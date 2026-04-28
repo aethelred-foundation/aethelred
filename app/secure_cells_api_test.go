@@ -1221,6 +1221,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClosureCommandCenterExportRec.Body.String(), "center_digest") || !strings.Contains(launchClosureCommandCenterExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure command center csv export, got %s", launchClosureCommandCenterExportRec.Body.String())
 	}
+
+	launchClosureDashboardListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-dashboards?jurisdiction=UAE", nil)
+	launchClosureDashboardListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureDashboardListRec, launchClosureDashboardListReq)
+	if launchClosureDashboardListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureDashboardListRec.Code, launchClosureDashboardListRec.Body.String())
+	}
+	var launchClosureDashboardListResp secureCellGovernmentAgentExecutionLaunchClosureDashboardListResponse
+	if err := json.Unmarshal(launchClosureDashboardListRec.Body.Bytes(), &launchClosureDashboardListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure dashboard list response: %v", err)
+	}
+	if len(launchClosureDashboardListResp.Items) != 1 || launchClosureDashboardListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure dashboard list response: %+v", launchClosureDashboardListResp.Items)
+	}
+	if launchClosureDashboardListResp.Items[0].DashboardDigest == "" || launchClosureDashboardListResp.Items[0].CenterID == "" || launchClosureDashboardListResp.Items[0].PrimaryAction == "" {
+		t.Fatalf("expected digest-bound execution launch closure dashboard, got %+v", launchClosureDashboardListResp.Items[0])
+	}
+
+	launchClosureDashboardDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closure-dashboard", nil)
+	launchClosureDashboardDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureDashboardDetailRec, launchClosureDashboardDetailReq)
+	if launchClosureDashboardDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureDashboardDetailRec.Code, launchClosureDashboardDetailRec.Body.String())
+	}
+	var launchClosureDashboardDetailResp secureCellGovernmentAgentExecutionLaunchClosureDashboardResponse
+	if err := json.Unmarshal(launchClosureDashboardDetailRec.Body.Bytes(), &launchClosureDashboardDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure dashboard detail response: %v", err)
+	}
+	if launchClosureDashboardDetailResp.Dashboard == nil || launchClosureDashboardDetailResp.Dashboard.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure dashboard detail response: %+v", launchClosureDashboardDetailResp.Dashboard)
+	}
+
+	launchClosureDashboardExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-dashboards/export?format=csv&jurisdiction=UAE", nil)
+	launchClosureDashboardExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureDashboardExportRec, launchClosureDashboardExportReq)
+	if launchClosureDashboardExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureDashboardExportRec.Code, launchClosureDashboardExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureDashboardExportRec.Body.String(), "dashboard_digest") || !strings.Contains(launchClosureDashboardExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure dashboard csv export, got %s", launchClosureDashboardExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

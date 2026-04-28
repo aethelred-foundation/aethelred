@@ -526,6 +526,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureCommandCenter.PrimaryAction != "issue_archive_certificate" || launchClosureCommandCenter.PendingItemCount == 0 {
 		t.Fatalf("expected archive-issue primary action, got %+v", launchClosureCommandCenter)
 	}
+
+	launchClosureDashboard, err := service.GetGovernmentAgentExecutionLaunchClosureDashboard(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureDashboard failed: %v", err)
+	}
+	if launchClosureDashboard.Status != SecureCellGovernmentAgentExecutionLaunchClosureDashboardAwaitingArchiveIssue || launchClosureDashboard.CanCloseNow || !launchClosureDashboard.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected launch closure dashboard awaiting archive issue, got %+v", launchClosureDashboard)
+	}
+	if launchClosureDashboard.DashboardDigest == "" || !strings.Contains(launchClosureDashboard.DashboardID, launchClosureDashboard.DashboardDigest[:12]) || launchClosureDashboard.CenterID != launchClosureCommandCenter.CenterID {
+		t.Fatalf("expected digest-bound launch closure dashboard tied to command center, got %+v", launchClosureDashboard)
+	}
+	if launchClosureDashboard.PrimaryAction != "issue_archive_certificate" || launchClosureDashboard.PendingItemCount == 0 {
+		t.Fatalf("expected archive-issue dashboard action, got %+v", launchClosureDashboard)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -918,6 +932,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureCommandCenter.PrimaryAction != "escalate_blocked_closure" {
 		t.Fatalf("expected blocked-closure primary action, got %+v", launchClosureCommandCenter)
+	}
+
+	launchClosureDashboard, err := service.GetGovernmentAgentExecutionLaunchClosureDashboard(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureDashboard failed: %v", err)
+	}
+	if launchClosureDashboard.Status != SecureCellGovernmentAgentExecutionLaunchClosureDashboardBlocked || launchClosureDashboard.CanCloseNow || launchClosureDashboard.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected blocked launch closure dashboard for tacit workflow, got %+v", launchClosureDashboard)
+	}
+	if launchClosureDashboard.BlockedItemCount == 0 || launchClosureDashboard.DashboardDigest == "" || launchClosureDashboard.CenterID != launchClosureCommandCenter.CenterID {
+		t.Fatalf("expected digest-bound blocked launch closure dashboard tied to command center, got %+v", launchClosureDashboard)
+	}
+	if launchClosureDashboard.PrimaryAction != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked dashboard action, got %+v", launchClosureDashboard)
 	}
 }
 
