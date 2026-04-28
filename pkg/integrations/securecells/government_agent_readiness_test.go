@@ -498,6 +498,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureRegistry.PendingClosureItemCount == 0 || !hasGovernmentAgentExecutionLaunchClosureItem(launchClosureRegistry.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchClosureItemAwaitingArchiveIssue) {
 		t.Fatalf("expected awaiting-archive-issue closure item, got %+v", launchClosureRegistry.Items)
 	}
+
+	launchClosureBoard, err := service.GetGovernmentAgentExecutionLaunchClosureBoard(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureBoard failed: %v", err)
+	}
+	if launchClosureBoard.Status != SecureCellGovernmentAgentExecutionLaunchClosureBoardAwaitingArchiveIssue || launchClosureBoard.CanCloseNow || !launchClosureBoard.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected launch closure board awaiting archive issue, got %+v", launchClosureBoard)
+	}
+	if launchClosureBoard.BoardDigest == "" || !strings.Contains(launchClosureBoard.BoardID, launchClosureBoard.BoardDigest[:12]) || launchClosureBoard.RegistryID != launchClosureRegistry.RegistryID {
+		t.Fatalf("expected digest-bound launch closure board tied to closure registry, got %+v", launchClosureBoard)
+	}
+	if launchClosureBoard.PendingItemCount == 0 || !hasGovernmentAgentExecutionLaunchClosureBoardItem(launchClosureBoard.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchClosureBoardItemAwaitingArchiveIssue) {
+		t.Fatalf("expected awaiting-archive-issue closure board item, got %+v", launchClosureBoard.Items)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -863,6 +877,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchClosureItem(launchClosureRegistry.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchClosureItemBlocked) {
 		t.Fatalf("expected blocked stop-condition watch closure item, got %+v", launchClosureRegistry.Items)
 	}
+
+	launchClosureBoard, err := service.GetGovernmentAgentExecutionLaunchClosureBoard(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureBoard failed: %v", err)
+	}
+	if launchClosureBoard.Status != SecureCellGovernmentAgentExecutionLaunchClosureBoardBlocked || launchClosureBoard.CanCloseNow || launchClosureBoard.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected blocked launch closure board for tacit workflow, got %+v", launchClosureBoard)
+	}
+	if launchClosureBoard.BlockedItemCount == 0 || launchClosureBoard.BoardDigest == "" || launchClosureBoard.RegistryID != launchClosureRegistry.RegistryID {
+		t.Fatalf("expected digest-bound blocked launch closure board tied to closure registry, got %+v", launchClosureBoard)
+	}
+	if !hasGovernmentAgentExecutionLaunchClosureBoardItem(launchClosureBoard.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchClosureBoardItemBlocked) {
+		t.Fatalf("expected blocked stop-condition watch closure board item, got %+v", launchClosureBoard.Items)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -1151,6 +1179,19 @@ func hasGovernmentAgentExecutionLaunchClosureItem(
 	items []SecureCellGovernmentAgentExecutionLaunchClosureItem,
 	receiptType string,
 	status SecureCellGovernmentAgentExecutionLaunchClosureItemStatus,
+) bool {
+	for _, item := range items {
+		if item.ReceiptType == receiptType && item.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchClosureBoardItem(
+	items []SecureCellGovernmentAgentExecutionLaunchClosureBoardItem,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionLaunchClosureBoardItemStatus,
 ) bool {
 	for _, item := range items {
 		if item.ReceiptType == receiptType && item.Status == status {
