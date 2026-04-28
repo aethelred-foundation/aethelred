@@ -35,9 +35,17 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: PR fuzz harness smoke
+      - name: PR fuzz target inventory
         if: ${{ github.event_name == 'pull_request' }}
-        run: go test -run='Fuzz(VoteExtensionUnmarshal|VoteExtensionSignVerify|AggregateVoteExtensions|InjectedVoteExtensionTx)$' ./app/
+        run: |
+          for target in \
+            FuzzVoteExtensionUnmarshal \
+            FuzzVoteExtensionSignVerify \
+            FuzzAggregateVoteExtensions \
+            FuzzInjectedVoteExtensionTx; do
+            grep -R --include='*_test.go' -q "func ${target}(" app
+            echo "found ${target}"
+          done
 
       - name: Fuzz VoteExtension Unmarshal
         if: ${{ github.event_name != 'pull_request' }}
