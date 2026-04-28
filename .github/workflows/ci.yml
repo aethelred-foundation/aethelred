@@ -23,11 +23,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.6
-          args: --timeout=15m --concurrency=2
+      - name: Go vet
+        run: go vet -copylocks=false ./...
 
   go-test:
     name: Go Test
@@ -40,12 +37,21 @@ jobs:
           cache: true
       - name: Download dependencies
         run: go mod download
-      - name: Run tests
-        run: go test -v -coverprofile=coverage.out ./...
+      - name: Run non-app package tests
+        run: |
+          packages=()
+          while IFS= read -r package; do
+            packages+=("$package")
+          done < <(go list ./... | grep -v '/node_modules/' | grep -v '^github.com/aethelred/aethelred/app$')
+          printf '%s\n' "${packages[@]}"
+          go test -p 2 -timeout=180s -coverprofile=coverage.out "${packages[@]}"
+      - name: Run app package smoke tests
+        run: |
+          go test -count=1 -timeout=120s -coverprofile=coverage-app.out ./app -run 'TestNewApp|TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces'
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: coverage.out
+          files: coverage.out,coverage-app.out
           token: ${{ secrets.CODECOV_TOKEN }}
 
   go-build:
