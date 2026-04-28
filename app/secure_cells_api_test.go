@@ -1289,6 +1289,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClosurePortfolioExportRec.Body.String(), "portfolio_digest") || !strings.Contains(launchClosurePortfolioExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure portfolio csv export, got %s", launchClosurePortfolioExportRec.Body.String())
 	}
+
+	launchClosureActionQueueListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-action-queues?jurisdiction=UAE", nil)
+	launchClosureActionQueueListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureActionQueueListRec, launchClosureActionQueueListReq)
+	if launchClosureActionQueueListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureActionQueueListRec.Code, launchClosureActionQueueListRec.Body.String())
+	}
+	var launchClosureActionQueueListResp secureCellGovernmentAgentExecutionLaunchClosureActionQueueListResponse
+	if err := json.Unmarshal(launchClosureActionQueueListRec.Body.Bytes(), &launchClosureActionQueueListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure action queue list response: %v", err)
+	}
+	if len(launchClosureActionQueueListResp.Items) != 1 || launchClosureActionQueueListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure action queue list response: %+v", launchClosureActionQueueListResp.Items)
+	}
+	if launchClosureActionQueueListResp.Items[0].QueueDigest == "" || len(launchClosureActionQueueListResp.Items[0].Actions) != 1 || launchClosureActionQueueListResp.Items[0].Actions[0].ActionDigest == "" {
+		t.Fatalf("expected digest-bound execution launch closure action queue, got %+v", launchClosureActionQueueListResp.Items[0])
+	}
+
+	launchClosureActionQueueDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closure-action-queue", nil)
+	launchClosureActionQueueDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureActionQueueDetailRec, launchClosureActionQueueDetailReq)
+	if launchClosureActionQueueDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureActionQueueDetailRec.Code, launchClosureActionQueueDetailRec.Body.String())
+	}
+	var launchClosureActionQueueDetailResp secureCellGovernmentAgentExecutionLaunchClosureActionQueueResponse
+	if err := json.Unmarshal(launchClosureActionQueueDetailRec.Body.Bytes(), &launchClosureActionQueueDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure action queue detail response: %v", err)
+	}
+	if launchClosureActionQueueDetailResp.Queue == nil || launchClosureActionQueueDetailResp.Queue.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure action queue detail response: %+v", launchClosureActionQueueDetailResp.Queue)
+	}
+
+	launchClosureActionQueueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-action-queues/export?format=csv&jurisdiction=UAE", nil)
+	launchClosureActionQueueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureActionQueueExportRec, launchClosureActionQueueExportReq)
+	if launchClosureActionQueueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureActionQueueExportRec.Code, launchClosureActionQueueExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureActionQueueExportRec.Body.String(), "queue_digest") || !strings.Contains(launchClosureActionQueueExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure action queue csv export, got %s", launchClosureActionQueueExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

@@ -568,6 +568,27 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if len(launchClosurePortfolio.Dashboards) == 0 || launchClosurePortfolio.Dashboards[0].DashboardID != launchClosureDashboard.DashboardID {
 		t.Fatalf("expected launch closure portfolio to include dashboard rows, got %+v", launchClosurePortfolio)
 	}
+
+	launchClosureActionQueue, err := service.GetGovernmentAgentExecutionLaunchClosureActionQueue(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureActionQueue failed: %v", err)
+	}
+	if launchClosureActionQueue.Status != SecureCellGovernmentAgentExecutionLaunchClosureActionQueueDue || launchClosureActionQueue.DashboardID != launchClosureDashboard.DashboardID {
+		t.Fatalf("expected due launch closure action queue tied to dashboard, got %+v", launchClosureActionQueue)
+	}
+	if launchClosureActionQueue.ActionCount != 1 || len(launchClosureActionQueue.Actions) != 1 {
+		t.Fatalf("expected single launch closure action queue item, got %+v", launchClosureActionQueue)
+	}
+	if launchClosureActionQueue.QueueDigest == "" || !strings.Contains(launchClosureActionQueue.QueueID, launchClosureActionQueue.QueueDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure action queue, got %+v", launchClosureActionQueue)
+	}
+	action := launchClosureActionQueue.Actions[0]
+	if action.Kind != SecureCellGovernmentAgentExecutionLaunchClosureActionIssueArchive || action.Status != SecureCellGovernmentAgentExecutionLaunchClosureActionQueueDue || action.Priority != SecureCellGovernmentAgentExecutionLaunchClosureActionPriorityHigh {
+		t.Fatalf("expected due archive-issue action, got %+v", action)
+	}
+	if action.DueAt == nil || action.OverdueSeconds != 0 || action.ActionDigest == "" {
+		t.Fatalf("expected timed launch closure action, got %+v", action)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -987,6 +1008,24 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosurePortfolio.PortfolioDigest == "" || len(launchClosurePortfolio.PrimaryActions) == 0 || launchClosurePortfolio.PrimaryActions[0].Action != "escalate_blocked_closure" {
 		t.Fatalf("expected blocked launch closure portfolio action, got %+v", launchClosurePortfolio)
+	}
+
+	launchClosureActionQueue, err := service.GetGovernmentAgentExecutionLaunchClosureActionQueue(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureActionQueue failed: %v", err)
+	}
+	if launchClosureActionQueue.Status != SecureCellGovernmentAgentExecutionLaunchClosureActionQueueBlocked || launchClosureActionQueue.BlockedActionCount != 1 {
+		t.Fatalf("expected blocked launch closure action queue, got %+v", launchClosureActionQueue)
+	}
+	if len(launchClosureActionQueue.Actions) != 1 {
+		t.Fatalf("expected one blocked launch closure action, got %+v", launchClosureActionQueue)
+	}
+	action := launchClosureActionQueue.Actions[0]
+	if action.Kind != SecureCellGovernmentAgentExecutionLaunchClosureActionEscalateBlocked || action.Status != SecureCellGovernmentAgentExecutionLaunchClosureActionQueueBlocked || !action.EscalationRecommended {
+		t.Fatalf("expected blocked escalation action, got %+v", action)
+	}
+	if action.Priority != SecureCellGovernmentAgentExecutionLaunchClosureActionPriorityCritical || action.ActionDigest == "" {
+		t.Fatalf("expected critical blocked launch closure action, got %+v", action)
 	}
 }
 
