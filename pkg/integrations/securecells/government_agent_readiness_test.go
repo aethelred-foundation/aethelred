@@ -687,6 +687,28 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureAutomationRunbook.RunbookDigest == "" || !strings.Contains(launchClosureAutomationRunbook.RunbookID, launchClosureAutomationRunbook.RunbookDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation runbook, got %+v", launchClosureAutomationRunbook)
 	}
+	launchClosureAutomationBrief, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationBrief(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationBrief failed: %v", err)
+	}
+	if launchClosureAutomationBrief.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue || launchClosureAutomationBrief.FocusAction != "drain_overdue_closure_actions" {
+		t.Fatalf("expected overdue launch closure automation brief focus, got %+v", launchClosureAutomationBrief)
+	}
+	if launchClosureAutomationBrief.Severity != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityHigh || launchClosureAutomationBrief.TopCheckpoint != "Issue archive certificates" {
+		t.Fatalf("expected overdue launch closure automation brief severity/checkpoint, got %+v", launchClosureAutomationBrief)
+	}
+	if len(launchClosureAutomationBrief.UniquePendingAction) != 1 || launchClosureAutomationBrief.UniquePendingAction[0] != "issue_archive_certificate" {
+		t.Fatalf("expected overdue launch closure automation brief pending actions, got %+v", launchClosureAutomationBrief)
+	}
+	if launchClosureAutomationBrief.RunbookID == "" || launchClosureAutomationBrief.BriefDigest == "" || !hasString(launchClosureAutomationBrief.Steps[0].CellIDs, created.CellID) {
+		t.Fatalf("expected brief tied to runbook and cell, got %+v", launchClosureAutomationBrief)
+	}
+	if !strings.Contains(launchClosureAutomationBrief.BriefID, launchClosureAutomationBrief.BriefDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation brief, got %+v", launchClosureAutomationBrief)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1211,6 +1233,25 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureAutomationRunbook.PacketID == "" || launchClosureAutomationRunbook.RunbookDigest == "" || !hasString(launchClosureAutomationRunbook.Steps[0].CellIDs, created.CellID) {
 		t.Fatalf("expected blocked runbook tied to packet and cell, got %+v", launchClosureAutomationRunbook)
+	}
+	launchClosureAutomationBrief, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationBrief(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationBrief failed: %v", err)
+	}
+	if launchClosureAutomationBrief.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked || launchClosureAutomationBrief.FocusAction != "clear_blocked_closure_path" {
+		t.Fatalf("expected blocked launch closure automation brief focus, got %+v", launchClosureAutomationBrief)
+	}
+	if launchClosureAutomationBrief.Severity != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityCritical || launchClosureAutomationBrief.TopCheckpoint != "Escalate blocked closure records" {
+		t.Fatalf("expected blocked launch closure automation brief severity/checkpoint, got %+v", launchClosureAutomationBrief)
+	}
+	if len(launchClosureAutomationBrief.UniquePendingAction) != 1 || launchClosureAutomationBrief.UniquePendingAction[0] != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked launch closure automation brief pending actions, got %+v", launchClosureAutomationBrief)
+	}
+	if launchClosureAutomationBrief.RunbookID == "" || launchClosureAutomationBrief.BriefDigest == "" || !hasString(launchClosureAutomationBrief.Steps[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked brief tied to runbook and cell, got %+v", launchClosureAutomationBrief)
 	}
 }
 
