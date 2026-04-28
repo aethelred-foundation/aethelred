@@ -852,6 +852,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchActivationExportRec.Body.String(), "activation_digest") || !strings.Contains(launchActivationExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch activation csv export, got %s", launchActivationExportRec.Body.String())
 	}
+
+	launchOrderListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-orders?jurisdiction=UAE", nil)
+	launchOrderListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchOrderListRec, launchOrderListReq)
+	if launchOrderListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchOrderListRec.Code, launchOrderListRec.Body.String())
+	}
+	var launchOrderListResp secureCellGovernmentAgentExecutionLaunchOrderListResponse
+	if err := json.Unmarshal(launchOrderListRec.Body.Bytes(), &launchOrderListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch order list response: %v", err)
+	}
+	if len(launchOrderListResp.Items) != 1 || launchOrderListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch order list response: %+v", launchOrderListResp.Items)
+	}
+	if launchOrderListResp.Items[0].OrderDigest == "" || launchOrderListResp.Items[0].ActivationID == "" || launchOrderListResp.Items[0].StopConditionCount == 0 {
+		t.Fatalf("expected digest-bound execution launch order, got %+v", launchOrderListResp.Items[0])
+	}
+
+	launchOrderDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-order", nil)
+	launchOrderDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchOrderDetailRec, launchOrderDetailReq)
+	if launchOrderDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchOrderDetailRec.Code, launchOrderDetailRec.Body.String())
+	}
+	var launchOrderDetailResp secureCellGovernmentAgentExecutionLaunchOrderResponse
+	if err := json.Unmarshal(launchOrderDetailRec.Body.Bytes(), &launchOrderDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch order detail response: %v", err)
+	}
+	if launchOrderDetailResp.Order == nil || launchOrderDetailResp.Order.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch order detail response: %+v", launchOrderDetailResp.Order)
+	}
+
+	launchOrderExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-orders/export?format=csv&jurisdiction=UAE", nil)
+	launchOrderExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchOrderExportRec, launchOrderExportReq)
+	if launchOrderExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchOrderExportRec.Code, launchOrderExportRec.Body.String())
+	}
+	if !strings.Contains(launchOrderExportRec.Body.String(), "order_digest") || !strings.Contains(launchOrderExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch order csv export, got %s", launchOrderExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

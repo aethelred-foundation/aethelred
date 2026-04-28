@@ -400,6 +400,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchActivation.WarnCount == 0 || launchActivation.FailCount != 0 || !hasGovernmentAgentExecutionLaunchActivationCheck(launchActivation.Checks, "PACKAGE_DIGEST_BOUND", SecureCellGovernmentAgentExecutionLaunchActivationCheckPass) {
 		t.Fatalf("expected warning-only launch activation with package digest check, got %+v", launchActivation.Checks)
 	}
+
+	launchOrder, err := service.GetGovernmentAgentExecutionLaunchOrder(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchOrder failed: %v", err)
+	}
+	if launchOrder.Status != SecureCellGovernmentAgentExecutionLaunchOrderWaitingOperatorReceipts || launchOrder.CanStartNow || !launchOrder.CanStartAfterOperatorReceipts {
+		t.Fatalf("expected launch order waiting for operator receipts, got %+v", launchOrder)
+	}
+	if launchOrder.OrderDigest == "" || !strings.Contains(launchOrder.OrderID, launchOrder.OrderDigest[:12]) || launchOrder.ActivationID != launchActivation.ActivationID {
+		t.Fatalf("expected digest-bound launch order tied to activation, got %+v", launchOrder)
+	}
+	if launchOrder.ReturnReceiptCount == 0 || !hasGovernmentAgentExecutionLaunchOrderStopCondition(launchOrder.StopConditions, "OPERATOR_RECEIPTS_MISSING", SecureCellGovernmentAgentExecutionLaunchOrderStopPriorityHigh) {
+		t.Fatalf("expected operator receipt stop condition and return receipts, got %+v", launchOrder)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -667,6 +681,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchActivationCheck(launchActivation.Checks, "CUSTODY_ACTIONS_CLEARED", SecureCellGovernmentAgentExecutionLaunchActivationCheckFail) {
 		t.Fatalf("expected failed custody action activation check, got %+v", launchActivation.Checks)
 	}
+
+	launchOrder, err := service.GetGovernmentAgentExecutionLaunchOrder(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchOrder failed: %v", err)
+	}
+	if launchOrder.Status != SecureCellGovernmentAgentExecutionLaunchOrderDenied || launchOrder.CanStartNow || launchOrder.CanStartAfterOperatorReceipts {
+		t.Fatalf("expected denied launch order for tacit workflow, got %+v", launchOrder)
+	}
+	if launchOrder.CriticalStopConditionCount == 0 || launchOrder.OrderDigest == "" || launchOrder.ActivationID != launchActivation.ActivationID {
+		t.Fatalf("expected digest-bound denied launch order tied to activation, got %+v", launchOrder)
+	}
+	if !hasGovernmentAgentExecutionLaunchOrderStopCondition(launchOrder.StopConditions, "ACTIVATION_CHECK_FAILED", SecureCellGovernmentAgentExecutionLaunchOrderStopPriorityCritical) {
+		t.Fatalf("expected critical activation failure stop condition, got %+v", launchOrder.StopConditions)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -866,6 +894,19 @@ func hasGovernmentAgentExecutionLaunchActivationCheck(
 ) bool {
 	for _, check := range checks {
 		if check.Code == code && check.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchOrderStopCondition(
+	conditions []SecureCellGovernmentAgentExecutionLaunchOrderStopCondition,
+	code string,
+	priority SecureCellGovernmentAgentExecutionLaunchOrderStopPriority,
+) bool {
+	for _, condition := range conditions {
+		if condition.Code == code && condition.Priority == priority {
 			return true
 		}
 	}
