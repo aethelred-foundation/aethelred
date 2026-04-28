@@ -122,7 +122,7 @@ func ExportControlLedgerOSCAL(ledger any) ([]byte, error) {
 		controlIDs = append(controlIDs, control.ControlID)
 	}
 
-	observations := make([]ControlLedgerOSCALObservation, 0, len(snap.Controls)+len(snap.Passports)+len(snap.Attestations)+len(snap.ApproverAttestations)+len(snap.ValueSettlements)+len(snap.PolicyReceipts)+len(snap.Seals))
+	observations := []ControlLedgerOSCALObservation{}
 	for _, control := range snap.Controls {
 		observations = append(observations, ControlLedgerOSCALObservation{
 			UUID:        deterministicUUID(snap.LedgerID + ":control:" + control.ControlID),
