@@ -372,6 +372,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchPackage.ReceiptValidationID != launchReceiptValidation.ValidationID || len(launchPackage.OperatorInstructions) == 0 {
 		t.Fatalf("expected launch package to bind receipt validation and operator instructions, got %+v", launchPackage)
 	}
+
+	launchCustody, err := service.GetGovernmentAgentExecutionLaunchCustody(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchCustody failed: %v", err)
+	}
+	if launchCustody.Status != SecureCellGovernmentAgentExecutionLaunchCustodyAwaitingReceipt || launchCustody.CanIssueNow || !launchCustody.CanIssueAfterOperatorReceipts {
+		t.Fatalf("expected launch custody to await operator receipts, got %+v", launchCustody)
+	}
+	if launchCustody.CustodyDigest == "" || !strings.Contains(launchCustody.CustodyID, launchCustody.CustodyDigest[:12]) || launchCustody.PackageID != launchPackage.PackageID {
+		t.Fatalf("expected digest-bound launch custody tied to package, got %+v", launchCustody)
+	}
+	if launchCustody.PendingActionCount == 0 || !hasGovernmentAgentExecutionLaunchCustodyAction(launchCustody.Actions, "collect_operator_acknowledgement", SecureCellGovernmentAgentExecutionLaunchCustodyActionPending) {
+		t.Fatalf("expected pending acknowledgement custody action, got %+v", launchCustody.Actions)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -611,6 +625,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if launchPackage.BlockedReceiptCount == 0 || launchPackage.PackageDigest == "" || launchPackage.ReceiptValidationID != launchReceiptValidation.ValidationID {
 		t.Fatalf("expected digest-bound blocked launch package tied to receipt validation, got %+v", launchPackage)
 	}
+
+	launchCustody, err := service.GetGovernmentAgentExecutionLaunchCustody(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchCustody failed: %v", err)
+	}
+	if launchCustody.Status != SecureCellGovernmentAgentExecutionLaunchCustodyBlocked || launchCustody.CanIssueNow || launchCustody.CanIssueAfterOperatorReceipts {
+		t.Fatalf("expected blocked launch custody for tacit workflow, got %+v", launchCustody)
+	}
+	if launchCustody.BlockedActionCount == 0 || launchCustody.CustodyDigest == "" || launchCustody.PackageID != launchPackage.PackageID {
+		t.Fatalf("expected digest-bound blocked launch custody tied to package, got %+v", launchCustody)
+	}
+	if !hasGovernmentAgentExecutionLaunchCustodyAction(launchCustody.Actions, "resolve_blocked_receipts", SecureCellGovernmentAgentExecutionLaunchCustodyActionBlocked) {
+		t.Fatalf("expected blocked remediation custody action, got %+v", launchCustody.Actions)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -784,6 +812,19 @@ func hasGovernmentAgentExecutionLaunchReceiptValidationCheck(
 ) bool {
 	for _, check := range checks {
 		if check.Code == code && check.Outcome == outcome {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchCustodyAction(
+	actions []SecureCellGovernmentAgentExecutionLaunchCustodyAction,
+	actionType string,
+	status SecureCellGovernmentAgentExecutionLaunchCustodyActionStatus,
+) bool {
+	for _, action := range actions {
+		if action.ActionType == actionType && action.Status == status {
 			return true
 		}
 	}
