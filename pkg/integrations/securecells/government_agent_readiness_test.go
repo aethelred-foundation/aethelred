@@ -512,6 +512,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureBoard.PendingItemCount == 0 || !hasGovernmentAgentExecutionLaunchClosureBoardItem(launchClosureBoard.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchClosureBoardItemAwaitingArchiveIssue) {
 		t.Fatalf("expected awaiting-archive-issue closure board item, got %+v", launchClosureBoard.Items)
 	}
+
+	launchClosureCommandCenter, err := service.GetGovernmentAgentExecutionLaunchClosureCommandCenter(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureCommandCenter failed: %v", err)
+	}
+	if launchClosureCommandCenter.Status != SecureCellGovernmentAgentExecutionLaunchClosureCommandCenterAwaitingArchiveIssue || launchClosureCommandCenter.CanCloseNow || !launchClosureCommandCenter.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected launch closure command center awaiting archive issue, got %+v", launchClosureCommandCenter)
+	}
+	if launchClosureCommandCenter.CenterDigest == "" || !strings.Contains(launchClosureCommandCenter.CenterID, launchClosureCommandCenter.CenterDigest[:12]) || launchClosureCommandCenter.BoardID != launchClosureBoard.BoardID {
+		t.Fatalf("expected digest-bound launch closure command center tied to closure board, got %+v", launchClosureCommandCenter)
+	}
+	if launchClosureCommandCenter.PrimaryAction != "issue_archive_certificate" || launchClosureCommandCenter.PendingItemCount == 0 {
+		t.Fatalf("expected archive-issue primary action, got %+v", launchClosureCommandCenter)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -890,6 +904,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if !hasGovernmentAgentExecutionLaunchClosureBoardItem(launchClosureBoard.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchClosureBoardItemBlocked) {
 		t.Fatalf("expected blocked stop-condition watch closure board item, got %+v", launchClosureBoard.Items)
+	}
+
+	launchClosureCommandCenter, err := service.GetGovernmentAgentExecutionLaunchClosureCommandCenter(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureCommandCenter failed: %v", err)
+	}
+	if launchClosureCommandCenter.Status != SecureCellGovernmentAgentExecutionLaunchClosureCommandCenterBlocked || launchClosureCommandCenter.CanCloseNow || launchClosureCommandCenter.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected blocked launch closure command center for tacit workflow, got %+v", launchClosureCommandCenter)
+	}
+	if launchClosureCommandCenter.BlockedItemCount == 0 || launchClosureCommandCenter.CenterDigest == "" || launchClosureCommandCenter.BoardID != launchClosureBoard.BoardID {
+		t.Fatalf("expected digest-bound blocked launch closure command center tied to closure board, got %+v", launchClosureCommandCenter)
+	}
+	if launchClosureCommandCenter.PrimaryAction != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked-closure primary action, got %+v", launchClosureCommandCenter)
 	}
 }
 

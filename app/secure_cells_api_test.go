@@ -1180,6 +1180,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClosureBoardExportRec.Body.String(), "board_digest") || !strings.Contains(launchClosureBoardExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure board csv export, got %s", launchClosureBoardExportRec.Body.String())
 	}
+
+	launchClosureCommandCenterListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-command-centers?jurisdiction=UAE", nil)
+	launchClosureCommandCenterListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureCommandCenterListRec, launchClosureCommandCenterListReq)
+	if launchClosureCommandCenterListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureCommandCenterListRec.Code, launchClosureCommandCenterListRec.Body.String())
+	}
+	var launchClosureCommandCenterListResp secureCellGovernmentAgentExecutionLaunchClosureCommandCenterListResponse
+	if err := json.Unmarshal(launchClosureCommandCenterListRec.Body.Bytes(), &launchClosureCommandCenterListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure command center list response: %v", err)
+	}
+	if len(launchClosureCommandCenterListResp.Items) != 1 || launchClosureCommandCenterListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure command center list response: %+v", launchClosureCommandCenterListResp.Items)
+	}
+	if launchClosureCommandCenterListResp.Items[0].CenterDigest == "" || launchClosureCommandCenterListResp.Items[0].BoardID == "" || launchClosureCommandCenterListResp.Items[0].PrimaryAction == "" {
+		t.Fatalf("expected digest-bound execution launch closure command center, got %+v", launchClosureCommandCenterListResp.Items[0])
+	}
+
+	launchClosureCommandCenterDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closure-command-center", nil)
+	launchClosureCommandCenterDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureCommandCenterDetailRec, launchClosureCommandCenterDetailReq)
+	if launchClosureCommandCenterDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureCommandCenterDetailRec.Code, launchClosureCommandCenterDetailRec.Body.String())
+	}
+	var launchClosureCommandCenterDetailResp secureCellGovernmentAgentExecutionLaunchClosureCommandCenterResponse
+	if err := json.Unmarshal(launchClosureCommandCenterDetailRec.Body.Bytes(), &launchClosureCommandCenterDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure command center detail response: %v", err)
+	}
+	if launchClosureCommandCenterDetailResp.Center == nil || launchClosureCommandCenterDetailResp.Center.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure command center detail response: %+v", launchClosureCommandCenterDetailResp.Center)
+	}
+
+	launchClosureCommandCenterExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-command-centers/export?format=csv&jurisdiction=UAE", nil)
+	launchClosureCommandCenterExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureCommandCenterExportRec, launchClosureCommandCenterExportReq)
+	if launchClosureCommandCenterExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureCommandCenterExportRec.Code, launchClosureCommandCenterExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureCommandCenterExportRec.Body.String(), "center_digest") || !strings.Contains(launchClosureCommandCenterExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure command center csv export, got %s", launchClosureCommandCenterExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
