@@ -589,6 +589,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if action.DueAt == nil || action.OverdueSeconds != 0 || action.ActionDigest == "" {
 		t.Fatalf("expected timed launch closure action, got %+v", action)
 	}
+
+	launchClosureAutomationAction, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAction(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAction failed: %v", err)
+	}
+	if launchClosureAutomationAction.QueueID != launchClosureActionQueue.QueueID || launchClosureAutomationAction.PendingAction != "issue_archive_certificate" {
+		t.Fatalf("expected launch closure automation action tied to queue, got %+v", launchClosureAutomationAction)
+	}
+	if launchClosureAutomationAction.AutomationAction != "secure_cell.government_agent_execution_launch_archive_issue_pending" || launchClosureAutomationAction.ActionKind != SecureCellGovernmentAgentExecutionLaunchClosureActionIssueArchive {
+		t.Fatalf("expected archive-issue automation action, got %+v", launchClosureAutomationAction)
+	}
+	if launchClosureAutomationAction.ActionDigest == "" || launchClosureAutomationAction.RecordID == "" || launchClosureAutomationAction.DueAt == nil {
+		t.Fatalf("expected digest-bound timed launch closure automation action, got %+v", launchClosureAutomationAction)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1026,6 +1040,17 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if action.Priority != SecureCellGovernmentAgentExecutionLaunchClosureActionPriorityCritical || action.ActionDigest == "" {
 		t.Fatalf("expected critical blocked launch closure action, got %+v", action)
+	}
+
+	launchClosureAutomationAction, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAction(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAction failed: %v", err)
+	}
+	if launchClosureAutomationAction.AutomationAction != "secure_cell.government_agent_execution_launch_closure_escalated" || launchClosureAutomationAction.PendingAction != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked launch closure automation action, got %+v", launchClosureAutomationAction)
+	}
+	if launchClosureAutomationAction.ActionPriority != SecureCellGovernmentAgentExecutionLaunchClosureActionPriorityCritical || !launchClosureAutomationAction.EscalationRecommended {
+		t.Fatalf("expected critical escalation automation action, got %+v", launchClosureAutomationAction)
 	}
 }
 

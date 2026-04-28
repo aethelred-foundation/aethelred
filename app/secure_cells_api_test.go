@@ -1330,6 +1330,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClosureActionQueueExportRec.Body.String(), "queue_digest") || !strings.Contains(launchClosureActionQueueExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure action queue csv export, got %s", launchClosureActionQueueExportRec.Body.String())
 	}
+
+	launchClosureAutomationActionListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-actions?jurisdiction=UAE", nil)
+	launchClosureAutomationActionListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationActionListRec, launchClosureAutomationActionListReq)
+	if launchClosureAutomationActionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationActionListRec.Code, launchClosureAutomationActionListRec.Body.String())
+	}
+	var launchClosureAutomationActionListResp secureCellGovernmentAgentExecutionLaunchClosureAutomationActionListResponse
+	if err := json.Unmarshal(launchClosureAutomationActionListRec.Body.Bytes(), &launchClosureAutomationActionListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure automation action list response: %v", err)
+	}
+	if len(launchClosureAutomationActionListResp.Items) != 1 || launchClosureAutomationActionListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure automation action list response: %+v", launchClosureAutomationActionListResp.Items)
+	}
+	if launchClosureAutomationActionListResp.Items[0].ActionDigest == "" || launchClosureAutomationActionListResp.Items[0].PendingAction == "" || launchClosureAutomationActionListResp.Items[0].AutomationAction == "" {
+		t.Fatalf("expected digest-bound execution launch closure automation action, got %+v", launchClosureAutomationActionListResp.Items[0])
+	}
+
+	launchClosureAutomationActionDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closure-automation-action", nil)
+	launchClosureAutomationActionDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationActionDetailRec, launchClosureAutomationActionDetailReq)
+	if launchClosureAutomationActionDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationActionDetailRec.Code, launchClosureAutomationActionDetailRec.Body.String())
+	}
+	var launchClosureAutomationActionDetailResp secureCellGovernmentAgentExecutionLaunchClosureAutomationActionResponse
+	if err := json.Unmarshal(launchClosureAutomationActionDetailRec.Body.Bytes(), &launchClosureAutomationActionDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure automation action detail response: %v", err)
+	}
+	if launchClosureAutomationActionDetailResp.Item == nil || launchClosureAutomationActionDetailResp.Item.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure automation action detail response: %+v", launchClosureAutomationActionDetailResp.Item)
+	}
+
+	launchClosureAutomationActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-actions/export?format=csv&jurisdiction=UAE", nil)
+	launchClosureAutomationActionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationActionExportRec, launchClosureAutomationActionExportReq)
+	if launchClosureAutomationActionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationActionExportRec.Code, launchClosureAutomationActionExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureAutomationActionExportRec.Body.String(), "automation_action") || !strings.Contains(launchClosureAutomationActionExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure automation action csv export, got %s", launchClosureAutomationActionExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
