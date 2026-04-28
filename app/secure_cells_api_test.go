@@ -975,6 +975,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchReceiptIntakeExportRec.Body.String(), "ledger_digest") || !strings.Contains(launchReceiptIntakeExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch receipt intake csv export, got %s", launchReceiptIntakeExportRec.Body.String())
 	}
+
+	launchCloseoutListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closeouts?jurisdiction=UAE", nil)
+	launchCloseoutListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchCloseoutListRec, launchCloseoutListReq)
+	if launchCloseoutListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchCloseoutListRec.Code, launchCloseoutListRec.Body.String())
+	}
+	var launchCloseoutListResp secureCellGovernmentAgentExecutionLaunchCloseoutListResponse
+	if err := json.Unmarshal(launchCloseoutListRec.Body.Bytes(), &launchCloseoutListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closeout list response: %v", err)
+	}
+	if len(launchCloseoutListResp.Items) != 1 || launchCloseoutListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closeout list response: %+v", launchCloseoutListResp.Items)
+	}
+	if launchCloseoutListResp.Items[0].RegisterDigest == "" || launchCloseoutListResp.Items[0].LedgerID == "" || launchCloseoutListResp.Items[0].GateCount == 0 {
+		t.Fatalf("expected digest-bound execution launch closeout, got %+v", launchCloseoutListResp.Items[0])
+	}
+
+	launchCloseoutDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closeout", nil)
+	launchCloseoutDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchCloseoutDetailRec, launchCloseoutDetailReq)
+	if launchCloseoutDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchCloseoutDetailRec.Code, launchCloseoutDetailRec.Body.String())
+	}
+	var launchCloseoutDetailResp secureCellGovernmentAgentExecutionLaunchCloseoutResponse
+	if err := json.Unmarshal(launchCloseoutDetailRec.Body.Bytes(), &launchCloseoutDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closeout detail response: %v", err)
+	}
+	if launchCloseoutDetailResp.Closeout == nil || launchCloseoutDetailResp.Closeout.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closeout detail response: %+v", launchCloseoutDetailResp.Closeout)
+	}
+
+	launchCloseoutExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closeouts/export?format=csv&jurisdiction=UAE", nil)
+	launchCloseoutExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchCloseoutExportRec, launchCloseoutExportReq)
+	if launchCloseoutExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchCloseoutExportRec.Code, launchCloseoutExportRec.Body.String())
+	}
+	if !strings.Contains(launchCloseoutExportRec.Body.String(), "register_digest") || !strings.Contains(launchCloseoutExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closeout csv export, got %s", launchCloseoutExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

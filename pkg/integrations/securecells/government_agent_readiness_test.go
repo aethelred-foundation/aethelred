@@ -442,6 +442,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchReceiptIntake.PendingReceiptItemCount == 0 || !hasGovernmentAgentExecutionLaunchReceiptIntakeItem(launchReceiptIntake.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchReceiptIntakeItemPending) {
 		t.Fatalf("expected pending operator acknowledgement intake item, got %+v", launchReceiptIntake.Items)
 	}
+
+	launchCloseout, err := service.GetGovernmentAgentExecutionLaunchCloseout(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchCloseout failed: %v", err)
+	}
+	if launchCloseout.Status != SecureCellGovernmentAgentExecutionLaunchCloseoutAwaitingOperatorReceipts || launchCloseout.CanCloseNow || launchCloseout.CanCloseAfterRuntimeReceipts {
+		t.Fatalf("expected launch closeout waiting for operator receipts, got %+v", launchCloseout)
+	}
+	if launchCloseout.RegisterDigest == "" || !strings.Contains(launchCloseout.RegisterID, launchCloseout.RegisterDigest[:12]) || launchCloseout.LedgerID != launchReceiptIntake.LedgerID {
+		t.Fatalf("expected digest-bound launch closeout tied to receipt intake, got %+v", launchCloseout)
+	}
+	if launchCloseout.OperatorReceiptGateCount == 0 || !hasGovernmentAgentExecutionLaunchCloseoutGate(launchCloseout.Gates, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchCloseoutGateAwaitingOperatorReceipt) {
+		t.Fatalf("expected operator acknowledgement closeout gate, got %+v", launchCloseout.Gates)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -751,6 +765,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchReceiptIntakeItem(launchReceiptIntake.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchReceiptIntakeItemBlocked) {
 		t.Fatalf("expected blocked stop-condition watch receipt intake item, got %+v", launchReceiptIntake.Items)
 	}
+
+	launchCloseout, err := service.GetGovernmentAgentExecutionLaunchCloseout(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchCloseout failed: %v", err)
+	}
+	if launchCloseout.Status != SecureCellGovernmentAgentExecutionLaunchCloseoutBlocked || launchCloseout.CanCloseNow || launchCloseout.CanCloseAfterRuntimeReceipts {
+		t.Fatalf("expected blocked launch closeout for tacit workflow, got %+v", launchCloseout)
+	}
+	if launchCloseout.BlockedGateCount == 0 || launchCloseout.RegisterDigest == "" || launchCloseout.LedgerID != launchReceiptIntake.LedgerID {
+		t.Fatalf("expected digest-bound blocked launch closeout tied to receipt intake, got %+v", launchCloseout)
+	}
+	if !hasGovernmentAgentExecutionLaunchCloseoutGate(launchCloseout.Gates, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchCloseoutGateBlocked) {
+		t.Fatalf("expected blocked stop-condition watch closeout gate, got %+v", launchCloseout.Gates)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -990,6 +1018,19 @@ func hasGovernmentAgentExecutionLaunchReceiptIntakeItem(
 ) bool {
 	for _, item := range items {
 		if item.ReceiptType == receiptType && item.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchCloseoutGate(
+	gates []SecureCellGovernmentAgentExecutionLaunchCloseoutGate,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionLaunchCloseoutGateStatus,
+) bool {
+	for _, gate := range gates {
+		if gate.ReceiptType == receiptType && gate.Status == status {
 			return true
 		}
 	}
