@@ -633,6 +633,22 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureAutomationSummary.SummaryDigest == "" || len(launchClosureAutomationSummary.TopActions) == 0 || launchClosureAutomationSummary.TopActions[0].PendingAction != "issue_archive_certificate" {
 		t.Fatalf("expected digest-bound archive-issue automation summary, got %+v", launchClosureAutomationSummary)
 	}
+	launchClosureAutomationBoard, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationBoard(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationBoard failed: %v", err)
+	}
+	if launchClosureAutomationBoard.RecommendedLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue || launchClosureAutomationBoard.RecommendedAction != "drain_overdue_closure_actions" {
+		t.Fatalf("expected overdue launch closure automation board recommendation, got %+v", launchClosureAutomationBoard)
+	}
+	if len(launchClosureAutomationBoard.Items) == 0 || launchClosureAutomationBoard.Items[0].Lane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue {
+		t.Fatalf("expected overdue launch closure automation board items, got %+v", launchClosureAutomationBoard)
+	}
+	if launchClosureAutomationBoard.BoardDigest == "" || !strings.Contains(launchClosureAutomationBoard.BoardID, launchClosureAutomationBoard.BoardDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation board, got %+v", launchClosureAutomationBoard)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1112,6 +1128,19 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if len(launchClosureAutomationSummary.TopActions) == 0 || launchClosureAutomationSummary.TopActions[0].PendingAction != "escalate_blocked_closure" {
 		t.Fatalf("expected blocked launch closure automation summary action, got %+v", launchClosureAutomationSummary)
+	}
+	launchClosureAutomationBoard, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationBoard(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationBoard failed: %v", err)
+	}
+	if launchClosureAutomationBoard.RecommendedLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked || launchClosureAutomationBoard.RecommendedAction != "clear_blocked_closure_path" {
+		t.Fatalf("expected blocked launch closure automation board recommendation, got %+v", launchClosureAutomationBoard)
+	}
+	if len(launchClosureAutomationBoard.Items) != 1 || launchClosureAutomationBoard.Items[0].Lane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked {
+		t.Fatalf("expected blocked launch closure automation board item, got %+v", launchClosureAutomationBoard)
 	}
 }
 

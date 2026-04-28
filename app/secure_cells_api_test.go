@@ -70,6 +70,28 @@ func TestNewApp_InitializesSecureCellWriteAuth_DisabledByDefault(t *testing.T) {
 	}
 }
 
+func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardCSVRows_EmptyBoardColumnCount(t *testing.T) {
+	board := &securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoard{
+		BoardID:           "government-agent-execution-launch-closure-automation-board:UAE:abcdef123456",
+		SummaryID:         "government-agent-execution-launch-closure-automation-summary:UAE:abcdef123456",
+		Jurisdiction:      "UAE",
+		EvaluatedAt:       time.Unix(1, 0).UTC(),
+		RecommendedLane:   securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneDue,
+		RecommendedAction: "work_next_due_closure_actions",
+		BoardDigest:       strings.Repeat("a", 64),
+		SummaryDigest:     strings.Repeat("b", 64),
+		GeneratedAt:       time.Unix(2, 0).UTC(),
+	}
+
+	rows := secureCellGovernmentAgentExecutionLaunchClosureAutomationBoardCSVRows(board)
+	if len(rows) != 2 {
+		t.Fatalf("expected header plus empty-board row, got %d rows", len(rows))
+	}
+	if got, want := len(rows[1]), len(rows[0]); got != want {
+		t.Fatalf("expected empty-board csv row to have %d columns, got %d: %#v", want, got, rows[1])
+	}
+}
+
 func TestSecureCellsHandlers_BearerCreateGetArtifactsFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -1439,6 +1461,33 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	}
 	if !strings.Contains(launchClosureAutomationSummaryExportRec.Body.String(), "summary_digest") || !strings.Contains(launchClosureAutomationSummaryExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure automation summary csv export, got %s", launchClosureAutomationSummaryExportRec.Body.String())
+	}
+
+	launchClosureAutomationBoardReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-board?jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationBoardRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationBoardRec, launchClosureAutomationBoardReq)
+	if launchClosureAutomationBoardRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationBoardRec.Code, launchClosureAutomationBoardRec.Body.String())
+	}
+	var launchClosureAutomationBoardResp secureCellGovernmentAgentExecutionLaunchClosureAutomationBoardResponse
+	if err := json.Unmarshal(launchClosureAutomationBoardRec.Body.Bytes(), &launchClosureAutomationBoardResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure automation board response: %v", err)
+	}
+	if launchClosureAutomationBoardResp.Board == nil || len(launchClosureAutomationBoardResp.Board.Items) != 1 {
+		t.Fatalf("unexpected government-agent execution launch closure automation board response: %+v", launchClosureAutomationBoardResp.Board)
+	}
+	if launchClosureAutomationBoardResp.Board.BoardDigest == "" || launchClosureAutomationBoardResp.Board.RecommendedAction == "" || launchClosureAutomationBoardResp.Board.RecommendedLane == "" {
+		t.Fatalf("expected digest-bound execution launch closure automation board, got %+v", launchClosureAutomationBoardResp.Board)
+	}
+
+	launchClosureAutomationBoardExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-board/export?format=csv&jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationBoardExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationBoardExportRec, launchClosureAutomationBoardExportReq)
+	if launchClosureAutomationBoardExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationBoardExportRec.Code, launchClosureAutomationBoardExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureAutomationBoardExportRec.Body.String(), "board_digest") || !strings.Contains(launchClosureAutomationBoardExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure automation board csv export, got %s", launchClosureAutomationBoardExportRec.Body.String())
 	}
 }
 
