@@ -414,6 +414,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchOrder.ReturnReceiptCount == 0 || !hasGovernmentAgentExecutionLaunchOrderStopCondition(launchOrder.StopConditions, "OPERATOR_RECEIPTS_MISSING", SecureCellGovernmentAgentExecutionLaunchOrderStopPriorityHigh) {
 		t.Fatalf("expected operator receipt stop condition and return receipts, got %+v", launchOrder)
 	}
+
+	launchMonitor, err := service.GetGovernmentAgentExecutionLaunchMonitor(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchMonitor failed: %v", err)
+	}
+	if launchMonitor.Status != SecureCellGovernmentAgentExecutionLaunchMonitorWaitingOperatorReceipts || launchMonitor.CanMonitorNow || !launchMonitor.CanMonitorAfterOperatorReceipts {
+		t.Fatalf("expected launch monitor waiting for operator receipts, got %+v", launchMonitor)
+	}
+	if launchMonitor.MonitorDigest == "" || !strings.Contains(launchMonitor.MonitorID, launchMonitor.MonitorDigest[:12]) || launchMonitor.OrderID != launchOrder.OrderID {
+		t.Fatalf("expected digest-bound launch monitor tied to order, got %+v", launchMonitor)
+	}
+	if launchMonitor.PendingCheckpointCount == 0 || !hasGovernmentAgentExecutionLaunchMonitorCheckpoint(launchMonitor.Checkpoints, "return_receipt", "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchMonitorCheckpointPending) {
+		t.Fatalf("expected pending operator acknowledgement checkpoint, got %+v", launchMonitor.Checkpoints)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -695,6 +709,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchOrderStopCondition(launchOrder.StopConditions, "ACTIVATION_CHECK_FAILED", SecureCellGovernmentAgentExecutionLaunchOrderStopPriorityCritical) {
 		t.Fatalf("expected critical activation failure stop condition, got %+v", launchOrder.StopConditions)
 	}
+
+	launchMonitor, err := service.GetGovernmentAgentExecutionLaunchMonitor(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchMonitor failed: %v", err)
+	}
+	if launchMonitor.Status != SecureCellGovernmentAgentExecutionLaunchMonitorDenied || launchMonitor.CanMonitorNow || launchMonitor.CanMonitorAfterOperatorReceipts {
+		t.Fatalf("expected denied launch monitor for tacit workflow, got %+v", launchMonitor)
+	}
+	if launchMonitor.BlockedCheckpointCount == 0 || launchMonitor.MonitorDigest == "" || launchMonitor.OrderID != launchOrder.OrderID {
+		t.Fatalf("expected digest-bound denied launch monitor tied to order, got %+v", launchMonitor)
+	}
+	if !hasGovernmentAgentExecutionLaunchMonitorCheckpoint(launchMonitor.Checkpoints, "stop_condition_watch", "", SecureCellGovernmentAgentExecutionLaunchMonitorCheckpointBlocked) {
+		t.Fatalf("expected blocked stop-condition watch checkpoint, got %+v", launchMonitor.Checkpoints)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -907,6 +935,20 @@ func hasGovernmentAgentExecutionLaunchOrderStopCondition(
 ) bool {
 	for _, condition := range conditions {
 		if condition.Code == code && condition.Priority == priority {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchMonitorCheckpoint(
+	checkpoints []SecureCellGovernmentAgentExecutionLaunchMonitorCheckpoint,
+	kind string,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionLaunchMonitorCheckpointStatus,
+) bool {
+	for _, checkpoint := range checkpoints {
+		if checkpoint.Kind == kind && checkpoint.Status == status && (receiptType == "" || checkpoint.ReceiptType == receiptType) {
 			return true
 		}
 	}

@@ -893,6 +893,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchOrderExportRec.Body.String(), "order_digest") || !strings.Contains(launchOrderExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch order csv export, got %s", launchOrderExportRec.Body.String())
 	}
+
+	launchMonitorListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-monitors?jurisdiction=UAE", nil)
+	launchMonitorListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchMonitorListRec, launchMonitorListReq)
+	if launchMonitorListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchMonitorListRec.Code, launchMonitorListRec.Body.String())
+	}
+	var launchMonitorListResp secureCellGovernmentAgentExecutionLaunchMonitorListResponse
+	if err := json.Unmarshal(launchMonitorListRec.Body.Bytes(), &launchMonitorListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch monitor list response: %v", err)
+	}
+	if len(launchMonitorListResp.Items) != 1 || launchMonitorListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch monitor list response: %+v", launchMonitorListResp.Items)
+	}
+	if launchMonitorListResp.Items[0].MonitorDigest == "" || launchMonitorListResp.Items[0].OrderID == "" || launchMonitorListResp.Items[0].CheckpointCount == 0 {
+		t.Fatalf("expected digest-bound execution launch monitor, got %+v", launchMonitorListResp.Items[0])
+	}
+
+	launchMonitorDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-monitor", nil)
+	launchMonitorDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchMonitorDetailRec, launchMonitorDetailReq)
+	if launchMonitorDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchMonitorDetailRec.Code, launchMonitorDetailRec.Body.String())
+	}
+	var launchMonitorDetailResp secureCellGovernmentAgentExecutionLaunchMonitorResponse
+	if err := json.Unmarshal(launchMonitorDetailRec.Body.Bytes(), &launchMonitorDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch monitor detail response: %v", err)
+	}
+	if launchMonitorDetailResp.Monitor == nil || launchMonitorDetailResp.Monitor.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch monitor detail response: %+v", launchMonitorDetailResp.Monitor)
+	}
+
+	launchMonitorExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-monitors/export?format=csv&jurisdiction=UAE", nil)
+	launchMonitorExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchMonitorExportRec, launchMonitorExportReq)
+	if launchMonitorExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchMonitorExportRec.Code, launchMonitorExportRec.Body.String())
+	}
+	if !strings.Contains(launchMonitorExportRec.Body.String(), "monitor_digest") || !strings.Contains(launchMonitorExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch monitor csv export, got %s", launchMonitorExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
