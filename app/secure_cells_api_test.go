@@ -1016,6 +1016,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchCloseoutExportRec.Body.String(), "register_digest") || !strings.Contains(launchCloseoutExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closeout csv export, got %s", launchCloseoutExportRec.Body.String())
 	}
+
+	launchSettlementListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-settlements?jurisdiction=UAE", nil)
+	launchSettlementListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchSettlementListRec, launchSettlementListReq)
+	if launchSettlementListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchSettlementListRec.Code, launchSettlementListRec.Body.String())
+	}
+	var launchSettlementListResp secureCellGovernmentAgentExecutionLaunchSettlementListResponse
+	if err := json.Unmarshal(launchSettlementListRec.Body.Bytes(), &launchSettlementListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch settlement list response: %v", err)
+	}
+	if len(launchSettlementListResp.Items) != 1 || launchSettlementListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch settlement list response: %+v", launchSettlementListResp.Items)
+	}
+	if launchSettlementListResp.Items[0].SettlementRegisterDigest == "" || launchSettlementListResp.Items[0].CloseoutRegisterID == "" || launchSettlementListResp.Items[0].SettlementItemCount == 0 {
+		t.Fatalf("expected digest-bound execution launch settlement, got %+v", launchSettlementListResp.Items[0])
+	}
+
+	launchSettlementDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-settlement", nil)
+	launchSettlementDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchSettlementDetailRec, launchSettlementDetailReq)
+	if launchSettlementDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchSettlementDetailRec.Code, launchSettlementDetailRec.Body.String())
+	}
+	var launchSettlementDetailResp secureCellGovernmentAgentExecutionLaunchSettlementResponse
+	if err := json.Unmarshal(launchSettlementDetailRec.Body.Bytes(), &launchSettlementDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch settlement detail response: %v", err)
+	}
+	if launchSettlementDetailResp.Settlement == nil || launchSettlementDetailResp.Settlement.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch settlement detail response: %+v", launchSettlementDetailResp.Settlement)
+	}
+
+	launchSettlementExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-settlements/export?format=csv&jurisdiction=UAE", nil)
+	launchSettlementExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchSettlementExportRec, launchSettlementExportReq)
+	if launchSettlementExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchSettlementExportRec.Code, launchSettlementExportRec.Body.String())
+	}
+	if !strings.Contains(launchSettlementExportRec.Body.String(), "settlement_register_digest") || !strings.Contains(launchSettlementExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch settlement csv export, got %s", launchSettlementExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
