@@ -709,6 +709,28 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !strings.Contains(launchClosureAutomationBrief.BriefID, launchClosureAutomationBrief.BriefDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation brief, got %+v", launchClosureAutomationBrief)
 	}
+	launchClosureAutomationDispatch, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationDispatch(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationDispatch failed: %v", err)
+	}
+	if launchClosureAutomationDispatch.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue || launchClosureAutomationDispatch.FocusAction != "drain_overdue_closure_actions" {
+		t.Fatalf("expected overdue launch closure automation dispatch focus, got %+v", launchClosureAutomationDispatch)
+	}
+	if launchClosureAutomationDispatch.Severity != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityHigh || launchClosureAutomationDispatch.LeadRole != "operations_lead" {
+		t.Fatalf("expected overdue launch closure automation dispatch severity/lead, got %+v", launchClosureAutomationDispatch)
+	}
+	if launchClosureAutomationDispatch.AssignmentCount != 1 || len(launchClosureAutomationDispatch.Assignments) != 1 || launchClosureAutomationDispatch.Assignments[0].PendingAction != "issue_archive_certificate" {
+		t.Fatalf("expected overdue launch closure automation dispatch assignments, got %+v", launchClosureAutomationDispatch)
+	}
+	if launchClosureAutomationDispatch.BriefID == "" || launchClosureAutomationDispatch.DispatchDigest == "" || !hasString(launchClosureAutomationDispatch.Assignments[0].CellIDs, created.CellID) {
+		t.Fatalf("expected dispatch tied to brief and cell, got %+v", launchClosureAutomationDispatch)
+	}
+	if !strings.Contains(launchClosureAutomationDispatch.DispatchID, launchClosureAutomationDispatch.DispatchDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation dispatch, got %+v", launchClosureAutomationDispatch)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1252,6 +1274,25 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureAutomationBrief.RunbookID == "" || launchClosureAutomationBrief.BriefDigest == "" || !hasString(launchClosureAutomationBrief.Steps[0].CellIDs, created.CellID) {
 		t.Fatalf("expected blocked brief tied to runbook and cell, got %+v", launchClosureAutomationBrief)
+	}
+	launchClosureAutomationDispatch, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationDispatch(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationDispatch failed: %v", err)
+	}
+	if launchClosureAutomationDispatch.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked || launchClosureAutomationDispatch.FocusAction != "clear_blocked_closure_path" {
+		t.Fatalf("expected blocked launch closure automation dispatch focus, got %+v", launchClosureAutomationDispatch)
+	}
+	if launchClosureAutomationDispatch.Severity != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityCritical || launchClosureAutomationDispatch.LeadRole != "incident_commander" || !launchClosureAutomationDispatch.EscalationRequired {
+		t.Fatalf("expected blocked launch closure automation dispatch severity/lead/escalation, got %+v", launchClosureAutomationDispatch)
+	}
+	if launchClosureAutomationDispatch.AssignmentCount != 1 || len(launchClosureAutomationDispatch.Assignments) != 1 || launchClosureAutomationDispatch.Assignments[0].PendingAction != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked launch closure automation dispatch assignments, got %+v", launchClosureAutomationDispatch)
+	}
+	if launchClosureAutomationDispatch.BriefID == "" || launchClosureAutomationDispatch.DispatchDigest == "" || !hasString(launchClosureAutomationDispatch.Assignments[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked dispatch tied to brief and cell, got %+v", launchClosureAutomationDispatch)
 	}
 }
 
