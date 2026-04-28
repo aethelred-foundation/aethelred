@@ -428,6 +428,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchMonitor.PendingCheckpointCount == 0 || !hasGovernmentAgentExecutionLaunchMonitorCheckpoint(launchMonitor.Checkpoints, "return_receipt", "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchMonitorCheckpointPending) {
 		t.Fatalf("expected pending operator acknowledgement checkpoint, got %+v", launchMonitor.Checkpoints)
 	}
+
+	launchReceiptIntake, err := service.GetGovernmentAgentExecutionLaunchReceiptIntake(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchReceiptIntake failed: %v", err)
+	}
+	if launchReceiptIntake.Status != SecureCellGovernmentAgentExecutionLaunchReceiptIntakeAwaitingOperatorReceipts || launchReceiptIntake.CanCollectNow || !launchReceiptIntake.CanCollectAfterOperatorReceipts {
+		t.Fatalf("expected launch receipt intake waiting for operator receipts, got %+v", launchReceiptIntake)
+	}
+	if launchReceiptIntake.LedgerDigest == "" || !strings.Contains(launchReceiptIntake.LedgerID, launchReceiptIntake.LedgerDigest[:12]) || launchReceiptIntake.MonitorID != launchMonitor.MonitorID {
+		t.Fatalf("expected digest-bound launch receipt intake tied to monitor, got %+v", launchReceiptIntake)
+	}
+	if launchReceiptIntake.PendingReceiptItemCount == 0 || !hasGovernmentAgentExecutionLaunchReceiptIntakeItem(launchReceiptIntake.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchReceiptIntakeItemPending) {
+		t.Fatalf("expected pending operator acknowledgement intake item, got %+v", launchReceiptIntake.Items)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -723,6 +737,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchMonitorCheckpoint(launchMonitor.Checkpoints, "stop_condition_watch", "", SecureCellGovernmentAgentExecutionLaunchMonitorCheckpointBlocked) {
 		t.Fatalf("expected blocked stop-condition watch checkpoint, got %+v", launchMonitor.Checkpoints)
 	}
+
+	launchReceiptIntake, err := service.GetGovernmentAgentExecutionLaunchReceiptIntake(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchReceiptIntake failed: %v", err)
+	}
+	if launchReceiptIntake.Status != SecureCellGovernmentAgentExecutionLaunchReceiptIntakeBlocked || launchReceiptIntake.CanCollectNow || launchReceiptIntake.CanCollectAfterOperatorReceipts {
+		t.Fatalf("expected blocked launch receipt intake for tacit workflow, got %+v", launchReceiptIntake)
+	}
+	if launchReceiptIntake.BlockedReceiptItemCount == 0 || launchReceiptIntake.LedgerDigest == "" || launchReceiptIntake.MonitorID != launchMonitor.MonitorID {
+		t.Fatalf("expected digest-bound blocked launch receipt intake tied to monitor, got %+v", launchReceiptIntake)
+	}
+	if !hasGovernmentAgentExecutionLaunchReceiptIntakeItem(launchReceiptIntake.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchReceiptIntakeItemBlocked) {
+		t.Fatalf("expected blocked stop-condition watch receipt intake item, got %+v", launchReceiptIntake.Items)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -949,6 +977,19 @@ func hasGovernmentAgentExecutionLaunchMonitorCheckpoint(
 ) bool {
 	for _, checkpoint := range checkpoints {
 		if checkpoint.Kind == kind && checkpoint.Status == status && (receiptType == "" || checkpoint.ReceiptType == receiptType) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchReceiptIntakeItem(
+	items []SecureCellGovernmentAgentExecutionLaunchReceiptIntakeItem,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionLaunchReceiptIntakeItemStatus,
+) bool {
+	for _, item := range items {
+		if item.ReceiptType == receiptType && item.Status == status {
 			return true
 		}
 	}
