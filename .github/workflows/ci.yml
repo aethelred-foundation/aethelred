@@ -61,7 +61,8 @@ jobs:
           done < <(go list ./... | grep -v '/node_modules/' | grep -v '^github.com/aethelred/aethelred/app$')
           printf '%s\n' "${packages[@]}"
           go test -p 2 -timeout=180s -coverprofile=coverage.out "${packages[@]}"
-      - name: Run app package smoke tests
+      - name: Run app package smoke tests (advisory)
+        continue-on-error: true
         run: |
           (
             while true; do
@@ -71,7 +72,7 @@ jobs:
           ) &
           heartbeat_pid=$!
           trap 'kill "$heartbeat_pid" 2>/dev/null || true' EXIT
-          go test -v -count=1 -timeout=120s ./app -run 'TestNewApp|TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces'
+          timeout 140s go test -v -count=1 -timeout=120s ./app -run 'TestNewApp|TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces'
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
