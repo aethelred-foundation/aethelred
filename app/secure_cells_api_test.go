@@ -811,6 +811,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchCustodyExportRec.Body.String(), "custody_digest") || !strings.Contains(launchCustodyExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch custody csv export, got %s", launchCustodyExportRec.Body.String())
 	}
+
+	launchActivationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-activations?jurisdiction=UAE", nil)
+	launchActivationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchActivationListRec, launchActivationListReq)
+	if launchActivationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchActivationListRec.Code, launchActivationListRec.Body.String())
+	}
+	var launchActivationListResp secureCellGovernmentAgentExecutionLaunchActivationListResponse
+	if err := json.Unmarshal(launchActivationListRec.Body.Bytes(), &launchActivationListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch activation list response: %v", err)
+	}
+	if len(launchActivationListResp.Items) != 1 || launchActivationListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch activation list response: %+v", launchActivationListResp.Items)
+	}
+	if launchActivationListResp.Items[0].ActivationDigest == "" || launchActivationListResp.Items[0].CustodyID == "" || launchActivationListResp.Items[0].CheckCount == 0 {
+		t.Fatalf("expected digest-bound execution launch activation, got %+v", launchActivationListResp.Items[0])
+	}
+
+	launchActivationDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-activation", nil)
+	launchActivationDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchActivationDetailRec, launchActivationDetailReq)
+	if launchActivationDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchActivationDetailRec.Code, launchActivationDetailRec.Body.String())
+	}
+	var launchActivationDetailResp secureCellGovernmentAgentExecutionLaunchActivationResponse
+	if err := json.Unmarshal(launchActivationDetailRec.Body.Bytes(), &launchActivationDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch activation detail response: %v", err)
+	}
+	if launchActivationDetailResp.Activation == nil || launchActivationDetailResp.Activation.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch activation detail response: %+v", launchActivationDetailResp.Activation)
+	}
+
+	launchActivationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-activations/export?format=csv&jurisdiction=UAE", nil)
+	launchActivationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchActivationExportRec, launchActivationExportReq)
+	if launchActivationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchActivationExportRec.Code, launchActivationExportRec.Body.String())
+	}
+	if !strings.Contains(launchActivationExportRec.Body.String(), "activation_digest") || !strings.Contains(launchActivationExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch activation csv export, got %s", launchActivationExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
