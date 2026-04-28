@@ -115,6 +115,31 @@ func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationPacketCSVRows_
 	}
 }
 
+func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationRunbookCSVRows_EmptyRunbookColumnCount(t *testing.T) {
+	runbook := &securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationRunbook{
+		RunbookID:     "government-agent-execution-launch-closure-automation-runbook:UAE:abcdef123456",
+		PacketID:      "government-agent-execution-launch-closure-automation-packet:UAE:abcdef123456",
+		BoardID:       "government-agent-execution-launch-closure-automation-board:UAE:abcdef123456",
+		SummaryID:     "government-agent-execution-launch-closure-automation-summary:UAE:abcdef123456",
+		Jurisdiction:  "UAE",
+		EvaluatedAt:   time.Unix(1, 0).UTC(),
+		FocusLane:     securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneDue,
+		FocusAction:   "work_next_due_closure_actions",
+		Headline:      "Work the next due closure actions before they breach SLA.",
+		PacketDigest:  strings.Repeat("a", 64),
+		RunbookDigest: strings.Repeat("b", 64),
+		GeneratedAt:   time.Unix(2, 0).UTC(),
+	}
+
+	rows := secureCellGovernmentAgentExecutionLaunchClosureAutomationRunbookCSVRows(runbook)
+	if len(rows) != 2 {
+		t.Fatalf("expected header plus empty-runbook row, got %d rows", len(rows))
+	}
+	if got, want := len(rows[1]), len(rows[0]); got != want {
+		t.Fatalf("expected empty-runbook csv row to have %d columns, got %d: %#v", want, got, rows[1])
+	}
+}
+
 func TestSecureCellsHandlers_BearerCreateGetArtifactsFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -1541,6 +1566,36 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	}
 	if !strings.Contains(launchClosureAutomationPacketExportRec.Body.String(), "packet_digest") || !strings.Contains(launchClosureAutomationPacketExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure automation packet csv export, got %s", launchClosureAutomationPacketExportRec.Body.String())
+	}
+
+	launchClosureAutomationRunbookReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-runbook?jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationRunbookRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationRunbookRec, launchClosureAutomationRunbookReq)
+	if launchClosureAutomationRunbookRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationRunbookRec.Code, launchClosureAutomationRunbookRec.Body.String())
+	}
+	var launchClosureAutomationRunbookResp secureCellGovernmentAgentExecutionLaunchClosureAutomationRunbookResponse
+	if err := json.Unmarshal(launchClosureAutomationRunbookRec.Body.Bytes(), &launchClosureAutomationRunbookResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure automation runbook response: %v", err)
+	}
+	if launchClosureAutomationRunbookResp.Runbook == nil || launchClosureAutomationRunbookResp.Runbook.ItemCount != 1 {
+		t.Fatalf("unexpected government-agent execution launch closure automation runbook response: %+v", launchClosureAutomationRunbookResp.Runbook)
+	}
+	if launchClosureAutomationRunbookResp.Runbook.RunbookDigest == "" || len(launchClosureAutomationRunbookResp.Runbook.Steps) == 0 || launchClosureAutomationRunbookResp.Runbook.Headline == "" {
+		t.Fatalf("expected digest-bound execution launch closure automation runbook, got %+v", launchClosureAutomationRunbookResp.Runbook)
+	}
+	if launchClosureAutomationRunbookResp.Runbook.PacketID == "" || launchClosureAutomationRunbookResp.Runbook.Steps[0].Title == "" || len(launchClosureAutomationRunbookResp.Runbook.Steps[0].CellIDs) == 0 {
+		t.Fatalf("expected populated execution launch closure automation runbook, got %+v", launchClosureAutomationRunbookResp.Runbook)
+	}
+
+	launchClosureAutomationRunbookExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-runbook/export?format=csv&jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationRunbookExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationRunbookExportRec, launchClosureAutomationRunbookExportReq)
+	if launchClosureAutomationRunbookExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationRunbookExportRec.Code, launchClosureAutomationRunbookExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureAutomationRunbookExportRec.Body.String(), "runbook_digest") || !strings.Contains(launchClosureAutomationRunbookExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure automation runbook csv export, got %s", launchClosureAutomationRunbookExportRec.Body.String())
 	}
 }
 

@@ -668,6 +668,25 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureAutomationPacket.PacketDigest == "" || !strings.Contains(launchClosureAutomationPacket.PacketID, launchClosureAutomationPacket.PacketDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation packet, got %+v", launchClosureAutomationPacket)
 	}
+	launchClosureAutomationRunbook, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationRunbook(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationRunbook failed: %v", err)
+	}
+	if launchClosureAutomationRunbook.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue || launchClosureAutomationRunbook.FocusAction != "drain_overdue_closure_actions" {
+		t.Fatalf("expected overdue launch closure automation runbook focus, got %+v", launchClosureAutomationRunbook)
+	}
+	if launchClosureAutomationRunbook.ItemCount != 1 || len(launchClosureAutomationRunbook.Steps) < 2 || launchClosureAutomationRunbook.Steps[1].PendingAction != "issue_archive_certificate" {
+		t.Fatalf("expected overdue launch closure automation runbook steps, got %+v", launchClosureAutomationRunbook)
+	}
+	if launchClosureAutomationRunbook.PacketID == "" || launchClosureAutomationRunbook.PacketDigest == "" || !hasString(launchClosureAutomationRunbook.Steps[0].CellIDs, created.CellID) {
+		t.Fatalf("expected runbook tied to packet and cell, got %+v", launchClosureAutomationRunbook)
+	}
+	if launchClosureAutomationRunbook.RunbookDigest == "" || !strings.Contains(launchClosureAutomationRunbook.RunbookID, launchClosureAutomationRunbook.RunbookDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation runbook, got %+v", launchClosureAutomationRunbook)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1176,6 +1195,22 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureAutomationPacket.BoardID == "" || launchClosureAutomationPacket.BoardDigest == "" || !hasString(launchClosureAutomationPacket.Steps[0].CellIDs, created.CellID) {
 		t.Fatalf("expected blocked packet tied to board and cell, got %+v", launchClosureAutomationPacket)
+	}
+	launchClosureAutomationRunbook, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationRunbook(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationRunbook failed: %v", err)
+	}
+	if launchClosureAutomationRunbook.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked || launchClosureAutomationRunbook.FocusAction != "clear_blocked_closure_path" {
+		t.Fatalf("expected blocked launch closure automation runbook focus, got %+v", launchClosureAutomationRunbook)
+	}
+	if launchClosureAutomationRunbook.ItemCount != 1 || len(launchClosureAutomationRunbook.Steps) < 2 || launchClosureAutomationRunbook.Steps[1].PendingAction != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked launch closure automation runbook steps, got %+v", launchClosureAutomationRunbook)
+	}
+	if launchClosureAutomationRunbook.PacketID == "" || launchClosureAutomationRunbook.RunbookDigest == "" || !hasString(launchClosureAutomationRunbook.Steps[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked runbook tied to packet and cell, got %+v", launchClosureAutomationRunbook)
 	}
 }
 
