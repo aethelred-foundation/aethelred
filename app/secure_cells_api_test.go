@@ -1057,6 +1057,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchSettlementExportRec.Body.String(), "settlement_register_digest") || !strings.Contains(launchSettlementExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch settlement csv export, got %s", launchSettlementExportRec.Body.String())
 	}
+
+	launchArchiveCertificateListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-archive-certificates?jurisdiction=UAE", nil)
+	launchArchiveCertificateListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchArchiveCertificateListRec, launchArchiveCertificateListReq)
+	if launchArchiveCertificateListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchArchiveCertificateListRec.Code, launchArchiveCertificateListRec.Body.String())
+	}
+	var launchArchiveCertificateListResp secureCellGovernmentAgentExecutionLaunchArchiveCertificateListResponse
+	if err := json.Unmarshal(launchArchiveCertificateListRec.Body.Bytes(), &launchArchiveCertificateListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch archive certificate list response: %v", err)
+	}
+	if len(launchArchiveCertificateListResp.Items) != 1 || launchArchiveCertificateListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch archive certificate list response: %+v", launchArchiveCertificateListResp.Items)
+	}
+	if launchArchiveCertificateListResp.Items[0].CertificateDigest == "" || launchArchiveCertificateListResp.Items[0].SettlementRegisterID == "" || launchArchiveCertificateListResp.Items[0].ArchiveItemCount == 0 {
+		t.Fatalf("expected digest-bound execution launch archive certificate, got %+v", launchArchiveCertificateListResp.Items[0])
+	}
+
+	launchArchiveCertificateDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-archive-certificate", nil)
+	launchArchiveCertificateDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchArchiveCertificateDetailRec, launchArchiveCertificateDetailReq)
+	if launchArchiveCertificateDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchArchiveCertificateDetailRec.Code, launchArchiveCertificateDetailRec.Body.String())
+	}
+	var launchArchiveCertificateDetailResp secureCellGovernmentAgentExecutionLaunchArchiveCertificateResponse
+	if err := json.Unmarshal(launchArchiveCertificateDetailRec.Body.Bytes(), &launchArchiveCertificateDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch archive certificate detail response: %v", err)
+	}
+	if launchArchiveCertificateDetailResp.Certificate == nil || launchArchiveCertificateDetailResp.Certificate.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch archive certificate detail response: %+v", launchArchiveCertificateDetailResp.Certificate)
+	}
+
+	launchArchiveCertificateExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-archive-certificates/export?format=csv&jurisdiction=UAE", nil)
+	launchArchiveCertificateExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchArchiveCertificateExportRec, launchArchiveCertificateExportReq)
+	if launchArchiveCertificateExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchArchiveCertificateExportRec.Code, launchArchiveCertificateExportRec.Body.String())
+	}
+	if !strings.Contains(launchArchiveCertificateExportRec.Body.String(), "certificate_digest") || !strings.Contains(launchArchiveCertificateExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch archive certificate csv export, got %s", launchArchiveCertificateExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

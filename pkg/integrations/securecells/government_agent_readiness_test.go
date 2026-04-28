@@ -470,6 +470,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchSettlement.PendingSettlementItemCount == 0 || !hasGovernmentAgentExecutionLaunchSettlementItem(launchSettlement.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchSettlementItemAwaitingPreservation) {
 		t.Fatalf("expected awaiting-preservation settlement item, got %+v", launchSettlement.Items)
 	}
+
+	launchArchiveCertificate, err := service.GetGovernmentAgentExecutionLaunchArchiveCertificate(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchArchiveCertificate failed: %v", err)
+	}
+	if launchArchiveCertificate.Status != SecureCellGovernmentAgentExecutionLaunchArchiveCertificateAwaitingPreservation || launchArchiveCertificate.CanIssueNow || !launchArchiveCertificate.CanIssueAfterPreservation {
+		t.Fatalf("expected launch archive certificate awaiting preservation, got %+v", launchArchiveCertificate)
+	}
+	if launchArchiveCertificate.CertificateDigest == "" || !strings.Contains(launchArchiveCertificate.CertificateID, launchArchiveCertificate.CertificateDigest[:12]) || launchArchiveCertificate.SettlementRegisterID != launchSettlement.RegisterID {
+		t.Fatalf("expected digest-bound launch archive certificate tied to settlement, got %+v", launchArchiveCertificate)
+	}
+	if launchArchiveCertificate.PendingArchiveItemCount == 0 || !hasGovernmentAgentExecutionLaunchArchiveCertificateItem(launchArchiveCertificate.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItemAwaitingPreservation) {
+		t.Fatalf("expected awaiting-preservation archive certificate item, got %+v", launchArchiveCertificate.Items)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -807,6 +821,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchSettlementItem(launchSettlement.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchSettlementItemBlocked) {
 		t.Fatalf("expected blocked stop-condition watch settlement item, got %+v", launchSettlement.Items)
 	}
+
+	launchArchiveCertificate, err := service.GetGovernmentAgentExecutionLaunchArchiveCertificate(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchArchiveCertificate failed: %v", err)
+	}
+	if launchArchiveCertificate.Status != SecureCellGovernmentAgentExecutionLaunchArchiveCertificateBlocked || launchArchiveCertificate.CanIssueNow || launchArchiveCertificate.CanIssueAfterPreservation {
+		t.Fatalf("expected blocked launch archive certificate for tacit workflow, got %+v", launchArchiveCertificate)
+	}
+	if launchArchiveCertificate.BlockedArchiveItemCount == 0 || launchArchiveCertificate.CertificateDigest == "" || launchArchiveCertificate.SettlementRegisterID != launchSettlement.RegisterID {
+		t.Fatalf("expected digest-bound blocked launch archive certificate tied to settlement, got %+v", launchArchiveCertificate)
+	}
+	if !hasGovernmentAgentExecutionLaunchArchiveCertificateItem(launchArchiveCertificate.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItemBlocked) {
+		t.Fatalf("expected blocked stop-condition watch archive certificate item, got %+v", launchArchiveCertificate.Items)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -1069,6 +1097,19 @@ func hasGovernmentAgentExecutionLaunchSettlementItem(
 	items []SecureCellGovernmentAgentExecutionLaunchSettlementItem,
 	receiptType string,
 	status SecureCellGovernmentAgentExecutionLaunchSettlementItemStatus,
+) bool {
+	for _, item := range items {
+		if item.ReceiptType == receiptType && item.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchArchiveCertificateItem(
+	items []SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItem,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItemStatus,
 ) bool {
 	for _, item := range items {
 		if item.ReceiptType == receiptType && item.Status == status {
