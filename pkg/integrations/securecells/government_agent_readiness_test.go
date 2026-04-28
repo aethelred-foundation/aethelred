@@ -484,6 +484,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchArchiveCertificate.PendingArchiveItemCount == 0 || !hasGovernmentAgentExecutionLaunchArchiveCertificateItem(launchArchiveCertificate.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItemAwaitingPreservation) {
 		t.Fatalf("expected awaiting-preservation archive certificate item, got %+v", launchArchiveCertificate.Items)
 	}
+
+	launchClosureRegistry, err := service.GetGovernmentAgentExecutionLaunchClosureRegistry(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureRegistry failed: %v", err)
+	}
+	if launchClosureRegistry.Status != SecureCellGovernmentAgentExecutionLaunchClosureRegistryAwaitingArchiveIssue || launchClosureRegistry.CanCloseRecordNow || !launchClosureRegistry.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected launch closure registry awaiting archive issue, got %+v", launchClosureRegistry)
+	}
+	if launchClosureRegistry.RegistryDigest == "" || !strings.Contains(launchClosureRegistry.RegistryID, launchClosureRegistry.RegistryDigest[:12]) || launchClosureRegistry.CertificateID != launchArchiveCertificate.CertificateID {
+		t.Fatalf("expected digest-bound launch closure registry tied to archive certificate, got %+v", launchClosureRegistry)
+	}
+	if launchClosureRegistry.PendingClosureItemCount == 0 || !hasGovernmentAgentExecutionLaunchClosureItem(launchClosureRegistry.Items, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchClosureItemAwaitingArchiveIssue) {
+		t.Fatalf("expected awaiting-archive-issue closure item, got %+v", launchClosureRegistry.Items)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -835,6 +849,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchArchiveCertificateItem(launchArchiveCertificate.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItemBlocked) {
 		t.Fatalf("expected blocked stop-condition watch archive certificate item, got %+v", launchArchiveCertificate.Items)
 	}
+
+	launchClosureRegistry, err := service.GetGovernmentAgentExecutionLaunchClosureRegistry(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureRegistry failed: %v", err)
+	}
+	if launchClosureRegistry.Status != SecureCellGovernmentAgentExecutionLaunchClosureRegistryBlocked || launchClosureRegistry.CanCloseRecordNow || launchClosureRegistry.CanCloseAfterArchiveIssue {
+		t.Fatalf("expected blocked launch closure registry for tacit workflow, got %+v", launchClosureRegistry)
+	}
+	if launchClosureRegistry.BlockedClosureItemCount == 0 || launchClosureRegistry.RegistryDigest == "" || launchClosureRegistry.CertificateID != launchArchiveCertificate.CertificateID {
+		t.Fatalf("expected digest-bound blocked launch closure registry tied to archive certificate, got %+v", launchClosureRegistry)
+	}
+	if !hasGovernmentAgentExecutionLaunchClosureItem(launchClosureRegistry.Items, "stop_condition_watch_receipt", SecureCellGovernmentAgentExecutionLaunchClosureItemBlocked) {
+		t.Fatalf("expected blocked stop-condition watch closure item, got %+v", launchClosureRegistry.Items)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -1110,6 +1138,19 @@ func hasGovernmentAgentExecutionLaunchArchiveCertificateItem(
 	items []SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItem,
 	receiptType string,
 	status SecureCellGovernmentAgentExecutionLaunchArchiveCertificateItemStatus,
+) bool {
+	for _, item := range items {
+		if item.ReceiptType == receiptType && item.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchClosureItem(
+	items []SecureCellGovernmentAgentExecutionLaunchClosureItem,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionLaunchClosureItemStatus,
 ) bool {
 	for _, item := range items {
 		if item.ReceiptType == receiptType && item.Status == status {

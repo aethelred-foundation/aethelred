@@ -1098,6 +1098,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchArchiveCertificateExportRec.Body.String(), "certificate_digest") || !strings.Contains(launchArchiveCertificateExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch archive certificate csv export, got %s", launchArchiveCertificateExportRec.Body.String())
 	}
+
+	launchClosureRegistryListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-registries?jurisdiction=UAE", nil)
+	launchClosureRegistryListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureRegistryListRec, launchClosureRegistryListReq)
+	if launchClosureRegistryListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureRegistryListRec.Code, launchClosureRegistryListRec.Body.String())
+	}
+	var launchClosureRegistryListResp secureCellGovernmentAgentExecutionLaunchClosureRegistryListResponse
+	if err := json.Unmarshal(launchClosureRegistryListRec.Body.Bytes(), &launchClosureRegistryListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure registry list response: %v", err)
+	}
+	if len(launchClosureRegistryListResp.Items) != 1 || launchClosureRegistryListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure registry list response: %+v", launchClosureRegistryListResp.Items)
+	}
+	if launchClosureRegistryListResp.Items[0].RegistryDigest == "" || launchClosureRegistryListResp.Items[0].CertificateID == "" || launchClosureRegistryListResp.Items[0].ClosureItemCount == 0 {
+		t.Fatalf("expected digest-bound execution launch closure registry, got %+v", launchClosureRegistryListResp.Items[0])
+	}
+
+	launchClosureRegistryDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closure-registry", nil)
+	launchClosureRegistryDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureRegistryDetailRec, launchClosureRegistryDetailReq)
+	if launchClosureRegistryDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureRegistryDetailRec.Code, launchClosureRegistryDetailRec.Body.String())
+	}
+	var launchClosureRegistryDetailResp secureCellGovernmentAgentExecutionLaunchClosureRegistryResponse
+	if err := json.Unmarshal(launchClosureRegistryDetailRec.Body.Bytes(), &launchClosureRegistryDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure registry detail response: %v", err)
+	}
+	if launchClosureRegistryDetailResp.Registry == nil || launchClosureRegistryDetailResp.Registry.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure registry detail response: %+v", launchClosureRegistryDetailResp.Registry)
+	}
+
+	launchClosureRegistryExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-registries/export?format=csv&jurisdiction=UAE", nil)
+	launchClosureRegistryExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureRegistryExportRec, launchClosureRegistryExportReq)
+	if launchClosureRegistryExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureRegistryExportRec.Code, launchClosureRegistryExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureRegistryExportRec.Body.String(), "registry_digest") || !strings.Contains(launchClosureRegistryExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure registry csv export, got %s", launchClosureRegistryExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
