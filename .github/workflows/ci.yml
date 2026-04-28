@@ -23,12 +23,23 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: true
       - name: Go vet
-        run: go vet -copylocks=false ./...
+        run: |
+          (
+            while true; do
+              sleep 60
+              printf 'go vet still running at %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            done
+          ) &
+          heartbeat_pid=$!
+          trap 'kill "$heartbeat_pid" 2>/dev/null || true' EXIT
+          go vet -p 2 -copylocks=false ./...
 
   go-test:
     name: Go Test
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -47,7 +58,15 @@ jobs:
           go test -p 2 -timeout=180s -coverprofile=coverage.out "${packages[@]}"
       - name: Run app package smoke tests
         run: |
-          go test -count=1 -timeout=120s -coverprofile=coverage-app.out ./app -run 'TestNewApp|TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces'
+          (
+            while true; do
+              sleep 60
+              printf 'app package smoke tests still running at %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            done
+          ) &
+          heartbeat_pid=$!
+          trap 'kill "$heartbeat_pid" 2>/dev/null || true' EXIT
+          go test -v -count=1 -timeout=120s -coverprofile=coverage-app.out ./app -run 'TestNewApp|TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces'
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
