@@ -1262,6 +1262,33 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClosureDashboardExportRec.Body.String(), "dashboard_digest") || !strings.Contains(launchClosureDashboardExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure dashboard csv export, got %s", launchClosureDashboardExportRec.Body.String())
 	}
+
+	launchClosurePortfolioReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-portfolio?jurisdiction=UAE", nil)
+	launchClosurePortfolioRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosurePortfolioRec, launchClosurePortfolioReq)
+	if launchClosurePortfolioRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosurePortfolioRec.Code, launchClosurePortfolioRec.Body.String())
+	}
+	var launchClosurePortfolioResp secureCellGovernmentAgentExecutionLaunchClosurePortfolioResponse
+	if err := json.Unmarshal(launchClosurePortfolioRec.Body.Bytes(), &launchClosurePortfolioResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure portfolio response: %v", err)
+	}
+	if launchClosurePortfolioResp.Portfolio == nil || launchClosurePortfolioResp.Portfolio.CellCount != 1 {
+		t.Fatalf("unexpected government-agent execution launch closure portfolio response: %+v", launchClosurePortfolioResp.Portfolio)
+	}
+	if launchClosurePortfolioResp.Portfolio.PortfolioDigest == "" || len(launchClosurePortfolioResp.Portfolio.PrimaryActions) == 0 || launchClosurePortfolioResp.Portfolio.PrimaryActions[0].Action == "" {
+		t.Fatalf("expected digest-bound execution launch closure portfolio, got %+v", launchClosurePortfolioResp.Portfolio)
+	}
+
+	launchClosurePortfolioExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-portfolio/export?format=csv&jurisdiction=UAE", nil)
+	launchClosurePortfolioExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosurePortfolioExportRec, launchClosurePortfolioExportReq)
+	if launchClosurePortfolioExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosurePortfolioExportRec.Code, launchClosurePortfolioExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosurePortfolioExportRec.Body.String(), "portfolio_digest") || !strings.Contains(launchClosurePortfolioExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure portfolio csv export, got %s", launchClosurePortfolioExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

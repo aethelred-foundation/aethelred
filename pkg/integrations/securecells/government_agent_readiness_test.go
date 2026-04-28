@@ -540,6 +540,34 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureDashboard.PrimaryAction != "issue_archive_certificate" || launchClosureDashboard.PendingItemCount == 0 {
 		t.Fatalf("expected archive-issue dashboard action, got %+v", launchClosureDashboard)
 	}
+
+	launchClosurePortfolio, err := service.GetGovernmentAgentExecutionLaunchClosurePortfolio(ctx, SecureCellGovernmentAgentProgramFilter{
+		Jurisdiction: "UAE",
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosurePortfolio failed: %v", err)
+	}
+	if launchClosurePortfolio.CellCount == 0 || launchClosurePortfolio.AwaitingArchiveIssueCount == 0 || launchClosurePortfolio.CanCloseAfterArchiveCount == 0 {
+		t.Fatalf("expected awaiting-archive closure portfolio counts, got %+v", launchClosurePortfolio)
+	}
+	if launchClosurePortfolio.PortfolioDigest == "" || !strings.Contains(launchClosurePortfolio.PortfolioID, launchClosurePortfolio.PortfolioDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure portfolio, got %+v", launchClosurePortfolio)
+	}
+	launchClosurePortfolioAgain, err := service.GetGovernmentAgentExecutionLaunchClosurePortfolio(ctx, SecureCellGovernmentAgentProgramFilter{
+		Jurisdiction: "UAE",
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosurePortfolio repeat failed: %v", err)
+	}
+	if launchClosurePortfolioAgain.PortfolioDigest != launchClosurePortfolio.PortfolioDigest {
+		t.Fatalf("expected stable launch closure portfolio digest, got %q then %q", launchClosurePortfolio.PortfolioDigest, launchClosurePortfolioAgain.PortfolioDigest)
+	}
+	if len(launchClosurePortfolio.PrimaryActions) == 0 || launchClosurePortfolio.PrimaryActions[0].Action != "issue_archive_certificate" || launchClosurePortfolio.PrimaryActions[0].Count == 0 {
+		t.Fatalf("expected archive-issue portfolio action, got %+v", launchClosurePortfolio)
+	}
+	if len(launchClosurePortfolio.Dashboards) == 0 || launchClosurePortfolio.Dashboards[0].DashboardID != launchClosureDashboard.DashboardID {
+		t.Fatalf("expected launch closure portfolio to include dashboard rows, got %+v", launchClosurePortfolio)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -946,6 +974,19 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureDashboard.PrimaryAction != "escalate_blocked_closure" {
 		t.Fatalf("expected blocked dashboard action, got %+v", launchClosureDashboard)
+	}
+
+	launchClosurePortfolio, err := service.GetGovernmentAgentExecutionLaunchClosurePortfolio(ctx, SecureCellGovernmentAgentProgramFilter{
+		CellID: created.CellID,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosurePortfolio failed: %v", err)
+	}
+	if launchClosurePortfolio.CellCount != 1 || launchClosurePortfolio.BlockedCount != 1 || launchClosurePortfolio.EscalationRequiredCount != 1 {
+		t.Fatalf("expected blocked launch closure portfolio counts, got %+v", launchClosurePortfolio)
+	}
+	if launchClosurePortfolio.PortfolioDigest == "" || len(launchClosurePortfolio.PrimaryActions) == 0 || launchClosurePortfolio.PrimaryActions[0].Action != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked launch closure portfolio action, got %+v", launchClosurePortfolio)
 	}
 }
 
