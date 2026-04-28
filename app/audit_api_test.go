@@ -20,7 +20,6 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil/sims"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	audithttp "github.com/aethelred/aethelred/pkg/audit"
 	"github.com/aethelred/aethelred/pkg/evidence"
@@ -527,10 +526,7 @@ func TestNewApp_AuditTrustRegistryAdminAPIActivatesEnterpriseWritesAndClearsThem
 func newAuditEnabledTestApp(t *testing.T, opts sims.AppOptionsMap) *AethelredApp {
 	t.Helper()
 
-	cfg := sdk.GetConfig()
-	cfg.SetBech32PrefixForAccount(AccountAddressPrefix, AccountAddressPrefix+"pub")
-	cfg.SetBech32PrefixForValidator(AccountAddressPrefix+"valoper", AccountAddressPrefix+"valoperpub")
-	cfg.SetBech32PrefixForConsensusNode(AccountAddressPrefix+"valcons", AccountAddressPrefix+"valconspub")
+	configureAppTestBech32Prefixes()
 
 	if _, ok := opts["aethelred.tee.mode"]; !ok {
 		opts["aethelred.tee.mode"] = "mock"

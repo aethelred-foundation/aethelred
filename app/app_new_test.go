@@ -8,7 +8,6 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil/sims"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestNewApp_NoPanic(t *testing.T) {
@@ -19,10 +18,7 @@ func TestNewApp_NoPanic(t *testing.T) {
 	}()
 
 	opts := sims.AppOptionsMap{"aethelred.pqc.mode": "simulated"}
-	cfg := sdk.GetConfig()
-	cfg.SetBech32PrefixForAccount(AccountAddressPrefix, AccountAddressPrefix+"pub")
-	cfg.SetBech32PrefixForValidator(AccountAddressPrefix+"valoper", AccountAddressPrefix+"valoperpub")
-	cfg.SetBech32PrefixForConsensusNode(AccountAddressPrefix+"valcons", AccountAddressPrefix+"valconspub")
+	configureAppTestBech32Prefixes()
 	_ = New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, opts)
 }
 
@@ -33,10 +29,7 @@ func TestNewApp_InitializesAuditAPI(t *testing.T) {
 		flags.FlagHome:       homeDir,
 	}
 
-	cfg := sdk.GetConfig()
-	cfg.SetBech32PrefixForAccount(AccountAddressPrefix, AccountAddressPrefix+"pub")
-	cfg.SetBech32PrefixForValidator(AccountAddressPrefix+"valoper", AccountAddressPrefix+"valoperpub")
-	cfg.SetBech32PrefixForConsensusNode(AccountAddressPrefix+"valcons", AccountAddressPrefix+"valconspub")
+	configureAppTestBech32Prefixes()
 
 	app := New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, opts)
 	if app.auditStudio == nil {

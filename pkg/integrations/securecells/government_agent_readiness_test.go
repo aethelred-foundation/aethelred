@@ -603,6 +603,23 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureAutomationAction.ActionDigest == "" || launchClosureAutomationAction.RecordID == "" || launchClosureAutomationAction.DueAt == nil {
 		t.Fatalf("expected digest-bound timed launch closure automation action, got %+v", launchClosureAutomationAction)
 	}
+	overdueAt := launchClosureAutomationAction.DueAt.UTC().Add(time.Minute)
+	launchClosureOverdueActions, err := service.ListGovernmentAgentExecutionLaunchClosureOverdueActions(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListGovernmentAgentExecutionLaunchClosureOverdueActions failed: %v", err)
+	}
+	if len(launchClosureOverdueActions) != 1 || launchClosureOverdueActions[0].CellID != created.CellID {
+		t.Fatalf("expected one overdue launch closure action, got %+v", launchClosureOverdueActions)
+	}
+	if launchClosureOverdueActions[0].PendingAction != "issue_archive_certificate" || launchClosureOverdueActions[0].AutomationAction != "secure_cell.government_agent_execution_launch_archive_issue_pending" || launchClosureOverdueActions[0].OverdueSeconds <= 0 {
+		t.Fatalf("expected overdue archive-issue action record, got %+v", launchClosureOverdueActions[0])
+	}
+	if !strings.HasPrefix(launchClosureOverdueActions[0].RecordID, "government-agent-execution-launch-closure-overdue-action:"+created.CellID+":") {
+		t.Fatalf("expected overdue-action record id, got %q", launchClosureOverdueActions[0].RecordID)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1051,6 +1068,24 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureAutomationAction.ActionPriority != SecureCellGovernmentAgentExecutionLaunchClosureActionPriorityCritical || !launchClosureAutomationAction.EscalationRecommended {
 		t.Fatalf("expected critical escalation automation action, got %+v", launchClosureAutomationAction)
+	}
+	blockedOverdueAt := launchClosureAutomationAction.DueAt.UTC().Add(time.Minute)
+	blockedOverdueActions, err := service.ListGovernmentAgentExecutionLaunchClosureOverdueActions(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+		Limit:  1,
+	})
+	if err != nil {
+		t.Fatalf("ListGovernmentAgentExecutionLaunchClosureOverdueActions failed: %v", err)
+	}
+	if len(blockedOverdueActions) != 1 || blockedOverdueActions[0].PendingAction != "escalate_blocked_closure" || blockedOverdueActions[0].AutomationAction != "secure_cell.government_agent_execution_launch_closure_escalated" {
+		t.Fatalf("expected blocked overdue launch closure action, got %+v", blockedOverdueActions)
+	}
+	if blockedOverdueActions[0].OverdueSeconds <= 0 || blockedOverdueActions[0].ActionPriority != SecureCellGovernmentAgentExecutionLaunchClosureActionPriorityCritical {
+		t.Fatalf("expected timed critical blocked overdue action, got %+v", blockedOverdueActions[0])
+	}
+	if !strings.HasPrefix(blockedOverdueActions[0].RecordID, "government-agent-execution-launch-closure-overdue-action:"+created.CellID+":") {
+		t.Fatalf("expected blocked overdue-action record id, got %q", blockedOverdueActions[0].RecordID)
 	}
 }
 

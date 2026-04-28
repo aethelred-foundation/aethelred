@@ -1371,6 +1371,48 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClosureAutomationActionExportRec.Body.String(), "automation_action") || !strings.Contains(launchClosureAutomationActionExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure automation action csv export, got %s", launchClosureAutomationActionExportRec.Body.String())
 	}
+
+	overdueBefore := time.Now().UTC().Add(2 * time.Hour).Format(time.RFC3339Nano)
+	launchClosureOverdueActionListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-overdue-actions?jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureOverdueActionListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureOverdueActionListRec, launchClosureOverdueActionListReq)
+	if launchClosureOverdueActionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureOverdueActionListRec.Code, launchClosureOverdueActionListRec.Body.String())
+	}
+	var launchClosureOverdueActionListResp secureCellGovernmentAgentExecutionLaunchClosureOverdueActionListResponse
+	if err := json.Unmarshal(launchClosureOverdueActionListRec.Body.Bytes(), &launchClosureOverdueActionListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure overdue action list response: %v", err)
+	}
+	if len(launchClosureOverdueActionListResp.Items) != 1 || launchClosureOverdueActionListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure overdue action list response: %+v", launchClosureOverdueActionListResp.Items)
+	}
+	if launchClosureOverdueActionListResp.Items[0].OverdueSeconds <= 0 || launchClosureOverdueActionListResp.Items[0].PendingAction == "" || launchClosureOverdueActionListResp.Items[0].AutomationAction == "" {
+		t.Fatalf("expected overdue execution launch closure action, got %+v", launchClosureOverdueActionListResp.Items[0])
+	}
+
+	launchClosureOverdueActionDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-closure-overdue-action?before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureOverdueActionDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureOverdueActionDetailRec, launchClosureOverdueActionDetailReq)
+	if launchClosureOverdueActionDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureOverdueActionDetailRec.Code, launchClosureOverdueActionDetailRec.Body.String())
+	}
+	var launchClosureOverdueActionDetailResp secureCellGovernmentAgentExecutionLaunchClosureOverdueActionResponse
+	if err := json.Unmarshal(launchClosureOverdueActionDetailRec.Body.Bytes(), &launchClosureOverdueActionDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure overdue action detail response: %v", err)
+	}
+	if launchClosureOverdueActionDetailResp.Item == nil || launchClosureOverdueActionDetailResp.Item.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch closure overdue action detail response: %+v", launchClosureOverdueActionDetailResp.Item)
+	}
+
+	launchClosureOverdueActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-overdue-actions/export?format=csv&jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureOverdueActionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureOverdueActionExportRec, launchClosureOverdueActionExportReq)
+	if launchClosureOverdueActionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureOverdueActionExportRec.Code, launchClosureOverdueActionExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureOverdueActionExportRec.Body.String(), "overdue_seconds") || !strings.Contains(launchClosureOverdueActionExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure overdue action csv export, got %s", launchClosureOverdueActionExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
