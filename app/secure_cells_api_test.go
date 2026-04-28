@@ -729,6 +729,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchReceiptValidationExportRec.Body.String(), "validation_digest") || !strings.Contains(launchReceiptValidationExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch receipt validation csv export, got %s", launchReceiptValidationExportRec.Body.String())
 	}
+
+	launchPackageListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-packages?jurisdiction=UAE", nil)
+	launchPackageListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchPackageListRec, launchPackageListReq)
+	if launchPackageListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchPackageListRec.Code, launchPackageListRec.Body.String())
+	}
+	var launchPackageListResp secureCellGovernmentAgentExecutionLaunchPackageListResponse
+	if err := json.Unmarshal(launchPackageListRec.Body.Bytes(), &launchPackageListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch package list response: %v", err)
+	}
+	if len(launchPackageListResp.Items) != 1 || launchPackageListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch package list response: %+v", launchPackageListResp.Items)
+	}
+	if launchPackageListResp.Items[0].PackageDigest == "" || launchPackageListResp.Items[0].ReceiptValidationID == "" || launchPackageListResp.Items[0].ReceiptManifestID == "" {
+		t.Fatalf("expected digest-bound execution launch package, got %+v", launchPackageListResp.Items[0])
+	}
+
+	launchPackageDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-package", nil)
+	launchPackageDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchPackageDetailRec, launchPackageDetailReq)
+	if launchPackageDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchPackageDetailRec.Code, launchPackageDetailRec.Body.String())
+	}
+	var launchPackageDetailResp secureCellGovernmentAgentExecutionLaunchPackageResponse
+	if err := json.Unmarshal(launchPackageDetailRec.Body.Bytes(), &launchPackageDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch package detail response: %v", err)
+	}
+	if launchPackageDetailResp.Package == nil || launchPackageDetailResp.Package.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch package detail response: %+v", launchPackageDetailResp.Package)
+	}
+
+	launchPackageExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-packages/export?format=csv&jurisdiction=UAE", nil)
+	launchPackageExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchPackageExportRec, launchPackageExportReq)
+	if launchPackageExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchPackageExportRec.Code, launchPackageExportRec.Body.String())
+	}
+	if !strings.Contains(launchPackageExportRec.Body.String(), "package_digest") || !strings.Contains(launchPackageExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch package csv export, got %s", launchPackageExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

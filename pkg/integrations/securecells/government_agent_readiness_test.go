@@ -358,6 +358,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchReceiptValidation.ManifestID != launchReceiptManifest.ManifestID || !hasGovernmentAgentExecutionLaunchReceiptValidationCheck(launchReceiptValidation.Checks, "REQUIREMENT_DIGEST_BOUND", SecureCellGovernmentAgentExecutionLaunchReceiptValidationPass) {
 		t.Fatalf("expected receipt validation to bind manifest and requirement digest checks, got %+v", launchReceiptValidation)
 	}
+
+	launchPackage, err := service.GetGovernmentAgentExecutionLaunchPackage(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchPackage failed: %v", err)
+	}
+	if launchPackage.Status != SecureCellGovernmentAgentExecutionLaunchPackageReviewRequired || launchPackage.ValidationFailCount != 0 || launchPackage.CanLaunchNow {
+		t.Fatalf("expected launch package held for operator review without validation failures, got %+v", launchPackage)
+	}
+	if launchPackage.PackageDigest == "" || !strings.Contains(launchPackage.PackageID, launchPackage.PackageDigest[:12]) {
+		t.Fatalf("expected digest-bound launch package, got %+v", launchPackage)
+	}
+	if launchPackage.ReceiptValidationID != launchReceiptValidation.ValidationID || len(launchPackage.OperatorInstructions) == 0 {
+		t.Fatalf("expected launch package to bind receipt validation and operator instructions, got %+v", launchPackage)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -585,6 +599,17 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if !hasGovernmentAgentExecutionLaunchReceiptValidationCheck(launchReceiptValidation.Checks, "MANIFEST_REQUIREMENTS_PRESENT", SecureCellGovernmentAgentExecutionLaunchReceiptValidationPass) {
 		t.Fatalf("expected manifest requirement presence check, got %+v", launchReceiptValidation.Checks)
+	}
+
+	launchPackage, err := service.GetGovernmentAgentExecutionLaunchPackage(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchPackage failed: %v", err)
+	}
+	if launchPackage.Status != SecureCellGovernmentAgentExecutionLaunchPackageBlocked || launchPackage.CanLaunchNow || launchPackage.CanLaunchAfterOperatorReview {
+		t.Fatalf("expected blocked launch package for tacit workflow, got %+v", launchPackage)
+	}
+	if launchPackage.BlockedReceiptCount == 0 || launchPackage.PackageDigest == "" || launchPackage.ReceiptValidationID != launchReceiptValidation.ValidationID {
+		t.Fatalf("expected digest-bound blocked launch package tied to receipt validation, got %+v", launchPackage)
 	}
 }
 
