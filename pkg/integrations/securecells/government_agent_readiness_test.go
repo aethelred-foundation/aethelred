@@ -731,6 +731,28 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !strings.Contains(launchClosureAutomationDispatch.DispatchID, launchClosureAutomationDispatch.DispatchDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation dispatch, got %+v", launchClosureAutomationDispatch)
 	}
+	launchClosureAutomationDirective, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationDirective(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationDirective failed: %v", err)
+	}
+	if launchClosureAutomationDirective.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue || launchClosureAutomationDirective.FocusAction != "drain_overdue_closure_actions" {
+		t.Fatalf("expected overdue launch closure automation directive focus, got %+v", launchClosureAutomationDirective)
+	}
+	if launchClosureAutomationDirective.Severity != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityHigh || launchClosureAutomationDirective.ExecutionWindow != "within_15_minutes" || !launchClosureAutomationDirective.AckRequired {
+		t.Fatalf("expected overdue launch closure automation directive severity/window/ack, got %+v", launchClosureAutomationDirective)
+	}
+	if launchClosureAutomationDirective.AssignmentCount != 1 || len(launchClosureAutomationDirective.Assignments) != 1 || launchClosureAutomationDirective.Assignments[0].PendingAction != "issue_archive_certificate" {
+		t.Fatalf("expected overdue launch closure automation directive assignments, got %+v", launchClosureAutomationDirective)
+	}
+	if launchClosureAutomationDirective.DispatchID == "" || launchClosureAutomationDirective.DirectiveDigest == "" || !hasString(launchClosureAutomationDirective.Assignments[0].CellIDs, created.CellID) {
+		t.Fatalf("expected directive tied to dispatch and cell, got %+v", launchClosureAutomationDirective)
+	}
+	if !strings.Contains(launchClosureAutomationDirective.DirectiveID, launchClosureAutomationDirective.DirectiveDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation directive, got %+v", launchClosureAutomationDirective)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1293,6 +1315,25 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureAutomationDispatch.BriefID == "" || launchClosureAutomationDispatch.DispatchDigest == "" || !hasString(launchClosureAutomationDispatch.Assignments[0].CellIDs, created.CellID) {
 		t.Fatalf("expected blocked dispatch tied to brief and cell, got %+v", launchClosureAutomationDispatch)
+	}
+	launchClosureAutomationDirective, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationDirective(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationDirective failed: %v", err)
+	}
+	if launchClosureAutomationDirective.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked || launchClosureAutomationDirective.FocusAction != "clear_blocked_closure_path" {
+		t.Fatalf("expected blocked launch closure automation directive focus, got %+v", launchClosureAutomationDirective)
+	}
+	if launchClosureAutomationDirective.Severity != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityCritical || launchClosureAutomationDirective.ExecutionWindow != "immediate" || !launchClosureAutomationDirective.EscalationRequired {
+		t.Fatalf("expected blocked launch closure automation directive severity/window/escalation, got %+v", launchClosureAutomationDirective)
+	}
+	if launchClosureAutomationDirective.AssignmentCount != 1 || len(launchClosureAutomationDirective.Assignments) != 1 || launchClosureAutomationDirective.Assignments[0].PendingAction != "escalate_blocked_closure" {
+		t.Fatalf("expected blocked launch closure automation directive assignments, got %+v", launchClosureAutomationDirective)
+	}
+	if launchClosureAutomationDirective.DispatchID == "" || launchClosureAutomationDirective.DirectiveDigest == "" || !hasString(launchClosureAutomationDirective.Assignments[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked directive tied to dispatch and cell, got %+v", launchClosureAutomationDirective)
 	}
 }
 

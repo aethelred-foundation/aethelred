@@ -136,7 +136,7 @@ func secureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchCSVRows(di
 			dispatch.LeadPendingAction,
 			strconv.FormatBool(dispatch.EscalationRequired),
 			strconv.Itoa(dispatch.AssignmentCount),
-			"", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 			dispatch.BriefDigest,
 			dispatch.DispatchDigest,
 			dispatch.GeneratedAt.UTC().Format(time.RFC3339Nano),

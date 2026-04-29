@@ -197,6 +197,38 @@ func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchCSVRow
 	}
 }
 
+func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationDirectiveCSVRows_EmptyDirectiveColumnCount(t *testing.T) {
+	directive := &securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationDirective{
+		DirectiveID:     "government-agent-execution-launch-closure-automation-directive:UAE:abcdef123456",
+		DispatchID:      "government-agent-execution-launch-closure-automation-dispatch:UAE:abcdef123456",
+		BriefID:         "government-agent-execution-launch-closure-automation-brief:UAE:abcdef123456",
+		RunbookID:       "government-agent-execution-launch-closure-automation-runbook:UAE:abcdef123456",
+		PacketID:        "government-agent-execution-launch-closure-automation-packet:UAE:abcdef123456",
+		BoardID:         "government-agent-execution-launch-closure-automation-board:UAE:abcdef123456",
+		SummaryID:       "government-agent-execution-launch-closure-automation-summary:UAE:abcdef123456",
+		Jurisdiction:    "UAE",
+		EvaluatedAt:     time.Unix(1, 0).UTC(),
+		FocusLane:       securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneDue,
+		FocusAction:     "work_next_due_closure_actions",
+		Severity:        securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityMedium,
+		Directive:       "Dispatch preventive work to clear the next due closure actions.",
+		LeadRole:        "workflow_coordinator",
+		AckRequired:     true,
+		ExecutionWindow: "within_60_minutes",
+		DispatchDigest:  strings.Repeat("a", 64),
+		DirectiveDigest: strings.Repeat("b", 64),
+		GeneratedAt:     time.Unix(2, 0).UTC(),
+	}
+
+	rows := secureCellGovernmentAgentExecutionLaunchClosureAutomationDirectiveCSVRows(directive)
+	if len(rows) != 2 {
+		t.Fatalf("expected header plus empty-directive row, got %d rows", len(rows))
+	}
+	if got, want := len(rows[1]), len(rows[0]); got != want {
+		t.Fatalf("expected empty-directive csv row to have %d columns, got %d: %#v", want, got, rows[1])
+	}
+}
+
 func TestSecureCellsHandlers_BearerCreateGetArtifactsFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -1713,6 +1745,36 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	}
 	if !strings.Contains(launchClosureAutomationDispatchExportRec.Body.String(), "dispatch_digest") || !strings.Contains(launchClosureAutomationDispatchExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure automation dispatch csv export, got %s", launchClosureAutomationDispatchExportRec.Body.String())
+	}
+
+	launchClosureAutomationDirectiveReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-directive?jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationDirectiveRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationDirectiveRec, launchClosureAutomationDirectiveReq)
+	if launchClosureAutomationDirectiveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationDirectiveRec.Code, launchClosureAutomationDirectiveRec.Body.String())
+	}
+	var launchClosureAutomationDirectiveResp secureCellGovernmentAgentExecutionLaunchClosureAutomationDirectiveResponse
+	if err := json.Unmarshal(launchClosureAutomationDirectiveRec.Body.Bytes(), &launchClosureAutomationDirectiveResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure automation directive response: %v", err)
+	}
+	if launchClosureAutomationDirectiveResp.Directive == nil || launchClosureAutomationDirectiveResp.Directive.AssignmentCount != 1 {
+		t.Fatalf("unexpected government-agent execution launch closure automation directive response: %+v", launchClosureAutomationDirectiveResp.Directive)
+	}
+	if launchClosureAutomationDirectiveResp.Directive.DirectiveDigest == "" || launchClosureAutomationDirectiveResp.Directive.ExecutionWindow == "" || !launchClosureAutomationDirectiveResp.Directive.AckRequired {
+		t.Fatalf("expected digest-bound execution launch closure automation directive, got %+v", launchClosureAutomationDirectiveResp.Directive)
+	}
+	if launchClosureAutomationDirectiveResp.Directive.DispatchID == "" || len(launchClosureAutomationDirectiveResp.Directive.Assignments) == 0 || len(launchClosureAutomationDirectiveResp.Directive.Assignments[0].CellIDs) == 0 {
+		t.Fatalf("expected populated execution launch closure automation directive, got %+v", launchClosureAutomationDirectiveResp.Directive)
+	}
+
+	launchClosureAutomationDirectiveExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-directive/export?format=csv&jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationDirectiveExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationDirectiveExportRec, launchClosureAutomationDirectiveExportReq)
+	if launchClosureAutomationDirectiveExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationDirectiveExportRec.Code, launchClosureAutomationDirectiveExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureAutomationDirectiveExportRec.Body.String(), "directive_digest") || !strings.Contains(launchClosureAutomationDirectiveExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure automation directive csv export, got %s", launchClosureAutomationDirectiveExportRec.Body.String())
 	}
 }
 
