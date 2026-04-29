@@ -813,6 +813,25 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !strings.Contains(launchClosureAutomationAcknowledgementReceiptManifest.ManifestID, launchClosureAutomationAcknowledgementReceiptManifest.ManifestDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation acknowledgement receipt manifest, got %+v", launchClosureAutomationAcknowledgementReceiptManifest)
 	}
+	launchClosureAutomationAcknowledgementReceiptEvidenceQueue, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueue(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueue failed: %v", err)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Status != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueueStatusOverdue || launchClosureAutomationAcknowledgementReceiptEvidenceQueue.OverdueCount == 0 {
+		t.Fatalf("expected overdue launch closure automation acknowledgement receipt evidence queue, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.EscalationCount != 0 || !hasLaunchClosureAutomationAckReceiptEvidenceQueueEvidence(launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items, "overdue_acknowledgement_explanation") {
+		t.Fatalf("expected recoverable acknowledgement receipt evidence queue, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.ManifestID == "" || launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueDigest == "" || !hasString(launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0].CellIDs, created.CellID) {
+		t.Fatalf("expected acknowledgement receipt evidence queue tied to manifest and cell, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0].ItemDigest == "" || !strings.Contains(launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueID, launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation acknowledgement receipt evidence queue, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1446,6 +1465,25 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if launchClosureAutomationAcknowledgementReceiptManifest.AcknowledgementReceiptID == "" || launchClosureAutomationAcknowledgementReceiptManifest.ManifestDigest == "" {
 		t.Fatalf("expected blocked acknowledgement receipt manifest tied to receipt, got %+v", launchClosureAutomationAcknowledgementReceiptManifest)
 	}
+	launchClosureAutomationAcknowledgementReceiptEvidenceQueue, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueue(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueue failed: %v", err)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Status != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueueStatusEscalation || launchClosureAutomationAcknowledgementReceiptEvidenceQueue.EscalationCount == 0 {
+		t.Fatalf("expected blocked launch closure automation acknowledgement receipt evidence queue status/counts, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
+	if !hasLaunchClosureAutomationAckReceiptEvidenceQueueEvidence(launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items, "escalation_owner_confirmation") || !hasString(launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked launch closure automation acknowledgement receipt evidence queue evidence and cell, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0].Priority != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueuePriorityCritical || launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0].Action != "collect_escalation_ack_receipt_evidence" {
+		t.Fatalf("expected critical blocked acknowledgement receipt evidence queue item, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0])
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.ManifestID == "" || launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueDigest == "" {
+		t.Fatalf("expected blocked acknowledgement receipt evidence queue tied to manifest, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -1458,6 +1496,15 @@ func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentRead
 }
 
 func hasLaunchClosureAutomationAckReceiptManifestEvidence(items []SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptManifestItem, evidence string) bool {
+	for _, item := range items {
+		if item.Evidence == evidence {
+			return true
+		}
+	}
+	return false
+}
+
+func hasLaunchClosureAutomationAckReceiptEvidenceQueueEvidence(items []SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueueItem, evidence string) bool {
 	for _, item := range items {
 		if item.Evidence == evidence {
 			return true
