@@ -11,11 +11,15 @@ import (
 	securecellsintegration "github.com/aethelred/aethelred/pkg/integrations/securecells"
 )
 
-type secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementResponse struct {
-	Acknowledgement *securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement `json:"acknowledgement,omitempty"`
+type launchClosureAutomationAck = securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement
+type launchClosureAutomationAckAssignment = securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchAssignment
+type launchClosureAutomationAckItem = securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardItem
+
+type secureCellLaunchClosureAutomationAckResponse struct {
+	Acknowledgement *launchClosureAutomationAck `json:"acknowledgement,omitempty"`
 }
 
-func (app *AethelredApp) handleSecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementGet(w http.ResponseWriter, r *http.Request) bool {
+func (app *AethelredApp) handleSecureCellLaunchClosureAutomationAckGet(w http.ResponseWriter, r *http.Request) bool {
 	if r.URL.Path == secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-acknowledgement" {
 		filter, err := parseSecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter(r)
 		if err != nil {
@@ -27,7 +31,7 @@ func (app *AethelredApp) handleSecureCellGovernmentAgentExecutionLaunchClosureAu
 			writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
 			return true
 		}
-		writeSecureCellJSON(w, http.StatusOK, secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementResponse{Acknowledgement: acknowledgement})
+		writeSecureCellJSON(w, http.StatusOK, secureCellLaunchClosureAutomationAckResponse{Acknowledgement: acknowledgement})
 		return true
 	}
 
@@ -42,7 +46,7 @@ func (app *AethelredApp) handleSecureCellGovernmentAgentExecutionLaunchClosureAu
 			writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
 			return true
 		}
-		if err := writeSecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementExport(w, r, acknowledgement); err != nil {
+		if err := writeSecureCellLaunchClosureAutomationAckExport(w, r, acknowledgement); err != nil {
 			writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
 		}
 		return true
@@ -51,17 +55,17 @@ func (app *AethelredApp) handleSecureCellGovernmentAgentExecutionLaunchClosureAu
 	return false
 }
 
-func writeSecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementExport(w http.ResponseWriter, r *http.Request, acknowledgement *securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement) error {
+func writeSecureCellLaunchClosureAutomationAckExport(w http.ResponseWriter, r *http.Request, acknowledgement *launchClosureAutomationAck) error {
 	format := secureCellExportFormat(r)
 	switch format {
 	case "json":
-		writeSecureCellJSON(w, http.StatusOK, secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementResponse{Acknowledgement: acknowledgement})
+		writeSecureCellJSON(w, http.StatusOK, secureCellLaunchClosureAutomationAckResponse{Acknowledgement: acknowledgement})
 		return nil
 	case "csv":
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-government-agent-execution-launch-closure-automation-acknowledgement.csv"`)
 		writer := csv.NewWriter(w)
-		for _, row := range secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRows(acknowledgement) {
+		for _, row := range secureCellLaunchClosureAutomationAckCSVRows(acknowledgement) {
 			if err := writer.Write(row); err != nil {
 				return fmt.Errorf("write government-agent-execution-launch-closure-automation-acknowledgement csv row: %w", err)
 			}
@@ -73,7 +77,7 @@ func writeSecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgeme
 	}
 }
 
-func secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRows(acknowledgement *securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement) [][]string {
+func secureCellLaunchClosureAutomationAckCSVRows(acknowledgement *launchClosureAutomationAck) [][]string {
 	rows := [][]string{{
 		"acknowledgement_id",
 		"directive_id",
@@ -124,39 +128,39 @@ func secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSV
 		return rows
 	}
 	if len(acknowledgement.Items) == 0 && len(acknowledgement.Assignments) == 0 {
-		rows = append(rows, secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRow(acknowledgement, securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchAssignment{}, securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardItem{}))
+		rows = append(rows, secureCellLaunchClosureAutomationAckCSVRow(acknowledgement, launchClosureAutomationAckAssignment{}, launchClosureAutomationAckItem{}))
 		return rows
 	}
 	assignments := acknowledgement.Assignments
 	if len(assignments) == 0 {
-		assignments = []securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchAssignment{{}}
+		assignments = []launchClosureAutomationAckAssignment{{}}
 	}
 	items := acknowledgement.Items
 	if len(items) == 0 {
-		items = []securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardItem{{}}
+		items = []launchClosureAutomationAckItem{{}}
 	}
 	maxLen := len(assignments)
 	if len(items) > maxLen {
 		maxLen = len(items)
 	}
 	for i := 0; i < maxLen; i++ {
-		var assignment securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchAssignment
-		var item securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardItem
+		var assignment launchClosureAutomationAckAssignment
+		var item launchClosureAutomationAckItem
 		if i < len(assignments) {
 			assignment = assignments[i]
 		}
 		if i < len(items) {
 			item = items[i]
 		}
-		rows = append(rows, secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRow(acknowledgement, assignment, item))
+		rows = append(rows, secureCellLaunchClosureAutomationAckCSVRow(acknowledgement, assignment, item))
 	}
 	return rows
 }
 
-func secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRow(
-	acknowledgement *securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement,
-	assignment securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationDispatchAssignment,
-	item securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardItem,
+func secureCellLaunchClosureAutomationAckCSVRow(
+	acknowledgement *launchClosureAutomationAck,
+	assignment launchClosureAutomationAckAssignment,
+	item launchClosureAutomationAckItem,
 ) []string {
 	ackDueAt := ""
 	if acknowledgement.AckDueAt != nil {

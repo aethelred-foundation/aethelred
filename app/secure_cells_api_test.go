@@ -229,7 +229,7 @@ func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationDirectiveCSVRo
 	}
 }
 
-func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRows_EmptyAcknowledgementColumnCount(t *testing.T) {
+func TestSecureCellLaunchClosureAutomationAckCSVRows_EmptyColumnCount(t *testing.T) {
 	ackDueAt := time.Unix(1, 0).UTC()
 	acknowledgement := &securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement{
 		AcknowledgementID:     "government-agent-execution-launch-closure-automation-acknowledgement:UAE:abcdef123456",
@@ -256,7 +256,7 @@ func TestSecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgemen
 		GeneratedAt:           time.Unix(3, 0).UTC(),
 	}
 
-	rows := secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementCSVRows(acknowledgement)
+	rows := secureCellLaunchClosureAutomationAckCSVRows(acknowledgement)
 	if len(rows) != 2 {
 		t.Fatalf("expected header plus empty-acknowledgement row, got %d rows", len(rows))
 	}
@@ -1819,7 +1819,7 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if launchClosureAutomationAcknowledgementRec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationAcknowledgementRec.Code, launchClosureAutomationAcknowledgementRec.Body.String())
 	}
-	var launchClosureAutomationAcknowledgementResp secureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementResponse
+	var launchClosureAutomationAcknowledgementResp secureCellLaunchClosureAutomationAckResponse
 	if err := json.Unmarshal(launchClosureAutomationAcknowledgementRec.Body.Bytes(), &launchClosureAutomationAcknowledgementResp); err != nil {
 		t.Fatalf("unmarshal government-agent execution launch closure automation acknowledgement response: %v", err)
 	}
