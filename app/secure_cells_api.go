@@ -1366,6 +1366,10 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if app.handleSecureCellLaunchClosureAutomationAckReceiptManifestGet(w, r) {
+			return
+		}
+
 		if app.handleSecureCellGovernmentAgentExecutionLaunchReceiptValidationGet(w, r) {
 			return
 		}
