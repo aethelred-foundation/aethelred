@@ -832,6 +832,25 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.Items[0].ItemDigest == "" || !strings.Contains(launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueID, launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation acknowledgement receipt evidence queue, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
 	}
+	launchClosureAutomationAcknowledgementReceiptEvidenceDispatch, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatch(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatch failed: %v", err)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Status != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatchStatusOverdue || launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.OverdueDispatchCount == 0 {
+		t.Fatalf("expected overdue launch closure automation acknowledgement receipt evidence dispatch, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.EscalationDispatchCount != 0 || !hasLaunchClosureAutomationAckReceiptEvidenceDispatchEvidence(launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items, "overdue_acknowledgement_explanation") {
+		t.Fatalf("expected recoverable acknowledgement receipt evidence dispatch, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.QueueID == "" || launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.DispatchDigest == "" || !hasString(launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0].CellIDs, created.CellID) {
+		t.Fatalf("expected acknowledgement receipt evidence dispatch tied to queue and cell, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0].DispatchItemDigest == "" || launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0].DispatchChannel != "operator_recovery_channel" {
+		t.Fatalf("expected digest-bound recovery evidence dispatch item, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0])
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1484,6 +1503,25 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if launchClosureAutomationAcknowledgementReceiptEvidenceQueue.ManifestID == "" || launchClosureAutomationAcknowledgementReceiptEvidenceQueue.QueueDigest == "" {
 		t.Fatalf("expected blocked acknowledgement receipt evidence queue tied to manifest, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceQueue)
 	}
+	launchClosureAutomationAcknowledgementReceiptEvidenceDispatch, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatch(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatch failed: %v", err)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Status != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatchStatusEscalation || launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.EscalationDispatchCount == 0 {
+		t.Fatalf("expected blocked launch closure automation acknowledgement receipt evidence dispatch status/counts, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch)
+	}
+	if !hasLaunchClosureAutomationAckReceiptEvidenceDispatchEvidence(launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items, "escalation_owner_confirmation") || !hasString(launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked launch closure automation acknowledgement receipt evidence dispatch evidence and cell, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch)
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0].DispatchChannel != "incident_command_channel" || launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0].EscalationTarget != "incident_commander" {
+		t.Fatalf("expected incident command dispatch for blocked acknowledgement receipt evidence, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.Items[0])
+	}
+	if launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.QueueID == "" || launchClosureAutomationAcknowledgementReceiptEvidenceDispatch.DispatchDigest == "" {
+		t.Fatalf("expected blocked acknowledgement receipt evidence dispatch tied to queue, got %+v", launchClosureAutomationAcknowledgementReceiptEvidenceDispatch)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -1505,6 +1543,15 @@ func hasLaunchClosureAutomationAckReceiptManifestEvidence(items []SecureCellGove
 }
 
 func hasLaunchClosureAutomationAckReceiptEvidenceQueueEvidence(items []SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceQueueItem, evidence string) bool {
+	for _, item := range items {
+		if item.Evidence == evidence {
+			return true
+		}
+	}
+	return false
+}
+
+func hasLaunchClosureAutomationAckReceiptEvidenceDispatchEvidence(items []SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatchItem, evidence string) bool {
 	for _, item := range items {
 		if item.Evidence == evidence {
 			return true

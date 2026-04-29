@@ -376,6 +376,45 @@ func TestSecureCellLaunchClosureAutomationAckReceiptEvidenceQueueCSVRows_EmptyCo
 	}
 }
 
+func TestSecureCellLaunchClosureAutomationAckReceiptEvidenceDispatchCSVRows_EmptyColumnCount(t *testing.T) {
+	dispatch := &securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatch{
+		DispatchID:               "government-agent-execution-launch-closure-automation-acknowledgement-receipt-evidence-dispatch:UAE:abcdef123456",
+		QueueID:                  "government-agent-execution-launch-closure-automation-acknowledgement-receipt-evidence-queue:UAE:abcdef123456",
+		ManifestID:               "government-agent-execution-launch-closure-automation-acknowledgement-receipt-manifest:UAE:abcdef123456",
+		AcknowledgementReceiptID: "government-agent-execution-launch-closure-automation-acknowledgement-receipt:UAE:abcdef123456",
+		AcknowledgementID:        "government-agent-execution-launch-closure-automation-acknowledgement:UAE:abcdef123456",
+		DirectiveID:              "government-agent-execution-launch-closure-automation-directive:UAE:abcdef123456",
+		ClosureDispatchID:        "government-agent-execution-launch-closure-automation-dispatch:UAE:abcdef123456",
+		BriefID:                  "government-agent-execution-launch-closure-automation-brief:UAE:abcdef123456",
+		RunbookID:                "government-agent-execution-launch-closure-automation-runbook:UAE:abcdef123456",
+		PacketID:                 "government-agent-execution-launch-closure-automation-packet:UAE:abcdef123456",
+		BoardID:                  "government-agent-execution-launch-closure-automation-board:UAE:abcdef123456",
+		SummaryID:                "government-agent-execution-launch-closure-automation-summary:UAE:abcdef123456",
+		Jurisdiction:             "UAE",
+		EvaluatedAt:              time.Unix(2, 0).UTC(),
+		FocusLane:                securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneDue,
+		FocusAction:              "work_next_due_closure_actions",
+		Severity:                 securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationBriefSeverityMedium,
+		ReceiptStatus:            securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptStatusOverdue,
+		ReceiptAction:            "recover_missing_launch_closure_ack_receipt",
+		Status:                   securecellsintegration.SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementReceiptEvidenceDispatchStatusOverdue,
+		PrimaryOperatorCommand:   "dispatch_overdue_ack_receipt_evidence_collection",
+		ReceiptDigest:            strings.Repeat("a", 64),
+		ManifestDigest:           strings.Repeat("b", 64),
+		QueueDigest:              strings.Repeat("c", 64),
+		DispatchDigest:           strings.Repeat("d", 64),
+		GeneratedAt:              time.Unix(3, 0).UTC(),
+	}
+
+	rows := secureCellLaunchClosureAutomationAckReceiptEvidenceDispatchCSVRows(dispatch)
+	if len(rows) != 2 {
+		t.Fatalf("expected header plus empty-acknowledgement-receipt-evidence-dispatch row, got %d rows", len(rows))
+	}
+	if got, want := len(rows[1]), len(rows[0]); got != want {
+		t.Fatalf("expected empty-acknowledgement-receipt-evidence-dispatch csv row to have %d columns, got %d: %#v", want, got, rows[1])
+	}
+}
+
 func TestSecureCellsHandlers_BearerCreateGetArtifactsFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -2042,6 +2081,36 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	}
 	if !strings.Contains(launchClosureAutomationAckReceiptEvidenceQueueExportRec.Body.String(), "queue_digest") || !strings.Contains(launchClosureAutomationAckReceiptEvidenceQueueExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch closure automation acknowledgement receipt evidence queue csv export, got %s", launchClosureAutomationAckReceiptEvidenceQueueExportRec.Body.String())
+	}
+
+	launchClosureAutomationAckReceiptEvidenceDispatchReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-acknowledgement-receipt-evidence-dispatch?jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationAckReceiptEvidenceDispatchRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationAckReceiptEvidenceDispatchRec, launchClosureAutomationAckReceiptEvidenceDispatchReq)
+	if launchClosureAutomationAckReceiptEvidenceDispatchRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationAckReceiptEvidenceDispatchRec.Code, launchClosureAutomationAckReceiptEvidenceDispatchRec.Body.String())
+	}
+	var launchClosureAutomationAckReceiptEvidenceDispatchResp secureCellLaunchClosureAutomationAckReceiptEvidenceDispatchResponse
+	if err := json.Unmarshal(launchClosureAutomationAckReceiptEvidenceDispatchRec.Body.Bytes(), &launchClosureAutomationAckReceiptEvidenceDispatchResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch closure automation acknowledgement receipt evidence dispatch response: %v", err)
+	}
+	if launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch == nil || launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch.OverdueDispatchCount == 0 {
+		t.Fatalf("unexpected government-agent execution launch closure automation acknowledgement receipt evidence dispatch response: %+v", launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch)
+	}
+	if launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch.DispatchDigest == "" || launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch.DispatchCount == 0 || len(launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch.Items) == 0 {
+		t.Fatalf("expected digest-bound execution launch closure automation acknowledgement receipt evidence dispatch, got %+v", launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch)
+	}
+	if launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch.QueueID == "" || len(launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch.Items[0].CellIDs) == 0 {
+		t.Fatalf("expected populated execution launch closure automation acknowledgement receipt evidence dispatch, got %+v", launchClosureAutomationAckReceiptEvidenceDispatchResp.Dispatch)
+	}
+
+	launchClosureAutomationAckReceiptEvidenceDispatchExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-closure-automation-acknowledgement-receipt-evidence-dispatch/export?format=csv&jurisdiction=UAE&before="+url.QueryEscape(overdueBefore), nil)
+	launchClosureAutomationAckReceiptEvidenceDispatchExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchClosureAutomationAckReceiptEvidenceDispatchExportRec, launchClosureAutomationAckReceiptEvidenceDispatchExportReq)
+	if launchClosureAutomationAckReceiptEvidenceDispatchExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchClosureAutomationAckReceiptEvidenceDispatchExportRec.Code, launchClosureAutomationAckReceiptEvidenceDispatchExportRec.Body.String())
+	}
+	if !strings.Contains(launchClosureAutomationAckReceiptEvidenceDispatchExportRec.Body.String(), "dispatch_digest") || !strings.Contains(launchClosureAutomationAckReceiptEvidenceDispatchExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch closure automation acknowledgement receipt evidence dispatch csv export, got %s", launchClosureAutomationAckReceiptEvidenceDispatchExportRec.Body.String())
 	}
 }
 
