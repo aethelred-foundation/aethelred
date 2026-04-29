@@ -753,6 +753,28 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !strings.Contains(launchClosureAutomationDirective.DirectiveID, launchClosureAutomationDirective.DirectiveDigest[:12]) {
 		t.Fatalf("expected digest-bound launch closure automation directive, got %+v", launchClosureAutomationDirective)
 	}
+	launchClosureAutomationAcknowledgement, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		Jurisdiction: "UAE",
+		Before:       &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement failed: %v", err)
+	}
+	if launchClosureAutomationAcknowledgement.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneOverdue || launchClosureAutomationAcknowledgement.FocusAction != "drain_overdue_closure_actions" {
+		t.Fatalf("expected overdue launch closure automation acknowledgement focus, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if launchClosureAutomationAcknowledgement.AckStatus != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementStatusOverdue || launchClosureAutomationAcknowledgement.AckOverdueSeconds <= 0 {
+		t.Fatalf("expected overdue launch closure automation acknowledgement timer, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if launchClosureAutomationAcknowledgement.AckAction != "recover_launch_closure_acknowledgement" || len(launchClosureAutomationAcknowledgement.RequiredRoles) != 1 || launchClosureAutomationAcknowledgement.RequiredRoles[0] != "archive_officer" {
+		t.Fatalf("expected overdue launch closure automation acknowledgement action/role, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if launchClosureAutomationAcknowledgement.DirectiveID == "" || launchClosureAutomationAcknowledgement.AcknowledgementDigest == "" || !hasString(launchClosureAutomationAcknowledgement.Assignments[0].CellIDs, created.CellID) {
+		t.Fatalf("expected acknowledgement tied to directive and cell, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if !strings.Contains(launchClosureAutomationAcknowledgement.AcknowledgementID, launchClosureAutomationAcknowledgement.AcknowledgementDigest[:12]) {
+		t.Fatalf("expected digest-bound launch closure automation acknowledgement, got %+v", launchClosureAutomationAcknowledgement)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -1334,6 +1356,25 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if launchClosureAutomationDirective.DispatchID == "" || launchClosureAutomationDirective.DirectiveDigest == "" || !hasString(launchClosureAutomationDirective.Assignments[0].CellIDs, created.CellID) {
 		t.Fatalf("expected blocked directive tied to dispatch and cell, got %+v", launchClosureAutomationDirective)
+	}
+	launchClosureAutomationAcknowledgement, err := service.GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement(ctx, SecureCellGovernmentAgentExecutionLaunchClosureOverdueActionFilter{
+		CellID: created.CellID,
+		Before: &blockedOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClosureAutomationAcknowledgement failed: %v", err)
+	}
+	if launchClosureAutomationAcknowledgement.FocusLane != SecureCellGovernmentAgentExecutionLaunchClosureAutomationBoardLaneBlocked || launchClosureAutomationAcknowledgement.FocusAction != "clear_blocked_closure_path" {
+		t.Fatalf("expected blocked launch closure automation acknowledgement focus, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if launchClosureAutomationAcknowledgement.AckStatus != SecureCellGovernmentAgentExecutionLaunchClosureAutomationAcknowledgementStatusOverdue || launchClosureAutomationAcknowledgement.AckAction != "escalate_launch_closure_acknowledgement" {
+		t.Fatalf("expected blocked launch closure automation acknowledgement status/action, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if len(launchClosureAutomationAcknowledgement.RequiredRoles) != 1 || launchClosureAutomationAcknowledgement.RequiredRoles[0] != "incident_commander" || !launchClosureAutomationAcknowledgement.EscalationRequired {
+		t.Fatalf("expected blocked launch closure automation acknowledgement role/escalation, got %+v", launchClosureAutomationAcknowledgement)
+	}
+	if launchClosureAutomationAcknowledgement.DirectiveID == "" || launchClosureAutomationAcknowledgement.AcknowledgementDigest == "" || !hasString(launchClosureAutomationAcknowledgement.Assignments[0].CellIDs, created.CellID) {
+		t.Fatalf("expected blocked acknowledgement tied to directive and cell, got %+v", launchClosureAutomationAcknowledgement)
 	}
 }
 
