@@ -53,7 +53,10 @@ type Keeper struct {
 	RegisteredMeasurements        collections.KeySet[string]
 	TrustedMeasurementRevocations collections.Map[string, string]
 	JobCount                      collections.Item[uint64]
+	CurrentEpoch                  collections.Item[uint64]
+	TotalUWU                      collections.Item[uint64]
 	Params                        collections.Item[types.Params]
+	EnterpriseAuditTrustRegistry  collections.Item[string]
 }
 
 // StakingKeeper defines the expected staking keeper interface
@@ -172,11 +175,29 @@ func NewKeeper(
 			"job_count",
 			collections.Uint64Value,
 		),
+		CurrentEpoch: collections.NewItem(
+			sb,
+			collections.NewPrefix(types.CurrentEpochKey),
+			"current_epoch",
+			collections.Uint64Value,
+		),
+		TotalUWU: collections.NewItem(
+			sb,
+			collections.NewPrefix(types.TotalUWUKey),
+			"total_uwu",
+			collections.Uint64Value,
+		),
 		Params: collections.NewItem(
 			sb,
 			collections.NewPrefix(types.ParamsKey),
 			"params",
 			codec.CollValue[types.Params](cdc),
+		),
+		EnterpriseAuditTrustRegistry: collections.NewItem(
+			sb,
+			collections.NewPrefix(types.EnterpriseAuditTrustRegistryKey),
+			"enterprise_audit_trust_registry",
+			collections.StringValue,
 		),
 	}
 }
@@ -843,6 +864,12 @@ func (k Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 	if err := k.JobCount.Set(ctx, uint64(len(gs.Jobs))); err != nil {
 		return err
 	}
+	if err := k.CurrentEpoch.Set(ctx, gs.CurrentEpoch); err != nil {
+		return err
+	}
+	if err := k.TotalUWU.Set(ctx, gs.TotalUwu); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -882,11 +909,22 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return false, nil
 	})
 
+	currentEpoch, err := k.CurrentEpoch.Get(ctx)
+	if err != nil {
+		currentEpoch = 0
+	}
+	totalUWU, err := k.TotalUWU.Get(ctx)
+	if err != nil {
+		totalUWU = 0
+	}
+
 	return &types.GenesisState{
 		Params:                params,
 		Jobs:                  jobs,
 		RegisteredModels:      models,
 		ValidatorStats:        stats,
 		ValidatorCapabilities: caps,
+		CurrentEpoch:          currentEpoch,
+		TotalUwu:              totalUWU,
 	}, nil
 }

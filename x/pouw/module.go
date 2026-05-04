@@ -45,14 +45,18 @@ func (AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {
 }
 
 // DefaultGenesis returns the module's default genesis state.
-func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
-	return cdc.MustMarshalJSON(types.DefaultGenesis())
+func (AppModuleBasic) DefaultGenesis(_ codec.JSONCodec) json.RawMessage {
+	bz, err := json.Marshal(types.DefaultManagedGenesis())
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 // ValidateGenesis performs genesis state validation.
-func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
-	var gs types.GenesisState
-	if err := cdc.UnmarshalJSON(bz, &gs); err != nil {
+func (AppModuleBasic) ValidateGenesis(_ codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
+	var gs types.ManagedGenesisState
+	if err := json.Unmarshal(bz, &gs); err != nil {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
 	return gs.Validate()
@@ -116,11 +120,13 @@ func (am *AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 }
 
 // InitGenesis performs the module's genesis initialization.
-func (am *AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
-	cdc.MustUnmarshalJSON(gs, &genesisState)
+func (am *AppModule) InitGenesis(ctx sdk.Context, _ codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState types.ManagedGenesisState
+	if err := json.Unmarshal(gs, &genesisState); err != nil {
+		panic(err)
+	}
 
-	if err := am.keeper.InitGenesis(ctx, &genesisState); err != nil {
+	if err := am.keeper.InitManagedGenesis(ctx, &genesisState); err != nil {
 		panic(err)
 	}
 
@@ -128,12 +134,16 @@ func (am *AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.R
 }
 
 // ExportGenesis returns the module's exported genesis state.
-func (am *AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	gs, err := am.keeper.ExportGenesis(ctx)
+func (am *AppModule) ExportGenesis(ctx sdk.Context, _ codec.JSONCodec) json.RawMessage {
+	gs, err := am.keeper.ExportManagedGenesis(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return cdc.MustMarshalJSON(gs)
+	bz, err := json.Marshal(gs)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
@@ -228,6 +238,14 @@ func GetQueryCmd() *cobra.Command {
 	// cmd.AddCommand(CmdQueryJob())
 	// cmd.AddCommand(CmdListJobs())
 	cmd.AddCommand(cli.CmdQueryPoUWStatus())
+	cmd.AddCommand(cli.CmdQueryPoUWModuleStatus())
+	cmd.AddCommand(cli.CmdQueryPoUWTrustRegistry())
+	cmd.AddCommand(cli.CmdQueryPoUWTrustRegistryHistory())
+	cmd.AddCommand(cli.CmdQueryPoUWControlLedgerPackageAnchors())
+	cmd.AddCommand(cli.CmdVerifyPortableControlLedgerPackage())
+	cmd.AddCommand(cli.CmdQueryPoUWTrustComplianceExport())
+	cmd.AddCommand(cli.CmdQueryPoUWTrustComplianceExportAnchors())
+	cmd.AddCommand(cli.CmdVerifyPouwTrustCompliancePackage())
 	cmd.AddCommand(cli.CmdQueryValidatorPCR0())
 	cmd.AddCommand(cli.CmdQueryIsPCR0Registered())
 

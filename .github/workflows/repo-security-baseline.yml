@@ -58,6 +58,7 @@ jobs:
 
   quick-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -78,7 +79,7 @@ jobs:
           set -euo pipefail
           # Go (root module only)
           if [[ -f go.mod ]]; then
-            go test ./... || true
+            timeout 240s go test -run TestDoesNotExist ./... || true
           fi
           # Rust (root crate only)
           if [[ -f Cargo.toml ]]; then

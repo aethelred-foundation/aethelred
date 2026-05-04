@@ -68,6 +68,8 @@ func newTestKeeper(t *testing.T) (keeper.Keeper, sdk.Context) {
 	// Initialize default params.
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 	require.NoError(t, k.JobCount.Set(ctx, 0))
+	require.NoError(t, k.CurrentEpoch.Set(ctx, 0))
+	require.NoError(t, k.TotalUWU.Set(ctx, 0))
 
 	return k, ctx
 }
@@ -236,11 +238,29 @@ func newTestKeeperFromStore(cdc codec.Codec, storeService store.KVStoreService) 
 			"job_count",
 			collections.Uint64Value,
 		),
+		CurrentEpoch: collections.NewItem(
+			sb,
+			collections.NewPrefix(types.CurrentEpochKey),
+			"current_epoch",
+			collections.Uint64Value,
+		),
+		TotalUWU: collections.NewItem(
+			sb,
+			collections.NewPrefix(types.TotalUWUKey),
+			"total_uwu",
+			collections.Uint64Value,
+		),
 		Params: collections.NewItem(
 			sb,
 			collections.NewPrefix(types.ParamsKey),
 			"params",
 			codec.CollValue[types.Params](cdc),
+		),
+		EnterpriseAuditTrustRegistry: collections.NewItem(
+			sb,
+			collections.NewPrefix(types.EnterpriseAuditTrustRegistryKey),
+			"enterprise_audit_trust_registry",
+			collections.StringValue,
 		),
 	}
 

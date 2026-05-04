@@ -301,7 +301,7 @@ type nitroQuote struct {
 	Digest      string          `json:"digest"`
 	PCRs        []nitroQuotePCR `json:"pcrs"`
 	Certificate []byte          `json:"certificate,omitempty"`
-	CABundle    []byte          `json:"cabundle,omitempty"`
+	CABundle    [][]byte        `json:"cabundle,omitempty"`
 	PublicKey   []byte          `json:"public_key,omitempty"`
 	UserData    []byte          `json:"user_data,omitempty"`
 	Nonce       []byte          `json:"nonce,omitempty"`
@@ -329,7 +329,12 @@ func marshalNitroQuote(doc *tee.NitroAttestationDocument) []byte {
 		Digest:      doc.Digest,
 		PCRs:        pcrs,
 		Certificate: doc.Certificate,
-		CABundle:    doc.CABundle,
+		CABundle: func() [][]byte {
+			if len(doc.CABundle) == 0 {
+				return nil
+			}
+			return [][]byte{doc.CABundle}
+		}(),
 		PublicKey:   doc.PublicKey,
 		UserData:    doc.UserData,
 		Nonce:       doc.Nonce,

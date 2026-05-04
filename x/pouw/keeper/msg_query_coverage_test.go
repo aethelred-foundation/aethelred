@@ -135,11 +135,15 @@ func TestQueryModelModuleStatusAndKeeperAccessors(t *testing.T) {
 		IsOnline:          false,
 		ReputationScore:   50,
 	}))
+	require.NoError(t, k.CurrentEpoch.Set(ctx, 7))
+	require.NoError(t, k.TotalUWU.Set(ctx, 99))
 
 	status, err := k.GetModuleStatus(ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, 0, status.JobCount)
 	require.EqualValues(t, 0, status.PendingJobCount)
+	require.EqualValues(t, 7, status.CurrentEpoch)
+	require.EqualValues(t, 99, status.TotalUWU)
 	require.EqualValues(t, 2, status.ValidatorCount)
 	require.EqualValues(t, 1, status.OnlineValidatorCount)
 	require.EqualValues(t, ctx.BlockHeight(), status.BlockHeight)

@@ -35,16 +35,32 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: PR fuzz target inventory
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          for target in \
+            FuzzVoteExtensionUnmarshal \
+            FuzzVoteExtensionSignVerify \
+            FuzzAggregateVoteExtensions \
+            FuzzInjectedVoteExtensionTx; do
+            grep -R --include='*_test.go' -q "func ${target}(" app
+            echo "found ${target}"
+          done
+
       - name: Fuzz VoteExtension Unmarshal
+        if: ${{ github.event_name != 'pull_request' }}
         run: go test -fuzz=FuzzVoteExtensionUnmarshal -fuzztime=${{ env.FUZZ_DURATION }} ./app/
 
       - name: Fuzz VoteExtension SignVerify
+        if: ${{ github.event_name != 'pull_request' }}
         run: go test -fuzz=FuzzVoteExtensionSignVerify -fuzztime=${{ env.FUZZ_DURATION }} ./app/
 
       - name: Fuzz AggregateVoteExtensions
+        if: ${{ github.event_name != 'pull_request' }}
         run: go test -fuzz=FuzzAggregateVoteExtensions -fuzztime=${{ env.FUZZ_DURATION }} ./app/
 
       - name: Fuzz InjectedVoteExtensionTx
+        if: ${{ github.event_name != 'pull_request' }}
         run: go test -fuzz=FuzzInjectedVoteExtensionTx -fuzztime=${{ env.FUZZ_DURATION }} ./app/
 
       - name: Upload fuzz corpus

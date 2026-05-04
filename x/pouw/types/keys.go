@@ -78,6 +78,15 @@ var (
 
 	// TrustedMeasurementRevocationKeyPrefix stores persisted emergency revocation request state.
 	TrustedMeasurementRevocationKeyPrefix = []byte{0x10}
+
+	// EnterpriseAuditTrustRegistryKey stores the keeper-backed enterprise audit trust registry.
+	EnterpriseAuditTrustRegistryKey = []byte{0x11}
+
+	// CurrentEpochKey stores the current protocol epoch.
+	CurrentEpochKey = []byte{0x12}
+
+	// TotalUWUKey stores the cumulative useful-work units tracked by the module.
+	TotalUWUKey = []byte{0x13}
 )
 
 // JobKey returns the store key for a job with the given ID

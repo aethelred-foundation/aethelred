@@ -35,6 +35,12 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
+	// Validate user-supplied metadata before any model lookups so malformed
+	// inputs are rejected consistently and cannot be masked by model state.
+	if err := validateUserMetadata(msg.Metadata); err != nil {
+		return nil, err
+	}
+
 	// Default fee to the module base fee if configured; fallback to zero if parsing fails.
 	fee := sdk.NewCoin("uaethel", sdkmath.NewInt(0))
 	if params, err := k.GetParams(ctx); err == nil && params.BaseJobFee != "" {
@@ -60,16 +66,12 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 	job.InputDataUri = msg.InputDataUri
 	job.Priority = msg.Priority
 
-	// SECURITY FIX (P2): Validate and copy metadata, rejecting reserved prefixes
+	// SECURITY FIX (P2): Copy metadata after the upfront validation above.
 	if len(msg.Metadata) > 0 {
 		if job.Metadata == nil {
 			job.Metadata = make(map[string]string, len(msg.Metadata))
 		}
 		for key, value := range msg.Metadata {
-			// Reject reserved keys that could interfere with scheduler internals
-			if strings.HasPrefix(key, reservedMetadataPrefix) {
-				return nil, fmt.Errorf("metadata key %q uses reserved prefix %q", key, reservedMetadataPrefix)
-			}
 			job.Metadata[key] = value
 		}
 	}
@@ -79,6 +81,15 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 	}
 
 	return &types.MsgSubmitJobResponse{JobId: job.Id}, nil
+}
+
+func validateUserMetadata(metadata map[string]string) error {
+	for key := range metadata {
+		if strings.HasPrefix(key, reservedMetadataPrefix) {
+			return fmt.Errorf("metadata key %q uses reserved prefix %q", key, reservedMetadataPrefix)
+		}
+	}
+	return nil
 }
 
 // RegisterModel handles MsgRegisterModel.
