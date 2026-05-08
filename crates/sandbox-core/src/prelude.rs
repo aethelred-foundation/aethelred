@@ -65,6 +65,10 @@ pub use crate::automated_decision_appeal::{
     DecisionImpact as AppealDecisionImpact, EvidenceItem as AppealEvidenceItem,
     OriginalDecision as AppealOriginalDecision,
 };
+pub use crate::background_check_register::{
+    BackgroundCheckRecord, BackgroundCheckRegister, CheckLine, CheckResult, CheckType,
+    ScreeningStage,
+};
 pub use crate::backup_restore::{Backup, BackupKey, BackupManifest, EncryptedSnapshot};
 pub use crate::bias_detection::{
     FairnessAuditor, FairnessReport, GroupLabel, GroupStats, OutcomeEvent, ProtectedClass,
@@ -110,6 +114,11 @@ pub use crate::compliance_dashboard::{
 };
 pub use crate::compliance_report::{
     ComplianceFramework, ComplianceReport, ControlMapping, ControlRef, ControlSection,
+};
+pub use crate::confidentiality_agreement::{
+    AgreementKind as NdaKind, AgreementStage as NdaStage, ConfidentialityAgreement,
+    ConfidentialityAgreementRegistry, PartyEntry as NdaPartyEntry,
+    PartyRole as NdaPartyRole, SignatureRecord as NdaSignatureRecord,
 };
 pub use crate::content_archive::{
     ContentArchive, ContentEntry, LifecycleStage, LifecycleTransition,
@@ -318,6 +327,10 @@ pub use crate::outage_register::{
     OutageEvent, OutageImpactLevel, OutageRegister, OutageStatus, OutageUpdate,
 };
 pub use crate::persistence::{EvidenceStore, PersistenceConfig, PersistentEvidenceLog, Snapshot};
+pub use crate::physical_access_register::{
+    AccessEvent as PhysicalAccessEvent, AccessGrant as PhysicalAccessGrant, CredentialKind,
+    Facility, FacilityTier, GrantStage as PhysicalGrantStage, PhysicalAccessRegister,
+};
 pub use crate::pii_redaction::{
     PiiRedactor, PiiRule, RedactionRecord, RedactionResult,
     SensitivityClass as PiiSensitivityClass,
@@ -402,6 +415,9 @@ pub use crate::sandbox_template::{
 pub use crate::scanner::{Finding, ScanSummary, Scanner, ScannerConfig, SensitiveClass};
 pub use crate::secrets_rotation::{
     RotationEvent, RotationOutcome, SecretKind, SecretRecord, SecretsRotationRegistry,
+};
+pub use crate::security_training_register::{
+    Course, CourseKind, Enrollment, EnrollmentStage, SecurityTrainingRegister,
 };
 pub use crate::service_catalog::{
     ComplianceScope as ServiceComplianceScope, LifecycleStage as ServiceLifecycleStage,

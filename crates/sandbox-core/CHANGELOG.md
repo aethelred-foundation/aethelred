@@ -10,6 +10,70 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.30] - 2026-05-08
+
+Workforce safety / people-controls cluster: pre-employment background
+checks, NDA / confidentiality agreement tracking, mandatory security
+training, and physical (badge) access registry. Closes the **people-side
+audit-evidence loop** alongside the v0.2.27 IAM cluster — auditors now
+see the full pre-employment, contractual, training, and physical-access
+trail for every workforce member.
+
+### Added
+
+- `background_check_register` — pre-employment screening with
+  `Initiated → Consent → InProgress → (Cleared | Adverse | Inconclusive
+  | Withdrawn)` lifecycle. Per-line check types (Criminal / Employment /
+  Education / Credit / Identity / DrugScreen / Sanctions / Licensure /
+  References / RightToWork) with auto-derived terminal stage from line
+  results. `latest_cleared_for_subject(id)` is the auditor's "is this
+  person cleared?" query. Maps to SOC 2 CC1.4, ISO 27001 A.7.1.1,
+  NIST 800-53 PS-3, FCRA / GDPR consent.
+- `confidentiality_agreement` — NDA register with four kinds (OneWay /
+  Mutual / MultiParty / EmbeddedInOther), `Drafted → Sent → Signed →
+  InEffect → (Expired | Terminated)` lifecycle, signature collection
+  with required-party enforcement (`signatures_complete()`), term-based
+  default expiry, and overdue-review query. Maps to ISO 27001 A.13.2.4,
+  SOC 2 CC2.2.
+- `security_training_register` — mandatory training compliance with
+  course definitions (recurrence cadence + passing threshold) and per-
+  subject enrollments through `Assigned → InProgress → (Completed |
+  Failed | Exempt | Withdrawn)` lifecycle. `due_for_renewal(course,
+  now)` flags subjects whose latest satisfying completion is older than
+  the cadence; `overdue(now)` flags missed deadlines. Maps to ISO 27001
+  A.7.2.2, SOC 2 CC1.4, NIST 800-53 AT-2, HIPAA §164.530(b), PCI-DSS
+  12.6.
+- `physical_access_register` — facility / badge registry with four-tier
+  facility classification (Public / Internal / Restricted / Critical),
+  six credential kinds (Badge / Pin / Biometric / Mobile / HardwareKey
+  / Escorted), and per-grant lifecycle `Requested → Approved → Active →
+  (Suspended | Expired | Revoked)` with Denied branch. Restricted /
+  Critical tiers enforce **separation of duty** at approve() — approver
+  must differ from sponsor. Maps to ISO 27001 A.11.1.1-3, SOC 2 CC6.4,
+  NIST 800-53 PE-2/3, HIPAA §164.310.
+
+### Tests
+
+- 108 new unit tests (background_check_register 30,
+  confidentiality_agreement 24, security_training_register 29,
+  physical_access_register 25).
+- Cumulative sandbox-core lib: **3,656 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `BackgroundCheckRegister`, `BackgroundCheckRecord`, `ScreeningStage`,
+  `CheckType`, `CheckResult`, `CheckLine`
+- `ConfidentialityAgreementRegistry`, `ConfidentialityAgreement`,
+  `NdaKind`, `NdaStage`, `NdaPartyEntry`, `NdaPartyRole`,
+  `NdaSignatureRecord`
+- `SecurityTrainingRegister`, `Course`, `CourseKind`, `Enrollment`,
+  `EnrollmentStage`
+- `PhysicalAccessRegister`, `Facility`, `FacilityTier`,
+  `PhysicalAccessGrant`, `PhysicalGrantStage`, `CredentialKind`,
+  `PhysicalAccessEvent`
+
+---
+
 ## [0.2.29] - 2026-05-08
 
 Vendor & third-party governance cluster: GDPR Art 28 subprocessor list,
