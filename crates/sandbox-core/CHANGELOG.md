@@ -10,6 +10,52 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.22] - 2026-05-08
+
+Change & release management cluster: disaster recovery drills, service
+catalog (developer portal), deployment calendar (change windows / freeze
+periods), and structured customer release notes. Closes ITIL change
+control, SOC2 CC8.1, and ISO 22301 audit gaps in one push.
+
+### Added
+
+- `disaster_recovery` — DR plan registry with tier (Tier1..Tier4), target
+  RPO/RTO, drill cadence, drill history, and `drill_overdue` /
+  `last_drill_met_targets` queries. Maps to SOC2 CC9.1, ISO 22301,
+  NIST 800-34.
+- `service_catalog` — internal developer portal: service ownership,
+  on-call binding, repository, documentation links, compliance scope,
+  SLO bindings, and `Proposed → Alpha → Beta → Ga → Deprecated → Retired`
+  lifecycle. `missing_on_call()` flags live services with no on-call
+  schedule.
+- `deployment_calendar` — change windows, freezes, and maintenance
+  windows with `is_deployable_at()` returning `Allowed | Blocked` plus
+  the active freeze/window. Freezes always win; service-scoped freezes
+  isolate to listed services.
+- `release_notes` — structured per-version release log with
+  `Preview/Beta/Ga/Deprecated/Removed` stage, Keep-a-Changelog categories,
+  supersedes/superseded-by links, `since_version()` query, and Markdown
+  rendering for changelog publication.
+
+### Tests
+
+- 89 new unit tests (disaster_recovery 22, service_catalog 22,
+  deployment_calendar 20, release_notes 25).
+- Cumulative sandbox-core lib: **2,906 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `DisasterRecoveryRegistry`, `DrPlan`, `DrTier`, `DrDrillKind`,
+  `DrDrillOutcome`, `DrDrillRecord`
+- `ServiceCatalog`, `ServiceEntry`, `ServiceLifecycleStage`,
+  `ServiceComplianceScope`, `ServiceLink`, `SloBinding`
+- `DeploymentCalendar`, `CalendarEntry`, `CalendarEntryKind`,
+  `DeployabilityCheck`
+- `ReleaseNotesRegistry`, `ReleaseNote`, `NoteEntry`, `NoteCategory`,
+  `SupportStage`
+
+---
+
 ## [0.2.21] - 2026-05-08
 
 Operational-control cluster: secrets rotation, on-call schedules, and

@@ -229,7 +229,7 @@ dependencies = [
 
 [[package]]
 name = "aethelred-sandbox-core"
-version = "0.2.21"
+version = "0.2.22"
 dependencies = [
  "aethelred-core",
  "async-trait",

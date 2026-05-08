@@ -1,6 +1,6 @@
 [package]
 name = "aethelred-sandbox-core"
-version = "0.2.21"
+version = "0.2.22"
 edition = "2021"
 authors = ["Aethelred Team"]
 description = "Aethelred Infinity Sandbox Core — production-grade foundation for sector sandbox crates (seal, workflow, evidence, TEE, zkML, policy)"

@@ -122,8 +122,15 @@ pub use crate::deployment_pipeline::{
     Environment as DeployEnvironment, PipelineRegistry, PipelineRun, PipelineStage,
     PipelineStatus,
 };
+pub use crate::deployment_calendar::{
+    CalendarEntry, DeployabilityCheck, DeploymentCalendar, EntryKind as CalendarEntryKind,
+};
 pub use crate::differential_privacy::{
     DpAccountant, Mechanism as DpMechanism, PrivacyBudget, PrivateQuery, SeedRng,
+};
+pub use crate::disaster_recovery::{
+    DisasterRecoveryRegistry, DrPlan, DrTier, DrillKind as DrDrillKind,
+    DrillOutcome as DrDrillOutcome, DrillRecord as DrDrillRecord,
 };
 pub use crate::distributed_lock::{
     FenceGuard, FenceToken, InMemoryLockBackend, Lease, LockBackend, LockResource,
@@ -266,6 +273,9 @@ pub use crate::refund_register::{
 pub use crate::regulatory_change::{
     ChangeBuilder, ImpactArea, RegulatoryChange, RegulatoryChangeRegistry, TrackingStatus,
 };
+pub use crate::release_notes::{
+    NoteCategory, NoteEntry, ReleaseNote, ReleaseNotesRegistry, SupportStage,
+};
 pub use crate::report_scheduler::{
     Cadence, FiringStatus, ReportFiring, ReportSchedule, ReportScheduler, ScheduleBuilder,
 };
@@ -299,6 +309,10 @@ pub use crate::sandbox_template::{
 pub use crate::scanner::{Finding, ScanSummary, Scanner, ScannerConfig, SensitiveClass};
 pub use crate::secrets_rotation::{
     RotationEvent, RotationOutcome, SecretKind, SecretRecord, SecretsRotationRegistry,
+};
+pub use crate::service_catalog::{
+    ComplianceScope as ServiceComplianceScope, LifecycleStage as ServiceLifecycleStage,
+    Link as ServiceLink, ServiceCatalog, ServiceEntry, SloBinding,
 };
 pub use crate::service_map::{
     Criticality, Dependency, DependencyKind, Service, ServiceId, ServiceMap,
