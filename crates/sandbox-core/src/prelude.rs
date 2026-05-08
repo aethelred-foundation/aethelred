@@ -132,6 +132,10 @@ pub use crate::disaster_recovery::{
     DisasterRecoveryRegistry, DrPlan, DrTier, DrillKind as DrDrillKind,
     DrillOutcome as DrDrillOutcome, DrillRecord as DrDrillRecord,
 };
+pub use crate::dpia_register::{
+    AssessmentEvent as DpiaEvent, AssessmentStage as DpiaStage, Dpia, DpiaRegister,
+    IdentifiedRisk as DpiaRisk, LegalBasis as DpiaLegalBasis, RiskLevel as DpiaRiskLevel,
+};
 pub use crate::distributed_lock::{
     FenceGuard, FenceToken, InMemoryLockBackend, Lease, LockBackend, LockResource,
 };
@@ -145,6 +149,10 @@ pub use crate::drift::{
     DriftConfig, DriftDetector, DriftEvent, DriftSeverity, Histogram as DriftHistogram,
 };
 pub use crate::edge_node_registry::{EdgeNode, EdgeNodeRegistry, NodeStatus};
+pub use crate::encryption_inventory::{
+    DataClass as EncryptionDataClass, EncryptedAsset, EncryptionAlgorithm,
+    EncryptionInventory, KeyManager, RotationRecord as EncryptionRotationRecord,
+};
 pub use crate::error::{SandboxError, SandboxResult};
 pub use crate::error_code::{ErrorCategory, ErrorCode, ENTERPRISE_API_VERSION};
 pub use crate::error_taxonomy::{
@@ -252,6 +260,11 @@ pub use crate::pii_redaction::{
 pub use crate::privacy_budget_tracker::{
     BudgetEntry, BudgetKind, BudgetLimits, BudgetStatus, PrivacyBudgetTracker,
 };
+pub use crate::privacy_request_register::{
+    PrivacyRequest, PrivacyRequestRegister, PrivacyRightKind,
+    RequestEvent as PrivacyRequestEvent, RequestStage as PrivacyRequestStage,
+    SubjectKind as PrivacyRequestSubjectKind,
+};
 pub use crate::policy::{Decision, PolicyEngine, PolicyGate, PolicyOutcome};
 pub use crate::policy_dsl::{DslGate, DslRegulatorCitation, GateSeverity, PolicyDocument};
 pub use crate::policy_versioning::{
@@ -289,6 +302,10 @@ pub use crate::request_tracing::{
 pub use crate::retention_purge::{
     is_past_retention, is_past_retention_at, retention_max_age, InMemoryPurgeStorage,
     LegalHoldRegistry, PurgeCandidate, PurgeReceipt, PurgeRunner, PurgeStorage,
+};
+pub use crate::retention_register::{
+    CategoryAssignment, Disposition as RetentionDisposition, RetentionBasis,
+    RetentionClass as RetentionPolicyClass, RetentionRegister,
 };
 pub use crate::retry_policy::{BackoffKind, RetrySpec};
 pub use crate::risk_appetite::{

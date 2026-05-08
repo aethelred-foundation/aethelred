@@ -10,6 +10,57 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.23] - 2026-05-08
+
+Privacy & data-governance cluster: DPIA register (GDPR Art 35),
+privacy-rights request handling (GDPR Art 15-22 / CCPA), encryption-at-rest
+inventory, and data retention class registry. Closes the GDPR / CCPA /
+HIPAA / SOX evidence loop on the controller-side governance surface.
+
+### Added
+
+- `dpia_register` — Data Protection Impact Assessment register with
+  `Draft → InReview → Approved → InForce → Superseded` (and `Rejected`)
+  lifecycle, identified-risk inventory with inherent/residual levels,
+  `requiring_regulator_consultation()` query (GDPR Art 36), and supersedes
+  chain. Maps to GDPR Art 35.
+- `privacy_request_register` — DSAR / right-to-know / right-to-delete /
+  rectification / portability / objection / automated-decision-review /
+  opt-out tracking with `Received → Verified → InProgress → Fulfilled |
+  Rejected | Withdrawn` lifecycle, statutory deadline tracking, and
+  `overdue() / due_within(now, days)` queries. Maps to GDPR Art 15-22 and
+  CCPA / CPRA.
+- `encryption_inventory` — encryption-at-rest catalog: per-asset
+  algorithm, key manager (CloudKms / Hsm / Byok / Application), key
+  rotation history, `rotation_overdue()` and `audit_failures()` queries.
+  Maps to NIST 800-53 SC-28, PCI 3.5, HIPAA §164.312(a)(2)(iv).
+- `retention_register` — data retention policy catalog: classes with
+  legal basis (Statutory / Contractual / BusinessInterest / Consent /
+  LegalHold), disposition (HardDelete / CryptoShred / Anonymise /
+  Aggregate / ArchiveColdStorage), category-to-class assignment table,
+  annual-review tracking, and `unassigned_categories()` audit. Maps to
+  GDPR Art 5(1)(e), HIPAA §164.530(j), SOX §802.
+
+### Tests
+
+- 88 new unit tests (dpia_register 24, privacy_request_register 19,
+  encryption_inventory 21, retention_register 24).
+- Cumulative sandbox-core lib: **2,994 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `Dpia`, `DpiaRegister`, `DpiaStage`, `DpiaEvent`, `DpiaRisk`,
+  `DpiaLegalBasis`, `DpiaRiskLevel`
+- `PrivacyRequest`, `PrivacyRequestRegister`, `PrivacyRequestEvent`,
+  `PrivacyRequestStage`, `PrivacyRequestSubjectKind`, `PrivacyRightKind`
+- `EncryptedAsset`, `EncryptionInventory`, `EncryptionAlgorithm`,
+  `EncryptionDataClass`, `EncryptionRotationRecord`, `KeyManager`
+- `RetentionRegister`, `RetentionPolicyClass` (collision-safe rename;
+  `seal::RetentionClass` already in prelude), `RetentionBasis`,
+  `RetentionDisposition`, `CategoryAssignment`
+
+---
+
 ## [0.2.22] - 2026-05-08
 
 Change & release management cluster: disaster recovery drills, service
