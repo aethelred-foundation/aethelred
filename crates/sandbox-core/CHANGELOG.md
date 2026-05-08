@@ -10,6 +10,62 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.27] - 2026-05-08
+
+Identity & access governance cluster: periodic access certification,
+segregation-of-duties detection, privileged-access management (PAM),
+and joiner/mover/leaver identity lifecycle. Closes the people-side of
+SOC 2 CC6.x and ISO 27001 A.9.2.x.
+
+### Added
+
+- `access_certification` — quarterly access-review campaigns with
+  `Pending → InProgress → Completed | Cancelled` lifecycle, per-entitlement
+  `Reaffirmed | RevokeRequested | ModifyRequested | Pending` verdict,
+  and completion gate that rejects unresolved entitlements. Maps to
+  SOC 2 CC6.3, ISO 27001 A.9.2.5, PCI-DSS 7.x.
+- `segregation_of_duties` — declared SoD rule registry with
+  `evaluate(tenant, principal, holdings)` returning fired rules,
+  conflict kinds (Financial / Operational / Privacy / Compliance /
+  Security), and violation lifecycle
+  (Open → AcceptedWithCompensation | Remediated | FalsePositive). Maps
+  to SOX §404, SOC 2 CC6.1, NIST 800-53 AC-5, PCI 6.4.
+- `privileged_access_register` — PAM grant register with
+  `Requested → Approved → Active → Expired | Revoked` lifecycle
+  (Denied branch from Requested), approver-must-differ-from-principal
+  enforcement, justification + linked ticket fields, and
+  `overdue_revocation(now)` / `expiring_within(now, hours)` queries.
+  Maps to SOC 2 CC6.1, NIST 800-53 AC-6, PCI-DSS 7.2, ISO 27001 A.9.2.3.
+- `identity_lifecycle` — joiner/mover/leaver/termination/LOA event
+  registry with `Requested → InProgress → Completed | Cancelled`
+  lifecycle, per-event provisioning tasks
+  (CreateAccount / DisableAccount / AssignRole / IssueCredential / ...)
+  with task-level status (Pending / InProgress / Completed / Failed /
+  Skipped), `closed_with_failures()` audit query, and
+  `overdue(now)` for past-effective-date open events. Maps to SOC 2
+  CC6.2, ISO 27001 A.9.2.1-2, NIST 800-53 AC-2.
+
+### Tests
+
+- 96 new unit tests (access_certification 23, segregation_of_duties 26,
+  privileged_access_register 20, identity_lifecycle 27).
+- Cumulative sandbox-core lib: **3,354 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `AccessCertificationRegistry`, `CertificationCampaign`,
+  `AccessCampaignStage`, `Entitlement`, `EntitlementKind`,
+  `AccessReviewVerdict`
+- `SegregationOfDutiesRegistry`, `SodRule`, `SodViolation`,
+  `ConflictKind`, `EvaluationHit`, `SodViolationStatus`
+- `PrivilegedAccessRegister`, `PrivilegedGrant`, `PrivilegeKind`,
+  `GrantStage`, `PrivilegedGrantEvent`
+- `IdentityLifecycleRegistry`, `IdentityEvent`, `IdentityEventKind`,
+  `IdentityEventStage`, `ProvisioningTask`, `IdentityTaskKind`,
+  `IdentityTaskStatus`
+
+---
+
 ## [0.2.26] - 2026-05-08
 
 Enterprise risk & audit prep cluster: top-level enterprise risk

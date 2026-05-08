@@ -47,6 +47,7 @@
 #![warn(missing_docs, rust_2018_idioms)]
 #![allow(clippy::too_many_arguments)]
 
+pub mod access_certification;
 pub mod adversarial_detector;
 pub mod agent_guardrail;
 pub mod agent_session;
@@ -124,6 +125,7 @@ pub mod health;
 pub mod hsm;
 pub mod http_api;
 pub mod human_review_queue;
+pub mod identity_lifecycle;
 pub mod identity_proofing;
 pub mod incident;
 pub mod incident_drill;
@@ -153,6 +155,7 @@ pub mod pii_redaction;
 pub mod policy_dsl;
 pub mod privacy_budget_tracker;
 pub mod privacy_request_register;
+pub mod privileged_access_register;
 pub mod policy_versioning;
 pub mod red_team_log;
 pub mod refund_register;
@@ -185,6 +188,7 @@ pub mod supply_chain_sbom;
 pub mod schema;
 pub mod seal;
 pub mod sector;
+pub mod segregation_of_duties;
 pub mod service_catalog;
 pub mod service_map;
 pub mod shadow_mode;

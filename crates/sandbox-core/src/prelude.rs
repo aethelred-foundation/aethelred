@@ -18,6 +18,10 @@
 pub use crate::anchor::{
     AnchorProof, AnchorReceipt, AnchorService, FileAnchorService, MockAnchorService,
 };
+pub use crate::access_certification::{
+    AccessCertificationRegistry, CampaignStage as AccessCampaignStage, CertificationCampaign,
+    Entitlement, EntitlementKind, ReviewVerdict as AccessReviewVerdict,
+};
 pub use crate::adversarial_detector::{
     AdversarialDetector, ThreatBand, ThreatCategory, ThreatFlag, ThreatReport, ThreatScore,
 };
@@ -233,6 +237,11 @@ pub use crate::http_api::{Endpoint, HttpHandler, HttpMethod, HttpRequest, HttpRe
 pub use crate::human_review_queue::{
     ReviewDecision, ReviewItem, ReviewPriority, ReviewQueue, ReviewState, ReviewVerdict,
 };
+pub use crate::identity_lifecycle::{
+    EventKind as IdentityEventKind, EventStage as IdentityEventStage, IdentityEvent,
+    IdentityLifecycleRegistry, ProvisioningTask, TaskKind as IdentityTaskKind,
+    TaskStatus as IdentityTaskStatus,
+};
 pub use crate::identity_proofing::{
     AssuranceLevel, IdentityProofRegistry, ProofProvider, ProofRecord, ProofStatus, SubjectKind,
 };
@@ -305,6 +314,10 @@ pub use crate::privacy_request_register::{
     PrivacyRequest, PrivacyRequestRegister, PrivacyRightKind,
     RequestEvent as PrivacyRequestEvent, RequestStage as PrivacyRequestStage,
     SubjectKind as PrivacyRequestSubjectKind,
+};
+pub use crate::privileged_access_register::{
+    GrantEvent as PrivilegedGrantEvent, GrantStage, PrivilegeKind, PrivilegedAccessRegister,
+    PrivilegedGrant,
 };
 pub use crate::policy::{Decision, PolicyEngine, PolicyGate, PolicyOutcome};
 pub use crate::policy_dsl::{DslGate, DslRegulatorCitation, GateSeverity, PolicyDocument};
@@ -417,6 +430,10 @@ pub use crate::seal::{
     ApprovalRecord, DigitalSeal, ModelReference, RetentionClass, SealEnvelope, SealVersion,
 };
 pub use crate::sector::{Sector, SectorMetadata};
+pub use crate::segregation_of_duties::{
+    ConflictKind, EvaluationHit, SegregationOfDutiesRegistry, SodRule, SodViolation,
+    ViolationStatus as SodViolationStatus,
+};
 pub use crate::tee::{Attestation, AttestationVendor, TeePlatform};
 pub use crate::tee_verify::{
     AttestationDocument, MockTeeVerifier, TeeAttestationVerifier, TeeVerifierPolicy,
