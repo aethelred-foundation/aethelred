@@ -21,6 +21,9 @@ pub use crate::anchor::{
 pub use crate::adversarial_detector::{
     AdversarialDetector, ThreatBand, ThreatCategory, ThreatFlag, ThreatReport, ThreatScore,
 };
+pub use crate::agent_guardrail::{
+    AgentGuardrail, AgentGuardrailRegistry, GuardrailDecision, ProposedAction,
+};
 pub use crate::agent_session::{
     AgentSession, AgentSessionRegistry, SessionStatus, SessionTurn, TurnRole,
 };
@@ -48,6 +51,11 @@ pub use crate::anti_replay::{
 pub use crate::audit::{AuditEntry, AuditFormat, AuditTrail};
 pub use crate::audit_archival::{
     ArchiveBatch, ArchiveStorage, ArchiveTier, AuditArchiver, InMemoryArchiveStorage,
+};
+pub use crate::automated_decision_appeal::{
+    Appeal, AppealEvent, AppealRegister, AppealStage,
+    DecisionImpact as AppealDecisionImpact, EvidenceItem as AppealEvidenceItem,
+    OriginalDecision as AppealOriginalDecision,
 };
 pub use crate::backup_restore::{Backup, BackupKey, BackupManifest, EncryptedSnapshot};
 pub use crate::bias_detection::{
@@ -218,6 +226,10 @@ pub use crate::incident_postmortem::{
     ActionItem, ActionPriority, Impact as PostmortemImpact, Postmortem, PostmortemBuilder,
     PostmortemRegistry, PostmortemSeverity, RootCauseCategory, TimelineEvent,
 };
+pub use crate::inference_audit::{
+    CapturedInference, InferenceAuditLog, ReviewVerdict as InferenceReviewVerdict,
+    SamplingPolicy,
+};
 pub use crate::internal_messaging::{Message, MessageBus, Subscription as BusSubscription, Topic};
 pub use crate::lineage::{EdgeType, LineageEdge, LineageGraph, LineageNode};
 pub use crate::llm_cost_meter::{
@@ -229,6 +241,10 @@ pub use crate::metrics::{
 };
 pub use crate::model_card::{
     DataDescription, Factors, IntendedUse, Metric, ModelCard, ModelCardBuilder, ModelDetails,
+};
+pub use crate::model_evaluation_harness::{
+    Benchmark, BenchmarkKind, BenchmarkStatus, EvaluationHarness, EvaluationRun,
+    RunStage as EvaluationRunStage,
 };
 pub use crate::model_risk_register::{
     DecisionImpact, Finding as ModelRiskFinding, FindingSeverity, ModelEntry, ModelRiskRegister,

@@ -10,6 +10,57 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.24] - 2026-05-08
+
+Operational AI safety cluster: structured model evaluation harness,
+automated-decision appeals (GDPR Art 22), per-agent action guardrails,
+and sampled inference audit. Closes the operational governance loop on
+agent runtime safety, decision recourse, and continuous monitoring.
+
+### Added
+
+- `model_evaluation_harness` — release-gate eval suites with
+  `Pending → Running → (Passed | Failed | Aborted)` lifecycle, per-benchmark
+  threshold + direction (higher / lower is better), automatic pass/fail
+  derivation from measurements, and `latest_passed_for_model()` query.
+  Maps to NIST AI RMF GOVERN-1.4, EU AI Act Art 15, ISO/IEC 23053.
+- `automated_decision_appeal` — GDPR Art 22 appeal register with
+  `Filed → Verified → EvidenceCollection → UnderReview → (Upheld |
+  PartiallyOverturned | Overturned | Withdrawn)` lifecycle, evidence
+  inventory, reviewer assignment, mandatory reasoned outcome on overturn,
+  and `overturned() / high_impact() / overdue(now)` queries.
+- `agent_guardrail` — per-agent runtime action policy: tool allowlist,
+  approval-required tools, prohibited content categories, output-token
+  cap, tool-calls-per-turn cap, and `evaluate(action)` returning
+  `Allow | RequireApproval(reason) | Deny(reason)`. Fail-closed default
+  for unregistered agents. Maps to NIST AI RMF MANAGE-2.4, EU AI Act
+  Art 14, OWASP / MITRE ATLAS agent action policy.
+- `inference_audit` — capacity-bounded sampling log of production
+  inferences with sampling policy (Periodic / LowConfidence /
+  FlaggedOnly / All), reviewer verdicts (Correct / Borderline /
+  Incorrect / Unsafe / Inconclusive), `regressions()` + `unreviewed()`
+  queries, and FIFO eviction at capacity. Maps to NIST AI RMF MEASURE-2.7
+  and EU AI Act Art 12.
+
+### Tests
+
+- 87 new unit tests (model_evaluation_harness 25, automated_decision_appeal
+  21, agent_guardrail 25, inference_audit 16).
+- Cumulative sandbox-core lib: **3,081 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `EvaluationHarness`, `EvaluationRun`, `EvaluationRunStage`, `Benchmark`,
+  `BenchmarkKind`, `BenchmarkStatus`
+- `AppealRegister`, `Appeal`, `AppealEvent`, `AppealStage`,
+  `AppealDecisionImpact`, `AppealEvidenceItem`, `AppealOriginalDecision`
+- `AgentGuardrail`, `AgentGuardrailRegistry`, `GuardrailDecision`,
+  `ProposedAction`
+- `InferenceAuditLog`, `CapturedInference`, `InferenceReviewVerdict`,
+  `SamplingPolicy`
+
+---
+
 ## [0.2.23] - 2026-05-08
 
 Privacy & data-governance cluster: DPIA register (GDPR Art 35),

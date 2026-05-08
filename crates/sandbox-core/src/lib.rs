@@ -48,6 +48,7 @@
 #![allow(clippy::too_many_arguments)]
 
 pub mod adversarial_detector;
+pub mod agent_guardrail;
 pub mod agent_session;
 pub mod alert_router;
 pub mod anchor;
@@ -62,6 +63,7 @@ pub mod async_api;
 pub mod async_persistence;
 pub mod audit;
 pub mod audit_archival;
+pub mod automated_decision_appeal;
 pub mod backup_restore;
 pub mod bias_detection;
 pub mod billing_meter;
@@ -121,6 +123,7 @@ pub mod identity_proofing;
 pub mod incident;
 pub mod incident_drill;
 pub mod incident_postmortem;
+pub mod inference_audit;
 pub mod internal_messaging;
 pub mod lineage;
 pub mod llm_cost_meter;
@@ -130,6 +133,7 @@ pub mod prelude;
 pub mod prompt_registry;
 pub mod metrics;
 pub mod model_card;
+pub mod model_evaluation_harness;
 pub mod model_risk_register;
 pub mod multi_region_replication;
 pub mod rate_limit;
