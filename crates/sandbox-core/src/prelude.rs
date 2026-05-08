@@ -85,6 +85,9 @@ pub use crate::change_advisory_board::{
 pub use crate::billing_meter::{
     Invoice, InvoiceLine, MeterRegistry, MeterUnit, RateCard, UsageEvent, MICRO_PER_UNIT,
 };
+pub use crate::budget_register::{
+    Budget, BudgetRegister, BudgetState, SpendEvent, Watermarks,
+};
 pub use crate::bring_your_own_key::{
     Dek, DekManager, InMemoryKek, KekId, KekProvider, KekRegistry, KekRotation,
 };
@@ -97,6 +100,10 @@ pub use crate::capability_token::{
 };
 pub use crate::chaos_inject::{
     ChaosHarness, FaultCategory, FaultDecision, FaultRule, InjectedFault,
+};
+pub use crate::chargeback_report::{
+    Adjustment as ChargebackAdjustment, ChargebackRegister, ChargebackReport,
+    LineItem as ChargebackLineItem, ReportStage as ChargebackStage,
 };
 pub use crate::compliance_dashboard::{
     ComplianceSnapshot, DashboardBuilder, Kpi, KpiSeverity, SnapshotHistory,
@@ -114,6 +121,9 @@ pub use crate::content_moderation::{
 pub use crate::control_test_register::{
     ControlTest, ControlTestRegister, PeriodSummary as ControlTestPeriodSummary,
     RemediationStatus as ControlRemediationStatus, TestMethod, TestOutcome,
+};
+pub use crate::cost_attribution::{
+    Allocation, AllocationMethod, CostAttributionRegistry, CostEntry,
 };
 pub use crate::cross_chain_anchor::{
     ChainId, ChainReceipt, CrossChainAnchor, CrossChainBundle, CrossChainStatus,
@@ -326,6 +336,9 @@ pub use crate::policy_versioning::{
 };
 pub use crate::prompt_registry::{
     PromptRegistry, PromptRole, PromptVariant, PromptVersion,
+};
+pub use crate::rate_card_versioning::{
+    RateCardRegistry, RateCardVersion, RateLine, VersionStatus as RateCardVersionStatus,
 };
 pub use crate::rate_limit::{
     BreakerConfig, BucketConfig, CircuitBreaker, CircuitState, RateDecision, RateLimiter,

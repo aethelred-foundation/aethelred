@@ -10,6 +10,56 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.28] - 2026-05-08
+
+FinOps & cost-control cluster: per-entity cost allocation, budget
+tracking with variance, internal chargeback reports, and effective-dated
+rate cards. Closes the FinOps Foundation framework loop —
+`billing_meter` measures usage, this cluster decides who pays.
+
+### Added
+
+- `cost_attribution` — per-entity cost allocation in micro-units (1 USD
+  = 1_000_000) with four allocation methods: `DirectAttribution`,
+  `EvenSplit`, `UsageProrate` (weighted), `Custom` (caller-supplied per-
+  owner amounts validated against total). Sum of per-owner amounts
+  always equals input total — last entry absorbs remainder. Maps to
+  FinOps Foundation "Allocation" capability.
+- `budget_register` — per-period budgets with cumulative spend, three-
+  level watermarks (warning / critical / exceeded as percentages), and
+  deterministic state recomputation
+  (`OnTrack | Warning | Critical | Exceeded`) on every spend / credit /
+  amount change. `alerting()` and `exceeded()` queries power FinOps
+  dashboards.
+- `chargeback_report` — invoice-style internal reports with
+  `Draft → Issued → Disputed | Settled` lifecycle, line items,
+  post-issue adjustments, and `recipient_total_micro()` aggregation.
+  Maps to FinOps Foundation "Showback / Chargeback" capability.
+- `rate_card_versioning` — effective-dated rate cards with
+  `Draft → Active → Superseded | Discarded` lifecycle, half-open window
+  semantics ([effective_at, effective_until)), overlap detection at
+  activation (drafts can be created with overlapping windows so
+  successors stage cleanly before `supersede(older, newer)` closes the
+  predecessor), and `current_at(card, tenant, now)` resolution.
+
+### Tests
+
+- 101 new unit tests (cost_attribution 24, budget_register 26,
+  chargeback_report 23, rate_card_versioning 28).
+- Cumulative sandbox-core lib: **3,455 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `CostAttributionRegistry`, `CostEntry`, `Allocation`,
+  `AllocationMethod`
+- `BudgetRegister`, `Budget`, `BudgetState`, `Watermarks`, `SpendEvent`
+- `ChargebackRegister`, `ChargebackReport`, `ChargebackLineItem`,
+  `ChargebackAdjustment`, `ChargebackStage`
+- `RateCardRegistry`, `RateCardVersion`, `RateLine`,
+  `RateCardVersionStatus`
+
+---
+
 ## [0.2.27] - 2026-05-08
 
 Identity & access governance cluster: periodic access certification,
