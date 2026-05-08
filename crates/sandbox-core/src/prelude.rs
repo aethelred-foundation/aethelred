@@ -163,6 +163,10 @@ pub use crate::encryption_inventory::{
 };
 pub use crate::error::{SandboxError, SandboxResult};
 pub use crate::error_code::{ErrorCategory, ErrorCode, ENTERPRISE_API_VERSION};
+pub use crate::escalation_matrix::{
+    EscalationMatrix, EscalationPolicy, EscalationStep, EscalationTier, NextStep,
+    Severity as EscalationSeverity,
+};
 pub use crate::error_taxonomy::{
     CanonicalError, ErrorClass, ErrorSeverity, ErrorTaxonomy,
 };
@@ -183,6 +187,10 @@ pub use crate::feature_store_freshness::{
 };
 pub use crate::feature_store_provenance::{
     FeatureBatch, FeatureProvenanceLog, FeatureSnapshot, FeatureSource,
+};
+pub use crate::forensic_capture::{
+    CustodyAction, CustodyEvent, EvidenceKind as ForensicEvidenceKind, ForensicCapture,
+    ForensicCaptureRegistry,
 };
 pub use crate::feature_announcement::{
     Announcement, AnnouncementBuilder, AnnouncementKind, AnnouncementRegistry,
@@ -225,6 +233,10 @@ pub use crate::incident_drill::{
 pub use crate::incident_postmortem::{
     ActionItem, ActionPriority, Impact as PostmortemImpact, Postmortem, PostmortemBuilder,
     PostmortemRegistry, PostmortemSeverity, RootCauseCategory, TimelineEvent,
+};
+pub use crate::incident_war_room::{
+    IncidentWarRoomRegistry, Role as WarRoomRole, RoleAssignment as WarRoomRoleAssignment,
+    TimelineEntry as WarRoomTimelineEntry, WarRoom, WarRoomActionItem, WarRoomStage,
 };
 pub use crate::inference_audit::{
     CapturedInference, InferenceAuditLog, ReviewVerdict as InferenceReviewVerdict,
@@ -365,6 +377,11 @@ pub use crate::slo_tracking::{
 };
 pub use crate::sso_integration::{
     GroupMapping, IdpKind, SsoConfig, SsoConfigBuilder, SsoRegistry, SsoStatus,
+};
+pub use crate::status_page::{
+    Component as StatusComponent, IncidentStage as StatusIncidentStage,
+    IncidentUpdate as StatusIncidentUpdate, OperationalStatus, PageSummary, PublicIncident,
+    StatusPage,
 };
 pub use crate::streaming_connector::{
     DeadLetterMessage, InMemorySource, PullStats, ReconnectPolicy, StreamCursor, StreamMessage,

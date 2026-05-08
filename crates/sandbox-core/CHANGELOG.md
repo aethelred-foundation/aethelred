@@ -10,6 +10,66 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.25] - 2026-05-08
+
+Incident-response operational maturity cluster: real-time war-room state,
+escalation matrices, forensic captures with chain-of-custody, and
+public status pages. Closes the operational loop on **active** incident
+coordination — existing modules tracked the records of past incidents;
+this cluster covers what's happening right now.
+
+### Added
+
+- `incident_war_room` — real-time war-room state with
+  `Activated → InProgress → Mitigated → Resolved` lifecycle (with
+  re-flare from Mitigated → InProgress), role assignments
+  (Commander / CommsLead / TechLead / Scribe / Sme / ExecSponsor /
+  CustomerLiaison), evolving hypothesis, customer-facing summary,
+  timeline, and in-flight action items. `missing_commander()` flags
+  active war rooms without a commander assigned. Maps to NIST 800-53
+  IR-4, ITIL incident management, ISO 27035.
+- `escalation_matrix` — per-(severity, service) escalation policies
+  with `next_step(now, last_ack_at)` returning the tier that should
+  fire based on elapsed time without ack. Tenant-wide defaults via
+  `service_id == ""`. Tier ordering enforced (Primary → Secondary →
+  Manager → Director → Executive). Maps to ITIL escalation, NIST
+  800-53 IR-6, SOC2 CC7.4.
+- `forensic_capture` — chain-of-custody preserved evidence registry:
+  SHA-256 integrity hash, custody event log (Captured / Verified /
+  VerificationFailed / Transferred / Released / Sealed / Destroyed),
+  metadata-only storage with out-of-band byte URI, `verify()` against
+  externally-recomputed hash with automatic custody-break detection,
+  `broken_custody()` and `sealed()` queries. Maps to NIST 800-86,
+  ISO 27037, SANS chain-of-custody.
+- `status_page` — public-facing status board: per-component operational
+  status with worst-severity rollup, public incident lifecycle
+  (`Investigating → Identified → Monitoring → Resolved →
+  PostmortemPublished` with re-flare allowed from Monitoring back to
+  Investigating), impacted-component tagging, postmortem URLs, and
+  `summary(generated_at, recent_count)` rendering for HTML/JSON pages.
+  Maps to Statuspage / Atlassian Statuspage / instatus pattern.
+
+### Tests
+
+- 93 new unit tests (incident_war_room 28, escalation_matrix 20,
+  forensic_capture 21, status_page 24).
+- Cumulative sandbox-core lib: **3,174 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `IncidentWarRoomRegistry`, `WarRoom`, `WarRoomStage`,
+  `WarRoomActionItem`, `WarRoomRole`, `WarRoomRoleAssignment`,
+  `WarRoomTimelineEntry`
+- `EscalationMatrix`, `EscalationPolicy`, `EscalationStep`,
+  `EscalationTier`, `EscalationSeverity`, `NextStep`
+- `ForensicCaptureRegistry`, `ForensicCapture`, `CustodyAction`,
+  `CustodyEvent`, `ForensicEvidenceKind`
+- `StatusPage`, `StatusComponent`, `OperationalStatus`,
+  `StatusIncidentStage`, `StatusIncidentUpdate`, `PublicIncident`,
+  `PageSummary`
+
+---
+
 ## [0.2.24] - 2026-05-08
 
 Operational AI safety cluster: structured model evaluation harness,
