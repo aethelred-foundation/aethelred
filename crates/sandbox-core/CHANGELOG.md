@@ -10,6 +10,68 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.29] - 2026-05-08
+
+Vendor & third-party governance cluster: GDPR Art 28 subprocessor list,
+vendor due-diligence questionnaire scoring, Data Processing Agreement
+inventory, and structured vendor offboarding. Closes the third-party
+governance evidence loop alongside existing `third_party_risk` and
+`supply_chain_sbom` modules.
+
+### Added
+
+- `subprocessor_register` — public-facing GDPR Art 28 subprocessor list
+  with `Proposed → NotificationSent → Approved | Objected | Withdrawn →
+  Active → Retired` lifecycle, customer-objection tracking with
+  auto-stage transition, notice-window enforcement
+  (`in_notice_window(now)` / `notice_window_expired(now)`), and
+  special-category-data flagging.
+- `vendor_assessment` — DDQ register with eight question domains
+  (Security / Privacy / Compliance / Financial / Operational /
+  BusinessContinuity / AiMl / Other), weighted scoring (1-10 weight,
+  0-5 score, returned in basis points 0-500), per-domain rollup, and
+  `Drafted → Sent → InReview → Completed | Cancelled` lifecycle with
+  Verdict (`Approved | ApprovedWithConditions | Rejected | Pending`).
+  Maps to SOC 2 CC9.2, ISO 27001 A.15.1.1, NIST 800-53 SR-3.
+- `data_processing_agreement` — DPA / BAA / SCC contract inventory
+  with `Drafted → InReview → Signed → InEffect → (Renewed | Expired |
+  Terminated)` lifecycle, signature records, periodic-review tracking
+  with cadence enforcement, document URI + SHA-256, and
+  `link_renewal(older, newer)` chaining successors. Maps to GDPR Art 28,
+  HIPAA BAA, CCPA service-provider contracts.
+- `vendor_offboarding` — structured offboarding workflow with
+  per-event tasks (RevokeAccess / ReclaimCredentials / ReturnData /
+  ConfirmDataDestruction / ConfirmSubprocessorDestruction /
+  SettleFinalInvoice / TerminateContract / UpdateRegisters /
+  KnowledgeTransfer / NotifyCustomers), task-level status, trigger
+  taxonomy (ContractEnd / Replacement / SecurityIncident / etc.), and
+  Completion Certificate issuance on close. Maps to GDPR Art 28(3)(g),
+  HIPAA §164.504(e)(2)(ii)(I), SOC 2 CC9.2, ISO 27001 A.15.2.1.
+
+### Tests
+
+- 93 new unit tests (subprocessor_register 21, vendor_assessment 23,
+  data_processing_agreement 22, vendor_offboarding 27).
+- Cumulative sandbox-core lib: **3,548 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `SubprocessorRegister`, `SubprocessorEntry`, `SubprocessorStage`,
+  `SubprocessorEvent`, `ProcessingPurpose`, `SubprocessorDataCategory`,
+  `CustomerObjection`
+- `VendorAssessmentRegistry`, `VendorAssessment`,
+  `VendorAssessmentStage`, `VendorAssessmentQuestion`, `QuestionDomain`,
+  `VendorAssessmentVerdict`
+- `DataProcessingAgreementRegistry`, `DataProcessingAgreement`,
+  `AgreementKind`, `AgreementStage`, `DpaSignatureRecord`,
+  `DpaReviewRecord`
+- `VendorOffboardingRegistry`, `VendorOffboardingEvent`,
+  `VendorOffboardingStage`, `OffboardingTask`,
+  `VendorOffboardingTaskKind`, `VendorOffboardingTaskStatus`,
+  `OffboardingTrigger`, `VendorOffboardingCertificate`
+
+---
+
 ## [0.2.28] - 2026-05-08
 
 FinOps & cost-control cluster: per-entity cost allocation, budget

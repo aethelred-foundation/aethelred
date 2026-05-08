@@ -137,6 +137,11 @@ pub use crate::customer_health::{
 pub use crate::dashboard_widget::{
     Dashboard, DashboardRegistry, Layout as DashboardLayout, RefreshPolicy, Widget, WidgetKind,
 };
+pub use crate::data_processing_agreement::{
+    AgreementKind, AgreementStage, DataProcessingAgreement,
+    DataProcessingAgreementRegistry, ReviewRecord as DpaReviewRecord,
+    SignatureRecord as DpaSignatureRecord,
+};
 pub use crate::data_quality_monitor::{
     DataExpectation, DataQualityMonitor, DataQualityReport, DataSample, FieldSpec, FieldType,
     FieldValue, QualityCategory, QualityFinding,
@@ -436,6 +441,10 @@ pub use crate::streaming_export::{
 pub use crate::subgroup_robustness::{
     CohortKey, CohortObservation, CohortStats, SubgroupReport, SubgroupRobustnessMonitor,
 };
+pub use crate::subprocessor_register::{
+    CustomerObjection, DataCategory as SubprocessorDataCategory, ProcessingPurpose,
+    SubprocessorEntry, SubprocessorEvent, SubprocessorRegister, SubprocessorStage,
+};
 pub use crate::supply_chain_sbom::{
     Component, Sbom, SbomFormat, SbomRegistry, VulnSeverity, Vulnerability,
 };
@@ -479,6 +488,17 @@ pub use crate::training_run::{
 };
 pub use crate::user_session::{
     MfaFactor, SessionActivity, SessionState, UserSession, UserSessionRegistry,
+};
+pub use crate::vendor_assessment::{
+    AssessmentStage as VendorAssessmentStage, Question as VendorAssessmentQuestion,
+    QuestionDomain, VendorAssessment, VendorAssessmentRegistry,
+    Verdict as VendorAssessmentVerdict,
+};
+pub use crate::vendor_offboarding::{
+    CompletionCertificate as VendorOffboardingCertificate,
+    EventStage as VendorOffboardingStage, OffboardingTask, OffboardingTrigger,
+    TaskKind as VendorOffboardingTaskKind, TaskStatus as VendorOffboardingTaskStatus,
+    VendorOffboardingEvent, VendorOffboardingRegistry,
 };
 pub use crate::time_query::{Bucket, TimeHistogram, TimeQuery};
 pub use crate::token_delegation::{
