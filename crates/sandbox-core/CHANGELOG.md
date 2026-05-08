@@ -10,6 +10,69 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.26] - 2026-05-08
+
+Enterprise risk & audit prep cluster: top-level enterprise risk
+register, control test history, external audit finding tracker, and
+regulatory correspondence log. Closes the audit-prep loop — the four
+registers compliance teams pull out before a SOC 2 / ISO 27001 / regulator
+examination.
+
+### Added
+
+- `enterprise_risk_register` — top-level board-level risk register with
+  `Identified → Analyzed → Treating → Monitored → Closed` lifecycle
+  (with `Monitored → Treating` re-treatment loop), inherent + residual
+  ratings (likelihood × impact), treatment strategy
+  (Accept / Mitigate / Transfer / Avoid), control bindings, board
+  acceptance flag, annual review tracking, and `top_by_residual()` /
+  `requiring_board_attention()` queries. Maps to ISO 31000, COSO ERM,
+  NIST 800-37, SOC 2 CC3.2.
+- `control_test_register` — operational evidence-of-operation for
+  compliance controls: per-test outcome (Passed / Failed / Exception /
+  NotApplicable), method (Inspection / Observation / Reperformance /
+  Inquiry / Automated), remediation tracking with status
+  (NotStarted → InProgress → Implemented → Verified), and
+  `period_summary(period)` aggregate statistics. Maps to SOC 2 Type II,
+  ISO 27001 9.2, PCI-DSS 12.x, NIST 800-53 CA-7.
+- `audit_finding_tracker` — external audit finding registry with
+  `Open → AcceptedByMgmt → Remediating → Remediated → Verified` lifecycle
+  (plus `Disputed`, `Withdrawn`, `Closed` branches and
+  `Remediated → Remediating` re-test loop), severity (Critical / High /
+  Moderate / Low / Informational), source (Soc2 / Iso27001 / PciQsa /
+  Hipaa / Sox / Internal / Regulator / CustomerAudit / PenTest), linked
+  controls and risks, and `material_open()` / `overdue(now)` queries.
+- `regulatory_correspondence` — bidirectional log of regulator
+  communications: direction (Inbound / Outbound), kind
+  (InformationRequest / ExaminationNotice / SelfDisclosure / Inquiry /
+  Response / Filing / ExaminationFindings / EnforcementAction /
+  NoActionLetter / General), `Logged → Acknowledged → ResponseDrafted →
+  ResponseSubmitted → Closed` lifecycle (with re-draft loop after
+  rejection), document storage URI + SHA-256, response deadline
+  tracking, and `chronological()` / `for_finding()` / `overdue()`
+  queries. Maps to SEC 17a-4, FFIEC, FCA Principle 11, SOX §906.
+
+### Tests
+
+- 84 new unit tests (enterprise_risk_register 25, control_test_register
+  20, audit_finding_tracker 20, regulatory_correspondence 19).
+- Cumulative sandbox-core lib: **3,258 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `EnterpriseRiskRegister`, `EnterpriseRisk`, `RiskCategory`,
+  `RiskRating`, `RiskStage`, `TreatmentStrategy`,
+  `EnterpriseControlReference`, `EnterpriseRiskEvent`
+- `ControlTestRegister`, `ControlTest`, `TestMethod`, `TestOutcome`,
+  `ControlRemediationStatus`, `ControlTestPeriodSummary`
+- `AuditFindingTracker`, `AuditFinding`, `AuditFindingStage`,
+  `AuditFindingSeverity`, `AuditSource`, `AuditFindingEvent`
+- `RegulatoryCorrespondence`, `CorrespondenceItem`, `CorrespondenceKind`,
+  `CorrespondenceDirection`, `CorrespondenceStatus`,
+  `CorrespondenceEvent`
+
+---
+
 ## [0.2.25] - 2026-05-08
 
 Incident-response operational maturity cluster: real-time war-room state,

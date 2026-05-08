@@ -52,6 +52,10 @@ pub use crate::audit::{AuditEntry, AuditFormat, AuditTrail};
 pub use crate::audit_archival::{
     ArchiveBatch, ArchiveStorage, ArchiveTier, AuditArchiver, InMemoryArchiveStorage,
 };
+pub use crate::audit_finding_tracker::{
+    AuditFinding, AuditFindingTracker, AuditSource, FindingEvent as AuditFindingEvent,
+    FindingSeverity as AuditFindingSeverity, FindingStage as AuditFindingStage,
+};
 pub use crate::automated_decision_appeal::{
     Appeal, AppealEvent, AppealRegister, AppealStage,
     DecisionImpact as AppealDecisionImpact, EvidenceItem as AppealEvidenceItem,
@@ -102,6 +106,10 @@ pub use crate::content_archive::{
 pub use crate::content_moderation::{
     ModerationCategory, ModerationLabel, ModerationLog, ModerationResult, ModerationSource,
     ModerationVerdict,
+};
+pub use crate::control_test_register::{
+    ControlTest, ControlTestRegister, PeriodSummary as ControlTestPeriodSummary,
+    RemediationStatus as ControlRemediationStatus, TestMethod, TestOutcome,
 };
 pub use crate::cross_chain_anchor::{
     ChainId, ChainReceipt, CrossChainAnchor, CrossChainBundle, CrossChainStatus,
@@ -163,6 +171,11 @@ pub use crate::encryption_inventory::{
 };
 pub use crate::error::{SandboxError, SandboxResult};
 pub use crate::error_code::{ErrorCategory, ErrorCode, ENTERPRISE_API_VERSION};
+pub use crate::enterprise_risk_register::{
+    ControlReference as EnterpriseControlReference, EnterpriseRisk, EnterpriseRiskRegister,
+    RiskCategory, RiskEvent as EnterpriseRiskEvent, RiskRating, RiskStage,
+    TreatmentStrategy,
+};
 pub use crate::escalation_matrix::{
     EscalationMatrix, EscalationPolicy, EscalationStep, EscalationTier, NextStep,
     Severity as EscalationSeverity,
@@ -313,6 +326,10 @@ pub use crate::refund_register::{
 };
 pub use crate::regulatory_change::{
     ChangeBuilder, ImpactArea, RegulatoryChange, RegulatoryChangeRegistry, TrackingStatus,
+};
+pub use crate::regulatory_correspondence::{
+    CorrespondenceEvent, CorrespondenceItem, CorrespondenceKind, Direction as CorrespondenceDirection,
+    RegulatoryCorrespondence, Status as CorrespondenceStatus,
 };
 pub use crate::release_notes::{
     NoteCategory, NoteEntry, ReleaseNote, ReleaseNotesRegistry, SupportStage,
