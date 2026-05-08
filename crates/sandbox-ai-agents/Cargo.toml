@@ -1,0 +1,30 @@
+[package]
+name = "aethelred-sandbox-ai-agents"
+version = "0.2.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Aethelred Infinity Sandbox — AI Agent Control Plane. Agent passport lifecycle, tool manifest, action trail, prompt-injection defense. EU AI Act Article 26 (deployer obligations) + ISO/IEC 42001 + NIST AI RMF."
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-mvp"
+keywords = ["sandbox", "ai-agents", "passport", "tool-manifest", "prompt-injection"]
+categories = ["development-tools::testing", "simulation"]
+
+[features]
+default = []
+async = ["aethelred-sandbox-core/async"]
+
+[dependencies]
+aethelred-sandbox-core = { path = "../sandbox-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.20", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+tracing = "0.1"
+
+[dev-dependencies]
+serde_json = "1.0"
+proptest = "1.6"
+
+[lints]
+workspace = true

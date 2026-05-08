@@ -1,0 +1,30 @@
+[package]
+name = "aethelred-sandbox-defense"
+version = "0.2.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Aethelred Infinity Sandbox — Defense AI Assurance. Autonomous logistics, sensor fusion, inspection QA, cyber-defense workflows with STANAG 4586 / DDS / Link 16 alignment, ITAR / EU dual-use posture, and air-gap mode."
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-mvp"
+keywords = ["sandbox", "defense", "ai", "stanag", "tee"]
+categories = ["development-tools::testing", "simulation"]
+
+[features]
+default = []
+async = ["aethelred-sandbox-core/async"]
+
+[dependencies]
+aethelred-sandbox-core = { path = "../sandbox-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.20", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+tracing = "0.1"
+
+[dev-dependencies]
+serde_json = "1.0"
+proptest = "1.6"
+
+[lints]
+workspace = true

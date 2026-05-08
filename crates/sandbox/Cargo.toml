@@ -22,12 +22,40 @@ tokio = { version = "=1.49.0", features = ["full"], optional = true }
 # Logging
 tracing = "=0.1.44"
 
+# ---------------------------------------------------------------------------
+# v0.2 Infinity Sandbox sector crates (re-exported under `infinity::*`).
+# All optional behind feature flags so existing users of the legacy v0.1
+# enterprise_sandboxes API are not forced to pull the seven sectors.
+# ---------------------------------------------------------------------------
+aethelred-sandbox-core = { path = "../sandbox-core", optional = true }
+aethelred-sandbox-finance = { path = "../sandbox-finance", optional = true }
+aethelred-sandbox-healthcare = { path = "../sandbox-healthcare", optional = true }
+aethelred-sandbox-defense = { path = "../sandbox-defense", optional = true }
+aethelred-sandbox-supply-chain = { path = "../sandbox-supply-chain", optional = true }
+aethelred-sandbox-ai-agents = { path = "../sandbox-ai-agents", optional = true }
+aethelred-sandbox-autonomous-mobility = { path = "../sandbox-autonomous-mobility", optional = true }
+aethelred-sandbox-research = { path = "../sandbox-research", optional = true }
+
 [dev-dependencies]
 tokio = { version = "=1.49.0", features = ["full", "test-util"] }
 
 [features]
 default = []
 async = ["tokio"]
+# `infinity` enables ALL seven Infinity Sandbox sector crates and re-exports
+# them under the `aethelred_sandbox::infinity::{finance, healthcare, ...}`
+# module tree. Customers who want only one sector should depend directly on
+# the sector crate (e.g., `aethelred-sandbox-finance`).
+infinity = [
+    "aethelred-sandbox-core",
+    "aethelred-sandbox-finance",
+    "aethelred-sandbox-healthcare",
+    "aethelred-sandbox-defense",
+    "aethelred-sandbox-supply-chain",
+    "aethelred-sandbox-ai-agents",
+    "aethelred-sandbox-autonomous-mobility",
+    "aethelred-sandbox-research",
+]
 
 [[example]]
 name = "trade_finance_demo"

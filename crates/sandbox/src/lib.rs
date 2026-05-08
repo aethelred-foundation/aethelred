@@ -66,6 +66,9 @@ pub mod runtime;
 /// Scenario Library - Bank-grade templates
 pub mod scenarios;
 
+/// Enterprise-grade regulated AI sandbox packs
+pub mod enterprise_sandboxes;
+
 /// Multi-Party Clean Rooms - Blind collaboration
 pub mod cleanroom;
 
@@ -107,9 +110,78 @@ pub use adversarial::*;
 pub use cleanroom::*;
 pub use core::*;
 pub use ctf::*;
+pub use enterprise_sandboxes::*;
 pub use profiler::*;
 pub use quantum::*;
 pub use regulatory::*;
 pub use runtime::*;
 pub use scenarios::*;
 pub use visualizer::*;
+
+// ============================================================================
+// v0.2 — Infinity Sandbox sector crates (gated by the `infinity` feature)
+// ============================================================================
+
+/// The seven production-grade sector sandboxes — Finance, Healthcare,
+/// Defense, Supply Chain, AI Agents, Autonomous Mobility, Research — built
+/// on a shared [`infinity::core`] foundation that uses the workspace
+/// `aethelred-core::crypto` primitives (real SHA-256 / Merkle / hybrid
+/// ECDSA + Dilithium-3 signatures).
+///
+/// Each sector exposes a plug-and-play `<Sector>Sandbox::quickstart(tenant)`
+/// constructor and a `prelude` module so customers can integrate in three
+/// lines:
+///
+/// ```ignore
+/// use aethelred_sandbox::infinity::finance::prelude::*;
+/// let sb = FinanceSandbox::quickstart("FAB").unwrap();
+/// let seal = sb.seal_credit_decision(CreditDecision::demo()).unwrap();
+/// ```
+///
+/// Enable with `features = ["infinity"]` on the `aethelred-sandbox`
+/// dependency, or depend directly on a specific
+/// `aethelred-sandbox-<sector>` crate to avoid pulling all seven.
+#[cfg(feature = "infinity")]
+pub mod infinity {
+    /// Shared foundation.
+    pub use aethelred_sandbox_core as core;
+
+    /// Finance AI Assurance — credit, AML, trading, advisory.
+    pub mod finance {
+        pub use aethelred_sandbox_finance::*;
+    }
+
+    /// Healthcare AI Assurance — genomics, clinical AI, ambient scribe, claims.
+    pub mod healthcare {
+        pub use aethelred_sandbox_healthcare::*;
+    }
+
+    /// Defense AI Assurance — autonomous logistics, sensor fusion, inspection,
+    /// cyber defense (with air-gap mode).
+    pub mod defense {
+        pub use aethelred_sandbox_defense::*;
+    }
+
+    /// Supply Chain Integrity — batch, customs, carbon, methane.
+    pub mod supply_chain {
+        pub use aethelred_sandbox_supply_chain::*;
+    }
+
+    /// AI Agent Control Plane — passport, tool manifest, action trail,
+    /// prompt-injection defense.
+    pub mod ai_agents {
+        pub use aethelred_sandbox_ai_agents::*;
+    }
+
+    /// Autonomous Mobility Assurance — ODD validation, mission replay,
+    /// perception events, safety case.
+    pub mod autonomous_mobility {
+        pub use aethelred_sandbox_autonomous_mobility::*;
+    }
+
+    /// Research Reproducibility — experiment runs, model release,
+    /// reproducibility checks, training-run lineage.
+    pub mod research {
+        pub use aethelred_sandbox_research::*;
+    }
+}

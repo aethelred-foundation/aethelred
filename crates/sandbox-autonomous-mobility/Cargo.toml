@@ -1,0 +1,30 @@
+[package]
+name = "aethelred-sandbox-autonomous-mobility"
+version = "0.2.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Aethelred Infinity Sandbox — Autonomous Mobility Assurance. Operational Design Domain (ODD) validation, mission replay, safety case events. ROS2 DDS / FMI / OpenUSD. ISO 21448 SOTIF / ISO 26262 / DO-178C / DO-326A / DO-356A."
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-mvp"
+keywords = ["sandbox", "autonomous-mobility", "odd", "sotif", "do-178c"]
+categories = ["development-tools::testing", "simulation"]
+
+[features]
+default = []
+async = ["aethelred-sandbox-core/async"]
+
+[dependencies]
+aethelred-sandbox-core = { path = "../sandbox-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.20", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+tracing = "0.1"
+
+[dev-dependencies]
+serde_json = "1.0"
+proptest = "1.6"
+
+[lints]
+workspace = true

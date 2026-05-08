@@ -1,0 +1,32 @@
+[package]
+name = "aethelred-sandbox-finance"
+version = "0.2.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Aethelred Infinity Sandbox — Finance AI Assurance. Credit, AML/sanctions, trading, advisory, and treasury workflows with FIX 4.4 / FpML / ISO 20022 / SWIFT alignment and CBUAE / SCA / FSRA / DFSA / FCA / OCC / MAS regulator views."
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-mvp"
+keywords = ["sandbox", "finance", "ai", "aml", "credit"]
+categories = ["development-tools::testing", "simulation"]
+
+[features]
+default = []
+# Enable async API (consumes core's `async` feature).
+async = ["aethelred-sandbox-core/async"]
+
+[dependencies]
+aethelred-sandbox-core = { path = "../sandbox-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.20", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+tracing = "0.1"
+rust_decimal = { version = "1.36", features = ["serde-with-str"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+proptest = "1.6"
+
+[lints]
+workspace = true

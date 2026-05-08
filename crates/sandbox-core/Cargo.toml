@@ -1,0 +1,71 @@
+[package]
+name = "aethelred-sandbox-core"
+version = "0.2.21"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Aethelred Infinity Sandbox Core — production-grade foundation for sector sandbox crates (seal, workflow, evidence, TEE, zkML, policy)"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-mvp"
+keywords = ["sandbox", "ai", "tee", "zkml", "evidence"]
+categories = ["development-tools::testing", "simulation", "cryptography"]
+
+[features]
+default = ["std", "real-crypto"]
+std = []
+# Use the workspace `aethelred-core` cryptography (production primitives).
+# Disable to use a minimal sha2-only fallback — useful for downstream
+# crates that cannot pull aethelred-core (e.g., wasm32-unknown-unknown).
+real-crypto = ["dep:aethelred-core"]
+# Enable async API surface for connectors.
+async = ["dep:tokio", "dep:async-trait"]
+# Mock the TEE attestation flow (always-pass, dev/CI friendly).
+mock-tee = []
+# Enable JSON Schema export for the seal v1 (used by SDK / docs).
+# Hand-curated schemas — no extra deps needed.
+schema = []
+
+[dependencies]
+# Workspace cryptography (real primitives — Hash256, Merkle, Hybrid sigs).
+aethelred-core = { path = "../core", optional = true }
+
+# Pure-Rust crypto fallback (when real-crypto feature is OFF).
+sha2 = "0.10"
+hex = "0.4"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Errors
+thiserror = "1.0"
+
+# IDs / time
+uuid = { version = "1.20", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+
+# Logging
+tracing = "0.1"
+
+# Async runtime (optional)
+tokio = { version = "1.49", features = ["sync", "rt", "macros"], optional = true }
+async-trait = { version = "0.1", optional = true }
+
+
+[dev-dependencies]
+tokio = { version = "1.49", features = ["full", "test-util"] }
+proptest = "1.6"
+serde_json = "1.0"
+criterion = "0.5"
+
+[[bin]]
+name = "aethelred-sandbox"
+path = "src/bin/cli.rs"
+required-features = ["real-crypto"]
+
+[[bench]]
+name = "core_hot_paths"
+harness = false
+required-features = ["real-crypto"]
+
+[lints]
+workspace = true
