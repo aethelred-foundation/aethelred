@@ -102,6 +102,11 @@ pub use crate::business_continuity::{
 pub use crate::capability_token::{
     EncodedToken, TokenClaims, TokenClaimsBuilder, TokenIssuer, TokenVerifier,
 };
+pub use crate::capacity_planning::{
+    CapacityPlanningRegistry, CapacityRecommendation, MetricKind as CapacityMetricKind,
+    RecommendationKind, RecommendationStage as CapacityRecommendationStage, ResourceCapacity,
+    UtilizationSample,
+};
 pub use crate::chaos_inject::{
     ChaosHarness, FaultCategory, FaultDecision, FaultRule, InjectedFault,
 };
@@ -288,7 +293,16 @@ pub use crate::inference_audit::{
     CapturedInference, InferenceAuditLog, ReviewVerdict as InferenceReviewVerdict,
     SamplingPolicy,
 };
+pub use crate::infrastructure_drift::{
+    DriftEvent as InfraDriftEvent, DriftRecord, DriftSeverity as InfraDriftSeverity, DriftSource,
+    DriftStage, FieldDelta, InfrastructureDriftRegister,
+};
 pub use crate::internal_messaging::{Message, MessageBus, Subscription as BusSubscription, Topic};
+pub use crate::kubernetes_manifest_register::{
+    ContainerImage, KubernetesManifest, KubernetesManifestRegister,
+    ManifestEvent as K8sManifestEvent, ManifestKind, ManifestStage as K8sManifestStage,
+    RbacBinding,
+};
 pub use crate::lineage::{EdgeType, LineageEdge, LineageGraph, LineageNode};
 pub use crate::llm_cost_meter::{
     LlmCallRecord, LlmCostMeter, LlmInvoice, LlmInvoiceLine, LlmModelRate, LlmRateCard,
@@ -473,6 +487,11 @@ pub use crate::segregation_of_duties::{
     ViolationStatus as SodViolationStatus,
 };
 pub use crate::tee::{Attestation, AttestationVendor, TeePlatform};
+pub use crate::terraform_plan_register::{
+    PlanEvent as TerraformPlanEvent, PlanStage as TerraformPlanStage,
+    PolicyGate as TerraformPolicyGate, PolicyVerdict, ResourceChange, ResourceChangeKind,
+    TerraformPlan, TerraformPlanRegister,
+};
 pub use crate::tee_verify::{
     AttestationDocument, MockTeeVerifier, TeeAttestationVerifier, TeeVerifierPolicy,
     TeeVerifierRegistry,

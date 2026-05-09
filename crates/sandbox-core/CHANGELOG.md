@@ -10,6 +10,76 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.31] - 2026-05-09
+
+Infrastructure governance cluster: Terraform/IaC plan-and-apply
+register, Kubernetes manifest register, infrastructure drift detection,
+and capacity planning. Closes the **infrastructure substrate** layer
+beneath the existing service-level surface (`service_catalog`,
+`deployment_pipeline`).
+
+### Added
+
+- `terraform_plan_register` — IaC plan-and-apply register with
+  `Planned → Reviewed → Approved → Applying → (Applied | Failed |
+  Discarded | RolledBack)` lifecycle. Reviewer and approver must differ
+  from proposer (separation of duty enforced at issue site). Policy
+  gates (Sentinel / OPA) with `Pending | Pass | SoftFail | HardFail |
+  Override` verdicts block approval when any gate is Pending or
+  HardFail. Resource changes broken out into add/update/replace/destroy
+  counts; `is_destructive()` and `destructive()` queries surface
+  high-risk plans. Maps to SOC 2 CC8.1, NIST 800-53 CM-3.
+- `kubernetes_manifest_register` — declared cluster-state inventory
+  with seventeen resource kinds (Deployment, StatefulSet, DaemonSet,
+  Job, CronJob, Service, Ingress, ConfigMap, Secret, Role, RoleBinding,
+  ClusterRole, ClusterRoleBinding, NetworkPolicy, PodSecurityPolicy,
+  Namespace, Other), `Drafted → Applied → Active → (Replaced | Deleted)`
+  lifecycle, container image references with digest pinning,
+  `unpinned_workloads()` query that flags active workloads with
+  un-pinned images (CIS K8s benchmark violation), and RBAC binding
+  inventory. Maps to CIS Kubernetes Benchmark, SOC 2 CC8.1, PCI 6.x.
+- `infrastructure_drift` — drift detection register comparing declared
+  vs actual state with `Detected → Triaged → RemediationPlanned →
+  (Remediated | Accepted) | FalsePositive` lifecycle, field-level
+  deltas, severity (Info / Low / Medium / High / Critical), and
+  `actionable()` / `aged(now, days)` queries. Sources include
+  Terraform, Kubernetes, Pulumi, CloudFormation, Helm, Ansible. Maps to
+  SOC 2 CC8.1, NIST 800-53 CM-8, CIS 4.1-4.3.
+- `capacity_planning` — utilisation sampling (capacity-bounded, FIFO-
+  evicted) plus operator recommendations with `Open → InReview →
+  Accepted → Implemented | Rejected | Stale` lifecycle. Six
+  recommendation kinds (ScaleUp / ScaleDown / ScaleOut / ScaleIn /
+  RightSize / Migrate); `under_utilised(metric, threshold)` and
+  `over_utilised()` resource filters; `estimated_total_saving_micro()`
+  aggregates open cost-saving recommendations. Maps to FinOps
+  "Optimize", SOC 2 A1.1, NIST 800-53 SC-5.
+
+### Tests
+
+- 104 new unit tests (terraform_plan_register 30,
+  kubernetes_manifest_register 24, infrastructure_drift 22,
+  capacity_planning 28).
+- Cumulative sandbox-core lib: **3,760 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `TerraformPlanRegister`, `TerraformPlan`, `TerraformPlanStage`,
+  `TerraformPolicyGate` (renamed to avoid collision with
+  `policy::PolicyGate`), `PolicyVerdict`, `ResourceChange`,
+  `ResourceChangeKind`, `TerraformPlanEvent`
+- `KubernetesManifestRegister`, `KubernetesManifest`, `ManifestKind`,
+  `K8sManifestStage`, `ContainerImage`, `RbacBinding`,
+  `K8sManifestEvent`
+- `InfrastructureDriftRegister`, `DriftRecord`, `DriftStage`,
+  `InfraDriftSeverity` and `InfraDriftEvent` (renamed to avoid
+  collisions with `drift::DriftSeverity` / `drift::DriftEvent`),
+  `DriftSource`, `FieldDelta`
+- `CapacityPlanningRegistry`, `ResourceCapacity`, `UtilizationSample`,
+  `CapacityMetricKind`, `CapacityRecommendation`, `RecommendationKind`,
+  `CapacityRecommendationStage`
+
+---
+
 ## [0.2.30] - 2026-05-08
 
 Workforce safety / people-controls cluster: pre-employment background
