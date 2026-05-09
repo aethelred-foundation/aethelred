@@ -10,6 +10,56 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.32] - 2026-05-09
+
+Customer-facing operations cluster: support ticket register, customer
+feedback (NPS / CSAT / CES) register, customer-visible knowledge base,
+and subscription renewal pipeline. Closes the **customer-success layer**
+that internal operations modules don't cover.
+
+### Added
+
+- `support_ticket_register` — external customer tickets with
+  `Open -> Assigned -> InProgress -> AwaitingCustomer -> (Resolved ->
+  Closed) | Cancelled` lifecycle (re-open allowed). Eight channels,
+  four priorities (P0-P3), threaded replies, CSAT capture, SLA
+  deadlines with `response_overdue` / `resolution_overdue` queries.
+- `feedback_register` — NPS (0-10), CSAT (1-5), CES (1-7), qualitative,
+  feature requests, bug reports, churn-risk signals. Numeric /
+  qualitative constructors validate score ranges; NPS auto-classifies
+  Promoter / Passive / Detractor. `nps_basis_points()`, `mean_csat()`,
+  `mean_ces()` aggregates with tenant / period filters.
+- `knowledge_base_register` — customer-facing KB with eight categories,
+  `Drafted -> InReview -> Published -> (Updated -> Published) |
+  Archived` lifecycle, monotonic version history with content SHA-256,
+  view/vote counters, `low_helpfulness()` rewrite-candidates query.
+- `renewal_register` — subscription renewal pipeline with `Upcoming ->
+  InNegotiation -> (Renewed | Churned | Expired)` lifecycle. ARR in
+  micro-units; auto-derived SizeDelta (Upsell / Flat / Downgrade);
+  health signals (Green / Yellow / Red), at_risk() filter,
+  total_retained_arr_micro / total_lost_arr_micro aggregates, and
+  nrr_basis_points() board-level Net Revenue Retention.
+
+### Tests
+
+- 102 new unit tests (support_ticket_register 27, feedback_register 26,
+  knowledge_base_register 23, renewal_register 26).
+- Cumulative sandbox-core lib: **3,862 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `SupportTicketRegister`, `SupportTicket`, `TicketStage`,
+  `TicketChannel`, `TicketPriority`, `TicketCategory`, `TicketReply`,
+  `TicketEvent`, `CsatRating`
+- `FeedbackRegister`, `FeedbackResponse`, `FeedbackKind`,
+  `FeedbackChannel`, `NpsSegment`
+- `KnowledgeBaseRegister`, `KnowledgeBaseArticle`, `ArticleCategory`,
+  `ArticleStage`, `KbArticleVersion`, `KbArticleEvent`
+- `RenewalRegister`, `RenewalOpportunity`, `RenewalStage`, `SizeDelta`,
+  `HealthSignal`, `RenewalEvent`
+
+---
+
 ## [0.2.31] - 2026-05-09
 
 Infrastructure governance cluster: Terraform/IaC plan-and-apply

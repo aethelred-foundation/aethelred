@@ -248,6 +248,9 @@ pub use crate::federated_verify::{
     CrossAttestation, FederatedReport, FederatedVerifier, FederationOutcome, Regulator,
     VerifierStrictness,
 };
+pub use crate::feedback_register::{
+    FeedbackChannel, FeedbackKind, FeedbackRegister, FeedbackResponse, NpsSegment,
+};
 pub use crate::fixtures::{Fixture, FixtureCatalog};
 pub use crate::gdpr_erasure::{
     CryptoShredExecutor, ErasureExecutor, ErasureLedger, ErasureReceipt, ErasureRequest,
@@ -298,6 +301,10 @@ pub use crate::infrastructure_drift::{
     DriftStage, FieldDelta, InfrastructureDriftRegister,
 };
 pub use crate::internal_messaging::{Message, MessageBus, Subscription as BusSubscription, Topic};
+pub use crate::knowledge_base_register::{
+    ArticleCategory, ArticleEvent as KbArticleEvent, ArticleStage,
+    ArticleVersion as KbArticleVersion, KnowledgeBaseArticle, KnowledgeBaseRegister,
+};
 pub use crate::kubernetes_manifest_register::{
     ContainerImage, KubernetesManifest, KubernetesManifestRegister,
     ManifestEvent as K8sManifestEvent, ManifestKind, ManifestStage as K8sManifestStage,
@@ -392,6 +399,9 @@ pub use crate::regulatory_correspondence::{
 pub use crate::release_notes::{
     NoteCategory, NoteEntry, ReleaseNote, ReleaseNotesRegistry, SupportStage,
 };
+pub use crate::renewal_register::{
+    HealthSignal, RenewalEvent, RenewalOpportunity, RenewalRegister, RenewalStage, SizeDelta,
+};
 pub use crate::report_scheduler::{
     Cadence, FiringStatus, ReportFiring, ReportSchedule, ReportScheduler, ScheduleBuilder,
 };
@@ -477,6 +487,10 @@ pub use crate::subprocessor_register::{
 };
 pub use crate::supply_chain_sbom::{
     Component, Sbom, SbomFormat, SbomRegistry, VulnSeverity, Vulnerability,
+};
+pub use crate::support_ticket_register::{
+    CsatRating, SupportTicket, SupportTicketRegister, TicketCategory, TicketChannel,
+    TicketEvent, TicketPriority, TicketReply, TicketStage,
 };
 pub use crate::seal::{
     ApprovalRecord, DigitalSeal, ModelReference, RetentionClass, SealEnvelope, SealVersion,
