@@ -10,6 +10,67 @@ unit-test count, and the public surface that was wired through
 
 ---
 
+## [0.2.33] - 2026-05-09
+
+Federated AI / multi-party governance cluster: per-participant federated
+enrolment, secure-aggregation run logs, data clean-room sessions, and
+chains of cross-party TEE attestations. Closes the **federated-AI
+governance surface** that aligns with Aethelred's positioning — pairs
+naturally with `federated_verify`, `tee_verify`, and
+`differential_privacy`.
+
+### Added
+
+- `federated_participant_register` — per-participant federated learning
+  enrolment with `Invited -> Enrolled -> Active -> (Suspended <-> Active)
+  -> Withdrawn | Terminated` lifecycle. Consent scope (SingleRound /
+  CohortStudy / Continuous / BenchOnly), contribution mode
+  (LocalTraining / SecureAggregation / DpLocal / DpCentral /
+  TeeSharedData), per-round contribution log with sample/weight
+  aggregates.
+- `secure_aggregation_log` — per-round secure-aggregation operational
+  log with `Pending -> Receiving -> Aggregating -> Completed | Aborted`
+  lifecycle. Seven aggregation protocols (FedAvg / SecureAgg /
+  Homomorphic / ThresholdSecretSharing / Tee / DpAggregation / Custom),
+  per-participant update integrity flags, post-hoc disqualification,
+  k-anonymity minimum-participants gate at completion, and five abort
+  reasons.
+- `clean_room_session` — data clean-room session register with
+  `Provisioned -> DataLoaded -> InUse -> Sealed -> Destroyed` lifecycle.
+  Five query policies, per-session DP epsilon budget enforcement at
+  query submission, query-level status (Pending / Running / Completed /
+  Failed / PolicyBlocked) with budget-charging only on Completed,
+  budget_exhausted() filter.
+- `federated_attestation_chain` — chains of cross-party TEE attestations
+  with `Building -> Sealed -> (Verified | Repudiated)` lifecycle.
+  LinkRelation (Root / Parent / Sibling / Witness) with parent-link
+  validation, per-link verdict (Pending / Verified / Failed / Skipped),
+  quorum threshold + any-failed gate at finalisation, links to
+  aggregation rounds and clean-room sessions.
+
+### Tests
+
+- 97 new unit tests (federated_participant_register 20,
+  secure_aggregation_log 23, clean_room_session 26,
+  federated_attestation_chain 28).
+- Cumulative sandbox-core lib: **3,959 tests / 0 failures / ~1.2s**.
+
+### Prelude
+
+- `FederatedParticipantRegister`, `FederatedParticipant`,
+  `ParticipantStage`, `ConsentScope`, `ContributionMode`,
+  `RoundContribution`, `FederatedParticipantEvent`
+- `SecureAggregationLog`, `AggregationRound`, `AggregationRoundStage`,
+  `AggregationProtocol`, `ParticipantUpdate`, `AbortReason`,
+  `AggregationRoundEvent`
+- `CleanRoomSessionRegister`, `CleanRoomSession`, `CleanRoomSessionStage`,
+  `QueryPolicy`, `QueryRecord`, `QueryStatus`, `CleanRoomSessionEvent`
+- `FederatedAttestationChainRegistry`, `AttestationChain`, `ChainStage`,
+  `AttestationLink`, `LinkRelation`, `LinkVerdict`,
+  `AttestationChainEvent`
+
+---
+
 ## [0.2.32] - 2026-05-09
 
 Customer-facing operations cluster: support ticket register, customer

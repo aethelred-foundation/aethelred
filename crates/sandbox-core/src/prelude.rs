@@ -114,6 +114,10 @@ pub use crate::chargeback_report::{
     Adjustment as ChargebackAdjustment, ChargebackRegister, ChargebackReport,
     LineItem as ChargebackLineItem, ReportStage as ChargebackStage,
 };
+pub use crate::clean_room_session::{
+    CleanRoomSession, CleanRoomSessionRegister, QueryPolicy, QueryRecord, QueryStatus,
+    SessionEvent as CleanRoomSessionEvent, SessionStage as CleanRoomSessionStage,
+};
 pub use crate::compliance_dashboard::{
     ComplianceSnapshot, DashboardBuilder, Kpi, KpiSeverity, SnapshotHistory,
 };
@@ -243,6 +247,14 @@ pub use crate::feature_announcement::{
 };
 pub use crate::feature_flag::{
     FeatureFlag, FeatureFlagRegistry, FlagKind, FlagOverride,
+};
+pub use crate::federated_attestation_chain::{
+    AttestationChain, AttestationLink, ChainEvent as AttestationChainEvent, ChainStage,
+    FederatedAttestationChainRegistry, LinkRelation, LinkVerdict,
+};
+pub use crate::federated_participant_register::{
+    ConsentScope, ContributionMode, FederatedParticipant, FederatedParticipantRegister,
+    ParticipantEvent as FederatedParticipantEvent, ParticipantStage, RoundContribution,
 };
 pub use crate::federated_verify::{
     CrossAttestation, FederatedReport, FederatedVerifier, FederationOutcome, Regulator,
@@ -439,6 +451,11 @@ pub use crate::sandbox_template::{
 pub use crate::scanner::{Finding, ScanSummary, Scanner, ScannerConfig, SensitiveClass};
 pub use crate::secrets_rotation::{
     RotationEvent, RotationOutcome, SecretKind, SecretRecord, SecretsRotationRegistry,
+};
+pub use crate::secure_aggregation_log::{
+    AbortReason, AggregationProtocol, AggregationRound, ParticipantUpdate,
+    RoundEvent as AggregationRoundEvent, RoundStage as AggregationRoundStage,
+    SecureAggregationLog,
 };
 pub use crate::security_training_register::{
     Course, CourseKind, Enrollment, EnrollmentStage, SecurityTrainingRegister,
