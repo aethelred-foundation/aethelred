@@ -1,0 +1,22 @@
+{
+  "name": "aethelred-public-proof-path",
+  "version": "0.2.0",
+  "description": "Docker-runnable sovereign public proof path for Aethelred Seal demos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "cli": "node src/cli.mjs",
+    "run": "node src/run-once.mjs",
+    "run:finance": "node src/run-once.mjs --scenario=finance",
+    "run:healthcare": "node src/run-once.mjs --scenario=healthcare",
+    "run:carbon": "node src/run-once.mjs --scenario=carbon",
+    "run:external": "node src/run-once.mjs --scenario=external-finance",
+    "verify": "node src/cli.mjs verify",
+    "validate": "bash ../../../scripts/validate-public-proof-path.sh",
+    "test": "node --test src/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

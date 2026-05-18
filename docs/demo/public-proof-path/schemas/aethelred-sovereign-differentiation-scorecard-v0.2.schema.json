@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aethelred.network/schemas/aethelred-sovereign-differentiation-scorecard-v0.2.schema.json",
+  "title": "Aethelred Sovereign Differentiation Scorecard v0.2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "seal_id",
+    "use_case",
+    "upstream_compute_provider",
+    "positioning",
+    "strategic_verdict",
+    "dimensions",
+    "10x_targets",
+    "remaining_gaps",
+    "score",
+    "signer",
+    "scorecard_hash",
+    "signature"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "const": "aethelred-sovereign-differentiation-scorecard-v0.2" },
+    "generated_at": { "type": "string" },
+    "seal_id": { "type": "string" },
+    "use_case": { "type": "string" },
+    "upstream_compute_provider": { "type": "object" },
+    "positioning": { "type": "string" },
+    "strategic_verdict": { "type": "string" },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "dimension", "generic_verifiable_cloud", "aethelred_10x_control", "status", "evidence"],
+        "properties": {
+          "status": { "enum": ["pass", "warning", "fail"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "10x_targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "remaining_gaps": { "type": "array" },
+    "score": { "type": "object" },
+    "signer": { "type": "object" },
+    "scorecard_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature": { "type": "string", "minLength": 4 }
+  }
+}

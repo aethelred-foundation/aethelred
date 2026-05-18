@@ -1,0 +1,161 @@
+openapi: 3.1.0
+info:
+  title: Aethelred Sovereign Public Proof Path API
+  version: 0.2.0
+  description: >
+    Docker-runnable public proof path for regulated AI decisions. This API
+    exposes Aethelred Seal verification, external compute proof normalization,
+    regulator export, readiness gates, anchor manifests, key-custody posture,
+    sovereign differentiation scorecards, and auditor attestations.
+servers:
+  - url: http://localhost:8088
+paths:
+  /v1/health:
+    get:
+      summary: Health summary
+      responses:
+        "200":
+          description: Service health and latest run summary
+  /v1/scenarios:
+    get:
+      summary: List sovereign scenario packs
+      responses:
+        "200":
+          description: Available finance, healthcare, carbon, and external-compute interop scenario packs
+  /v1/proof-path/run:
+    post:
+      summary: Run a proof path
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scenario_id:
+                  type: string
+                  enum: [finance, healthcare, carbon, external-finance]
+                request:
+                  type: object
+                  description: Full custom proof request. Overrides scenario_id when supplied.
+      responses:
+        "201":
+          description: Full proof record
+  /v1/proof-path/latest:
+    get:
+      summary: Read latest proof record
+      responses:
+        "200":
+          description: Full latest proof record
+  /v1/seals/latest:
+    get:
+      summary: Read latest Aethelred Seal
+      responses:
+        "200":
+          description: Latest seal
+  /v1/seals/latest/verify:
+    get:
+      summary: Verify latest Aethelred Seal and related proof artifacts
+      responses:
+        "200":
+          description: Verifier report
+  /v1/evidence/latest:
+    get:
+      summary: Read latest evidence bundle
+      responses:
+        "200":
+          description: Evidence bundle
+  /v1/external-compute/latest:
+    get:
+      summary: Read latest external compute report
+      responses:
+        "200":
+          description: Normalized Docker, external confidential-compute, sovereign-cloud, or on-prem compute proof report
+  /v1/institutional/context:
+    get:
+      summary: Read institutional context
+      responses:
+        "200":
+          description: Tenant, policy, model, identity, deployment, and governance context
+  /v1/assurance/latest:
+    get:
+      summary: Read assurance plan
+      responses:
+        "200":
+          description: Assurance target, current posture, and production blockers
+  /v1/quorum/latest:
+    get:
+      summary: Read verifier quorum
+      responses:
+        "200":
+          description: Signed verifier votes
+  /v1/jurisdiction/latest:
+    get:
+      summary: Read jurisdiction report
+      responses:
+        "200":
+          description: Jurisdiction and residency evidence
+  /v1/liability/latest:
+    get:
+      summary: Read liability route
+      responses:
+        "200":
+          description: Sponsor, human controller, model-risk owner, operator, and auditor route
+  /v1/key-custody/latest:
+    get:
+      summary: Read key custody manifest
+      responses:
+        "200":
+          description: Demo signer posture and production KMS/HSM requirements
+  /v1/anchor/latest:
+    get:
+      summary: Read anchor manifest
+      responses:
+        "200":
+          description: Local anchor and chain-ready payload
+  /v1/auditor/latest:
+    get:
+      summary: Read auditor attestation
+      responses:
+        "200":
+          description: Simulated auditor attestation over public proof artifacts
+  /v1/readiness/latest:
+    get:
+      summary: Read pilot readiness gate
+      responses:
+        "200":
+          description: Public proof, regulated pilot, and production readiness gate
+  /v1/sovereign-differentiation/latest:
+    get:
+      summary: Read sovereign differentiation scorecard
+      responses:
+        "200":
+          description: Aethelred-vs-generic-verifiable-cloud scorecard for regulated buyers
+  /v1/evidence-index/latest:
+    get:
+      summary: Read regulatory evidence index
+      responses:
+        "200":
+          description: Artifact hash index and control map
+  /v1/regulator-pack/latest:
+    get:
+      summary: Export regulator pack
+      responses:
+        "200":
+          description: Combined regulator/auditor export bundle
+  /v1/ledger/verify:
+    get:
+      summary: Verify append-only ledger
+      responses:
+        "200":
+          description: Ledger chain verification
+  /v1/audit/latest.md:
+    get:
+      summary: Read human audit report
+      responses:
+        "200":
+          description: Markdown audit report
+          content:
+            text/markdown:
+              schema:
+                type: string

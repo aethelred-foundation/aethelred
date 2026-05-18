@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aethelred.network/schemas/aethelred-seal-v0.2.schema.json",
+  "title": "Aethelred Seal v0.2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "seal_id",
+    "run_id",
+    "job_id",
+    "issued_at",
+    "status",
+    "purpose",
+    "assurance_tier",
+    "commitments",
+    "verifier_quorum",
+    "liability",
+    "jurisdiction",
+    "signer",
+    "seal_hash",
+    "signature"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "const": "aethelred-seal-v0.2" },
+    "seal_id": { "type": "string", "pattern": "^seal_[0-9a-f]{24}$" },
+    "run_id": { "type": "string", "pattern": "^proof_[0-9]+_[0-9a-f-]+$" },
+    "job_id": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+    "issued_at": { "type": "string" },
+    "status": { "type": "string" },
+    "purpose": { "type": "string" },
+    "assurance_tier": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "commitments": {
+      "type": "object",
+      "required": [
+        "model_hash",
+        "input_hash",
+        "output_hash",
+        "policy_receipt_hash",
+        "attestation_hash",
+        "evidence_bundle_hash",
+        "institutional_context_hash",
+        "jurisdiction_report_hash",
+        "liability_route_hash",
+        "validator_quorum_hash",
+        "assurance_plan_hash"
+      ],
+      "additionalProperties": true
+    },
+    "verifier_quorum": { "type": "object" },
+    "liability": { "type": "object" },
+    "jurisdiction": { "type": "object" },
+    "signer": { "type": "object" },
+    "seal_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature": { "type": "string", "minLength": 4 }
+  }
+}

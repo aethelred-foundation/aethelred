@@ -14,6 +14,25 @@ npm install && npm start
 # Open http://localhost:3000
 ```
 
+### Option 1A: Docker Public Proof Path (Recommended for First External Proof)
+
+```bash
+# Start the Aethelred Seal public proof path
+cd docs/demo/public-proof-path
+docker compose up --build
+
+# Open http://localhost:8088
+```
+
+This path produces an institutional proof package: policy receipt, registered
+identity context, jurisdiction report, Docker demo attestation, evidence bundle,
+external compute report, regulated verifier quorum, liability route, Aethelred
+Seal, regulatory evidence index, sovereign differentiation scorecard, key
+custody manifest, anchor manifest, pilot readiness gate, auditor attestation,
+append-only ledger entry, and audit pack without requiring a live testnet.
+Scenario packs are available for finance, healthcare, carbon MRV, and external
+confidential-compute proof wrapping.
+
 ### Option 2: CLI Demo (Quick & Impressive)
 
 ```bash
