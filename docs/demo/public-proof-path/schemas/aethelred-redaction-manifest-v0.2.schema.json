@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aethelred.network/schemas/aethelred-redaction-manifest-v0.2.schema.json",
+  "title": "Aethelred Redaction Manifest v0.2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "use_case",
+    "data_boundary",
+    "public_artifact_policy",
+    "raw_regulated_data_exported",
+    "input_hash",
+    "output_hash",
+    "field_classifications",
+    "restricted_fields",
+    "export_controls",
+    "signer",
+    "manifest_hash",
+    "signature"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "const": "aethelred-redaction-manifest-v0.2" },
+    "generated_at": { "type": "string" },
+    "use_case": { "type": "string" },
+    "data_boundary": { "type": "string" },
+    "public_artifact_policy": { "type": "string" },
+    "raw_regulated_data_exported": { "type": "boolean" },
+    "input_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "output_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "field_classifications": { "type": "array", "minItems": 1 },
+    "restricted_fields": { "type": "array" },
+    "export_controls": { "type": "array", "minItems": 1 },
+    "signer": { "type": "object" },
+    "manifest_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature": { "type": "string", "minLength": 4 }
+  }
+}

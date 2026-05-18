@@ -28,7 +28,8 @@ This path produces an institutional proof package: policy receipt, registered
 identity context, jurisdiction report, Docker demo attestation, evidence bundle,
 external compute report, regulated verifier quorum, liability route, Aethelred
 Seal, regulatory evidence index, sovereign differentiation scorecard, key
-custody manifest, anchor manifest, pilot readiness gate, auditor attestation,
+custody manifest, redaction manifest, procurement readiness pack, verifier
+onboarding pack, anchor manifest, pilot readiness gate, auditor attestation,
 append-only ledger entry, and audit pack without requiring a live testnet.
 Scenario packs are available for finance, healthcare, carbon MRV, and external
 confidential-compute proof wrapping.

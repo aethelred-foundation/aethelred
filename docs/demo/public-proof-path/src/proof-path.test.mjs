@@ -19,7 +19,11 @@ test('buildProofPath writes a verifiable Aethelred Seal path', async () => {
     assert.equal(result.pilot_readiness_gate.regulated_pilot_status, 'conditional-pass');
     assert.match(result.anchor_manifest.anchor_id, /^anchor_[0-9a-f]{24}$/);
     assert.match(result.auditor_attestation.attestation_id, /^audit_[0-9a-f]{24}$/);
+    assert.equal(result.redaction_manifest.raw_regulated_data_exported, false);
+    assert.equal(result.verifier_onboarding_pack.pilot_roster_template.length, result.validator_quorum.votes.length);
+    assert.equal(result.procurement_readiness_pack.buyer_status, 'pilot-procurement-ready-with-conditions');
     assert.ok(result.regulatory_evidence_index.artifacts.some((artifact) => artifact.name === 'validator-quorum.json'));
+    assert.ok(result.regulatory_evidence_index.artifacts.some((artifact) => artifact.name === 'procurement-readiness-pack.json'));
 
     const seal = JSON.parse(await readFile(join(outputDir, 'latest', 'aethelred-seal.json'), 'utf8'));
     assert.equal(seal.seal_id, result.seal.seal_id);
@@ -129,6 +133,21 @@ test('verifyProofRecord fails closed on tampered anchor manifest', async () => {
     const report = verifyProofRecord(tampered);
     assert.equal(report.valid, false);
     assert.ok(report.checks.some((check) => check.id === 'anchor-manifest-hash' && check.status === 'fail'));
+  } finally {
+    await rm(outputDir, { recursive: true, force: true });
+  }
+});
+
+test('verifyProofRecord fails closed on tampered procurement readiness pack', async () => {
+  const outputDir = await mkdtemp(join(tmpdir(), 'aethelred-proof-path-'));
+  try {
+    const result = await buildProofPath({ outputDir });
+    const tampered = structuredClone(result);
+    tampered.procurement_readiness_pack.buyer_status = 'blocked';
+
+    const report = verifyProofRecord(tampered);
+    assert.equal(report.valid, false);
+    assert.ok(report.checks.some((check) => check.id === 'procurement-readiness-pack-hash' && check.status === 'fail'));
   } finally {
     await rm(outputDir, { recursive: true, force: true });
   }

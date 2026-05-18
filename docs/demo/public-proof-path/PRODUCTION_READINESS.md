@@ -16,6 +16,9 @@ requirements explicit and machine-readable.
 | External compute proof ingestion | Implemented with Docker and external confidential-compute adapters | Needs provider-native quote verifier |
 | Regulated verifier quorum | Simulated signed quorum | Needs legal verifier onboarding |
 | Liability routing | Implemented as structured route | Needs legal terms |
+| Redaction and public export controls | Implemented with signed redaction manifest | Ready for pilot hardening |
+| Procurement packaging | Implemented with signed buyer readiness pack | Ready for buyer review |
+| Verifier onboarding | Implemented with signed onboarding pack | Needs legal entity commitments |
 | Sovereign differentiation scorecard | Signed and included in regulator pack | Ready for buyer/investor evidence |
 | Anchor payload | Local ledger plus chain-ready payload | Needs testnet or permissioned-zone submitter |
 | Key custody | Ephemeral demo keys | Needs KMS/HSM |

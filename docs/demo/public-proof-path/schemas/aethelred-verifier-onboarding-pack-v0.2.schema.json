@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aethelred.network/schemas/aethelred-verifier-onboarding-pack-v0.2.schema.json",
+  "title": "Aethelred Verifier Onboarding Pack v0.2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "quorum_id",
+    "target_jurisdiction",
+    "required_categories",
+    "onboarding_stages",
+    "verifier_requirements",
+    "pilot_roster_template",
+    "signer",
+    "pack_hash",
+    "signature"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "const": "aethelred-verifier-onboarding-pack-v0.2" },
+    "generated_at": { "type": "string" },
+    "quorum_id": { "type": "string" },
+    "target_jurisdiction": { "type": "string" },
+    "required_categories": { "type": "array", "minItems": 1 },
+    "onboarding_stages": { "type": "array", "minItems": 1 },
+    "verifier_requirements": { "type": "array", "minItems": 1 },
+    "pilot_roster_template": { "type": "array", "minItems": 1 },
+    "signer": { "type": "object" },
+    "pack_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature": { "type": "string", "minLength": 4 }
+  }
+}

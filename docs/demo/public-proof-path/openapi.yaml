@@ -125,6 +125,24 @@ paths:
       responses:
         "200":
           description: Public proof, regulated pilot, and production readiness gate
+  /v1/redaction/latest:
+    get:
+      summary: Read redaction manifest
+      responses:
+        "200":
+          description: Public export-control and data minimization manifest
+  /v1/verifier-onboarding/latest:
+    get:
+      summary: Read verifier onboarding pack
+      responses:
+        "200":
+          description: Verifier council onboarding requirements and legal-readiness template
+  /v1/procurement/latest:
+    get:
+      summary: Read procurement readiness pack
+      responses:
+        "200":
+          description: Institutional buyer controls, required documents, and pilot packaging
   /v1/sovereign-differentiation/latest:
     get:
       summary: Read sovereign differentiation scorecard

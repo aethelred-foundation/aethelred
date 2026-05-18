@@ -37,6 +37,9 @@ Usage:
   node src/cli.mjs verify --output-dir=out
   node src/cli.mjs verify --record=out/latest/proof-record.json
   node src/cli.mjs external-report --output-dir=out
+  node src/cli.mjs redaction-manifest --output-dir=out
+  node src/cli.mjs verifier-onboarding --output-dir=out
+  node src/cli.mjs procurement-pack --output-dir=out
   node src/cli.mjs regulator-pack --output-dir=out
   node src/cli.mjs sovereign-scorecard --output-dir=out
   node src/cli.mjs anchor --output-dir=out
@@ -106,11 +109,20 @@ if (command === 'help' || flags.help) {
     anchor_manifest: record?.anchor_manifest,
     pilot_readiness_gate: record?.pilot_readiness_gate,
     auditor_attestation: record?.auditor_attestation,
+    redaction_manifest: record?.redaction_manifest,
+    verifier_onboarding_pack: record?.verifier_onboarding_pack,
+    procurement_readiness_pack: record?.procurement_readiness_pack,
     sovereign_differentiation_scorecard: record?.sovereign_differentiation_scorecard,
     regulatory_evidence_index: record?.regulatory_evidence_index,
     public_verifier_manifest: record?.public_verifier_manifest,
     ledger_verification: await verifyLedger(outputDir),
   });
+} else if (command === 'redaction-manifest') {
+  writeJson(await readLatestArtifact('redaction-manifest.json', outputDir));
+} else if (command === 'verifier-onboarding') {
+  writeJson(await readLatestArtifact('verifier-onboarding-pack.json', outputDir));
+} else if (command === 'procurement-pack') {
+  writeJson(await readLatestArtifact('procurement-readiness-pack.json', outputDir));
 } else if (command === 'sovereign-scorecard') {
   writeJson(await readLatestArtifact('sovereign-differentiation-scorecard.json', outputDir));
 } else if (command === 'anchor') {

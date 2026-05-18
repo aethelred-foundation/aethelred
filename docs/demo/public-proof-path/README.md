@@ -75,6 +75,9 @@ docs/demo/public-proof-path/out/
 | `/v1/anchor/latest` | Local anchor and chain-ready payload |
 | `/v1/auditor/latest` | Signed simulated auditor attestation |
 | `/v1/readiness/latest` | Pilot readiness gate and production blockers |
+| `/v1/redaction/latest` | Public export-control and redaction manifest |
+| `/v1/verifier-onboarding/latest` | Verifier council onboarding and legal-readiness pack |
+| `/v1/procurement/latest` | Institutional buyer procurement readiness pack |
 | `/v1/sovereign-differentiation/latest` | Signed Aethelred-vs-generic-verifiable-cloud scorecard |
 | `/v1/evidence-index/latest` | Regulator-readable artifact index with hashes |
 | `/v1/regulator-pack/latest` | Combined regulator export bundle |
@@ -119,6 +122,9 @@ Every run writes a complete evidence set:
 | `key-custody-manifest.json` | Signer custody posture and production HSM/KMS requirements |
 | `anchor-manifest.json` | Local ledger anchor and chain-ready payload |
 | `pilot-readiness-gate.json` | Conditional pilot readiness gates |
+| `redaction-manifest.json` | Public export-control, field classification, and data minimization manifest |
+| `verifier-onboarding-pack.json` | Verifier council onboarding requirements and roster template |
+| `procurement-readiness-pack.json` | Institutional buyer controls, required documents, and pilot commercial packaging |
 | `sovereign-differentiation-scorecard.json` | Signed scorecard showing where Aethelred adds sovereign controls above generic verifiable compute |
 | `regulatory-evidence-index.json` | Artifact index with SHA-256 commitments |
 | `auditor-attestation.json` | Signed simulated external-auditor attestation over artifact consistency |
@@ -186,6 +192,9 @@ node src/cli.mjs run --scenario=healthcare
 node src/cli.mjs run --scenario=external-finance
 node src/cli.mjs verify
 node src/cli.mjs external-report
+node src/cli.mjs redaction-manifest
+node src/cli.mjs verifier-onboarding
+node src/cli.mjs procurement-pack
 node src/cli.mjs regulator-pack
 node src/cli.mjs sovereign-scorecard
 node src/cli.mjs anchor
@@ -208,6 +217,9 @@ Core schema contracts live in [`schemas/`](./schemas/):
 - `aethelred-anchor-manifest-v0.2.schema.json`
 - `aethelred-pilot-readiness-gate-v0.2.schema.json`
 - `aethelred-external-compute-report-v0.2.schema.json`
+- `aethelred-redaction-manifest-v0.2.schema.json`
+- `aethelred-verifier-onboarding-pack-v0.2.schema.json`
+- `aethelred-procurement-readiness-pack-v0.2.schema.json`
 - `aethelred-sovereign-differentiation-scorecard-v0.2.schema.json`
 
 ## Container Posture

@@ -1116,6 +1116,9 @@ const buildPublicVerifierManifest = ({ runId, seal, policyReceipt, assurancePlan
     '/v1/anchor/latest',
     '/v1/auditor/latest',
     '/v1/readiness/latest',
+    '/v1/redaction/latest',
+    '/v1/verifier-onboarding/latest',
+    '/v1/procurement/latest',
     '/v1/sovereign-differentiation/latest',
     '/v1/evidence-index/latest',
     '/v1/regulator-pack/latest',
@@ -1428,6 +1431,208 @@ const buildPilotReadinessGate = ({
   return signDocument(payload, signer, 'gate_hash');
 };
 
+const classifyInputField = ([field, value]) => {
+  const serialized = stableStringify(value).toLowerCase();
+  const piiLike = value === true && field === 'raw_pii_present';
+  const markerDetected = PII_MARKERS.some((marker) => serialized.includes(marker));
+  const publicSafe = !piiLike && !markerDetected;
+
+  return {
+    field,
+    classification: publicSafe ? 'public-demo-safe' : 'restricted',
+    public_export: publicSafe,
+    value_hash: sha256Hex(value),
+    reason: publicSafe ? 'synthetic-or-approved-public-proof-field' : 'restricted-by-public-proof-redaction-policy',
+  };
+};
+
+const buildRedactionManifest = ({ request, inputHash, outputHash, issuedAt, signer }) => {
+  const fieldClassifications = Object.entries(request.evidence_input || {}).map(classifyInputField);
+  const restrictedFields = fieldClassifications.filter((field) => !field.public_export).map((field) => field.field);
+  const payload = {
+    schema_version: 'aethelred-redaction-manifest-v0.2',
+    generated_at: issuedAt,
+    use_case: request.use_case,
+    data_boundary: request.evidence_input?.data_boundary || 'missing',
+    public_artifact_policy: 'hash-commitments-and-synthetic-fields-only',
+    raw_regulated_data_exported: false,
+    input_hash: inputHash,
+    output_hash: outputHash,
+    field_classifications: fieldClassifications,
+    restricted_fields: restrictedFields,
+    export_controls: [
+      {
+        control: 'raw-data-minimization',
+        status: restrictedFields.length === 0 ? 'pass' : 'blocked',
+        evidence: restrictedFields.length === 0 ? 'no restricted fields detected' : restrictedFields.join(', '),
+      },
+      {
+        control: 'hash-only-commitments',
+        status: 'pass',
+        evidence: 'input_hash and output_hash',
+      },
+      {
+        control: 'public-demo-boundary',
+        status: SAFE_DATA_BOUNDARIES.has(request.evidence_input?.data_boundary) ? 'pass' : 'blocked',
+        evidence: request.evidence_input?.data_boundary || 'missing',
+      },
+    ],
+    signer: signerDescriptor(signer),
+  };
+
+  return signDocument(payload, signer, 'manifest_hash');
+};
+
+const buildVerifierOnboardingPack = ({ validatorQuorum, jurisdictionReport, issuedAt, signer }) => {
+  const categories = [...new Set((validatorQuorum.votes || []).map((vote) => vote.category))];
+  const payload = {
+    schema_version: 'aethelred-verifier-onboarding-pack-v0.2',
+    generated_at: issuedAt,
+    quorum_id: validatorQuorum.quorum_id,
+    target_jurisdiction: jurisdictionReport.jurisdiction,
+    required_categories: categories,
+    onboarding_stages: [
+      {
+        stage: 'legal-identity',
+        exit_evidence: 'Verifier legal entity, jurisdiction, beneficial ownership, and authorized signer mapped to verifier DID.',
+      },
+      {
+        stage: 'technical-readiness',
+        exit_evidence: 'Verifier key custody, uptime target, incident contact, and evidence-retention controls documented.',
+      },
+      {
+        stage: 'policy-scope',
+        exit_evidence: 'Allowed sectors, disallowed conflicts, liability boundary, and escalation duty accepted.',
+      },
+      {
+        stage: 'pilot-countersignature',
+        exit_evidence: 'Verifier signs pilot evidence hash and accepts regulator cooperation obligations.',
+      },
+    ],
+    verifier_requirements: [
+      'Legal entity mapping for verifier DID.',
+      'Public key registry and rotation contact.',
+      'Sector scope and conflict policy.',
+      'Evidence retention and incident cooperation terms.',
+      'Service-level target for pilot quorum participation.',
+    ],
+    pilot_roster_template: (validatorQuorum.votes || []).map((vote) => ({
+      verifier_id: vote.verifier_id,
+      verifier_name: vote.verifier_name,
+      category: vote.category,
+      jurisdiction: vote.jurisdiction,
+      controls: vote.controls,
+      current_demo_vote_hash: vote.vote_hash,
+      production_status: 'requires-legal-onboarding',
+    })),
+    signer: signerDescriptor(signer),
+  };
+
+  return signDocument(payload, signer, 'pack_hash');
+};
+
+const buildProcurementReadinessPack = ({
+  request,
+  policyReceipt,
+  jurisdictionReport,
+  liabilityRoute,
+  assurancePlan,
+  keyCustodyManifest,
+  anchorManifest,
+  pilotReadinessGate,
+  redactionManifest,
+  verifierOnboardingPack,
+  issuedAt,
+  signer,
+}) => {
+  const controls = [
+    {
+      domain: 'policy',
+      buyer_question: 'Can the institution prove the decision was allowed by a governed policy?',
+      aethelred_evidence: policyReceipt.content_hash,
+      status: policyReceipt.decision === 'allow' ? 'pass' : 'blocked',
+    },
+    {
+      domain: 'data-residency',
+      buyer_question: 'Can the institution prove where the decision workflow was allowed to run?',
+      aethelred_evidence: jurisdictionReport.execution_region,
+      status: jurisdictionReport.data_residency_allowed ? 'pass' : 'blocked',
+    },
+    {
+      domain: 'privacy',
+      buyer_question: 'Can public artifacts be reviewed without exposing raw regulated data?',
+      aethelred_evidence: redactionManifest.manifest_hash,
+      status: redactionManifest.raw_regulated_data_exported ? 'blocked' : 'pass',
+    },
+    {
+      domain: 'liability',
+      buyer_question: 'Can accountability be routed to sponsor, human controller, model owner, operator, and auditor path?',
+      aethelred_evidence: liabilityRoute.route_id,
+      status: liabilityRoute.status === 'bound' ? 'pass' : 'blocked',
+    },
+    {
+      domain: 'verifier-governance',
+      buyer_question: 'Can verifier categories be onboarded as legal entities for pilot quorum operation?',
+      aethelred_evidence: verifierOnboardingPack.pack_hash,
+      status: 'conditional',
+    },
+    {
+      domain: 'key-custody',
+      buyer_question: 'Is production key custody ready?',
+      aethelred_evidence: keyCustodyManifest.manifest_hash,
+      status: keyCustodyManifest.production_status === 'production-custody' ? 'pass' : 'conditional',
+    },
+    {
+      domain: 'anchoring',
+      buyer_question: 'Can the seal be anchored to a public testnet or permissioned institutional zone?',
+      aethelred_evidence: anchorManifest.anchor_id,
+      status: anchorManifest.status === 'locally-anchored-public-proof' ? 'conditional' : 'blocked',
+    },
+    {
+      domain: 'pilot-readiness',
+      buyer_question: 'Is the workload ready for a controlled regulated pilot?',
+      aethelred_evidence: pilotReadinessGate.gate_hash,
+      status: pilotReadinessGate.regulated_pilot_status === 'conditional-pass' ? 'conditional' : 'blocked',
+    },
+  ];
+  const blocked = controls.filter((control) => control.status === 'blocked');
+  const payload = {
+    schema_version: 'aethelred-procurement-readiness-pack-v0.2',
+    generated_at: issuedAt,
+    tenant: request.tenant,
+    use_case: request.use_case,
+    buyer_status: blocked.length === 0 ? 'pilot-procurement-ready-with-conditions' : 'blocked',
+    controls,
+    required_buyer_documents: [
+      'Pilot scope and data classification memo.',
+      'Deployment mode selection: public seal, permissioned zone, sovereign private deployment, or hybrid settlement.',
+      'Security owner approval for key custody and incident response.',
+      'Legal owner approval for liability route and claim boundary.',
+      'Regulator or auditor evidence export acceptance.',
+      'Verifier council onboarding plan.',
+    ],
+    commercial_packaging: {
+      recommended_offer: 'regulated-ai-decision-seal-pilot',
+      deployment_modes: ['hybrid-public-seal', 'permissioned-institutional-zone', 'sovereign-private'],
+      pilot_duration_days: 90,
+      success_metrics: [
+        'Every pilot decision receives a verifiable seal.',
+        'Verifier report returns no failed checks.',
+        'Regulator pack exports without raw regulated data.',
+        'Incident and exception workflows are exercised at least once.',
+      ],
+    },
+    open_conditions: assurancePlan.production_blockers.map((blocker) => ({
+      id: blocker.id,
+      owner: blocker.owner,
+      requirement: blocker.requirement,
+    })),
+    signer: signerDescriptor(signer),
+  };
+
+  return signDocument(payload, signer, 'pack_hash');
+};
+
 const buildAuditorAttestation = ({ artifacts, issuedAt, runId, sealId, signer }) => {
   const artifactHashes = Object.fromEntries(Object.entries(artifacts).map(([name, value]) => [name, sha256Hex(value)]));
   const payload = {
@@ -1450,6 +1655,9 @@ const buildAuditorAttestation = ({ artifacts, issuedAt, runId, sealId, signer })
       'liability route',
       'key custody manifest',
       'anchor manifest',
+      'redaction manifest',
+      'verifier onboarding pack',
+      'procurement readiness pack',
       'sovereign differentiation scorecard',
       'regulatory evidence index',
     ],
@@ -1490,6 +1698,9 @@ const buildRegulatoryEvidenceIndex = ({ artifacts, signer, issuedAt, runId, seal
         'key-custody-manifest.json': 'Signer custody posture, rotation expectations, and HSM/KMS production requirements.',
         'anchor-manifest.json': 'Local-ledger anchor plus chain-ready payload for testnet or permissioned-zone anchoring.',
         'pilot-readiness-gate.json': 'Conditional pilot readiness gate with production blockers.',
+        'redaction-manifest.json': 'Public export-control and redaction manifest for regulated data minimization.',
+        'verifier-onboarding-pack.json': 'Verifier council onboarding requirements, roster template, and pilot legal-readiness checklist.',
+        'procurement-readiness-pack.json': 'Institutional buyer procurement controls, required documents, and commercial pilot packaging.',
         'sovereign-differentiation-scorecard.json': 'Aethelred-vs-generic-verifiable-cloud scorecard for sovereign and regulated buyers.',
         'auditor-attestation.json': 'Signed simulated external-auditor attestation over public proof artifacts.',
         'public-verifier-manifest.json': 'Public endpoints, claims, and claim boundaries.',
@@ -1506,6 +1717,9 @@ const buildRegulatoryEvidenceIndex = ({ artifacts, signer, issuedAt, runId, seal
       { control: 'key-custody', artifacts: ['key-custody-manifest.json', 'auditor-attestation.json'] },
       { control: 'anchoring', artifacts: ['anchor-manifest.json', 'ledger.json'] },
       { control: 'pilot-readiness', artifacts: ['pilot-readiness-gate.json', 'assurance-plan.json'] },
+      { control: 'privacy-redaction', artifacts: ['redaction-manifest.json', 'evidence-bundle.json'] },
+      { control: 'verifier-onboarding', artifacts: ['verifier-onboarding-pack.json', 'validator-quorum.json'] },
+      { control: 'procurement-readiness', artifacts: ['procurement-readiness-pack.json', 'pilot-readiness-gate.json'] },
       { control: 'sovereign-differentiation', artifacts: ['sovereign-differentiation-scorecard.json', 'external-compute-report.json'] },
       { control: 'audit-export', artifacts: ['audit-pack.json', 'audit-report.md'] },
     ],
@@ -1529,6 +1743,9 @@ const buildAuditMarkdown = ({
   externalComputeReport,
   anchorManifest,
   pilotReadinessGate,
+  redactionManifest,
+  verifierOnboardingPack,
+  procurementReadinessPack,
   sovereignDifferentiationScorecard,
   auditorAttestation,
 }) => {
@@ -1573,8 +1790,11 @@ Overall status: **${verifierReport.valid ? 'verified public proof path' : 'faile
 8. Aethelred Seal \`${seal.seal_id}\` bound the full decision evidence into one verifier-friendly record.
 9. Anchor manifest \`${anchorManifest.anchor_id}\` produced a local ledger anchor and chain-ready payload.
 10. Pilot readiness gate returned \`${pilotReadinessGate.regulated_pilot_status}\` with explicit production blockers.
-11. Sovereign differentiation scorecard \`${sovereignDifferentiationScorecard.scorecard_hash}\` documented the Aethelred layer above compute.
-12. Auditor attestation \`${auditorAttestation.attestation_id}\` signed the public proof artifact consistency boundary.
+11. Redaction manifest \`${redactionManifest.manifest_hash}\` documented public export controls and data minimization.
+12. Verifier onboarding pack \`${verifierOnboardingPack.pack_hash}\` mapped verifier categories to production onboarding evidence.
+13. Procurement readiness pack \`${procurementReadinessPack.pack_hash}\` converted proof artifacts into buyer due-diligence controls.
+14. Sovereign differentiation scorecard \`${sovereignDifferentiationScorecard.scorecard_hash}\` documented the Aethelred layer above compute.
+15. Auditor attestation \`${auditorAttestation.attestation_id}\` signed the public proof artifact consistency boundary.
 
 ## Production Promotion Blockers
 
@@ -1839,6 +2059,33 @@ export const createProofRecord = (request = defaultProofRequest(), issuedAt = no
     issuedAt,
     signer: auditSigner,
   });
+  const redactionManifest = buildRedactionManifest({
+    request,
+    inputHash,
+    outputHash,
+    issuedAt,
+    signer: auditSigner,
+  });
+  const verifierOnboardingPack = buildVerifierOnboardingPack({
+    validatorQuorum,
+    jurisdictionReport,
+    issuedAt,
+    signer: auditSigner,
+  });
+  const procurementReadinessPack = buildProcurementReadinessPack({
+    request,
+    policyReceipt,
+    jurisdictionReport,
+    liabilityRoute,
+    assurancePlan,
+    keyCustodyManifest,
+    anchorManifest,
+    pilotReadinessGate,
+    redactionManifest,
+    verifierOnboardingPack,
+    issuedAt,
+    signer: auditSigner,
+  });
   const sovereignDifferentiationScorecard = buildSovereignDifferentiationScorecard({
     request,
     seal,
@@ -1867,6 +2114,9 @@ export const createProofRecord = (request = defaultProofRequest(), issuedAt = no
     'key-custody-manifest.json': keyCustodyManifest,
     'anchor-manifest.json': anchorManifest,
     'pilot-readiness-gate.json': pilotReadinessGate,
+    'redaction-manifest.json': redactionManifest,
+    'verifier-onboarding-pack.json': verifierOnboardingPack,
+    'procurement-readiness-pack.json': procurementReadinessPack,
     'sovereign-differentiation-scorecard.json': sovereignDifferentiationScorecard,
     'public-verifier-manifest.json': publicVerifierManifest,
   };
@@ -1908,6 +2158,9 @@ export const createProofRecord = (request = defaultProofRequest(), issuedAt = no
     key_custody_manifest: keyCustodyManifest,
     anchor_manifest: anchorManifest,
     pilot_readiness_gate: pilotReadinessGate,
+    redaction_manifest: redactionManifest,
+    verifier_onboarding_pack: verifierOnboardingPack,
+    procurement_readiness_pack: procurementReadinessPack,
     sovereign_differentiation_scorecard: sovereignDifferentiationScorecard,
     seal,
     regulatory_evidence_index: regulatoryEvidenceIndex,
@@ -1934,6 +2187,9 @@ export const createProofRecord = (request = defaultProofRequest(), issuedAt = no
     anchor_hash: anchorManifest.anchor_hash,
     key_custody_manifest_hash: keyCustodyManifest.manifest_hash,
     pilot_readiness_gate_hash: pilotReadinessGate.gate_hash,
+    redaction_manifest_hash: redactionManifest.manifest_hash,
+    verifier_onboarding_pack_hash: verifierOnboardingPack.pack_hash,
+    procurement_readiness_pack_hash: procurementReadinessPack.pack_hash,
     sovereign_differentiation_scorecard_hash: sovereignDifferentiationScorecard.scorecard_hash,
     assurance_tier: assurancePlan.target_tier,
     jurisdiction: jurisdictionReport,
@@ -1959,6 +2215,9 @@ export const createProofRecord = (request = defaultProofRequest(), issuedAt = no
       externalComputeReport,
       anchorManifest,
       pilotReadinessGate,
+      redactionManifest,
+      verifierOnboardingPack,
+      procurementReadinessPack,
       sovereignDifferentiationScorecard,
       auditorAttestation,
     }),
@@ -2002,6 +2261,9 @@ const recomputeIndexArtifacts = (record) => ({
   'key-custody-manifest.json': record.key_custody_manifest,
   'anchor-manifest.json': record.anchor_manifest,
   'pilot-readiness-gate.json': record.pilot_readiness_gate,
+  'redaction-manifest.json': record.redaction_manifest,
+  'verifier-onboarding-pack.json': record.verifier_onboarding_pack,
+  'procurement-readiness-pack.json': record.procurement_readiness_pack,
   'sovereign-differentiation-scorecard.json': record.sovereign_differentiation_scorecard,
   'public-verifier-manifest.json': record.public_verifier_manifest,
 });
@@ -2015,6 +2277,9 @@ export const verifyProofRecord = (record = {}) => {
   const keyCustodyVerification = verifySignedDocument(record.key_custody_manifest, 'manifest_hash');
   const anchorVerification = verifySignedDocument(record.anchor_manifest, 'anchor_hash');
   const pilotGateVerification = verifySignedDocument(record.pilot_readiness_gate, 'gate_hash');
+  const redactionVerification = verifySignedDocument(record.redaction_manifest, 'manifest_hash');
+  const verifierOnboardingVerification = verifySignedDocument(record.verifier_onboarding_pack, 'pack_hash');
+  const procurementVerification = verifySignedDocument(record.procurement_readiness_pack, 'pack_hash');
   const scorecardVerification = verifySignedDocument(record.sovereign_differentiation_scorecard, 'scorecard_hash');
   const auditorVerification = verifySignedDocument(record.auditor_attestation, 'attestation_hash');
   const votes = record.validator_quorum?.votes || [];
@@ -2246,6 +2511,54 @@ export const verifyProofRecord = (record = {}) => {
       record.pilot_readiness_gate?.regulated_pilot_status || 'missing',
     ),
     check(
+      'redaction-manifest-hash',
+      'Redaction manifest hash is stable',
+      redactionVerification.hash_ok,
+      record.redaction_manifest?.manifest_hash || 'missing',
+    ),
+    check(
+      'redaction-manifest-signature',
+      'Redaction manifest signature verifies',
+      redactionVerification.signature_ok,
+      record.redaction_manifest?.signer?.key_id || 'missing',
+    ),
+    check(
+      'redaction-manifest-public-export',
+      'Redaction manifest blocks raw regulated data export',
+      record.redaction_manifest?.raw_regulated_data_exported === false,
+      record.redaction_manifest?.public_artifact_policy || 'missing',
+    ),
+    check(
+      'verifier-onboarding-pack-hash',
+      'Verifier onboarding pack hash is stable',
+      verifierOnboardingVerification.hash_ok,
+      record.verifier_onboarding_pack?.pack_hash || 'missing',
+    ),
+    check(
+      'verifier-onboarding-pack-signature',
+      'Verifier onboarding pack signature verifies',
+      verifierOnboardingVerification.signature_ok,
+      record.verifier_onboarding_pack?.signer?.key_id || 'missing',
+    ),
+    check(
+      'procurement-readiness-pack-hash',
+      'Procurement readiness pack hash is stable',
+      procurementVerification.hash_ok,
+      record.procurement_readiness_pack?.pack_hash || 'missing',
+    ),
+    check(
+      'procurement-readiness-pack-signature',
+      'Procurement readiness pack signature verifies',
+      procurementVerification.signature_ok,
+      record.procurement_readiness_pack?.signer?.key_id || 'missing',
+    ),
+    check(
+      'procurement-readiness-pack-status',
+      'Procurement readiness pack is not blocked',
+      record.procurement_readiness_pack?.buyer_status !== 'blocked',
+      record.procurement_readiness_pack?.buyer_status || 'missing',
+    ),
+    check(
       'sovereign-differentiation-scorecard-hash',
       'Sovereign differentiation scorecard hash is stable',
       scorecardVerification.hash_ok,
@@ -2361,6 +2674,9 @@ const appendLedger = async (outputDir, record) => {
       seal: sha256Hex(record.seal),
       evidence_bundle: record.evidence_bundle_hash,
       external_compute_report: sha256Hex(record.external_compute_report),
+      redaction_manifest: sha256Hex(record.redaction_manifest),
+      verifier_onboarding_pack: sha256Hex(record.verifier_onboarding_pack),
+      procurement_readiness_pack: sha256Hex(record.procurement_readiness_pack),
       sovereign_differentiation_scorecard: sha256Hex(record.sovereign_differentiation_scorecard),
       validator_quorum: sha256Hex(record.validator_quorum),
       regulatory_evidence_index: sha256Hex(record.regulatory_evidence_index),
@@ -2439,6 +2755,9 @@ export const writeProofArtifacts = async (record, outputDir = DEFAULT_OUTPUT_DIR
     'key-custody-manifest.json': record.key_custody_manifest,
     'anchor-manifest.json': record.anchor_manifest,
     'pilot-readiness-gate.json': record.pilot_readiness_gate,
+    'redaction-manifest.json': record.redaction_manifest,
+    'verifier-onboarding-pack.json': record.verifier_onboarding_pack,
+    'procurement-readiness-pack.json': record.procurement_readiness_pack,
     'sovereign-differentiation-scorecard.json': record.sovereign_differentiation_scorecard,
     'regulatory-evidence-index.json': record.regulatory_evidence_index,
     'auditor-attestation.json': record.auditor_attestation,

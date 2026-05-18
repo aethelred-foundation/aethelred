@@ -28,6 +28,9 @@ test('core public proof artifacts satisfy schema contracts', async () => {
       ['aethelred-anchor-manifest-v0.2.schema.json', record.anchor_manifest],
       ['aethelred-pilot-readiness-gate-v0.2.schema.json', record.pilot_readiness_gate],
       ['aethelred-external-compute-report-v0.2.schema.json', record.external_compute_report],
+      ['aethelred-redaction-manifest-v0.2.schema.json', record.redaction_manifest],
+      ['aethelred-verifier-onboarding-pack-v0.2.schema.json', record.verifier_onboarding_pack],
+      ['aethelred-procurement-readiness-pack-v0.2.schema.json', record.procurement_readiness_pack],
       ['aethelred-sovereign-differentiation-scorecard-v0.2.schema.json', record.sovereign_differentiation_scorecard],
     ];
 

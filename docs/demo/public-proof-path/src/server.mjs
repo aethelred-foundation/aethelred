@@ -259,6 +259,8 @@ const page = (record) => {
         <select id="scenario" aria-label="Scenario">${scenarioOptions}</select>
         <button class="primary" onclick="runProof()">Run Proof</button>
         <a class="button" href="/v1/regulator-pack/latest">Regulator Pack</a>
+        <a class="button" href="/v1/procurement/latest">Procurement</a>
+        <a class="button" href="/v1/redaction/latest">Redaction</a>
         <a class="button" href="/v1/external-compute/latest">Compute Report</a>
         <a class="button" href="/v1/sovereign-differentiation/latest">10x Scorecard</a>
         <a class="button" href="/v1/audit/latest.md">Audit Report</a>
@@ -389,6 +391,9 @@ const latestRegulatorPack = async () => {
     anchor_manifest: record?.anchor_manifest,
     pilot_readiness_gate: record?.pilot_readiness_gate,
     auditor_attestation: record?.auditor_attestation,
+    redaction_manifest: record?.redaction_manifest,
+    verifier_onboarding_pack: record?.verifier_onboarding_pack,
+    procurement_readiness_pack: record?.procurement_readiness_pack,
     sovereign_differentiation_scorecard: record?.sovereign_differentiation_scorecard,
     regulatory_evidence_index: record?.regulatory_evidence_index,
     public_verifier_manifest: record?.public_verifier_manifest,
@@ -496,6 +501,18 @@ const handle = async (request, response) => {
     }
     if (request.method === 'GET' && url.pathname === '/v1/readiness/latest') {
       send(response, 200, await readLatestArtifact('pilot-readiness-gate.json', OUTPUT_DIR));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/v1/redaction/latest') {
+      send(response, 200, await readLatestArtifact('redaction-manifest.json', OUTPUT_DIR));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/v1/verifier-onboarding/latest') {
+      send(response, 200, await readLatestArtifact('verifier-onboarding-pack.json', OUTPUT_DIR));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/v1/procurement/latest') {
+      send(response, 200, await readLatestArtifact('procurement-readiness-pack.json', OUTPUT_DIR));
       return;
     }
     if (request.method === 'GET' && url.pathname === '/v1/sovereign-differentiation/latest') {

@@ -27,6 +27,9 @@ controls.
 | `key-custody-manifest.json` | `aethelred-key-custody-manifest-v0.2` | Demo signer posture plus production HSM/KMS requirements |
 | `anchor-manifest.json` | `aethelred-anchor-manifest-v0.2` | Local ledger anchor and chain-ready payload for testnet or permissioned zone |
 | `pilot-readiness-gate.json` | `aethelred-pilot-readiness-gate-v0.2` | Public proof, regulated pilot, and production readiness gates |
+| `redaction-manifest.json` | `aethelred-redaction-manifest-v0.2` | Public export-control, field classification, and data minimization manifest |
+| `verifier-onboarding-pack.json` | `aethelred-verifier-onboarding-pack-v0.2` | Verifier council onboarding requirements, roster template, and pilot legal-readiness checklist |
+| `procurement-readiness-pack.json` | `aethelred-procurement-readiness-pack-v0.2` | Institutional buyer controls, required documents, and pilot commercial packaging |
 | `sovereign-differentiation-scorecard.json` | `aethelred-sovereign-differentiation-scorecard-v0.2` | Signed Aethelred-vs-generic-verifiable-cloud scorecard for regulated buyers |
 | `regulatory-evidence-index.json` | `aethelred-regulatory-evidence-index-v0.2` | Regulator-readable artifact index with SHA-256 commitments |
 | `auditor-attestation.json` | `aethelred-auditor-attestation-v0.2` | Signed public-proof auditor attestation over artifact consistency |
@@ -81,6 +84,9 @@ currently checks:
 - key custody manifest hash and signature
 - anchor manifest hash, signature, and seal binding
 - pilot readiness gate hash, signature, and non-blocked state
+- redaction manifest hash, signature, and raw-data export boundary
+- verifier onboarding pack hash and signature
+- procurement readiness pack hash, signature, and non-blocked buyer status
 - regulatory evidence index hash, signature, and artifact hashes
 - auditor attestation hash, signature, and artifact hashes
 - append-only ledger chain verification

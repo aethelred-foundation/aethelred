@@ -26,6 +26,9 @@ for scenario in finance healthcare carbon external-finance; do
   node src/cli.mjs regulator-pack --output-dir="$scenario_dir" >/dev/null
   node src/cli.mjs anchor --output-dir="$scenario_dir" >/dev/null
   node src/cli.mjs external-report --output-dir="$scenario_dir" >/dev/null
+  node src/cli.mjs redaction-manifest --output-dir="$scenario_dir" >/dev/null
+  node src/cli.mjs verifier-onboarding --output-dir="$scenario_dir" >/dev/null
+  node src/cli.mjs procurement-pack --output-dir="$scenario_dir" >/dev/null
   node src/cli.mjs sovereign-scorecard --output-dir="$scenario_dir" >/dev/null
 done
 

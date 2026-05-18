@@ -71,6 +71,9 @@ Use these endpoints during a demo:
 | `/v1/external-compute/latest` | Upstream compute proof normalization and acceptance checks |
 | `/v1/regulator-pack/latest` | Regulator/auditor export |
 | `/v1/evidence-index/latest` | Artifact index and hash commitments |
+| `/v1/redaction/latest` | Public export-control and data minimization evidence |
+| `/v1/verifier-onboarding/latest` | Verifier council onboarding pack |
+| `/v1/procurement/latest` | Institutional buyer readiness pack |
 | `/v1/sovereign-differentiation/latest` | Signed 10x scorecard against generic verifiable compute |
 | `/v1/anchor/latest` | Chain-ready anchor payload |
 | `/v1/key-custody/latest` | Demo key posture and production custody requirements |
@@ -88,10 +91,13 @@ Use these endpoints during a demo:
 6. Open the jurisdiction report and show residency controls.
 7. Open the validator quorum and show multi-category votes.
 8. Open the liability route and show who is accountable.
-9. Open the 10x scorecard and show the Aethelred controls above generic compute proof.
-10. Open the readiness gate and production blockers.
-11. Open the regulator pack and evidence index.
-12. Close with the production promotion plan.
+9. Open the redaction manifest and show raw-data export controls.
+10. Open the procurement pack and show buyer due-diligence controls.
+11. Open the verifier onboarding pack and show how demo verifiers become legal pilot participants.
+12. Open the 10x scorecard and show the Aethelred controls above generic compute proof.
+13. Open the readiness gate and production blockers.
+14. Open the regulator pack and evidence index.
+15. Close with the production promotion plan.
 
 ## Production Promotion Gates
 
