@@ -34,7 +34,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate release-preflight fuzz-check
+.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate public-testnet-readiness release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -215,6 +215,10 @@ local-readiness:
 ## validator-helm-validate: Lint and render-check the production validator Helm chart
 validator-helm-validate:
 	@bash ./scripts/validate-validator-helm-chart.sh
+
+## public-testnet-readiness: Validate public testnet launch blockers and handoff consistency
+public-testnet-readiness:
+	@python3 ./scripts/validate-public-testnet-readiness.py
 
 ## release-preflight: Run all pre-release validation checks
 release-preflight: local-readiness validator-helm-validate audit-signoff-check coverage-critical sdk-version-check openapi-validate

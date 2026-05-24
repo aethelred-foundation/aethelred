@@ -117,6 +117,7 @@ aethel run src/main.py --network testnet --hardware aws-nitro
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [Devnet Launch Pack](devnet/README.md) | Devnet command surface, onboarding packets, readiness gates, and handoff checklist | Validators / Developers / Release Engineering |
+| [Public Testnet Readiness](testnet/PUBLIC_TESTNET_READINESS.md) | Public validator launch gate, blockers, and launch packet requirements | Validators / Release Engineering / Security |
 | [Getting Started](guides/getting-started.md) | First sovereign function | Developers |
 | [Validator Onboarding CLI](guides/validator-onboarding-cli.md) | Institutional validator onboarding flow (stake + PCR0 + readiness) | Node Operators |
 | [Python SDK](sdk/python.md) | Data science integration | ML Engineers |
@@ -168,6 +169,7 @@ docs/
 ├── DEVELOPER_QUICKSTART.md  # Get started in 10 minutes
 ├── SDK_GUIDE.md             # SDK usage guide
 ├── devnet/                  # Devnet launch pack and onboarding gates
+├── testnet/                 # Public testnet launch readiness and handoff gates
 ├── VALIDATOR_RUNBOOK.md     # Validator operations
 ├── AIPs/                    # Aethelred Improvement Proposals (mirrored)
 ├── api/                     # Detailed API schemas

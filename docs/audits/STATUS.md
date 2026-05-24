@@ -72,7 +72,7 @@ Updated: 2026-03-02
 
 | Gate | Description | Status | Evidence |
 |------|-------------|--------|----------|
-| G1 | Audit signoff | PASS | All findings closed (see tables above); external audits AUD-2026-001/002 in progress |
+| G1 | Audit signoff | PARTIAL | Internal findings closed; external audits AUD-2026-001/002 remain in progress. Public testnet requires completed scopes or a signed launch waiver; mainnet remains blocked until signed reports are complete. |
 | G2 | CI branch-protection gates | PASS | `Core Required Gate`, `Security Required Gate`, `E2E Required Gate`, `Contracts Required Gate`, `Rust Required Gate`, `Load Test Required Gate` all enforced |
 | G3 | Dependency integrity (Go vendoring) | PASS | `GOFLAGS=-mod=mod` in CI; `go.sum` integrity-checked; no `replace` directives |
 | G4 | Dependency integrity (Rust) | PASS | All `[[bench]]` targets have matching source files; `cargo audit` clean |

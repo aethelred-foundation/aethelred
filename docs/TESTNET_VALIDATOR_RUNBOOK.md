@@ -40,7 +40,7 @@ curl -fsSL \
   https://raw.githubusercontent.com/aethelred-foundation/aethelred/release/testnet-v1.0/config/genesis/testnet-genesis.json \
   -o $HOME/.aethelred/config/genesis.json
 
-echo "fa276d9f9f9c5d2c50e17c88fb820b8e8ac500b8acb0ae1c1b9e0637c080b3a6  $HOME/.aethelred/config/genesis.json" \
+echo "182b526879c751ac5141c043760d6208fdfbd99078d16d424dba74515dab7710  $HOME/.aethelred/config/genesis.json" \
   | shasum -a 256 -c -
 # Must print: OK
 
@@ -129,7 +129,7 @@ Every validator must verify the genesis file before starting:
 
 ```bash
 shasum -a 256 $HOME/.aethelred/config/genesis.json
-# Expected: fa276d9f9f9c5d2c50e17c88fb820b8e8ac500b8acb0ae1c1b9e0637c080b3a6
+# Expected: 182b526879c751ac5141c043760d6208fdfbd99078d16d424dba74515dab7710
 ```
 
 If the checksum does not match, do not start the node. Escalate in Slack `#validators-testnet`.

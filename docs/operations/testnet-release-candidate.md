@@ -1,5 +1,9 @@
 # Testnet Release Candidate: aethelred-testnet-1
 
+**Current Status:** `BLOCKED FOR PUBLIC LAUNCH`
+**Status Date:** 2026-05-24
+**Readiness Gate:** `make public-testnet-readiness`
+
 **Release Branch:** `release/testnet-v1.0`
 **Image Tag:** `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1`
 **Chain ID:** `aethelred-testnet-1`
@@ -12,7 +16,7 @@
 
 | File | Path | SHA-256 |
 |------|------|---------|
-| Genesis JSON | `config/genesis/testnet-genesis.json` | `fa276d9f9f9c5d2c50e17c88fb820b8e8ac500b8acb0ae1c1b9e0637c080b3a6` |
+| Genesis JSON | `config/genesis/testnet-genesis.json` | `182b526879c751ac5141c043760d6208fdfbd99078d16d424dba74515dab7710` |
 | Checksum file | `config/genesis/testnet-genesis.sha256` | — |
 
 ### How to Verify Genesis
@@ -26,8 +30,21 @@ cd aethelred
 shasum -a 256 -c config/genesis/testnet-genesis.sha256
 
 # Expected output:
-# testnet-genesis.json: OK
+# config/genesis/testnet-genesis.json: OK
 ```
+
+---
+
+## Public Launch Blockers
+
+The repository can run internal rehearsal, but public validator onboarding must not begin until `make public-testnet-readiness` passes on `release/testnet-v1.0`.
+
+Current blockers:
+
+- External audit scopes `/contracts/ethereum` and `Consensus + vote extensions` are still marked `In progress` unless a signed public-testnet waiver is approved.
+- Genesis time is stale and must be regenerated for the actual public launch window.
+- Sepolia bridge is enabled with the zero contract address.
+- Seed and persistent peer entries use placeholder node IDs instead of real `nodeID@host:port` values.
 
 ---
 
@@ -91,6 +108,7 @@ peer-3@peer3.testnet.aethelred.io:26656
 
 Per [FREEZE_POLICY.md](./FREEZE_POLICY.md) and [GATE_INVENTORY.md](./GATE_INVENTORY.md):
 
+- [ ] `make public-testnet-readiness` passes on `release/testnet-v1.0`
 - [ ] Release branch `release/testnet-v1.0` exists and is frozen
 - [ ] Genesis artifact published with checksum
 - [ ] All 18 CI gates green on release branch
