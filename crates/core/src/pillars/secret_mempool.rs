@@ -982,6 +982,28 @@ impl EnclaveExecutor {
     }
 
     #[cfg(not(feature = "production"))]
+    fn random_dev_bytes<const N: usize>(&self, label: &str) -> Result<[u8; N], EnclaveError> {
+        let mut rng = OsRng;
+        let mut bytes = Vec::with_capacity(N);
+
+        while bytes.len() < N {
+            let random_word = rng.try_next_u64().map_err(|e| {
+                EnclaveError::ExecutionFailed(format!(
+                    "failed to generate development {}: {}",
+                    label, e
+                ))
+            })?;
+            let chunk = random_word.to_le_bytes();
+            let remaining = N - bytes.len();
+            bytes.extend_from_slice(&chunk[..remaining.min(chunk.len())]);
+        }
+
+        bytes.try_into().map_err(|_| {
+            EnclaveError::ExecutionFailed(format!("failed to materialize development {}", label))
+        })
+    }
+
+    #[cfg(not(feature = "production"))]
     fn encrypt_for_sender(
         &self,
         result: &[u8],
@@ -991,11 +1013,7 @@ impl EnclaveExecutor {
             return Err(EnclaveError::ExecutionFailed("empty result".to_string()));
         }
 
-        let mut nonce = [0u8; 12];
-        let mut rng = OsRng;
-        rng.try_fill_bytes(&mut nonce).map_err(|e| {
-            EnclaveError::ExecutionFailed(format!("failed to generate development nonce: {}", e))
-        })?;
+        let nonce = self.random_dev_bytes::<12>("nonce")?;
 
         let mut key_material = [0u8; 32];
         self.derive_stream_key(sender_pubkey, &nonce, &mut key_material);
@@ -1024,14 +1042,7 @@ impl EnclaveExecutor {
             .unwrap()
             .as_secs();
 
-        let mut nonce = [0u8; 32];
-        let mut rng = OsRng;
-        rng.try_fill_bytes(&mut nonce).map_err(|e| {
-            EnclaveError::ExecutionFailed(format!(
-                "failed to generate development attestation nonce: {}",
-                e
-            ))
-        })?;
+        let nonce = self.random_dev_bytes::<32>("attestation nonce")?;
 
         use sha2::{Digest, Sha256};
         let mut report_hasher = Sha256::new();
