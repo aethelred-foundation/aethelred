@@ -14,7 +14,7 @@
  <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/security-scans.yml?branch=main&style=flat-square&label=Security" alt="Security"></a>
  <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/contracts-ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/contracts-ci.yml?branch=main&style=flat-square&label=Contracts" alt="Contracts"></a>
  <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/rust-crates-ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/rust-crates-ci.yml?branch=main&style=flat-square&label=Rust" alt="Rust"></a>
- <img src="https://img.shields.io/badge/status-testnet--v1.0-yellow?style=flat-square" alt="Status: Testnet v1.0">
+ <img src="https://img.shields.io/badge/status-devnet--candidate-yellow?style=flat-square" alt="Status: Devnet candidate">
  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
 </p>
 <p align="center">
@@ -143,10 +143,13 @@ aethelred/
 # 1. Clone
 git clone https://github.com/aethelred-foundation/aethelred.git && cd aethelred
 
-# 2. Start local testnet (4 validators, Docker)
+# 2. Validate the devnet package
+make devnet-validate
+
+# 3. Start the lightweight local developer stack
 make local-testnet-up
 
-# 3. Check node health
+# 4. Check local service health
 make local-testnet-doctor
 ```
 
@@ -158,6 +161,8 @@ aethel tx pouw submit-job \
  --verification-type hybrid \
  --from mykey
 ```
+
+For the full local Devnet cluster and external onboarding workflow, start with the [Devnet Launch Pack](docs/devnet/README.md).
 
 ---
 
@@ -200,6 +205,10 @@ make build # Build Go node binary
 make test # Run all Go tests
 make test-integration # Run integration tests
 make loadtest-scenarios # Run exploit simulations
+make devnet-validate # Validate devnet genesis, compose, and launch docs
+make devnet-up # Start the full local devnet cluster
+make devnet-doctor # Health check full local devnet services
+make devnet-endpoints # Print full local devnet endpoints
 make local-testnet-up # Start Docker testnet
 make local-testnet-doctor # Health check all services
 make proto-gen # Regenerate protobuf
@@ -220,6 +229,7 @@ Aethelred separates **consensus participation** from **compute-heavy verificatio
 For current operator guidance, use:
 
 - [Testnet Validator Runbook](docs/TESTNET_VALIDATOR_RUNBOOK.md)
+- [Devnet Launch Pack](docs/devnet/README.md)
 - [Mainnet Validator Runbook](docs/VALIDATOR_RUNBOOK.md)
 - [Hardware Requirements](docs/validator/HARDWARE_REQUIREMENTS.md)
 

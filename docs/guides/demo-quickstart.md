@@ -45,7 +45,7 @@ cd demo/dashboard && npm install && npm start
 ### For Developers (10-15 minutes)
 ```bash
 # Start local devnet
-./deploy/scripts/setup-devnet.sh --clean --build
+make devnet-clean-start
 
 # Run SDK demo
 cd sdk/typescript && npx ts-node examples/credit-scoring-demo.ts
@@ -97,13 +97,13 @@ npm start
 ### 3. Full Local Network
 ```bash
 # Start everything
-./deploy/scripts/setup-devnet.sh --clean --build
+make devnet-clean-start
 
 # Open these URLs:
 # - Block Explorer: http://localhost:3000
 # - Grafana Metrics: http://localhost:3001
-# - Faucet: http://localhost:8888
-# - RPC: http://localhost:26657
+# - Faucet: http://localhost:8081
+# - JSON-RPC: http://localhost:8545
 ```
 
 ### 4. SDK Code Walkthrough
@@ -160,6 +160,6 @@ sudo systemctl start docker
 ## Need Help?
 
 - Documentation: https://docs.aethelred.io
-- GitHub: https://github.com/aethelred
+- GitHub: https://github.com/aethelred-foundation/aethelred
 - Discord: https://discord.gg/aethelred
 - Email: team@aethelred.io

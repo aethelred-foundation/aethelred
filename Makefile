@@ -461,3 +461,39 @@ local-testnet-logs:
 ## local-testnet-doctor: Health-check all local testnet services
 local-testnet-doctor:
 	@bash scripts/devtools-local-testnet.sh doctor
+
+# ============================================================================
+# Devnet Launch Controls
+# ============================================================================
+
+## devnet-validate: Run devnet genesis, compose, and documentation readiness checks
+devnet-validate:
+	@bash scripts/devnet-control.sh validate
+
+## devnet-up: Start the full local devnet cluster
+devnet-up:
+	@bash scripts/devnet-control.sh up
+
+## devnet-clean-start: Rebuild and start the full local devnet cluster from clean state
+devnet-clean-start:
+	@bash scripts/devnet-control.sh clean-start
+
+## devnet-down: Stop the full local devnet cluster
+devnet-down:
+	@bash scripts/devnet-control.sh down
+
+## devnet-status: Show full local devnet container status
+devnet-status:
+	@bash scripts/devnet-control.sh status
+
+## devnet-logs: Stream full local devnet logs
+devnet-logs:
+	@bash scripts/devnet-control.sh logs
+
+## devnet-doctor: Run full local devnet runtime health checks
+devnet-doctor:
+	@bash scripts/devnet-control.sh doctor
+
+## devnet-endpoints: Print full local devnet service endpoints
+devnet-endpoints:
+	@bash scripts/devnet-control.sh endpoints

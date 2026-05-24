@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Interactive demo dashboard for Aethelred presentations",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "vite",
     "build": "vite build",

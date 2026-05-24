@@ -30,13 +30,13 @@ npm install && npm start
 ### Option 3: Local DevNet (Technical Deep Dive)
 
 ```bash
-# Full local network with 3 validators
-./deploy/scripts/setup-devnet.sh --clean --build
+# Full local network
+make devnet-clean-start
 
 # Endpoints available:
 # - Block Explorer: http://localhost:3000
-# - RPC: http://localhost:26657
-# - Faucet: http://localhost:8888
+# - JSON-RPC: http://localhost:8545
+# - Faucet: http://localhost:8081
 # - Grafana Metrics: http://localhost:3001
 ```
 

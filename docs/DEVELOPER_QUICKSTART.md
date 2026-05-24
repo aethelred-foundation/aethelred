@@ -161,6 +161,9 @@ Run the supported local devtools stack for protocol and SDK work:
 git clone https://github.com/aethelred-foundation/aethelred.git
 cd aethelred
 
+# Validate the devnet package before starting shared onboarding work
+make devnet-validate
+
 # Start the local stack (default profile: mock RPC + verifier apps)
 make local-testnet-up
 
@@ -178,6 +181,17 @@ Services available:
 - **Devtools dashboard**: http://localhost:3101/devtools (when the `dashboard` profile is enabled)
 
 The default local stack is for developer integration and UI verification. It is not the same thing as public testnet validator onboarding.
+
+For full local Devnet operation, use the launch command family:
+
+```bash
+make devnet-up
+make devnet-doctor
+make devnet-endpoints
+make devnet-down
+```
+
+The full Devnet stack is documented in [docs/devnet/README.md](./devnet/README.md) and is the preferred path before validator walkthroughs, demo rehearsals, and external developer onboarding.
 
 ## 5. CLI Tools
 

@@ -17,7 +17,7 @@
       "section": "VS Code Extension Demo",
       "duration_seconds": 180,
       "actions": [
-        "Install Aethelred Sovereign Copilot extension",
+        "Install the Aethelred VS Code extension",
         "Show compliance linting in real-time",
         "Demonstrate cost estimation hover",
         "Use code snippets for job submission"
@@ -44,10 +44,11 @@
       "section": "Local DevNet Setup",
       "duration_seconds": 180,
       "commands": [
-        "./deploy/scripts/setup-devnet.sh --clean --build",
-        "# Starts 3 validators, zkML prover, API gateway",
+        "make devnet-clean-start",
+        "# Starts validators, compute, bridge, faucet, explorer, and observability",
         "# Explorer at http://localhost:3000",
-        "# Faucet at http://localhost:8888"
+        "# Faucet at http://localhost:8081",
+        "# JSON-RPC at http://localhost:8545"
       ]
     },
     {
@@ -66,15 +67,15 @@
       "section": "Q&A / Hands-On",
       "duration_seconds": 180,
       "resources": [
-        "docs.aethelred.ai - Full documentation",
-        "github.com/aethelred - Open source SDKs",
+        "docs.aethelred.io - Full documentation",
+        "github.com/aethelred-foundation/aethelred - Protocol repository",
         "discord.gg/aethelred - Developer community"
       ]
     }
   ],
   "code_samples": {
-    "typescript": "import { AethelredClient, Job } from '@aethelred/sdk';\n\nconst client = new AethelredClient({ endpoint: 'http://localhost:26657' });\n\nconst job = await client.submitJob({\n  model: 'credit-scoring-v1',\n  input: encryptedData,\n  compliance: ['GDPR', 'CCPA'],\n});\n\nconst result = await job.waitForCompletion();\nconst seal = await client.getSeal(result.sealId);\nconsole.log('Verified:', seal.verify());",
-    "python": "from aethelred import AethelredClient\n\nclient = AethelredClient(endpoint='http://localhost:26657')\n\njob = client.submit_job(\n    model='credit-scoring-v1',\n    input_data=encrypted_data,\n    compliance=['GDPR', 'CCPA']\n)\n\nresult = job.wait_for_completion()\nseal = client.get_seal(result.seal_id)\nprint(f'Verified: {seal.verify()}')"
+    "typescript": "import { AethelredClient, Job } from '@aethelred/sdk';\n\nconst client = new AethelredClient({ endpoint: 'http://localhost:8545' });\n\nconst job = await client.submitJob({\n  model: 'credit-scoring-v1',\n  input: encryptedData,\n  compliance: ['GDPR', 'CCPA'],\n});\n\nconst result = await job.waitForCompletion();\nconst seal = await client.getSeal(result.sealId);\nconsole.log('Verified:', seal.verify());",
+    "python": "from aethelred import AethelredClient\n\nclient = AethelredClient(endpoint='http://localhost:8545')\n\njob = client.submit_job(\n    model='credit-scoring-v1',\n    input_data=encrypted_data,\n    compliance=['GDPR', 'CCPA']\n)\n\nresult = job.wait_for_completion()\nseal = client.get_seal(result.seal_id)\nprint(f'Verified: {seal.verify()}')"
   },
   "prerequisites": [
     "Node.js 18+ or Python 3.9+",

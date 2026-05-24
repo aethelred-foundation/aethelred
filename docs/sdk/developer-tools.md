@@ -79,7 +79,7 @@ Recommended commands:
 
 ### 4. Local Testnet (Docker-Based)
 
-Compose file: `$AETHELRED_REPO_ROOT/deploy/docker/docker-compose.local-testnet.yml`
+Compose file: `$AETHELRED_REPO_ROOT/integrations/deploy/docker/docker-compose.local-testnet.yml`
 
 Included services:
 
@@ -103,6 +103,17 @@ AETHELRED_LOCAL_TESTNET_PROFILE=real-node ./scripts/devtools-local-testnet.sh up
 # or
 aethel local up --profile real-node
 ```
+
+For the full local Devnet cluster, use the repository-level command family:
+
+```bash
+make devnet-validate
+make devnet-up
+make devnet-doctor
+make devnet-endpoints
+```
+
+The operator-grade Devnet path is documented in [Devnet Launch Pack](../devnet/README.md).
 
 ### 5. `model-registry` CLI (Local-First Model Registry Workflow)
 
