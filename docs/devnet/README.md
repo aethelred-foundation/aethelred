@@ -50,6 +50,7 @@ This runs:
 
 - Devnet genesis guard: `scripts/validate-devnet-genesis.py`
 - Compose security guard: `scripts/validate-compose-security.sh`
+- Devnet topology guard: `scripts/validate-devnet-topology.py`
 - Compose syntax validation when Docker Compose is available
 - Documentation presence check for this launch pack
 
@@ -94,10 +95,12 @@ make devnet-down
 | JSON-RPC | `http://localhost:8545` |
 | WebSocket | `ws://localhost:8546` |
 | GraphQL | `http://localhost:8547/graphql` |
-| Faucet | `http://localhost:8081` |
-| Explorer | `http://localhost:3000` |
-| Prometheus | `http://localhost:9091` |
-| Grafana | `http://localhost:3001` |
+| Faucet | `http://localhost:8080` |
+| Explorer | `http://localhost:4000` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3000` |
+
+Use `make devnet-endpoints` as the canonical local endpoint source. The demo dashboard runs separately on `http://localhost:5173` so it does not collide with Grafana.
 
 Hosted devnet endpoints must be published with the release package. Do not rely on stale endpoint values from cached docs or chat messages.
 
@@ -123,6 +126,30 @@ Validator operators should complete the public testnet runbook flow before joini
 - [Testnet Validator Runbook](../TESTNET_VALIDATOR_RUNBOOK.md)
 - [Validator Onboarding CLI](../guides/validator-onboarding-cli.md)
 - [Validator Hardware Requirements](../validator/HARDWARE_REQUIREMENTS.md)
+
+For local devnet only, setup scripts create deterministic keys so every developer can reproduce the same sandbox. These keys are public test fixtures and must never be reused for hosted devnet, testnet, mainnet, bridge, faucet, or validator operations.
+
+Generate the local genesis checksum with:
+
+```bash
+shasum -a 256 tools/devnet/genesis.json
+```
+
+Before publishing a hosted devnet packet, replace all placeholder validator keys, hybrid keys, attestations, and TEE measurements, then run:
+
+```bash
+make devnet-release-genesis-check
+```
+
+For any hosted devnet cohort, render the Docker Compose profile with an immutable image tag and record the resulting image digests in the handoff packet:
+
+```bash
+AETHELRED_VERSION=<release-tag> docker compose \
+  -f integrations/deploy/docker/docker-compose.yml \
+  config
+```
+
+Do not publish a validator packet that relies on mutable image tags, placeholder bridge or faucet keys, or simulated attestation values.
 
 ---
 

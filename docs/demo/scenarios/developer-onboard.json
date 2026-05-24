@@ -46,8 +46,8 @@
       "commands": [
         "make devnet-clean-start",
         "# Starts validators, compute, bridge, faucet, explorer, and observability",
-        "# Explorer at http://localhost:3000",
-        "# Faucet at http://localhost:8081",
+        "# Explorer at http://localhost:4000",
+        "# Faucet at http://localhost:8080",
         "# JSON-RPC at http://localhost:8545"
       ]
     },

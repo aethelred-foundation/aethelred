@@ -40,6 +40,10 @@ spec:
         fsGroup: {{ .Values.podSecurityContext.fsGroup }}
         runAsUser: {{ .Values.podSecurityContext.runAsUser }}
         runAsNonRoot: {{ .Values.podSecurityContext.runAsNonRoot }}
+        {{- with .Values.podSecurityContext.seccompProfile }}
+        seccompProfile:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -56,6 +60,8 @@ spec:
         - name: init-config
           image: "{{ .Values.validator.image.repository }}:{{ .Values.validator.image.tag }}"
           imagePullPolicy: {{ .Values.validator.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.validator.securityContext | nindent 12 }}
           command: ["aethelredd", "init", "--home=/data"]
           volumeMounts:
             - name: data
@@ -76,6 +82,8 @@ spec:
         - name: validator
           image: "{{ .Values.validator.image.repository }}:{{ .Values.validator.image.tag }}"
           imagePullPolicy: {{ .Values.validator.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.validator.securityContext | nindent 12 }}
           command:
             {{- toYaml .Values.validator.command | nindent 12 }}
           ports:
@@ -134,6 +142,8 @@ spec:
               mountPath: /mnt/secrets-store
               readOnly: true
             {{- end }}
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: {{ .Values.validator.livenessProbe.path }}
@@ -157,6 +167,12 @@ spec:
           imagePullPolicy: {{ .Values.teeWorker.image.pullPolicy }}
           securityContext:
             privileged: {{ .Values.teeWorker.privileged }}
+            allowPrivilegeEscalation: {{ .Values.teeWorker.securityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.teeWorker.securityContext.readOnlyRootFilesystem }}
+            capabilities:
+              {{- toYaml .Values.teeWorker.securityContext.capabilities | nindent 14 }}
+            seccompProfile:
+              {{- toYaml .Values.teeWorker.securityContext.seccompProfile | nindent 14 }}
           command:
             {{- toYaml .Values.teeWorker.command | nindent 12 }}
           ports:
@@ -180,12 +196,16 @@ spec:
               mountPath: /dev/sgx_provision
             - name: sgx-enclave
               mountPath: /dev/sgx_enclave
+            - name: tmp
+              mountPath: /tmp
         {{- end }}
 
         {{- if .Values.zkmlProver.enabled }}
         - name: zkml-prover
           image: "{{ .Values.zkmlProver.image.repository }}:{{ .Values.zkmlProver.image.tag }}"
           imagePullPolicy: {{ .Values.zkmlProver.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.zkmlProver.securityContext | nindent 12 }}
           command:
             {{- toYaml .Values.zkmlProver.command | nindent 12 }}
           ports:
@@ -205,6 +225,8 @@ spec:
             - name: zkml-models
               mountPath: /models
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
         {{- end }}
 
       volumes:
@@ -220,6 +242,8 @@ spec:
         - name: zkml-models
           persistentVolumeClaim:
             claimName: {{ .Values.zkmlModels.existingClaim }}
+        - name: tmp
+          emptyDir: {}
         - name: sgx-provision
           hostPath:
             path: /dev/sgx_provision

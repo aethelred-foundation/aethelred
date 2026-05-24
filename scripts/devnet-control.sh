@@ -50,6 +50,7 @@ compose() {
 validate() {
   python3 "${ROOT_DIR}/scripts/validate-devnet-genesis.py" "${GENESIS_FILE}"
   bash "${ROOT_DIR}/scripts/validate-compose-security.sh"
+  python3 "${ROOT_DIR}/scripts/validate-devnet-topology.py"
 
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
     compose config --quiet
@@ -71,12 +72,12 @@ Core services:
   JSON-RPC:      http://localhost:8545
   WebSocket:     ws://localhost:8546
   GraphQL:       http://localhost:8547/graphql
-  Faucet:        http://localhost:8081
-  Explorer:      http://localhost:3000
+  Faucet:        http://localhost:8080
+  Explorer:      http://localhost:4000
 
 Operations:
-  Prometheus:    http://localhost:9091
-  Grafana:       http://localhost:3001
+  Prometheus:    http://localhost:9090
+  Grafana:       http://localhost:3000
   Health check:  make devnet-doctor
 
 Network:

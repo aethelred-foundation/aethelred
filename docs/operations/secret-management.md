@@ -18,10 +18,11 @@ Keep validator, node, and TEE keys outside Git and outside static Kubernetes man
 
 ## Rotation Policy
 
-1. Rotate validator and TEE material at least quarterly.
-2. Keep two active versions during rolling upgrade windows.
-3. Trigger controlled rollout (`helm upgrade`) after secret rotation.
-4. Validate signing and attestation health before revoking prior versions.
+1. Validator consensus signing keys are long-lived identity keys. Do not rotate them on a calendar schedule; rotate only for compromise, cryptographic deprecation, or a coordinated validator replacement event.
+2. Rotate TEE, TLS, API, session, faucet, bridge relayer, and other operational secrets at least quarterly.
+3. Keep two active non-consensus secret versions during rolling upgrade windows.
+4. Trigger controlled rollout (`helm upgrade`) after non-consensus secret rotation.
+5. Validate signing and attestation health before revoking prior versions.
 
 ## Access Control Baseline
 

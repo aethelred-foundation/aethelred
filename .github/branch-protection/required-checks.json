@@ -1,5 +1,6 @@
 {
   "default": [
+    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
@@ -9,6 +10,7 @@
     "Fuzzing Required Gate"
   ],
   "main": [
+    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
@@ -19,6 +21,7 @@
     "E2E Required Gate"
   ],
   "develop": [
+    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
@@ -28,6 +31,7 @@
     "Fuzzing Required Gate"
   ],
   "release/*": [
+    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",

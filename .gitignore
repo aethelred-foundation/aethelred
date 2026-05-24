@@ -137,14 +137,10 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI & Dev Tooling (local only) ────────────────────────────────────
-.ai-tools/
-.claude/
-.cursor/
-.codex/
-.serena/
-.aider*
-CLAUDE.md
+# ── Local Tooling Scratch Space ─────────────────────────────────────
+.local-tools/
+.local-agents/
+*.local-instructions.md
 
 # ── Audit Evidence ───────────────────────────────────────────────────
 # The canonical load and test evidence pack is committed in-repo.

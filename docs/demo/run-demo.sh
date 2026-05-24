@@ -166,7 +166,7 @@ start_dashboard() {
         npm start &
         DASHBOARD_PID=$!
         cd "$SCRIPT_DIR"
-        echo -e "${GREEN}✓ Dashboard starting at http://localhost:3000${NC}"
+        echo -e "${GREEN}✓ Dashboard starting at http://localhost:5173${NC}"
         sleep 2
     else
         echo -e "${YELLOW}Dashboard package.json not found. Skipping dashboard.${NC}"

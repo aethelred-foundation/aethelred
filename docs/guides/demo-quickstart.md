@@ -7,8 +7,8 @@
 ./demo/run-demo.sh falcon-lion --mode presentation
 
 # Option 2: Web Dashboard (requires npm)
-cd demo/dashboard && npm install && npm start
-# Open http://localhost:3000
+cd docs/demo/dashboard && npm install && npm start
+# Open http://localhost:5173
 ```
 
 ---
@@ -88,7 +88,7 @@ cd sdk/typescript && npx ts-node examples/credit-scoring-demo.ts
 
 ### 2. Interactive Web Demo
 ```bash
-cd demo/dashboard
+cd docs/demo/dashboard
 npm install
 npm start
 # Click "Run Demo" on each card
@@ -100,9 +100,9 @@ npm start
 make devnet-clean-start
 
 # Open these URLs:
-# - Block Explorer: http://localhost:3000
-# - Grafana Metrics: http://localhost:3001
-# - Faucet: http://localhost:8081
+# - Block Explorer: http://localhost:4000
+# - Grafana Metrics: http://localhost:3000
+# - Faucet: http://localhost:8080
 # - JSON-RPC: http://localhost:8545
 ```
 
@@ -148,10 +148,10 @@ sudo systemctl start docker
 
 ## Resources
 
-- **Full Demo Guide:** `demo/README.md`
-- **Investor Scenario:** `demo/scenarios/investor-pitch.json`
-- **Developer Scenario:** `demo/scenarios/developer-onboard.json`
-- **Enterprise Scenario:** `demo/scenarios/enterprise-eval.json`
+- **Full Demo Guide:** `docs/demo/README.md`
+- **Investor Scenario:** `docs/demo/scenarios/investor-pitch.json`
+- **Developer Scenario:** `docs/demo/scenarios/developer-onboard.json`
+- **Enterprise Scenario:** `docs/demo/scenarios/enterprise-eval.json`
 - **SDK Examples:** `sdk/typescript/examples/`
 - **VS Code Extension:** `tools/vscode-extension/`
 

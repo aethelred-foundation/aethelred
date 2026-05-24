@@ -451,7 +451,7 @@ An on-chain vector storage system provides HNSW-indexed (Hierarchical Navigable 
 
 - **Capacity:** Up to 10,000,000 vectors per namespace.
 - **Index Types:** Flat (exact), IVF (approximate), HNSW (default, m=16, ef_construction=200), PQ (100x compression), SQ (4-8x compression).
-- **Embedding Models:** Support for OpenAI Ada-002, OpenAI 3-Small/Large, Cohere v3, Sentence Transformers, CLIP, BioMedLM, FinBERT, and custom models.
+- **Embedding Profiles:** Support for vendor-hosted embedding APIs, open-source transformer encoders, multimodal encoders, domain-specific encoders, and custom models.
 - **Search:** Cosine similarity with epsilon-safe denominator, filterable by tags, content type, date range, and owner.
 - **Access Control:** Per-namespace owner, reader list, public/private flag, optional encryption.
 - **Document Processing:** Automatic chunking (fixed, semantic, sentence, recursive) with configurable chunk size (default 512 tokens) and overlap (default 50 tokens).

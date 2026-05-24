@@ -34,7 +34,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical release-preflight fuzz-check
+.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -202,8 +202,22 @@ audit-signoff-check:
 		--required-scope "Consensus + vote extensions" \
 		--require-signed-report
 
+## local-readiness: Run lightweight audit, policy, and devnet guardrails
+local-readiness:
+	@python3 ./scripts/validate-repo-authority.py
+	@python3 ./scripts/validate_canonical_product_truth.py
+	@bash ./scripts/validate-compose-security.sh .
+	@bash ./scripts/validate-pouw-medium-guards.sh .
+	@bash ./scripts/validate-low-findings-guards.sh .
+	@$(MAKE) devnet-validate
+	@echo "Local readiness checks passed."
+
+## validator-helm-validate: Lint and render-check the production validator Helm chart
+validator-helm-validate:
+	@bash ./scripts/validate-validator-helm-chart.sh
+
 ## release-preflight: Run all pre-release validation checks
-release-preflight: audit-signoff-check coverage-critical sdk-version-check openapi-validate
+release-preflight: local-readiness validator-helm-validate audit-signoff-check coverage-critical sdk-version-check openapi-validate
 	@echo "All release preflight checks passed"
 
 ## docker-build: Build Docker image
@@ -469,6 +483,10 @@ local-testnet-doctor:
 ## devnet-validate: Run devnet genesis, compose, and documentation readiness checks
 devnet-validate:
 	@bash scripts/devnet-control.sh validate
+
+## devnet-release-genesis-check: Reject placeholder genesis fields before hosted devnet release
+devnet-release-genesis-check:
+	@python3 ./scripts/validate-devnet-genesis.py --release tools/devnet/genesis.json
 
 ## devnet-up: Start the full local devnet cluster
 devnet-up:

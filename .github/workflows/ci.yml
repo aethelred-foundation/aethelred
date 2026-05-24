@@ -99,6 +99,34 @@ jobs:
       - name: Lint protos
         run: buf lint
 
+  core-required-gate:
+    name: Core Required Gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - go-lint
+      - go-test
+      - go-build
+      - proto-lint
+    env:
+      GO_LINT_RESULT: ${{ needs.go-lint.result }}
+      GO_TEST_RESULT: ${{ needs.go-test.result }}
+      GO_BUILD_RESULT: ${{ needs.go-build.result }}
+      PROTO_LINT_RESULT: ${{ needs.proto-lint.result }}
+    steps:
+      - name: Enforce core CI gate
+        run: |
+          set -euo pipefail
+          for gate in GO_LINT_RESULT GO_TEST_RESULT GO_BUILD_RESULT PROTO_LINT_RESULT; do
+            result="${!gate}"
+            echo "${gate}=${result}"
+            if [ "${result}" != "success" ]; then
+              echo "::error::${gate} did not pass"
+              exit 1
+            fi
+          done
+          echo "Core CI gate passed."
+
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest

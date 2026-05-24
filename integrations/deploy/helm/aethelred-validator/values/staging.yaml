@@ -3,11 +3,18 @@ network:
   chainID: aethelred-staging-1
 validator:
   image:
-    tag: staging
+    tag: v0.1.0-staging.0
   env:
     logLevel: debug
+teeWorker:
+  image:
+    tag: v0.1.0-staging.0
+zkmlProver:
+  image:
+    tag: v0.1.0-staging.0
 service:
   rpc:
+    enabled: false
     type: ClusterIP
 serviceMonitor:
   enabled: true

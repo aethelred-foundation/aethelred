@@ -34,15 +34,14 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Service endpoints
 declare -A SERVICES=(
-    ["bootnode-rpc"]="http://localhost:26657/health"
-    ["validator-alice-rpc"]="http://localhost:26658/health"
-    ["validator-bob-rpc"]="http://localhost:26659/health"
-    ["compute-charlie-rpc"]="http://localhost:26660/health"
-    ["bridge-relayer"]="http://localhost:8080/health"
-    ["faucet"]="http://localhost:8081/health"
-    ["explorer"]="http://localhost:3000/api/health"
-    ["prometheus"]="http://localhost:9091/-/healthy"
-    ["grafana"]="http://localhost:3001/api/health"
+    ["validator-alice-rpc"]="http://localhost:8545/health"
+    ["validator-bob-rpc"]="http://localhost:8555/health"
+    ["compute-charlie-rpc"]="http://localhost:8565/health"
+    ["bridge-relayer"]="http://localhost:9104/health"
+    ["faucet"]="http://localhost:8080/health"
+    ["explorer"]="http://localhost:4000/health"
+    ["prometheus"]="http://localhost:9090/-/healthy"
+    ["grafana"]="http://localhost:3000/api/health"
 )
 
 # Colors
@@ -261,10 +260,10 @@ output_text_blockchain_info() {
     echo "│                           BLOCKCHAIN STATUS                                 │"
     echo "├─────────────────────────────────────────────────────────────────────────────┤"
 
-    local bootnode_height=$(get_block_height "http://localhost:26657")
-    local alice_height=$(get_block_height "http://localhost:26658")
-    local bob_height=$(get_block_height "http://localhost:26659")
-    local peer_count=$(get_peer_count "http://localhost:26657")
+    local bootnode_height=$(get_block_height "http://localhost:8545")
+    local alice_height=$(get_block_height "http://localhost:8545")
+    local bob_height=$(get_block_height "http://localhost:8555")
+    local peer_count=$(get_peer_count "http://localhost:8545")
 
     printf "│  Block Height (bootnode):    %-48s│\n" "$bootnode_height"
     printf "│  Block Height (alice):       %-48s│\n" "$alice_height"
