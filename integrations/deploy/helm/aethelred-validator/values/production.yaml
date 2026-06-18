@@ -5,9 +5,30 @@ network:
   chainID: aethelred-mainnet-1
 validator:
   image:
-    tag: stable
+    tag: v0.1.0-rc.0
   env:
     logLevel: info
+  resources:
+    requests:
+      cpu: "32"
+      memory: 128Gi
+      ephemeralStorage: 500Gi
+    limits:
+      cpu: "64"
+      memory: 256Gi
+      ephemeralStorage: 1Ti
+teeWorker:
+  image:
+    tag: v0.1.0-rc.0
+zkmlProver:
+  image:
+    tag: v0.1.0-rc.0
+service:
+  rpc:
+    enabled: false
+    type: ClusterIP
+persistence:
+  size: 2Ti
 serviceMonitor:
   enabled: true
 networkPolicy:

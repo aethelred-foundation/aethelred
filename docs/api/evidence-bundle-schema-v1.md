@@ -19,15 +19,21 @@ Evidence bundles are produced by validators after completing Proof-of-Useful-Wor
 | `schema_version` | `string` | yes | Schema version. Must be `"1.0.0"` for this version. |
 | `bundle_id` | `string` | yes | Unique bundle identifier (UUID v4). |
 | `job_id` | `string` | yes | On-chain job identifier (hex-encoded transaction hash). |
+| `chain_id` | `string` | yes | Aethelred chain identifier for the evidence-producing network. |
+| `seal_id` | `string` | yes | Digital Seal identifier linked to this evidence bundle. |
 | `timestamp` | `string` (ISO 8601) | yes | Bundle creation time in UTC. Must include timezone designator `Z`. |
 | `model_hash` | `string` (hex, 64 chars) | yes | SHA-256 hash of model weights used for inference. |
 | `circuit_hash` | `string` (hex, 64 chars) | yes | SHA-256 hash of the zkML circuit definition. |
 | `verifying_key_hash` | `string` (hex, 64 chars) | yes | SHA-256 hash of the verifying key. |
+| `validator_signature` | `string` (base64) | yes | Validator/operator signature carried on the accepted evidence transcript, such as the primary TEE attestation signature. |
+| `confidence_score` | `number` | yes | Accepted-job confidence score, bounded to `[0, 1]`. |
 | `tee_evidence` | `object` | yes | TEE attestation evidence. See below. |
 | `zkml_evidence` | `object` | yes | zkML proof evidence. See below. |
 | `region` | `string` | yes | Processing region identifier (e.g., `"us-east-1"`, `"eu-west-1"`). |
 | `operator` | `string` | yes | Operator identifier (validator address, bech32-encoded). |
 | `policy_decision` | `object` | yes | Policy engine output for this job. See below. |
+| `archive_pointer` | `object` | yes | Retained audit archive pointer. See below. |
+| `verification` | `object` | yes | Verification result flags for schema, policy, TEE, zkML, and Digital Seal checks. |
 | `metadata` | `object` | no | Optional extensible metadata. Reserved for future use. |
 
 ### `tee_evidence` Object
@@ -58,6 +64,30 @@ Evidence bundles are produced by validators after completing Proof-of-Useful-Wor
 | `fallback_allowed` | `boolean` | yes | Whether fallback to single-evidence mode is permitted. Must be `false` for enterprise. |
 | `policy_version` | `string` | no | Version of the policy engine that produced this decision. |
 
+### `archive_pointer` Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `archive_type` | `string` | yes | Archive backend type, such as `"opensearch"` or `"object_storage"`. |
+| `index` | `string` | yes | Logical archive index or bucket namespace. |
+| `document_id` | `string` | yes | Archive document or object identifier. |
+| `uri` | `string` | yes | Operator-resolvable archive URI. |
+| `retention_days` | `integer` | yes | Minimum retention period for the evidence record. |
+| `write_status` | `string` | yes | Archive write state, for example `"committed"` or `"pending_live_archive_write"`. |
+
+### `verification` Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `artifact_mode` | `string` | no | Optional artifact mode, such as `"live"` or `"pretestnet_drill_fixture"`. |
+| `schema_verified` | `boolean` | yes | Whether the bundle passed schema validation. Must be `true` for accepted evidence. |
+| `policy_verified` | `boolean` | yes | Whether the bundle passed policy validation. Must be `true` for accepted evidence. |
+| `tee_attestation_verified` | `boolean` | yes | Whether live TEE attestation verification succeeded. Drill fixtures must set this to `false` and mark live replacement required. |
+| `zkml_proof_verified` | `boolean` | yes | Whether live zkML proof verification succeeded. Drill fixtures must set this to `false` and mark live replacement required. |
+| `digital_seal_verified` | `boolean` | yes | Whether Digital Seal verification succeeded. Drill fixtures must set this to `false` and mark live replacement required. |
+| `live_verification_required` | `boolean` | yes | Whether the artifact still requires replacement with live verification evidence. |
+| `verifier_version` | `string` | yes | Version of the verifier that produced the verification status. |
+
 ## Validation Rules
 
 ### 1. Required Field Presence
@@ -73,14 +103,21 @@ All `hex(32)` fields (64-character hex strings representing 32-byte SHA-256 dige
 
 Affected fields: `model_hash`, `circuit_hash`, `verifying_key_hash`, `tee_evidence.nonce`, `zkml_evidence.output_commitment`.
 
-### 3. Platform Enum Validation
+### 3. Chain, Seal, Signature, and Score Validation
+
+- `chain_id` must be non-empty and must match the network that produced the evidence.
+- `seal_id` must be non-empty and must resolve to the Digital Seal associated with `job_id`.
+- `validator_signature` must be a non-empty standard base64 value.
+- `confidence_score` must be present and must be a number between `0` and `1`, inclusive.
+
+### 4. Platform Enum Validation
 
 `tee_evidence.platform` must be one of the following exact string values:
 - `"sgx"` -- Intel Software Guard Extensions
 - `"nitro"` -- AWS Nitro Enclaves
 - `"sev-snp"` -- AMD SEV-SNP
 
-### 4. Proof System Enum Validation
+### 5. Proof System Enum Validation
 
 `zkml_evidence.proof_system` must be one of the following exact string values:
 - `"groth16"` -- Groth16 (EZKL, Circom)
@@ -89,7 +126,7 @@ Affected fields: `model_hash`, `circuit_hash`, `verifying_key_hash`, `tee_eviden
 - `"halo2"` -- Halo2 (PSE, Axiom)
 - `"stark"` -- STARK (RISC Zero, Plonky2)
 
-### 5. Timestamp Recency Rules
+### 6. Timestamp Recency Rules
 
 - `timestamp` must be a valid ISO 8601 string with UTC timezone designator `Z`.
 - Format: `YYYY-MM-DDTHH:MM:SSZ` or `YYYY-MM-DDTHH:MM:SS.sssZ`.
@@ -97,22 +134,30 @@ Affected fields: `model_hash`, `circuit_hash`, `verifying_key_hash`, `tee_eviden
 - The timestamp must not be older than the block time of the job's originating transaction plus a **configurable maximum age** (default: 1 hour).
 - Bundles with timestamps outside these bounds must be rejected by validators.
 
-### 6. Base64 Encoding Rules
+### 7. Base64 Encoding Rules
 
-All base64-encoded fields (`tee_evidence.quote`, `zkml_evidence.proof_bytes`, `zkml_evidence.public_inputs`) must:
+All base64-encoded fields (`validator_signature`, `tee_evidence.quote`, `zkml_evidence.proof_bytes`, `zkml_evidence.public_inputs`) must:
 - Use standard base64 encoding (RFC 4648, Section 4).
 - Decode to a non-empty byte array.
 - Not exceed 10 MiB after decoding.
 
-### 7. Bundle Integrity
+### 8. Archive and Verification Integrity
+
+- `archive_pointer` must contain the backend type, index, document ID, URI, positive retention period, and write status.
+- `verification.schema_verified` and `verification.policy_verified` must be `true` for accepted evidence.
+- `verification.tee_attestation_verified`, `verification.zkml_proof_verified`, and `verification.digital_seal_verified` must reflect actual verifier results. Drill fixtures may set these to `false` only when `artifact_mode` clearly marks the artifact as a drill fixture and `live_verification_required` is `true`.
+- `verification.verifier_version` must be non-empty.
+
+### 9. Bundle Integrity
 
 - The `bundle_id` must be a valid UUID v4 string.
 - The `job_id` must reference an existing on-chain job.
 - The `operator` must be a valid bech32-encoded address with the `aethel` prefix.
+- `policy_decision.mode` must be `"hybrid"`, `require_both` must be `true`, and `fallback_allowed` must be `false`.
 
-### 8. Bundle Signing (Future -- v1.1)
+### 10. Bundle Signing
 
-A future version will add a `signature` field at the top level. The signature will cover the canonical JSON serialization of all fields (excluding `signature` and `metadata`), signed with the operator's validator key. This is reserved but not yet required.
+The `validator_signature` field is required in v1. It must be a real validator/operator signature carried on the accepted evidence transcript, such as the primary TEE attestation signature. Exporters must fail closed if no validator signature is available; they must not synthesize a digest and label it as a signature. `metadata` remains extensible and is not used as a substitute for any required audit field.
 
 ## Examples
 
@@ -123,10 +168,14 @@ A future version will add a `signature` field at the top level. The signature wi
   "schema_version": "1.0.0",
   "bundle_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "job_id": "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+  "chain_id": "aethelred-mainnet-1",
+  "seal_id": "seal-01HVW2Y5T8C9P5T8M2Z3R4A6B7",
   "timestamp": "2026-03-28T14:30:00Z",
   "model_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
   "circuit_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "verifying_key_hash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+  "validator_signature": "dmFsaWRhdG9yLXNpZ25hdHVyZS1ieXRlcw==",
+  "confidence_score": 0.9825,
   "tee_evidence": {
     "platform": "nitro",
     "enclave_id": "i-0abc123def456789a:enc-0def456789abc1230",
@@ -147,6 +196,24 @@ A future version will add a `signature` field at the top level. The signature wi
     "require_both": true,
     "fallback_allowed": false,
     "policy_version": "1.2.0"
+  },
+  "archive_pointer": {
+    "archive_type": "opensearch",
+    "index": "aethelred-enterprise-evidence",
+    "document_id": "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+    "uri": "opensearch://evidence/aethelred-enterprise-evidence/_doc/A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+    "retention_days": 365,
+    "write_status": "committed"
+  },
+  "verification": {
+    "artifact_mode": "live",
+    "schema_verified": true,
+    "policy_verified": true,
+    "tee_attestation_verified": true,
+    "zkml_proof_verified": true,
+    "digital_seal_verified": true,
+    "live_verification_required": false,
+    "verifier_version": "enterprise-verifier-v1.0.0"
   }
 }
 ```
@@ -158,15 +225,25 @@ A future version will add a `signature` field at the top level. The signature wi
 | Schema Version | 1.0.0 |
 | Bundle ID | f47ac10b-58cc-4372-a567-0e02b2c3d479 |
 | Job ID | A1B2C3D4...E5F6A1B2 |
+| Chain ID | aethelred-mainnet-1 |
+| Seal ID | seal-01HVW2Y5T8C9P5T8M2Z3R4A6B7 |
 | Timestamp | 2026-03-28T14:30:00Z |
 | Model Hash | 9f86d081...0f00a08 |
+| Validator Signature | dmFsaWRhdG9y... |
+| Confidence Score | 0.9825 |
 | TEE Platform | nitro |
 | Proof System | groth16 |
 | Region | us-east-1 |
 | Operator | aethel1qypq...lzv7xu |
 | Policy Mode | hybrid (require_both=true, fallback=false) |
+| Archive | opensearch/aethelred-enterprise-evidence |
+| Verification | schema=true, policy=true, tee=true, zkml=true, seal=true |
 
 ## Backward Compatibility
+
+### Pilot-Readiness Hardening Note
+
+Version `1.0.0` was strengthened before the paid M42 pilot readiness gate to require `chain_id`, `seal_id`, `validator_signature`, `confidence_score`, `archive_pointer`, and `verification`. This was a controlled pre-stable hardening of the v1 contract, not a post-production schema break. Consumers used for paid-pilot or enterprise evidence must treat these fields as required.
 
 ### Version Bump Rules
 
@@ -181,6 +258,7 @@ All schema evolution is **additive only** within a major version:
 - New enum values may be added to `tee_evidence.platform` and `zkml_evidence.proof_system` in minor versions.
 - Consumers must ignore unknown fields without error (forward compatibility).
 - New required fields are only allowed in a new major version.
+- Exception: the paid-pilot readiness hardening above is already part of the canonical `1.0.0` baseline and must not be treated as optional by current consumers.
 
 ### Deprecation Timeline
 

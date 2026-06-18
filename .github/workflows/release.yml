@@ -10,6 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   VALIDATOR_IMAGE: aethelred-foundation/aethelred/aethelredd
+  GO_VERSION: "1.25.8"
 
 permissions:
   contents: write
@@ -26,8 +27,14 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: ${{ env.GO_VERSION }}
           cache: true
+
+      - name: Run local readiness checks
+        run: make local-readiness
+
+      - name: Validate validator Helm chart
+        run: make validator-helm-validate
 
       - name: Run audit signoff check
         run: make audit-signoff-check
@@ -70,6 +77,5 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.VALIDATOR_IMAGE }}:${{ steps.meta.outputs.VERSION }}
-            ${{ env.REGISTRY }}/${{ env.VALIDATOR_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

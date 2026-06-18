@@ -99,6 +99,8 @@ Your validator deployment MUST consist of three components:
 | **Network** | 10 Gbps | 25 Gbps | Low latency to peers |
 | **HSM** | AWS CloudHSM | Thales Luna PCIe | FIPS 140-2 Level 3 required |
 
+The Helm chart base values are sized for devnet and staging rehearsal. Production operators must apply `integrations/deploy/helm/aethelred-validator/values/production.yaml` or an equivalent overlay that preserves the minimum CPU, memory, storage, and private-RPC requirements in this runbook.
+
 ### HSM Requirements
 
 | HSM Model | Certification | Performance | Integration |
@@ -183,6 +185,23 @@ aws cloudhsmv2 create-backup \
 - [ ] Monitoring agents installed
 - [ ] Backup procedures tested
 - [ ] Emergency contacts verified
+
+### Kubernetes / Helm Preflight
+
+Run these checks before a Kubernetes-based validator deployment:
+
+```bash
+helm lint integrations/deploy/helm/aethelred-validator \
+  -f integrations/deploy/helm/aethelred-validator/values.yaml \
+  -f integrations/deploy/helm/aethelred-validator/values/production.yaml
+
+helm template aethelred-validator integrations/deploy/helm/aethelred-validator \
+  --namespace aethelred \
+  -f integrations/deploy/helm/aethelred-validator/values.yaml \
+  -f integrations/deploy/helm/aethelred-validator/values/production.yaml
+```
+
+Confirm the rendered manifest has no public validator RPC `LoadBalancer`, no mutable `latest` or `stable` image tags, no privileged TEE worker unless explicitly approved, NetworkPolicy enabled, SecretProviderClass configured, and PVC capacity at or above the storage minimum.
 
 ### Installation
 
@@ -411,7 +430,7 @@ aethelredd snapshot restore --dry-run /backups/latest.tar.gz
 aws cloudhsmv2 describe-backups --backup-id latest
 
 # 3. Test failover node can start
-ssh failover "docker run --rm ghcr.io/aethelred-foundation/aethelred/aethelredd:latest version"
+ssh failover "docker run --rm ghcr.io/aethelred-foundation/aethelred/aethelredd:<release-tag> version"
 
 # 4. Log verification results
 echo "Backup verification completed: $(date)" >> /var/log/backup-verify.log

@@ -352,6 +352,12 @@ service Msg {
       body: "*"
     };
   }
+  rpc RegisterValidatorHybridKey(MsgRegisterValidatorHybridKey) returns (MsgRegisterValidatorHybridKeyResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/validators/hybrid_key"
+      body: "*"
+    };
+  }
 }
 
 message MsgRegisterValidatorCapability {
@@ -377,6 +383,19 @@ message MsgRegisterValidatorPCR0 {
 message MsgRegisterValidatorPCR0Response {
   string validator_address = 1;
   string pcr0_hex = 2;
+}
+
+// MsgRegisterValidatorHybridKey registers a validator's hybrid
+// (secp256k1 + ML-DSA) public key, used to verify the validator's signatures
+// over Digital Seal claims contributed via vote extensions.
+message MsgRegisterValidatorHybridKey {
+  string creator = 1;
+  string validator_address = 2;
+  bytes hybrid_public_key = 3;
+}
+
+message MsgRegisterValidatorHybridKeyResponse {
+  string validator_address = 1;
 }
 
 // Query service
@@ -431,6 +450,30 @@ service Query {
       get: "/aethelred/pouw/v1/stats/epochs/{epoch}"
     };
   }
+  rpc SealQuorum(QuerySealQuorumRequest) returns (QuerySealQuorumResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/seals/{seal_id}/quorum"
+    };
+  }
+}
+
+// SealQuorumSignature is one validator's hybrid (secp256k1 + ML-DSA) signature
+// over a Digital Seal's canonical claim, retained for offline verification.
+message SealQuorumSignature {
+  string signer_address = 1;
+  string algorithm = 2;
+  bytes public_key = 3;
+  bytes signature = 4;
+}
+
+message QuerySealQuorumRequest {
+  string seal_id = 1;
+}
+
+message QuerySealQuorumResponse {
+  string seal_id = 1;
+  repeated SealQuorumSignature signatures = 2;
+  uint32 signature_count = 3;
 }
 
 message QueryJobRequest {
@@ -561,4 +604,14 @@ message GenesisState {
   Params params = 5;
   uint64 current_epoch = 6;
   uint64 total_uwu = 7;
+  // validator_hybrid_keys seeds validators' hybrid (secp256k1 + ML-DSA) public
+  // keys at genesis so Digital Seal quorum signatures can be verified from the
+  // first block without each validator submitting a registration transaction.
+  repeated ValidatorHybridKey validator_hybrid_keys = 8;
+}
+
+// ValidatorHybridKey binds a validator account address to its hybrid public key.
+message ValidatorHybridKey {
+  string validator_address = 1;
+  bytes hybrid_public_key = 2;
 }

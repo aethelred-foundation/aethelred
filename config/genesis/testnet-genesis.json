@@ -7,7 +7,7 @@
   "_comment": "=============================================================================",
   "_comment_2": "AETHELRED INCENTIVIZED TESTNET GENESIS",
   "_comment_3": "Network: aethelred-testnet-1 | Launch: April 1, 2026 14:00 UTC",
-  "_comment_4": "Branch: release/testnet-v1.0 | Image: aethelred/node:testnet-v1.0.0",
+  "_comment_4": "Branch: release/testnet-v1.0 | Image: ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1",
   "_comment_5": "=============================================================================",
   "metadata": {
     "protocol_version": "1.0.0",
@@ -15,7 +15,14 @@
     "network_type": "testnet",
     "documentation": "https://docs.aethelred.io/testnet",
     "release_branch": "release/testnet-v1.0",
-    "image_tag": "aethelred/node:testnet-v1.0.0"
+    "image_tag": "ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1",
+    "pqc": {
+      "mode": "hybrid",
+      "signature_backend": "cloudflare-circl",
+      "signature_algorithm": "ML-DSA-65 (FIPS 204)",
+      "kem_algorithm": "ML-KEM-768 (FIPS 203)",
+      "classical_curve": "secp256k1"
+    }
   },
   "consensus": {
     "type": "proof_of_compute",

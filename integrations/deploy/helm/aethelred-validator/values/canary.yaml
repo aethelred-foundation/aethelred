@@ -1,15 +1,22 @@
 replicaCount: 1
 validator:
   image:
-    tag: canary
+    tag: v0.1.0-canary.0
   env:
     logLevel: info
+teeWorker:
+  image:
+    tag: v0.1.0-canary.0
+zkmlProver:
+  image:
+    tag: v0.1.0-canary.0
 updateStrategy:
   type: RollingUpdate
   rollingUpdate:
     partition: 0
 service:
   rpc:
+    enabled: false
     type: ClusterIP
 podDisruptionBudget:
   minAvailable: 1

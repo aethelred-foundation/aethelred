@@ -1139,7 +1139,27 @@ fn generate_dilithium_keypair(
     ))
 }
 
-/// Generate Dilithium keypair from seed
+/// Generate Dilithium keypair from seed.
+///
+/// SECURITY: the `pqcrypto-dilithium` backend does not expose deterministic
+/// (seed-based) ML-DSA key generation, so this fails closed rather than emit a
+/// non-standard, unusable key. Use [`HybridKeyPair::generate`] for fresh keys;
+/// HD/seed-based derivation is provided by the Go node (see crypto/pqc).
+#[cfg(feature = "full-pqc")]
+fn generate_dilithium_keypair_from_seed(
+    _seed: &[u8; 32],
+    _level: DilithiumSecurityLevel,
+) -> CryptoResult<(DilithiumSecretKey, DilithiumPublicKey)> {
+    Err(CryptoError::UnsupportedAlgorithm(
+        "deterministic seed-based ML-DSA key generation is not supported by the \
+         pqcrypto-dilithium backend"
+            .to_string(),
+    ))
+}
+
+/// Generate Dilithium keypair from seed (dev-only deterministic mock; never
+/// compiled into `full-pqc` builds).
+#[cfg(not(feature = "full-pqc"))]
 fn generate_dilithium_keypair_from_seed(
     seed: &[u8; 32],
     level: DilithiumSecurityLevel,
@@ -1171,10 +1191,24 @@ fn generate_dilithium_keypair_from_seed(
     ))
 }
 
-/// Derive public key from Dilithium secret key
+/// Derive the public key from a Dilithium secret key.
+///
+/// SECURITY: `pqcrypto-dilithium` does not expose recomputing the ML-DSA public
+/// key from a secret key, so this fails closed. Callers must retain the public
+/// key produced at generation time ([`HybridKeyPair`] already stores it).
+#[cfg(feature = "full-pqc")]
+fn derive_dilithium_public_key(_sk: &DilithiumSecretKey) -> CryptoResult<DilithiumPublicKey> {
+    Err(CryptoError::UnsupportedAlgorithm(
+        "recomputing the ML-DSA public key from a secret key is not supported by the \
+         pqcrypto-dilithium backend; retain the public key from key generation"
+            .to_string(),
+    ))
+}
+
+/// Derive public key from Dilithium secret key (dev-only deterministic mock;
+/// never compiled into `full-pqc` builds).
+#[cfg(not(feature = "full-pqc"))]
 fn derive_dilithium_public_key(sk: &DilithiumSecretKey) -> CryptoResult<DilithiumPublicKey> {
-    // In production with full-pqc, this would extract from secret key structure
-    // For mock, we derive deterministically
     use sha2::{Digest, Sha256};
 
     let mut hasher = Sha256::new();
@@ -1486,8 +1520,10 @@ mod tests {
     fn test_sign_verify_panic_mode() {
         let keypair = HybridKeyPair::generate().unwrap();
         let message = b"Test transaction data";
-        let mut config = VerifierConfig::default();
-        config.panic_mode_qc = true; // Activate panic mode
+        let config = VerifierConfig {
+            panic_mode_qc: true, // Activate panic mode
+            ..Default::default()
+        };
 
         let signature = keypair.sign(message).unwrap();
 
@@ -1500,10 +1536,23 @@ mod tests {
     fn test_deterministic_keygen() {
         let seed = [42u8; 64];
 
-        let keypair1 = HybridKeyPair::from_seed(&seed).unwrap();
-        let keypair2 = HybridKeyPair::from_seed(&seed).unwrap();
+        // Under full-pqc, seed-based ML-DSA keygen is unsupported by the
+        // pqcrypto backend and MUST fail closed rather than return a fake key.
+        #[cfg(feature = "full-pqc")]
+        {
+            assert!(
+                HybridKeyPair::from_seed(&seed).is_err(),
+                "from_seed must fail closed under full-pqc"
+            );
+        }
 
-        assert_eq!(keypair1.address(), keypair2.address());
+        // Without full-pqc, the dev mock provides deterministic derivation.
+        #[cfg(not(feature = "full-pqc"))]
+        {
+            let keypair1 = HybridKeyPair::from_seed(&seed).unwrap();
+            let keypair2 = HybridKeyPair::from_seed(&seed).unwrap();
+            assert_eq!(keypair1.address(), keypair2.address());
+        }
     }
 
     #[test]

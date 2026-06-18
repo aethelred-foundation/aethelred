@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Aethelred AIP",
+  "scopeName": "text.aip",
+  "patterns": [
+    {
+      "match": "^\\s*#.*$",
+      "name": "comment.line.number-sign.aip"
+    }
+  ],
+  "repository": {}
+}

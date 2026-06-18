@@ -413,6 +413,7 @@ func NewEnhancedDigitalSeal(
 			RequestedBy:      requestedBy,
 			Purpose:          purpose,
 			Status:           SealStatusPending,
+			JobId:            jobID,
 			TeeAttestations:  make([]*TEEAttestation, 0),
 			ValidatorSet:     make([]string, 0),
 		},

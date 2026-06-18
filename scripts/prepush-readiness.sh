@@ -40,6 +40,10 @@ echo "==> Canonical truth"
 python3 scripts/validate_canonical_product_truth.py
 
 echo
+echo "==> Local readiness guardrails"
+make local-readiness
+
+echo
 echo "==> Go validation"
 go test ./app/... -count=1
 go test ./x/pouw/keeper/... -count=1

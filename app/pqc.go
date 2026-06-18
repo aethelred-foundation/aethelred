@@ -25,7 +25,9 @@ func resolvePQCMode(appOpts servertypes.AppOptions) string {
 		))
 	}
 	if mode == "" {
-		mode = "simulated"
+		// Secure by default: require composite (classical + PQC) signatures
+		// unless an operator explicitly relaxes the policy.
+		mode = "hybrid"
 	}
 	return mode
 }
@@ -40,9 +42,8 @@ func initPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
 		}
 	case "hybrid":
 		pqc.SetPQCMode(pqc.PQCModeHybrid)
-		if !pqc.IsCirclAvailable() {
-			return fmt.Errorf("PQC hybrid mode requires circl; build with -tags=pqc_circl")
-		}
+		// circl is compiled in unconditionally; the power-on self-tests are the
+		// real validation that the PQC primitives operate correctly.
 		if err := pqc.RunPQCSelfTests(); err != nil {
 			return fmt.Errorf("PQC self-tests failed: %w", err)
 		}

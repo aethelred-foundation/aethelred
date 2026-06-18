@@ -37,6 +37,7 @@
     "ts-node": "^10.9.2"
   },
   "overrides": {
+    "fast-uri": "^3.1.2",
     "handlebars": "^4.7.9",
     "flatted": "^3.4.2",
     "serialize-javascript": "^7.0.5",

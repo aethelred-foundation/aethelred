@@ -105,7 +105,7 @@ bin/
 contracts/artifacts/
 contracts/cache/
 contracts/out/
-contracts/typechain-types/
+# TypeChain outputs are committed for downstream tooling and scripts.
 
 # ── Cosmos SDK ────────────────────────────────────────────────────────
 *.db
@@ -128,7 +128,7 @@ temp/
 
 # ── Build Binaries ───────────────────────────────────────────────────
 aethelred-loadtest
-aethelredd
+/aethelredd
 
 # ── Coverage Output ──────────────────────────────────────────────────
 coverage*.out
@@ -137,18 +137,13 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI & Dev Tooling (local only) ────────────────────────────────────
-.ai-tools/
-.claude/
-.cursor/
-.codex/
-.serena/
-.aider*
-CLAUDE.md
+# ── Local Tooling Scratch Space ─────────────────────────────────────
+.local-tools/
+.local-agents/
+*.local-instructions.md
 
-# ── Local Test Outputs ───────────────────────────────────────────────
-loadtest-results/
-test-results/
+# ── Audit Evidence ───────────────────────────────────────────────────
+# The canonical load and test evidence pack is committed in-repo.
 
 # ── Separate Repositories ────────────────────────────────────────────
 dApps/terraqura/
@@ -157,7 +152,8 @@ dApps/terraqura/
 *.zip
 
 # ── Cargo Local Config ──────────────────────────────────────────────
-.cargo/
+.cargo/*
+!.cargo/config.toml
 !crates/vendor/rust_decimal/.cargo/
 !crates/vendor/rust_decimal/.cargo/**
 

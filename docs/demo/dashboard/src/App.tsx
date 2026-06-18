@@ -355,8 +355,8 @@ const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="text-center mt-12 text-gray-500 text-sm">
-        <p>Aethelred MVP Demo • No Testnet Required</p>
-        <p className="mt-1">docs.aethelred.ai • github.com/aethelred</p>
+        <p>Aethelred Devnet Demo • Local-first protocol walkthrough</p>
+        <p className="mt-1">docs.aethelred.io • github.com/aethelred-foundation/aethelred</p>
       </footer>
     </div>
   );

@@ -1,8 +1,11 @@
-// Package pqc provides NIST test vectors for Dilithium and Kyber validation.
+// Package pqc — developer-facing self-consistency vectors for Dilithium/Kyber.
 //
-// These test vectors are derived from the NIST FIPS 204 and FIPS 203 specifications
-// to ensure our implementation produces correct outputs. In production, these vectors
-// should be verified against the official NIST Known-Answer Tests (KAT).
+// NOTE: The arbitrary seeds below are NOT NIST known-answer values; these helpers
+// exercise determinism and round-trip self-consistency only. The authoritative
+// NIST validation lives in nist_kat_test.go, which checks our circl-backed
+// wrapper against the official NIST ACVP FIPS 204 (ML-DSA) and FIPS 203 (ML-KEM)
+// keyGen vectors. The underlying signing/KEM primitives are additionally
+// validated by circl's own bundled ACVP suite.
 package pqc
 
 import (
@@ -42,28 +45,28 @@ func GetDilithiumTestVectors() []DilithiumTestVector {
 			ExpectedSigHash: sha256Hash32([]byte("dilithium3_sig_vector1")),
 		},
 		{
-			Name:    "Dilithium3_Vector2_Empty",
-			Level:   DilithiumLevel3,
-			Seed:    hexDecode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
-			Message: []byte{},
+			Name:            "Dilithium3_Vector2_Empty",
+			Level:           DilithiumLevel3,
+			Seed:            hexDecode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+			Message:         []byte{},
 			ExpectedPKHash:  sha256Hash32([]byte("dilithium3_pk_vector2")),
 			ExpectedSKHash:  sha256Hash32([]byte("dilithium3_sk_vector2")),
 			ExpectedSigHash: sha256Hash32([]byte("dilithium3_sig_vector2")),
 		},
 		{
-			Name:    "Dilithium2_Vector1",
-			Level:   DilithiumLevel2,
-			Seed:    hexDecode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"),
-			Message: []byte("Dilithium2 test message"),
+			Name:            "Dilithium2_Vector1",
+			Level:           DilithiumLevel2,
+			Seed:            hexDecode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"),
+			Message:         []byte("Dilithium2 test message"),
 			ExpectedPKHash:  sha256Hash32([]byte("dilithium2_pk_vector1")),
 			ExpectedSKHash:  sha256Hash32([]byte("dilithium2_sk_vector1")),
 			ExpectedSigHash: sha256Hash32([]byte("dilithium2_sig_vector1")),
 		},
 		{
-			Name:    "Dilithium5_Vector1",
-			Level:   DilithiumLevel5,
-			Seed:    hexDecode("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
-			Message: []byte("Maximum security Dilithium5"),
+			Name:            "Dilithium5_Vector1",
+			Level:           DilithiumLevel5,
+			Seed:            hexDecode("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
+			Message:         []byte("Maximum security Dilithium5"),
 			ExpectedPKHash:  sha256Hash32([]byte("dilithium5_pk_vector1")),
 			ExpectedSKHash:  sha256Hash32([]byte("dilithium5_sk_vector1")),
 			ExpectedSigHash: sha256Hash32([]byte("dilithium5_sig_vector1")),
@@ -77,12 +80,12 @@ func GetDilithiumTestVectors() []DilithiumTestVector {
 
 // KyberTestVector represents a known-answer test for Kyber
 type KyberTestVector struct {
-	Name              string
-	Level             int
-	Seed              []byte
-	ExpectedPKHash    [32]byte // SHA-256 of public key
-	ExpectedSKHash    [32]byte // SHA-256 of private key
-	ExpectedSSLength  int      // Expected shared secret length
+	Name             string
+	Level            int
+	Seed             []byte
+	ExpectedPKHash   [32]byte // SHA-256 of public key
+	ExpectedSKHash   [32]byte // SHA-256 of private key
+	ExpectedSSLength int      // Expected shared secret length
 }
 
 // GetKyberTestVectors returns the test vectors for Kyber validation
@@ -462,13 +465,13 @@ func RunHybridWalletTestVectors() []TestVectorResult {
 
 // PQCTestSuiteResult contains the complete test suite results
 type PQCTestSuiteResult struct {
-	DilithiumResults   []TestVectorResult
-	KyberResults       []TestVectorResult
-	HybridResults      []TestVectorResult
-	AllPassed          bool
-	TotalTests         int
-	PassedTests        int
-	FailedTests        int
+	DilithiumResults []TestVectorResult
+	KyberResults     []TestVectorResult
+	HybridResults    []TestVectorResult
+	AllPassed        bool
+	TotalTests       int
+	PassedTests      int
+	FailedTests      int
 }
 
 // RunFullPQCTestSuite runs the complete PQC test suite

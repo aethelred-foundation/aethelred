@@ -22,6 +22,8 @@ podSecurityContext:
   fsGroup: 1000
   runAsUser: 1000
   runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
 
 nodeSelector:
   aethelred.io/tee-capable: "true"
@@ -44,8 +46,16 @@ affinity:
 validator:
   image:
     repository: ghcr.io/aethelred-foundation/aethelred/aethelredd
-    tag: latest
+    tag: v0.1.0-devnet.0
     pullPolicy: IfNotPresent
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   command:
     - aethelredd
     - start
@@ -87,13 +97,21 @@ teeWorker:
   enabled: true
   image:
     repository: ghcr.io/aethelred/tee-worker
-    tag: latest
+    tag: v0.1.0-devnet.0
     pullPolicy: IfNotPresent
   command:
     - /usr/bin/tee-worker
     - --listen=0.0.0.0:9091
     - --attestation-service=attestation.aethelred.svc:443
-  privileged: true
+  privileged: false
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   resources:
     requests:
       cpu: "2"
@@ -108,7 +126,7 @@ zkmlProver:
   enabled: true
   image:
     repository: ghcr.io/aethelred/zkml-prover
-    tag: latest
+    tag: v0.1.0-devnet.0
     pullPolicy: IfNotPresent
   command:
     - /usr/bin/zkml-prover
@@ -123,6 +141,14 @@ zkmlProver:
       cpu: "4"
       memory: 32Gi
       gpu: "1"
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
 
 persistence:
   enabled: true
@@ -145,8 +171,8 @@ service:
     type: ClusterIP
     annotations: {}
   rpc:
-    enabled: true
-    type: LoadBalancer
+    enabled: false
+    type: ClusterIP
     annotations: {}
 
 podDisruptionBudget:

@@ -8,10 +8,10 @@ This directory contains everything you need to showcase Aethelred's capabilities
 
 ```bash
 # Start the demo dashboard
-cd demo/dashboard
+cd docs/demo/dashboard
 npm install && npm start
 
-# Open http://localhost:3000
+# Open http://localhost:5173
 ```
 
 ### Option 2: CLI Demo (Quick & Impressive)
@@ -30,14 +30,14 @@ npm install && npm start
 ### Option 3: Local DevNet (Technical Deep Dive)
 
 ```bash
-# Full local network with 3 validators
-./deploy/scripts/setup-devnet.sh --clean --build
+# Full local network
+make devnet-clean-start
 
 # Endpoints available:
-# - Block Explorer: http://localhost:3000
-# - RPC: http://localhost:26657
-# - Faucet: http://localhost:8888
-# - Grafana Metrics: http://localhost:3001
+# - Block Explorer: http://localhost:4000
+# - JSON-RPC: http://localhost:8545
+# - Faucet: http://localhost:8080
+# - Grafana Metrics: http://localhost:3000
 ```
 
 ---
@@ -103,7 +103,7 @@ npm install && npm start
 ## Directory Structure
 
 ```
-demo/
+docs/demo/
 ├── README.md                 # This file
 ├── run-demo.sh              # Universal demo runner
 ├── dashboard/               # Interactive web dashboard
@@ -165,7 +165,7 @@ demo/
 **Demo won't start:**
 ```bash
 # Ensure dependencies are installed
-cd demo/dashboard && npm install
+cd docs/demo/dashboard && npm install
 cd crates/demo/falcon-lion && cargo build --release
 ```
 

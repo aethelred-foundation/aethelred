@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -49,10 +50,11 @@ const (
 	CompositeScheme
 )
 
-// NewDualKeyWallet creates a new wallet with both ECDSA and Dilithium keys
+// NewDualKeyWallet creates a new wallet with both ECDSA (secp256k1) and
+// Dilithium keys, using the system CSPRNG.
 func NewDualKeyWallet(dilithiumLevel int) (*DualKeyWallet, error) {
-	// Generate ECDSA key pair (using P-256 as a stand-in for secp256k1)
-	ecdsaPriv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	// Generate ECDSA key pair on secp256k1 (Bitcoin/Ethereum curve).
+	ecdsaPriv, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate ECDSA key: %w", err)
 	}
@@ -74,7 +76,9 @@ func NewDualKeyWallet(dilithiumLevel int) (*DualKeyWallet, error) {
 	}, nil
 }
 
-// NewDualKeyWalletFromSeed creates a wallet from deterministic seeds
+// NewDualKeyWalletFromSeed deterministically derives a wallet from explicit
+// per-algorithm seeds. The same seeds always reproduce the same wallet,
+// independent of Go version (derivation does not rely on stdlib internals).
 func NewDualKeyWalletFromSeed(ecdsaSeed, dilithiumSeed []byte, dilithiumLevel int) (*DualKeyWallet, error) {
 	if len(ecdsaSeed) < 32 {
 		return nil, errors.New("ECDSA seed must be at least 32 bytes")
@@ -83,17 +87,14 @@ func NewDualKeyWalletFromSeed(ecdsaSeed, dilithiumSeed []byte, dilithiumLevel in
 		return nil, errors.New("Dilithium seed must be at least 32 bytes")
 	}
 
-	// Generate ECDSA key from seed
-	h := sha256.Sum256(ecdsaSeed)
-	ecdsaPriv, err := ecdsa.GenerateKey(elliptic.P256(), &deterministicReader{seed: h[:]})
+	ecdsaPriv, err := deriveSecp256k1FromSeed(ecdsaSeed)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate ECDSA key from seed: %w", err)
+		return nil, fmt.Errorf("failed to derive ECDSA key from seed: %w", err)
 	}
 
-	// Generate Dilithium key from seed
 	dilithiumKP, err := GenerateDilithiumKeyPairFromSeed(dilithiumLevel, dilithiumSeed)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate Dilithium key from seed: %w", err)
+		return nil, fmt.Errorf("failed to derive Dilithium key from seed: %w", err)
 	}
 
 	address := deriveWalletAddress(ecdsaPriv.PublicKey, dilithiumKP.PublicKey)
@@ -106,22 +107,55 @@ func NewDualKeyWalletFromSeed(ecdsaSeed, dilithiumSeed []byte, dilithiumLevel in
 	}, nil
 }
 
-// deterministicReader provides deterministic "random" bytes from a seed
-type deterministicReader struct {
-	seed    []byte
-	counter int
+// NewDualKeyWalletFromMasterSeed deterministically derives both the secp256k1
+// and ML-DSA keys from a single master seed (e.g. a BIP39 mnemonic seed) using
+// domain-separated HKDF. One seed recovers the entire dual-key wallet.
+func NewDualKeyWalletFromMasterSeed(masterSeed []byte, dilithiumLevel int) (*DualKeyWallet, error) {
+	if len(masterSeed) < 32 {
+		return nil, errors.New("master seed must be at least 32 bytes")
+	}
+
+	ecdsaSeed, err := hkdfDerive(masterSeed, []byte("aethelred-dual-wallet/ecdsa"), 32)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive ECDSA seed: %w", err)
+	}
+	defer zeroBytes(ecdsaSeed)
+
+	dilithiumSeed, err := hkdfDerive(masterSeed, []byte("aethelred-dual-wallet/dilithium"), 32)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive Dilithium seed: %w", err)
+	}
+	defer zeroBytes(dilithiumSeed)
+
+	return NewDualKeyWalletFromSeed(ecdsaSeed, dilithiumSeed, dilithiumLevel)
 }
 
-func (r *deterministicReader) Read(p []byte) (n int, err error) {
-	for i := range p {
-		h := sha256.New()
-		h.Write(r.seed)
-		_ = binary.Write(h, binary.BigEndian, int64(r.counter)) // writing to hash.Hash cannot fail
-		sum := h.Sum(nil)
-		p[i] = sum[0]
-		r.counter++
+// deriveSecp256k1FromSeed deterministically derives a secp256k1 private key from
+// a seed. It expands the seed to 48 bytes via HKDF and reduces modulo (n-1) then
+// adds 1, landing uniformly in [1, n-1] with negligible modular bias (per
+// FIPS 186-4 Appendix B.4.1). This derivation is stable across Go versions
+// because it does not depend on crypto/ecdsa key-generation reader behaviour.
+func deriveSecp256k1FromSeed(seed []byte) (*ecdsa.PrivateKey, error) {
+	curve := btcec.S256()
+	n := curve.Params().N
+
+	expanded, err := hkdfDerive(seed, []byte("aethelred-secp256k1-scalar-v1"), 48)
+	if err != nil {
+		return nil, err
 	}
-	return len(p), nil
+	defer zeroBytes(expanded)
+
+	k := new(big.Int).SetBytes(expanded)
+	nMinus1 := new(big.Int).Sub(n, big.NewInt(1))
+	k.Mod(k, nMinus1)
+	k.Add(k, big.NewInt(1)) // ensure 1 <= k <= n-1
+
+	priv := new(ecdsa.PrivateKey)
+	priv.Curve = curve
+	priv.D = k
+	priv.PublicKey.X, priv.PublicKey.Y = curve.ScalarBaseMult(k.Bytes())
+
+	return priv, nil
 }
 
 // deriveWalletAddress derives address from both public keys
@@ -327,9 +361,12 @@ func DeserializeDualKeyWallet(data []byte) (*DualKeyWallet, error) {
 
 	// Reconstruct ECDSA key
 	ecdsaPriv := new(ecdsa.PrivateKey)
-	ecdsaPriv.PublicKey.Curve = elliptic.P256()
+	ecdsaPriv.PublicKey.Curve = btcec.S256()
 	ecdsaPriv.D = new(big.Int).SetBytes(ecdsaPrivBytes)
-	ecdsaPriv.PublicKey.X, ecdsaPriv.PublicKey.Y = ecdsaPriv.PublicKey.Curve.ScalarBaseMult(ecdsaPrivBytes)
+	// Reconstructing an ecdsa.PublicKey (X, Y) from a stored private scalar has no
+	// crypto/ecdh equivalent — ecdh.PrivateKey does not expose affine coordinates —
+	// so ScalarBaseMult remains the only standard-library option here.
+	ecdsaPriv.PublicKey.X, ecdsaPriv.PublicKey.Y = ecdsaPriv.PublicKey.Curve.ScalarBaseMult(ecdsaPrivBytes) //nolint:staticcheck // see comment above
 
 	// Reconstruct Dilithium key
 	dilithiumKP, err := DeserializeDilithiumKeyPair(dilithiumBytes)

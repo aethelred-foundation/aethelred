@@ -1,8 +1,9 @@
 {
     "name": "vscode-aethelred",
-    "displayName": "Aethelred",
-    "description": "Aethelred blockchain development tools for VS Code — AIP syntax, Seal verification, local testnet integration",
+    "displayName": "Aethelred Devtools Scaffold",
+    "description": "Scaffolded VS Code extension workspace for future Aethelred developer tooling",
     "version": "0.1.0",
+    "private": true,
     "publisher": "aethelred",
     "engines": {
         "vscode": "^1.85.0"
@@ -20,7 +21,6 @@
         "zkml",
         "TEE"
     ],
-    "icon": "images/aethelred-icon.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/aethelred-foundation/vscode-aethelred"
@@ -110,10 +110,10 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
-        "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js",
-        "package": "vsce package",
-        "publish": "vsce publish"
+        "lint": "eslint src --ext .ts",
+        "test": "node -e \"console.log('No extension tests are defined for this scaffold workspace yet.')\"",
+        "package": "node -e \"console.log('Packaging is disabled for this scaffold workspace.')\"",
+        "publish": "node -e \"console.log('Publishing is disabled for this scaffold workspace.')\""
     },
     "devDependencies": {
         "@types/node": "^25.6.0",

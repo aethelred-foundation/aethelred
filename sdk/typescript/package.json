@@ -59,7 +59,7 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "docs": "typedoc",
     "prepack": "npm run build",
     "prepublishOnly": "npm run build"
@@ -91,10 +91,10 @@
   "dependencies": {
     "@noble/curves": "^1.3.0",
     "@noble/hashes": "^1.3.3",
-    "axios": "^1.15.0",
+    "axios": "^1.16.1",
     "eventemitter3": "^5.0.1",
     "pino": "^8.18.0",
-    "ws": "^8.20.0",
+    "ws": "^8.21.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

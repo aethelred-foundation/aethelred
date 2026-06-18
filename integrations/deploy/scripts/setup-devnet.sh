@@ -31,8 +31,10 @@ set -euo pipefail
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DEPLOY_DIR="${PROJECT_ROOT}/deploy"
+DEPLOY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${DEPLOY_ROOT}/../.." && pwd)"
+PROJECT_ROOT="${REPO_ROOT}"
+DEPLOY_DIR="${DEPLOY_ROOT}"
 CONFIG_DIR="${DEPLOY_DIR}/config"
 DOCKER_DIR="${DEPLOY_DIR}/docker"
 DATA_DIR="${DEPLOY_DIR}/data"
@@ -91,6 +93,21 @@ check_command() {
         return 1
     fi
     return 0
+}
+
+sha256_hex() {
+    if command -v sha256sum > /dev/null 2>&1; then
+        sha256sum | awk '{print $1}'
+        return
+    fi
+
+    if command -v shasum > /dev/null 2>&1; then
+        shasum -a 256 | awk '{print $1}'
+        return
+    fi
+
+    log_error "Neither sha256sum nor shasum is available."
+    return 1
 }
 
 parse_args() {
@@ -162,14 +179,14 @@ check_prerequisites() {
 
     # Check Docker
     if check_command docker; then
-        local docker_version=$(docker --version | grep -oP '\d+\.\d+\.\d+' | head -1)
+        local docker_version=$(docker --version | sed -E 's/.* ([0-9]+(\.[0-9]+)+).*/\1/')
         log_info "Docker version: ${docker_version}"
     else
         missing=$((missing + 1))
     fi
 
     # Check Docker Compose
-    if check_command docker-compose || docker compose version &> /dev/null; then
+    if command -v docker-compose > /dev/null 2>&1 || docker compose version > /dev/null 2>&1; then
         log_info "Docker Compose available"
     else
         log_error "Docker Compose not found"
@@ -195,7 +212,12 @@ check_prerequisites() {
     fi
 
     # Check available disk space (require at least 10GB)
-    local available_space=$(df -BG "${PROJECT_ROOT}" | tail -1 | awk '{print $4}' | sed 's/G//')
+    local available_space
+    if [[ "$(uname)" == "Darwin" ]]; then
+        available_space=$(df -g "${PROJECT_ROOT}" | tail -1 | awk '{print $4}')
+    else
+        available_space=$(df -BG "${PROJECT_ROOT}" | tail -1 | awk '{print $4}' | sed 's/G//')
+    fi
     if [[ ${available_space} -lt 10 ]]; then
         log_warning "Low disk space: ${available_space}GB available (recommended: 10GB+)"
     else
@@ -273,7 +295,7 @@ generate_keys() {
 
             # Generate a deterministic key for DevNet reproducibility
             # In production, use proper key generation
-            local seed_hex=$(echo -n "aethelred-devnet-validator-${validator}" | sha256sum | cut -d' ' -f1)
+            local seed_hex=$(printf "%s" "aethelred-devnet-validator-${validator}" | sha256_hex)
 
             cat > "${key_file}" << EOF
 {
@@ -296,7 +318,7 @@ EOF
     else
         log_info "Generating key for compute-charlie..."
 
-        local seed_hex=$(echo -n "aethelred-devnet-compute-charlie" | sha256sum | cut -d' ' -f1)
+        local seed_hex=$(printf "%s" "aethelred-devnet-compute-charlie" | sha256_hex)
 
         cat > "${compute_key}" << EOF
 {
@@ -319,7 +341,7 @@ EOF
     else
         log_info "Generating key for bridge-relayer..."
 
-        local seed_hex=$(echo -n "aethelred-devnet-bridge-relayer" | sha256sum | cut -d' ' -f1)
+        local seed_hex=$(printf "%s" "aethelred-devnet-bridge-relayer" | sha256_hex)
 
         cat > "${bridge_key}" << EOF
 {
@@ -369,7 +391,7 @@ deploy_bridge_contract() {
 
     log_step "Step 5: Deploying Bridge Contract"
 
-    local contracts_dir="${PROJECT_ROOT}/contracts/ethereum"
+    local contracts_dir="${REPO_ROOT}/contracts"
 
     if [[ ! -d "${contracts_dir}" ]]; then
         log_error "Contracts directory not found: ${contracts_dir}"
@@ -456,7 +478,7 @@ run_health_checks() {
 
     # Check bootnode
     log_info "Checking bootnode..."
-    if docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" exec -T bootnode curl -sf http://localhost:26657/health > /dev/null 2>&1; then
+    if [[ "$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' aethelred-bootnode 2>/dev/null || true)" == "healthy" ]]; then
         log_success "Bootnode: HEALTHY"
     else
         log_warning "Bootnode: NOT READY (may still be starting)"
@@ -466,7 +488,13 @@ run_health_checks() {
     # Check validators
     for validator in alice bob; do
         log_info "Checking validator-${validator}..."
-        if docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" exec -T "validator-${validator}" curl -sf http://localhost:26657/health > /dev/null 2>&1; then
+        local validator_port
+        if [[ "${validator}" == "alice" ]]; then
+            validator_port=8545
+        else
+            validator_port=8555
+        fi
+        if curl -sf "http://localhost:${validator_port}/health" > /dev/null 2>&1; then
             log_success "Validator ${validator}: HEALTHY"
         else
             log_warning "Validator ${validator}: NOT READY"
@@ -476,7 +504,7 @@ run_health_checks() {
 
     # Check compute node
     log_info "Checking compute-charlie..."
-    if docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" exec -T compute-charlie curl -sf http://localhost:26657/health > /dev/null 2>&1; then
+    if curl -sf http://localhost:8565/health > /dev/null 2>&1; then
         log_success "Compute charlie: HEALTHY"
     else
         log_warning "Compute charlie: NOT READY"
@@ -485,10 +513,28 @@ run_health_checks() {
 
     # Check bridge relayer
     log_info "Checking bridge-relayer..."
-    if docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" exec -T bridge-relayer curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+    if curl -sf http://localhost:9104/health > /dev/null 2>&1; then
         log_success "Bridge relayer: HEALTHY"
     else
         log_warning "Bridge relayer: NOT READY"
+        all_healthy=false
+    fi
+
+    # Check faucet
+    log_info "Checking faucet..."
+    if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+        log_success "Faucet: HEALTHY"
+    else
+        log_warning "Faucet: NOT READY"
+        all_healthy=false
+    fi
+
+    # Check explorer
+    log_info "Checking explorer..."
+    if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
+        log_success "Explorer: HEALTHY"
+    else
+        log_warning "Explorer: NOT READY"
         all_healthy=false
     fi
 
@@ -503,7 +549,7 @@ run_health_checks() {
 
     # Check Grafana
     log_info "Checking Grafana..."
-    if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
+    if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
         log_success "Grafana: HEALTHY"
     else
         log_warning "Grafana: NOT READY"
@@ -534,16 +580,16 @@ print_summary() {
 ╠═══════════════════════════════════════════════════════════════════════════╣
 ║                                                                            ║
 ║  📡 Service Endpoints:                                                     ║
-║  ├─ Bootnode RPC:      http://localhost:26657                             ║
-║  ├─ Bootnode gRPC:     http://localhost:9090                              ║
-║  ├─ Validator Alice:   http://localhost:26658                             ║
-║  ├─ Validator Bob:     http://localhost:26659                             ║
-║  ├─ Compute Charlie:   http://localhost:26660                             ║
-║  ├─ Bridge Relayer:    http://localhost:8080                              ║
-║  ├─ Faucet:            http://localhost:8081                              ║
-║  ├─ Explorer:          http://localhost:3000                              ║
-║  ├─ Prometheus:        http://localhost:9091                              ║
-║  └─ Grafana:           http://localhost:3001 (admin/admin)                ║
+║  ├─ JSON-RPC:          http://localhost:8545                              ║
+║  ├─ WebSocket:         ws://localhost:8546                                ║
+║  ├─ GraphQL:           http://localhost:8547/graphql                      ║
+║  ├─ Validator Bob RPC: http://localhost:8555                              ║
+║  ├─ Compute RPC:       http://localhost:8565                              ║
+║  ├─ Bridge Metrics:    http://localhost:9104                              ║
+║  ├─ Faucet:            http://localhost:8080                              ║
+║  ├─ Explorer:          http://localhost:4000                              ║
+║  ├─ Prometheus:        http://localhost:9090                              ║
+║  └─ Grafana:           http://localhost:3000                              ║
 ║                                                                            ║
 ║  🔑 Keys stored in: ${KEYS_DIR}
 ║                                                                            ║
@@ -551,7 +597,7 @@ print_summary() {
 ║  ├─ View logs:    docker compose -p aethelred-devnet logs -f             ║
 ║  ├─ Stop:         docker compose -p aethelred-devnet down                ║
 ║  ├─ Restart:      docker compose -p aethelred-devnet restart             ║
-║  └─ Health check: ./deploy/scripts/healthcheck.sh                         ║
+║  └─ Health check: make devnet-doctor                                      ║
 ║                                                                            ║
 ║  ⏱️  Setup completed in ${duration} seconds                                 ║
 ╚═══════════════════════════════════════════════════════════════════════════╝

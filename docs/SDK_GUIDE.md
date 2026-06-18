@@ -525,10 +525,10 @@ docker-compose logs -f aethelred-node
 | `aethelred-node` | 26657, 26656, 1317, 9090 | Aethelred node |
 | `tee-worker` | 8545 | TEE execution worker |
 | `zkml-prover` | 8546 | zkML proving service |
-| `explorer` | 3000 | Block explorer |
+| `explorer` | 4000 | Block explorer |
 | `faucet` | 8080 | Testnet faucet |
-| `prometheus` | 9092 | Metrics |
-| `grafana` | 3001 | Dashboards |
+| `prometheus` | 9090 | Metrics |
+| `grafana` | 3000 | Dashboards |
 
 ### Development Workflow
 
@@ -601,7 +601,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:4000
 
 ### Features
 

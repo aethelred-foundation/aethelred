@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "Interactive demo dashboard for Aethelred presentations",
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "vite",
+    "start": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "dependencies": {
     "react": "^18.2.0",

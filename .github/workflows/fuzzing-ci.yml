@@ -15,6 +15,8 @@ on:
 env:
   GO_VERSION: "1.25.8"
   RUST_VERSION: "1.85.0"
+  RUST_NIGHTLY: "nightly-2026-05-01"
+  CARGO_FUZZ_VERSION: "0.13.1"
   GOFLAGS: "-mod=mod"
   # PR runs use short duration; nightly/manual can use longer
   FUZZ_DURATION: ${{ github.event.inputs.fuzz_duration || (github.event_name == 'schedule' && '5m' || '30s') }}
@@ -67,10 +69,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY }}
 
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --locked
+        # Build the cargo-fuzz CLI with stable Rust while keeping its upstream
+        # lockfile. Recent nightlies reject compiler-internal rustc attributes
+        # used by older transitive dependencies during tool installation.
+        run: |
+          rustup toolchain install "${RUST_VERSION}" --profile minimal --no-self-update
+          cargo +"${RUST_VERSION}" install cargo-fuzz --version "${CARGO_FUZZ_VERSION}" --locked
 
       # Vendor fuzz-only deps (libfuzzer-sys) into vendor/ so builds work
       # with the repo's vendored source replacement policy intact.
@@ -85,7 +94,7 @@ jobs:
         run: |
           for crate in crates/core/fuzz crates/bridge/fuzz crates/consensus/fuzz crates/vm/fuzz; do
             echo "::group::cargo check ${crate}"
-            cargo +nightly check --manifest-path "${crate}/Cargo.toml"
+            cargo +"${RUST_NIGHTLY}" check --manifest-path "${crate}/Cargo.toml"
             echo "::endgroup::"
           done
 
@@ -93,28 +102,28 @@ jobs:
       - name: "core: fuzz_hybrid_signature_from_bytes"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "core: fuzz_hybrid_pubkey_from_bytes"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "core: fuzz_kyber_pubkey_from_bytes"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "core: fuzz_signature_roundtrip"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_signature_roundtrip -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
@@ -122,14 +131,14 @@ jobs:
       - name: "bridge: fuzz_bridge_event_parsing"
         continue-on-error: true
         working-directory: crates/bridge
-        run: cargo +nightly fuzz run fuzz_bridge_event_parsing -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_bridge_event_parsing -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "bridge: fuzz_bridge_state_transition"
         continue-on-error: true
         working-directory: crates/bridge
-        run: cargo +nightly fuzz run fuzz_bridge_state_transition -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_bridge_state_transition -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
@@ -137,14 +146,14 @@ jobs:
       - name: "consensus: fuzz_vrf_prove_verify"
         continue-on-error: true
         working-directory: crates/consensus
-        run: cargo +nightly fuzz run fuzz_vrf_prove_verify -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_vrf_prove_verify -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "consensus: fuzz_reputation_score"
         continue-on-error: true
         working-directory: crates/consensus
-        run: cargo +nightly fuzz run fuzz_reputation_score -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_reputation_score -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
@@ -153,7 +162,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         continue-on-error: true
         working-directory: crates/vm
-        run: cargo +nightly fuzz run fuzz_vm_bytecode_execution -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_vm_bytecode_execution -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
@@ -161,7 +170,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         continue-on-error: true
         working-directory: crates/vm
-        run: cargo +nightly fuzz run fuzz_precompile_inputs -- -max_total_time="${FUZZ_SECONDS}"
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_precompile_inputs -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
@@ -251,10 +260,17 @@ jobs:
           fi
 
       # --- Rust extended fuzzing (10 min per target) ---
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY }}
 
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --locked
+        # Build the cargo-fuzz CLI with stable Rust while keeping its upstream
+        # lockfile. Recent nightlies reject compiler-internal rustc attributes
+        # used by older transitive dependencies during tool installation.
+        run: |
+          rustup toolchain install "${RUST_VERSION}" --profile minimal --no-self-update
+          cargo +"${RUST_VERSION}" install cargo-fuzz --version "${CARGO_FUZZ_VERSION}" --locked
 
       - name: Vendor fuzz dependencies
         run: |
@@ -265,59 +281,59 @@ jobs:
         run: |
           for crate in crates/core/fuzz crates/bridge/fuzz crates/consensus/fuzz crates/vm/fuzz; do
             echo "::group::cargo check ${crate}"
-            cargo +nightly check --manifest-path "${crate}/Cargo.toml"
+            cargo +"${RUST_NIGHTLY}" check --manifest-path "${crate}/Cargo.toml"
             echo "::endgroup::"
           done
 
       - name: "core extended: fuzz_hybrid_signature_from_bytes (10m)"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time=600
 
       - name: "core extended: fuzz_hybrid_pubkey_from_bytes (10m)"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time=600
 
       - name: "core extended: fuzz_kyber_pubkey_from_bytes (10m)"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time=600
 
       - name: "core extended: fuzz_signature_roundtrip (10m)"
         continue-on-error: true
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_signature_roundtrip -- -max_total_time=600
 
       - name: "bridge extended: fuzz_bridge_event_parsing (10m)"
         continue-on-error: true
         working-directory: crates/bridge
-        run: cargo +nightly fuzz run fuzz_bridge_event_parsing -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_bridge_event_parsing -- -max_total_time=600
 
       - name: "bridge extended: fuzz_bridge_state_transition (10m)"
         continue-on-error: true
         working-directory: crates/bridge
-        run: cargo +nightly fuzz run fuzz_bridge_state_transition -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_bridge_state_transition -- -max_total_time=600
 
       - name: "consensus extended: fuzz_vrf_prove_verify (10m)"
         continue-on-error: true
         working-directory: crates/consensus
-        run: cargo +nightly fuzz run fuzz_vrf_prove_verify -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_vrf_prove_verify -- -max_total_time=600
 
       - name: "consensus extended: fuzz_reputation_score (10m)"
         continue-on-error: true
         working-directory: crates/consensus
-        run: cargo +nightly fuzz run fuzz_reputation_score -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_reputation_score -- -max_total_time=600
 
       - name: "vm extended: fuzz_vm_bytecode_execution (10m)"
         continue-on-error: true
         working-directory: crates/vm
-        run: cargo +nightly fuzz run fuzz_vm_bytecode_execution -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_vm_bytecode_execution -- -max_total_time=600
 
       - name: "vm extended: fuzz_precompile_inputs (10m)"
         continue-on-error: true
         working-directory: crates/vm
-        run: cargo +nightly fuzz run fuzz_precompile_inputs -- -max_total_time=600
+        run: cargo +"${RUST_NIGHTLY}" fuzz run fuzz_precompile_inputs -- -max_total_time=600
 
       - name: Upload Rust extended corpus
         if: always()
