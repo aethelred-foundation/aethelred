@@ -32,7 +32,7 @@
     "h3": "^1.15.9",
     "brace-expansion": "^2.0.3",
     "@tootallnate/once": "^3.0.1",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "postcss": "^8.4.31",
     "minimatch": "^9.0.7"
   }
