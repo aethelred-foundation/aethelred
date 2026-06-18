@@ -15,7 +15,14 @@
     "network_type": "testnet",
     "documentation": "https://docs.aethelred.io/testnet",
     "release_branch": "release/testnet-v1.0",
-    "image_tag": "ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1"
+    "image_tag": "ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1",
+    "pqc": {
+      "mode": "hybrid",
+      "signature_backend": "cloudflare-circl",
+      "signature_algorithm": "ML-DSA-65 (FIPS 204)",
+      "kem_algorithm": "ML-KEM-768 (FIPS 203)",
+      "classical_curve": "secp256k1"
+    }
   },
   "consensus": {
     "type": "proof_of_compute",

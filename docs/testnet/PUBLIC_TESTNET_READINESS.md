@@ -24,6 +24,23 @@ The public testnet gate currently blocks on:
 
 ---
 
+## Cryptographic Posture
+
+Post-quantum cryptography is implemented and on by default — it is no longer a launch blocker:
+
+| Property | Value |
+|---|---|
+| PQC signatures | Real **ML-DSA-65** (NIST FIPS 204) via Cloudflare circl — no simulated path |
+| PQC key exchange | Real **ML-KEM-768** (NIST FIPS 203) via Cloudflare circl |
+| Classical curve | **secp256k1** (hybrid with ML-DSA) |
+| Default node mode | `hybrid` (composite classical + PQC); selecting a non-real mode is rejected at startup |
+| Digital Seal | Validator-quorum hybrid signatures (2/3+ power), verified against registered validator keys |
+| Validation | NIST ACVP keyGen known-answer tests pass in CI; the readiness gate asserts `metadata.pqc.mode` is `hybrid`/`production` |
+
+The node reads its PQC mode from `aethelred.pqc.mode` / `AETHELRED_PQC_MODE` and defaults to `hybrid`. Validators register their hybrid public key on-chain via `MsgRegisterValidatorHybridKey` (key derived deterministically from the validator's consensus key).
+
+---
+
 ## Readiness Command
 
 Run from the repository root:
@@ -39,6 +56,7 @@ The command validates:
 - Genesis time is not stale.
 - Bridge configuration is not enabled with a zero contract address.
 - Seed and persistent peer entries use real node IDs.
+- Post-quantum posture: `metadata.pqc.mode` is `hybrid`/`production` (never `simulated`), backed by Cloudflare circl (real ML-DSA-65 / ML-KEM-768) with a secp256k1 classical curve.
 - Testnet runbook and release-candidate docs match the current genesis checksum and image tag.
 - Required external audit scopes are complete unless a signed public-testnet waiver is explicitly set.
 
@@ -50,8 +68,10 @@ Use `AETHELRED_PUBLIC_TESTNET_AUDIT_WAIVER=1` only after a signed launch waiver 
 
 1. Merge the audit-readiness PR after required review.
 2. Cut or update `release/testnet-v1.0` from the reviewed commit.
-3. Regenerate testnet genesis with the approved launch time, bridge posture, seeds, peers, and image tag.
-4. Update `config/genesis/testnet-genesis.sha256`.
+3. Finalize the genesis in one step with the approved launch time, bridge posture, seeds, peers, and image tag:
+   `make finalize-testnet-genesis ARGS="--launch-in 48h --disable-bridge --image-tag <ghcr-tag> --seed <id>@host:26656 --peer <id>@host:26656 ..."`.
+   This rewrites the genesis, recomputes `config/genesis/testnet-genesis.sha256`, and syncs the checksum/image references in the runbook and release-candidate doc.
+4. Confirm the regenerated `config/genesis/testnet-genesis.sha256` matches the published packet.
 5. Confirm public image pull by digest, not only by mutable registry state.
 6. Run `make public-testnet-readiness`.
 7. Run the full CI and branch-protection suite on the release branch.

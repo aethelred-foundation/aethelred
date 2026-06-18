@@ -1,16 +1,15 @@
-// Package pqc provides BIP32/BIP44-compatible hierarchical deterministic wallet
-// support for Aethelred's hybrid ECDSA + Dilithium key system.
+// Package pqc provides hierarchical deterministic wallet support for Aethelred's
+// hybrid secp256k1 + Dilithium key system.
 //
-// Standard derivation path: m/44'/60'/0'/0/index
-// (coin type 60 for Ethereum compatibility; Aethelred will register its own)
-//
-// Uses HKDF-SHA256 (RFC 5869) instead of raw SHA256 counter-mode for key
-// derivation, providing cryptographically rigorous extract-and-expand semantics.
+// Derivation uses BIP44-style path *labels* (m/44'/60'/0'/0/index) as HKDF-SHA256
+// (RFC 5869) domain-separation info, deriving both the secp256k1 and ML-DSA child
+// keys from a single master seed. NOTE: this is deliberately NOT BIP32 wire
+// compatible — there is no BIP32 standard for ML-DSA keys, so a dual-key wallet
+// cannot interoperate with standard single-curve BIP32 wallets. The path labels
+// are organizational; the cryptography is HKDF extract-and-expand.
 package pqc
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -104,14 +103,10 @@ func (w *HDWallet) DeriveChild(path HDDerivationPath) (*DualKeyWallet, error) {
 	}
 	defer zeroBytes(dilithiumSeed)
 
-	// Generate ECDSA key from derived seed using HKDF-based reader
-	ecdsaReader, err := hkdfReader(ecdsaSeed, []byte("aethelred-ecdsa-keygen"))
+	// Derive the secp256k1 key deterministically from the per-path ECDSA seed.
+	ecdsaPriv, err := deriveSecp256k1FromSeed(ecdsaSeed)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create ECDSA key reader: %w", err)
-	}
-	ecdsaPriv, err := ecdsa.GenerateKey(elliptic.P256(), ecdsaReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate ECDSA key: %w", err)
+		return nil, fmt.Errorf("failed to derive ECDSA key: %w", err)
 	}
 
 	// Generate Dilithium key from derived seed
@@ -165,12 +160,6 @@ func hkdfDerive(secret, info []byte, length int) ([]byte, error) {
 		return nil, fmt.Errorf("HKDF expansion failed: %w", err)
 	}
 	return derived, nil
-}
-
-// hkdfReader creates an io.Reader that provides HKDF-derived bytes for key gen.
-func hkdfReader(secret, info []byte) (io.Reader, error) {
-	salt := []byte("aethelred-hkdf-v1")
-	return hkdf.New(sha256.New, secret, salt, info), nil
 }
 
 // derivePathInfo creates the HKDF info string from a derivation path.

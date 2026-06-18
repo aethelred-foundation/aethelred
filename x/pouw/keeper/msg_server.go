@@ -228,3 +228,26 @@ func (k msgServer) RegisterValidatorPCR0(goCtx context.Context, msg *types.MsgRe
 		Pcr0Hex:          msg.Pcr0Hex,
 	}, nil
 }
+
+// RegisterValidatorHybridKey registers a validator's hybrid (secp256k1 + ML-DSA)
+// public key, used to verify the validator's signatures over Digital Seal claims
+// in vote extensions. ValidateBasic enforces that the signer (creator) is the
+// validator whose key is being registered.
+func (k msgServer) RegisterValidatorHybridKey(goCtx context.Context, msg *types.MsgRegisterValidatorHybridKey) (*types.MsgRegisterValidatorHybridKeyResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil RegisterValidatorHybridKey message")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	if err := k.Keeper.RegisterValidatorHybridKey(ctx, msg.ValidatorAddress, msg.HybridPublicKey); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgRegisterValidatorHybridKeyResponse{
+		ValidatorAddress: msg.ValidatorAddress,
+	}, nil
+}

@@ -14,8 +14,12 @@ default = ["std", "full-pqc"]
 std = []
 # Feature flag to simulate TEEs during development on Mac/Windows
 mock-tee = []
-# Enable full PQC implementations (vs lightweight for testing)
-full-pqc = ["pqcrypto-kyber"]
+# Strict PQC behavior marker. When enabled (the default), Dilithium key
+# derivation uses the real fail-closed paths (see crypto/hybrid.rs); when
+# disabled, dev-only mock derivation is used for fast tests. Both ML-DSA
+# (pqcrypto-dilithium) and ML-KEM (pqcrypto-kyber) are ALWAYS real, in every
+# build configuration — this feature does not gate the PQC dependencies.
+full-pqc = []
 # Enable SGX support (Linux only)
 sgx = []
 # Enable HSM support via PKCS#11
@@ -76,8 +80,11 @@ ripemd = "0.1"          # Bitcoin address compatibility
 # =============================================================================
 # Dilithium3 (NIST FIPS 204 / ML-DSA) for Signatures - REQUIRED for production
 pqcrypto-dilithium = "0.5"
-# Kyber768 (NIST FIPS 203 / ML-KEM) for Key Exchange
-pqcrypto-kyber = { version = "0.8", optional = true }
+# Kyber768 (NIST FIPS 203 / ML-KEM) for Key Exchange - REQUIRED for production.
+# Non-optional (like pqcrypto-dilithium): crypto/kyber.rs and
+# transport/kyber_libp2p.rs import it unconditionally, so gating it behind a
+# feature broke `--no-default-features`. Real ML-KEM in every build config.
+pqcrypto-kyber = "0.8"
 # Common PQC traits
 pqcrypto-traits = "0.3"
 

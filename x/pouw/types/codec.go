@@ -19,6 +19,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgCancelJob{}, "aethelred/pouw/MsgCancelJob", nil)
 	cdc.RegisterConcrete(&MsgRegisterValidatorCapability{}, "aethelred/pouw/MsgRegisterValidatorCapability", nil)
 	cdc.RegisterConcrete(&MsgRegisterValidatorPCR0{}, "aethelred/pouw/MsgRegisterValidatorPCR0", nil)
+	cdc.RegisterConcrete(&MsgRegisterValidatorHybridKey{}, "aethelred/pouw/MsgRegisterValidatorHybridKey", nil)
 }
 
 // RegisterInterfaces registers the interfaces types with the interface registry.
@@ -29,6 +30,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&MsgCancelJob{},
 		&MsgRegisterValidatorCapability{},
 		&MsgRegisterValidatorPCR0{},
+		&MsgRegisterValidatorHybridKey{},
 	)
 
 	registry.RegisterImplementations((*tx.MsgResponse)(nil),
@@ -37,6 +39,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&MsgCancelJobResponse{},
 		&MsgRegisterValidatorCapabilityResponse{},
 		&MsgRegisterValidatorPCR0Response{},
+		&MsgRegisterValidatorHybridKeyResponse{},
 	)
 
 	// Best-effort registration: avoid panic when proto descriptors are not

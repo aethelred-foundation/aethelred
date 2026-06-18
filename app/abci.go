@@ -107,6 +107,17 @@ func (app *AethelredApp) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		// MUST produce identical extension bytes/hashes.
 		voteExt.SortVerifications()
 
+		// Sign each successful verification's Digital Seal claim with the
+		// validator's hybrid (secp256k1 + ML-DSA) key. This must precede the
+		// ed25519 extension signature so the claim signatures are covered by it.
+		// Non-fatal: a hybrid-key failure must not break consensus participation;
+		// the validator simply won't contribute to that seal's quorum.
+		if app.validatorHybridWallet != nil {
+			if claimErr := SignSealClaims(voteExt, app.validatorHybridWallet, ctx.ChainID()); claimErr != nil {
+				app.Logger().Error("Failed to sign seal claims in vote extension", "error", claimErr)
+			}
+		}
+
 		validationMode := app.voteExtensionValidationMode(ctx)
 
 		// Sign the vote extension with validator's ed25519 private key

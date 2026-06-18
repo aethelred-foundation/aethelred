@@ -163,11 +163,14 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Query_Seal_FullMethodName         = "/aethelred.seal.v1.Query/Seal"
-	Query_Seals_FullMethodName        = "/aethelred.seal.v1.Query/Seals"
-	Query_SealsByModel_FullMethodName = "/aethelred.seal.v1.Query/SealsByModel"
-	Query_VerifySeal_FullMethodName   = "/aethelred.seal.v1.Query/VerifySeal"
-	Query_Params_FullMethodName       = "/aethelred.seal.v1.Query/Params"
+	Query_Seal_FullMethodName                     = "/aethelred.seal.v1.Query/Seal"
+	Query_Seals_FullMethodName                    = "/aethelred.seal.v1.Query/Seals"
+	Query_SealsByModel_FullMethodName             = "/aethelred.seal.v1.Query/SealsByModel"
+	Query_SealsByRequester_FullMethodName         = "/aethelred.seal.v1.Query/SealsByRequester"
+	Query_VerifySeal_FullMethodName               = "/aethelred.seal.v1.Query/VerifySeal"
+	Query_ExportSeal_FullMethodName               = "/aethelred.seal.v1.Query/ExportSeal"
+	Query_EnterpriseEvidenceBundle_FullMethodName = "/aethelred.seal.v1.Query/EnterpriseEvidenceBundle"
+	Query_Params_FullMethodName                   = "/aethelred.seal.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -179,7 +182,10 @@ type QueryClient interface {
 	Seal(ctx context.Context, in *QuerySealRequest, opts ...grpc.CallOption) (*QuerySealResponse, error)
 	Seals(ctx context.Context, in *QuerySealsRequest, opts ...grpc.CallOption) (*QuerySealsResponse, error)
 	SealsByModel(ctx context.Context, in *QuerySealsByModelRequest, opts ...grpc.CallOption) (*QuerySealsByModelResponse, error)
+	SealsByRequester(ctx context.Context, in *QuerySealsByRequesterRequest, opts ...grpc.CallOption) (*QuerySealsByRequesterResponse, error)
 	VerifySeal(ctx context.Context, in *QueryVerifySealRequest, opts ...grpc.CallOption) (*QueryVerifySealResponse, error)
+	ExportSeal(ctx context.Context, in *QueryExportSealRequest, opts ...grpc.CallOption) (*QueryExportSealResponse, error)
+	EnterpriseEvidenceBundle(ctx context.Context, in *QueryEnterpriseEvidenceBundleRequest, opts ...grpc.CallOption) (*QueryEnterpriseEvidenceBundleResponse, error)
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 }
 
@@ -221,10 +227,40 @@ func (c *queryClient) SealsByModel(ctx context.Context, in *QuerySealsByModelReq
 	return out, nil
 }
 
+func (c *queryClient) SealsByRequester(ctx context.Context, in *QuerySealsByRequesterRequest, opts ...grpc.CallOption) (*QuerySealsByRequesterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QuerySealsByRequesterResponse)
+	err := c.cc.Invoke(ctx, Query_SealsByRequester_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) VerifySeal(ctx context.Context, in *QueryVerifySealRequest, opts ...grpc.CallOption) (*QueryVerifySealResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryVerifySealResponse)
 	err := c.cc.Invoke(ctx, Query_VerifySeal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ExportSeal(ctx context.Context, in *QueryExportSealRequest, opts ...grpc.CallOption) (*QueryExportSealResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryExportSealResponse)
+	err := c.cc.Invoke(ctx, Query_ExportSeal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) EnterpriseEvidenceBundle(ctx context.Context, in *QueryEnterpriseEvidenceBundleRequest, opts ...grpc.CallOption) (*QueryEnterpriseEvidenceBundleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryEnterpriseEvidenceBundleResponse)
+	err := c.cc.Invoke(ctx, Query_EnterpriseEvidenceBundle_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +286,10 @@ type QueryServer interface {
 	Seal(context.Context, *QuerySealRequest) (*QuerySealResponse, error)
 	Seals(context.Context, *QuerySealsRequest) (*QuerySealsResponse, error)
 	SealsByModel(context.Context, *QuerySealsByModelRequest) (*QuerySealsByModelResponse, error)
+	SealsByRequester(context.Context, *QuerySealsByRequesterRequest) (*QuerySealsByRequesterResponse, error)
 	VerifySeal(context.Context, *QueryVerifySealRequest) (*QueryVerifySealResponse, error)
+	ExportSeal(context.Context, *QueryExportSealRequest) (*QueryExportSealResponse, error)
+	EnterpriseEvidenceBundle(context.Context, *QueryEnterpriseEvidenceBundleRequest) (*QueryEnterpriseEvidenceBundleResponse, error)
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
@@ -271,8 +310,17 @@ func (UnimplementedQueryServer) Seals(context.Context, *QuerySealsRequest) (*Que
 func (UnimplementedQueryServer) SealsByModel(context.Context, *QuerySealsByModelRequest) (*QuerySealsByModelResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SealsByModel not implemented")
 }
+func (UnimplementedQueryServer) SealsByRequester(context.Context, *QuerySealsByRequesterRequest) (*QuerySealsByRequesterResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SealsByRequester not implemented")
+}
 func (UnimplementedQueryServer) VerifySeal(context.Context, *QueryVerifySealRequest) (*QueryVerifySealResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifySeal not implemented")
+}
+func (UnimplementedQueryServer) ExportSeal(context.Context, *QueryExportSealRequest) (*QueryExportSealResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportSeal not implemented")
+}
+func (UnimplementedQueryServer) EnterpriseEvidenceBundle(context.Context, *QueryEnterpriseEvidenceBundleRequest) (*QueryEnterpriseEvidenceBundleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnterpriseEvidenceBundle not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
@@ -352,6 +400,24 @@ func _Query_SealsByModel_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_SealsByRequester_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySealsByRequesterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).SealsByRequester(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_SealsByRequester_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).SealsByRequester(ctx, req.(*QuerySealsByRequesterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_VerifySeal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryVerifySealRequest)
 	if err := dec(in); err != nil {
@@ -366,6 +432,42 @@ func _Query_VerifySeal_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).VerifySeal(ctx, req.(*QueryVerifySealRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ExportSeal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryExportSealRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ExportSeal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ExportSeal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ExportSeal(ctx, req.(*QueryExportSealRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_EnterpriseEvidenceBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryEnterpriseEvidenceBundleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).EnterpriseEvidenceBundle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_EnterpriseEvidenceBundle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).EnterpriseEvidenceBundle(ctx, req.(*QueryEnterpriseEvidenceBundleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -408,8 +510,20 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_SealsByModel_Handler,
 		},
 		{
+			MethodName: "SealsByRequester",
+			Handler:    _Query_SealsByRequester_Handler,
+		},
+		{
 			MethodName: "VerifySeal",
 			Handler:    _Query_VerifySeal_Handler,
+		},
+		{
+			MethodName: "ExportSeal",
+			Handler:    _Query_ExportSeal_Handler,
+		},
+		{
+			MethodName: "EnterpriseEvidenceBundle",
+			Handler:    _Query_EnterpriseEvidenceBundle_Handler,
 		},
 		{
 			MethodName: "Params",

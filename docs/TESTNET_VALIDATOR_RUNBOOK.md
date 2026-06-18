@@ -40,7 +40,7 @@ curl -fsSL \
   https://raw.githubusercontent.com/aethelred-foundation/aethelred/release/testnet-v1.0/config/genesis/testnet-genesis.json \
   -o $HOME/.aethelred/config/genesis.json
 
-echo "182b526879c751ac5141c043760d6208fdfbd99078d16d424dba74515dab7710  $HOME/.aethelred/config/genesis.json" \
+echo "9da89ba135c96aa7fe26ea3d340c0677f2772468eb8895207b878d03dd556c0f  $HOME/.aethelred/config/genesis.json" \
   | shasum -a 256 -c -
 # Must print: OK
 
@@ -80,7 +80,30 @@ docker exec aethelred-testnet aethelredd tx staking create-validator \
   --gas=auto \
   --gas-adjustment=1.5 \
   --yes
+
+# 8. Register your post-quantum (hybrid) public key
+# This key signs Digital Seal claims for the validator quorum. It is derived
+# deterministically from your consensus key and logged at node startup:
+#   docker logs aethelred-testnet 2>&1 | grep hybrid_public_key
+# Copy the hex value and register it (skip if your key was seeded at genesis):
+docker exec aethelred-testnet aethelredd tx pouw register-hybrid-key <HYBRID_PUBLIC_KEY_HEX> \
+  --from=validator \
+  --chain-id=aethelred-testnet-1 \
+  --gas=auto \
+  --gas-adjustment=1.5 \
+  --yes
+
+# Verify a seal's validator quorum (anyone, for offline auditing):
+#   aethelredd query pouw seal-quorum <SEAL_ID>
 ```
+
+## Post-Quantum Cryptography
+
+This testnet runs **real** post-quantum cryptography by default (`hybrid` mode): ML-DSA-65
+(FIPS 204) signatures and ML-KEM-768 (FIPS 203) key exchange via Cloudflare circl, in a
+composite scheme with secp256k1. There is no simulated-crypto path. Each validator registers
+a hybrid public key (step 8 above, or seeded at genesis); Digital Seals carry a 2/3+ power
+quorum of hybrid signatures that any party can verify offline via `query pouw seal-quorum`.
 
 ## Network Details
 
@@ -129,7 +152,7 @@ Every validator must verify the genesis file before starting:
 
 ```bash
 shasum -a 256 $HOME/.aethelred/config/genesis.json
-# Expected: 182b526879c751ac5141c043760d6208fdfbd99078d16d424dba74515dab7710
+# Expected: 9da89ba135c96aa7fe26ea3d340c0677f2772468eb8895207b878d03dd556c0f
 ```
 
 If the checksum does not match, do not start the node. Escalate in Slack `#validators-testnet`.

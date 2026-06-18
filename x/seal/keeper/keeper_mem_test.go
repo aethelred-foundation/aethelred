@@ -49,6 +49,7 @@ func TestKeeperMemSetGetSeal(t *testing.T) {
 	ctx := context.Background()
 
 	seal := newSealForTest(1)
+	seal.JobId = "job-keeper-mem-1"
 	if err := k.SetSeal(ctx, seal); err != nil {
 		t.Fatalf("expected set seal success, got %v", err)
 	}
@@ -59,6 +60,14 @@ func TestKeeperMemSetGetSeal(t *testing.T) {
 	}
 	if got.Id != seal.Id {
 		t.Fatalf("expected seal ID match")
+	}
+
+	gotByJob, err := k.GetSealByJob(ctx, seal.JobId)
+	if err != nil {
+		t.Fatalf("expected get seal by job success, got %v", err)
+	}
+	if gotByJob.Id != seal.Id {
+		t.Fatalf("expected seal ID match by job")
 	}
 
 	if _, err := k.GetSeal(ctx, "missing"); err == nil {

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -326,14 +327,25 @@ func (sg *SealGenerator) buildVerificationBundle(result *ConsensusResult) (*type
 		}
 	}
 
+	// Enforce output consistency: every TEE attestation included in the bundle
+	// must agree with the consensus output. A seal must never be minted over
+	// attestations that disagree with the output it certifies.
+	if len(bundle.TEEVerifications) > 0 && !teeOutputsConsistent(bundle.TEEVerifications, bundle.AggregatedOutputHash) {
+		return nil, fmt.Errorf("TEE attestation outputs disagree with consensus output; refusing to seal")
+	}
+
+	outputsMatch := outputsAgree(bundle)
+
 	// Determine verification type
 	if len(bundle.TEEVerifications) > 0 && bundle.ZKMLVerification != nil {
 		bundle.VerificationType = "hybrid"
 		bundle.HybridVerification = &types.HybridVerification{
 			TEEVerifications: bundle.TEEVerifications,
 			ZKMLVerification: bundle.ZKMLVerification,
-			CrossValidated:   true,
-			OutputsMatch:     true, // Assume outputs match if consensus was reached
+			// Cross-validated only when TEE outputs agree with consensus AND the
+			// zkML proof actually verified — not assumed.
+			CrossValidated: outputsMatch && bundle.ZKMLVerification.Verified,
+			OutputsMatch:   outputsMatch,
 		}
 	} else if len(bundle.TEEVerifications) > 0 {
 		bundle.VerificationType = "tee"
@@ -358,6 +370,30 @@ func (sg *SealGenerator) buildVerificationBundle(result *ConsensusResult) (*type
 	bundle.BundleHash = sg.computeBundleHash(bundle)
 
 	return bundle, nil
+}
+
+// teeOutputsConsistent reports whether every TEE attestation in the slice
+// committed to the expected (consensus) output hash.
+func teeOutputsConsistent(teeVerifs []types.TEEVerification, expected []byte) bool {
+	for i := range teeVerifs {
+		if !bytes.Equal(teeVerifs[i].OutputHash, expected) {
+			return false
+		}
+	}
+	return true
+}
+
+// outputsAgree reports whether all verification evidence in the bundle agrees on
+// the aggregated output: every TEE attestation matches it, and any zkML proof
+// was verified. This replaces the previous unconditional "assume match".
+func outputsAgree(bundle *types.VerificationBundle) bool {
+	if !teeOutputsConsistent(bundle.TEEVerifications, bundle.AggregatedOutputHash) {
+		return false
+	}
+	if bundle.ZKMLVerification != nil && !bundle.ZKMLVerification.Verified {
+		return false
+	}
+	return true
 }
 
 // computeBundleHash computes a hash of the verification bundle
@@ -428,10 +464,35 @@ func (sg *SealGenerator) classifyData(purpose string) string {
 	}
 }
 
-// GenerateSealFromJob creates a seal from a completed compute job
-func (sg *SealGenerator) GenerateSealFromJob(ctx context.Context, jobID string, outputHash []byte, verificationResults []VerificationResult) (*types.EnhancedDigitalSeal, error) {
-	// Convert verification results to TEE results
-	teeResults := make([]TEEResult, 0)
+// JobContext carries the job-registry and consensus metadata required to mint a
+// Digital Seal for a completed compute job. The PoUW settlement path populates
+// it from the stored job (model/input hashes, requester, purpose) and the
+// consensus round that finalized the result (height, round, validator counts).
+type JobContext struct {
+	JobID                   string
+	ModelHash               []byte
+	InputHash               []byte
+	OutputHash              []byte
+	RequestedBy             string
+	Purpose                 string
+	Height                  int64
+	Round                   int32
+	TotalValidators         int
+	ParticipatingValidators int
+	BlockHash               []byte
+	ZKMLResult              *ZKMLResult
+	Timestamp               time.Time
+}
+
+// GenerateSealFromJob creates a seal from a completed compute job. The agreement
+// count is derived from the successful verification results; all remaining
+// consensus and provenance metadata is taken from the supplied JobContext. The
+// resulting ConsensusResult is validated by GenerateSeal before any seal is
+// minted, so insufficient consensus or missing provenance is rejected here.
+func (sg *SealGenerator) GenerateSealFromJob(ctx context.Context, job JobContext, verificationResults []VerificationResult) (*types.EnhancedDigitalSeal, error) {
+	// Convert successful verification results to TEE results. Only successful
+	// verifications count toward agreement.
+	teeResults := make([]TEEResult, 0, len(verificationResults))
 	for _, vr := range verificationResults {
 		if vr.Success {
 			teeResults = append(teeResults, TEEResult{
@@ -445,15 +506,27 @@ func (sg *SealGenerator) GenerateSealFromJob(ctx context.Context, jobID string, 
 		}
 	}
 
-	// We need to get job details - for now create minimal consensus result
+	timestamp := job.Timestamp
+	if timestamp.IsZero() {
+		timestamp = time.Now().UTC()
+	}
+
 	consensusResult := &ConsensusResult{
-		JobID:                   jobID,
-		OutputHash:              outputHash,
-		TEEResults:              teeResults,
+		JobID:                   job.JobID,
+		ModelHash:               job.ModelHash,
+		InputHash:               job.InputHash,
+		OutputHash:              job.OutputHash,
+		Height:                  job.Height,
+		Round:                   job.Round,
+		TotalValidators:         job.TotalValidators,
+		ParticipatingValidators: job.ParticipatingValidators,
 		AgreementCount:          len(teeResults),
-		TotalValidators:         len(teeResults),
-		ParticipatingValidators: len(teeResults),
-		Timestamp:               time.Now().UTC(),
+		TEEResults:              teeResults,
+		ZKMLResult:              job.ZKMLResult,
+		RequestedBy:             job.RequestedBy,
+		Purpose:                 job.Purpose,
+		BlockHash:               job.BlockHash,
+		Timestamp:               timestamp,
 	}
 
 	return sg.GenerateSeal(ctx, consensusResult)

@@ -107,6 +107,22 @@ def main() -> int:
     if any(image_tag.endswith(tag) or tag in image_tag for tag in MUTABLE_TAGS):
         errors.append("metadata.image_tag must not use mutable latest/stable tags")
 
+    # Post-quantum cryptography posture: the public testnet must declare and run
+    # real hybrid PQC (never the simulated path), backed by circl with secp256k1.
+    pqc = genesis.get("metadata", {}).get("pqc", {})
+    if not pqc:
+        errors.append("metadata.pqc posture block is missing; declare mode/backend/curve")
+    else:
+        if pqc.get("mode") not in ("hybrid", "production"):
+            errors.append(
+                f"metadata.pqc.mode must be 'hybrid' or 'production', got {pqc.get('mode')!r} "
+                "(the simulated PQC path must never ship to a public testnet)"
+            )
+        if pqc.get("signature_backend") != "cloudflare-circl":
+            errors.append("metadata.pqc.signature_backend must be 'cloudflare-circl' (real ML-DSA)")
+        if pqc.get("classical_curve") != "secp256k1":
+            errors.append("metadata.pqc.classical_curve must be 'secp256k1'")
+
     try:
         genesis_time = parse_time(genesis["genesis_time"])
         if genesis_time <= datetime.now(timezone.utc):

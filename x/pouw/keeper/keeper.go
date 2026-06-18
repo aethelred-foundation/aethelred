@@ -52,6 +52,8 @@ type Keeper struct {
 	ValidatorMeasurements         collections.Map[string, string]
 	RegisteredMeasurements        collections.KeySet[string]
 	TrustedMeasurementRevocations collections.Map[string, string]
+	ValidatorHybridKeys           collections.Map[string, []byte]
+	SealQuorumSignatures          collections.Map[string, []byte]
 	JobCount                      collections.Item[uint64]
 	Params                        collections.Item[types.Params]
 }
@@ -60,6 +62,7 @@ type Keeper struct {
 type StakingKeeper interface {
 	GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error)
 	GetValidator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.Validator, error)
+	GetValidatorByConsAddr(ctx context.Context, consAddr sdk.ConsAddress) (stakingtypes.Validator, error)
 }
 
 // BankKeeper defines the expected bank keeper interface for economic operations
@@ -165,6 +168,20 @@ func NewKeeper(
 			"trusted_measurement_revocations",
 			collections.StringKey,
 			collections.StringValue,
+		),
+		ValidatorHybridKeys: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.ValidatorHybridKeyKeyPrefix),
+			"validator_hybrid_keys",
+			collections.StringKey,
+			collections.BytesValue,
+		),
+		SealQuorumSignatures: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.SealQuorumSignatureKeyPrefix),
+			"seal_quorum_signatures",
+			collections.StringKey,
+			collections.BytesValue,
 		),
 		JobCount: collections.NewItem(
 			sb,
@@ -839,6 +856,17 @@ func (k Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 		}
 	}
 
+	// Seed validator hybrid (secp256k1 + ML-DSA) public keys so Digital Seal
+	// quorum signatures are verifiable from the first block.
+	for _, hk := range gs.ValidatorHybridKeys {
+		if hk == nil || hk.ValidatorAddress == "" {
+			continue
+		}
+		if err := k.RegisterValidatorHybridKey(ctx, hk.ValidatorAddress, hk.HybridPublicKey); err != nil {
+			return err
+		}
+	}
+
 	// Set job count
 	if err := k.JobCount.Set(ctx, uint64(len(gs.Jobs))); err != nil {
 		return err
@@ -882,11 +910,24 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return false, nil
 	})
 
+	// Walk iterates in ascending key order, so the export is deterministic.
+	var hybridKeys []*types.ValidatorHybridKey
+	_ = k.ValidatorHybridKeys.Walk(ctx, nil, func(addr string, key []byte) (bool, error) {
+		keyCopy := make([]byte, len(key))
+		copy(keyCopy, key)
+		hybridKeys = append(hybridKeys, &types.ValidatorHybridKey{
+			ValidatorAddress: addr,
+			HybridPublicKey:  keyCopy,
+		})
+		return false, nil
+	})
+
 	return &types.GenesisState{
 		Params:                params,
 		Jobs:                  jobs,
 		RegisteredModels:      models,
 		ValidatorStats:        stats,
 		ValidatorCapabilities: caps,
+		ValidatorHybridKeys:   hybridKeys,
 	}, nil
 }

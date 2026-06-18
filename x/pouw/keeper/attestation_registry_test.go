@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -46,6 +47,9 @@ func (registryBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Co
 
 type registryStakingKeeper struct {
 	validators []stakingtypes.Validator
+	// byConsAddr maps a bech32 consensus address to its validator, used by
+	// GetValidatorByConsAddr in seal-quorum resolution tests.
+	byConsAddr map[string]stakingtypes.Validator
 }
 
 func (m registryStakingKeeper) GetAllValidators(context.Context) ([]stakingtypes.Validator, error) {
@@ -56,11 +60,22 @@ func (registryStakingKeeper) GetValidator(context.Context, sdk.ValAddress) (stak
 	return stakingtypes.Validator{}, nil
 }
 
+func (m registryStakingKeeper) GetValidatorByConsAddr(_ context.Context, consAddr sdk.ConsAddress) (stakingtypes.Validator, error) {
+	if v, ok := m.byConsAddr[consAddr.String()]; ok {
+		return v, nil
+	}
+	return stakingtypes.Validator{}, fmt.Errorf("validator not found for consensus address %s", consAddr)
+}
+
 func newRegistryTestKeeper(t *testing.T) (Keeper, sdk.Context) {
 	return newRegistryTestKeeperWithValidators(t, nil)
 }
 
 func newRegistryTestKeeperWithValidators(t *testing.T, validators []stakingtypes.Validator) (Keeper, sdk.Context) {
+	return newRegistryTestKeeperWithStaking(t, registryStakingKeeper{validators: validators})
+}
+
+func newRegistryTestKeeperWithStaking(t *testing.T, sk registryStakingKeeper) (Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.ModuleName)
@@ -82,7 +97,7 @@ func newRegistryTestKeeperWithValidators(t *testing.T, validators []stakingtypes
 	k := NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
-		registryStakingKeeper{validators: validators},
+		sk,
 		registryBankKeeper{},
 		sealkeeper.Keeper{},
 		verifykeeper.Keeper{},

@@ -16,7 +16,7 @@
 
 | File | Path | SHA-256 |
 |------|------|---------|
-| Genesis JSON | `config/genesis/testnet-genesis.json` | `182b526879c751ac5141c043760d6208fdfbd99078d16d424dba74515dab7710` |
+| Genesis JSON | `config/genesis/testnet-genesis.json` | `9da89ba135c96aa7fe26ea3d340c0677f2772468eb8895207b878d03dd556c0f` |
 | Checksum file | `config/genesis/testnet-genesis.sha256` | — |
 
 ### How to Verify Genesis
