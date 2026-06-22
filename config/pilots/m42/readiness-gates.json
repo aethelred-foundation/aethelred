@@ -1,0 +1,98 @@
+{
+  "$schema": "https://aethelred.network/schemas/pilot-readiness-gates-v1.json",
+  "pilot": "m42-med42-synthetic-eval",
+  "customer": "M42",
+  "commercial_frame": {
+    "pilot_fee_usd": 200000,
+    "target_sponsor_value_usd": 1000000,
+    "claim_boundary": "Target value is sponsor-perceived strategic value from reusable assets, risk reduction, and decision acceleration; it is not a guaranteed savings claim."
+  },
+  "go_live_required_gates": [
+    {
+      "id": "G-001",
+      "severity": "P0",
+      "owner": "Aethelred pilot lead",
+      "gate": "Exclusive sandbox live validation",
+      "acceptance": "make m42-sandbox-validate passes with zero failures, including validator RPC, TEE /execute smoke, zkML /prove smoke, archive, Prometheus, and Alertmanager."
+    },
+    {
+      "id": "G-002",
+      "severity": "P0",
+      "owner": "Aethelred security owner",
+      "gate": "No live PHI/customer data boundary",
+      "acceptance": "Workload and model manifests forbid live patient data and PHI; any non-synthetic data requires written scope change."
+    },
+    {
+      "id": "G-003",
+      "severity": "P0",
+      "owner": "Aethelred evidence owner",
+      "gate": "Hybrid evidence only",
+      "acceptance": "Every accepted job has TEE attestation, zkML proof object, matching model/circuit hashes, chain_id, seal_id, validator_signature, archive_pointer, verification flags, and fallback mode accepts zero jobs."
+    },
+    {
+      "id": "G-004",
+      "severity": "P0",
+      "owner": "Aethelred model owner",
+      "gate": "M42-approved model binding",
+      "acceptance": "The fixture model digest is replaced by the approved Med42-compatible checkpoint or hosted endpoint digest before customer-approved data is introduced."
+    },
+    {
+      "id": "G-005",
+      "severity": "P0",
+      "owner": "Aethelred prover owner",
+      "gate": "Circuit and verifier binding",
+      "acceptance": "The active circuit hash and verifying key hash are registered and included in every accepted evidence bundle."
+    },
+    {
+      "id": "G-006",
+      "severity": "P0",
+      "owner": "M42 security reviewer",
+      "gate": "Negative-control challenge",
+      "acceptance": "Missing TEE, missing zkML, wrong model hash, PHI injection, fallback mode, and stale nonce replay are mutated from a real bundle, hashed, executed through the policy harness, and rejected."
+    },
+    {
+      "id": "G-007",
+      "severity": "P0",
+      "owner": "Aethelred operator",
+      "gate": "Archive and monitoring evidence",
+      "acceptance": "Evidence archive, Prometheus, and Alertmanager are reachable and retained for the pilot period."
+    },
+    {
+      "id": "G-008",
+      "severity": "P0",
+      "owner": "M42 sponsor",
+      "gate": "$1M value architecture accepted",
+      "acceptance": "M42 sponsor accepts the value-bank structure, mutual action plan, and Week 4 executive value board outputs."
+    },
+    {
+      "id": "G-009",
+      "severity": "P0",
+      "owner": "Aethelred executive sponsor",
+      "gate": "Investor-grade gap register",
+      "acceptance": "m42-pilot-gap-register.json is generated and all FAIL findings are closed or explicitly dispositioned before live claims."
+    },
+    {
+      "id": "G-010",
+      "severity": "P0",
+      "owner": "Aethelred API owner",
+      "gate": "Evidence bundle contract parity",
+      "acceptance": "Go types, JSON schema, OpenAPI, TypeScript SDK, sponsor docs, and generated bundles all require the canonical enterprise evidence bundle fields."
+    }
+  ],
+  "warning_gates": [
+    {
+      "id": "W-001",
+      "severity": "P1",
+      "owner": "Aethelred operator",
+      "gate": "Local archive hardening",
+      "acceptance": "Loopback/private archive is acceptable for rehearsal; hosted customer access requires authentication, TLS, or private connectivity."
+    },
+    {
+      "id": "W-002",
+      "severity": "P1",
+      "owner": "Aethelred pilot lead",
+      "gate": "Fixture-to-live evidence replacement",
+      "acceptance": "All pretestnet drill fixtures are replaced by live sandbox outputs before final M42 claims."
+    }
+  ]
+}

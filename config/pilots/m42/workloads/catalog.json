@@ -1,0 +1,210 @@
+{
+  "$schema": "https://aethelred.network/schemas/workload-catalog-v1.json",
+  "active_workload": "med42-clinical-evaluation",
+  "customer": "M42",
+  "pilot_fee_usd": 200000,
+  "selection_note": "M42 selects one workload to drive the four-week paid pilot. All four packs are ready; the active workload binds the canonical evidence path and CI gate. Run any workload with scripts/m42-sandbox-drill.py --workload <id> or --all.",
+  "workloads": [
+    {
+      "case_unit": "variant",
+      "circuit_hash": "517a90e54e9a0082487266bd572f4d413f5b59f5b05e8f2839c2b8c40247fe4d",
+      "fixture": "docs/workload-packs/m42/workloads/genomic-variant-interpretation/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "genomic-variant-interpretation",
+      "kind": "genomics_variant_classification",
+      "metric_floors": {
+        "ancestry_concordance_gap_max": 0.12,
+        "clinically_significant_discordance_max": 0,
+        "concordance": 0.95,
+        "pathogenic_recall": 0.98
+      },
+      "model_hash": "1fec2363b3a262501fe3de09381126f933b1b95b3852a786c31ec8b6e28025bd",
+      "pack": "config/pilots/m42/workloads/genomic-variant-interpretation.json",
+      "primary_metric": "pathogenic_recall",
+      "title": "Genomic variant interpretation",
+      "why_first": "High volume, repeatable, clear baseline comparison per variant batch."
+    },
+    {
+      "case_unit": "evaluation case",
+      "circuit_hash": "9dda0ee98dca7763b72e45f5cbd77d1eb26243e7d00240c7d66817310414e1b5",
+      "fixture": "docs/workload-packs/m42/workloads/med42-clinical-evaluation/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "med42-clinical-evaluation",
+      "kind": "clinical_language_evaluation",
+      "metric_floors": {
+        "adverse_prompt_rejection_rate": 1.0,
+        "benchmark_accuracy": 0.85,
+        "clinical_factuality": 0.95,
+        "safety_flag_recall": 0.98,
+        "safety_recall_specialty_gap_max": 0.1
+      },
+      "model_hash": "73e901338cd578d92d07e96a8521f1516a7d46134ac521c09899d59987caf82a",
+      "pack": "config/pilots/m42/workloads/med42-clinical-evaluation.json",
+      "primary_metric": "clinical_factuality",
+      "title": "Med42 evaluation / fine-tuning",
+      "why_first": "Strategic AI asset with measurable benchmark outputs."
+    },
+    {
+      "case_unit": "study",
+      "circuit_hash": "c1af7b352c311118de0654c2b7d998a49e4d19672da4bf5b4b356a0602967970",
+      "fixture": "docs/workload-packs/m42/workloads/retrospective-radiology-ai/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "retrospective-radiology-ai",
+      "kind": "radiology_binary_detection",
+      "metric_floors": {
+        "auroc": 0.9,
+        "expected_calibration_error_max": 0.1,
+        "fairness_auroc_gap_max": 0.2,
+        "sensitivity": 0.9,
+        "specificity": 0.8,
+        "worst_finding_type_miss_rate_max": 0.12
+      },
+      "model_hash": "941b2c5312d81f8b135da7bbbfdffbaee2a3fe32e9016077268a16bc8f203276",
+      "pack": "config/pilots/m42/workloads/retrospective-radiology-ai.json",
+      "primary_metric": "auroc",
+      "title": "Retrospective radiology AI evaluation",
+      "why_first": "Clinically relevant and can start on historical data."
+    },
+    {
+      "case_unit": "compound",
+      "circuit_hash": "7c5ae005fa54b4104a3f29cfa5da280e23c221660c5ca82aa6448b7526a15ed1",
+      "fixture": "docs/workload-packs/m42/workloads/drug-discovery-screening/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "drug-discovery-screening",
+      "kind": "virtual_screening_ranking",
+      "metric_floors": {
+        "bedroc_alpha20": 0.5,
+        "enrichment_factor_1pct": 10.0,
+        "roc_auc": 0.8,
+        "top100_hit_rate": 0.1
+      },
+      "model_hash": "f6e0f50c0e05f104c0d07a8fee3f04fbdb5765d14bea4ae84882fd5052855593",
+      "pack": "config/pilots/m42/workloads/drug-discovery-screening.json",
+      "primary_metric": "enrichment_factor_1pct",
+      "title": "Drug-discovery screening",
+      "why_first": "Compute heavy and commercially valuable."
+    },
+    {
+      "case_unit": "record",
+      "circuit_hash": "f62122a2b16a578c5971024baa73d8e9633816ab4afc139ce112443ad09dfbf0",
+      "fixture": "docs/workload-packs/m42/workloads/de-identification-attestation/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "de-identification-attestation",
+      "kind": "deidentification_attestation",
+      "metric_floors": {
+        "hipaa_safe_harbor_coverage": 0.95,
+        "k_anonymity": 5,
+        "l_diversity": 2,
+        "membership_inference_advantage_max": 0.1,
+        "phi_recall": 0.98,
+        "re_identification_risk_max": 0.2,
+        "residual_phi_count_max": 0
+      },
+      "model_hash": "720b741ea9c8d2b8b0cce2429cd31a3039de8a5acced47fd7f18c67291adb2b5",
+      "pack": "config/pilots/m42/workloads/de-identification-attestation.json",
+      "primary_metric": "phi_recall",
+      "title": "De-identification & data-egress attestation",
+      "why_first": "The enabling control: unlocks every cross-border data sale by proving safe egress."
+    },
+    {
+      "case_unit": "cohort query",
+      "circuit_hash": "a2e85c08414945e91d50c36461260f34e361202e9e4494790fa9d20838b7d0d1",
+      "fixture": "docs/workload-packs/m42/workloads/population-health-rwe/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "population-health-rwe",
+      "kind": "population_health_rwe",
+      "metric_floors": {
+        "count_relative_error_max": 0.05,
+        "dp_epsilon_max": 1.0,
+        "query_determinism": 0.99,
+        "small_cell_suppression_compliance": 1.0
+      },
+      "model_hash": "4811724cf2270c437c9bdb433b62dbf64e10203b443f2e2fa03a06ac84523354",
+      "pack": "config/pilots/m42/workloads/population-health-rwe.json",
+      "primary_metric": "count_relative_error",
+      "title": "Malaffi population-health & real-world evidence",
+      "why_first": "Monetizes the flagship Malaffi HIE: cross-border RWE for pharma and governments."
+    },
+    {
+      "case_unit": "association test",
+      "circuit_hash": "04145136d93d7217604515cd47fb2ff041116f26133ee8bce3e77f3e49bec640",
+      "fixture": "docs/workload-packs/m42/workloads/biobank-gwas-prs/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "biobank-gwas-prs",
+      "kind": "genomics_cohort_association",
+      "metric_floors": {
+        "association_power": 0.8,
+        "false_discovery_rate_max": 0.05,
+        "genomic_inflation_lambda_max": 1.1,
+        "prs_auc": 0.65
+      },
+      "model_hash": "1cbe3b54b2930007bf7040ae8905e28bc8a4ff5fa23544375450ac6877a7fdd2",
+      "pack": "config/pilots/m42/workloads/biobank-gwas-prs.json",
+      "primary_metric": "prs_auc",
+      "title": "Biobank GWAS & polygenic risk scores",
+      "why_first": "Turns the 700K-genome programme into pharma-grade association evidence."
+    },
+    {
+      "case_unit": "slide",
+      "circuit_hash": "4d8a8e31d0e8e91a0afca2c07868341d46e145a4313083d350695b437f083ba4",
+      "fixture": "docs/workload-packs/m42/workloads/digital-pathology-ai/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "digital-pathology-ai",
+      "kind": "pathology_wsi_detection",
+      "metric_floors": {
+        "expected_calibration_error_max": 0.1,
+        "fairness_auroc_gap_max": 0.2,
+        "slide_auroc": 0.92,
+        "slide_sensitivity": 0.95,
+        "slide_specificity": 0.8,
+        "worst_tissue_miss_rate_max": 0.1
+      },
+      "model_hash": "1444cf5e014402bd150deecf466717368a8d153c0a9d896ae9087f228fc53747",
+      "pack": "config/pilots/m42/workloads/digital-pathology-ai.json",
+      "primary_metric": "slide_auroc",
+      "title": "Digital pathology AI",
+      "why_first": "A diagnostics service M42 already runs (NRL prostate-cancer pathology)."
+    },
+    {
+      "case_unit": "candidate",
+      "circuit_hash": "24ae4cd69dc1d0ed63821bc9e0d9a76a53e52c171a35e3dd360bec26e27a8d1b",
+      "fixture": "docs/workload-packs/m42/workloads/clinical-trial-matching/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "clinical-trial-matching",
+      "kind": "clinical_trial_matching",
+      "metric_floors": {
+        "fairness_auroc_gap_max": 0.2,
+        "false_match_rate_max": 0.05,
+        "matching_auroc": 0.9,
+        "matching_sensitivity": 0.75,
+        "synthetic_control_smd_max": 0.1
+      },
+      "model_hash": "8068d398542c61758c26267db2dcaf731abb5c0e4684a7312b43f83151f70951",
+      "pack": "config/pilots/m42/workloads/clinical-trial-matching.json",
+      "primary_metric": "matching_sensitivity",
+      "title": "Clinical-trial matching & synthetic control arms",
+      "why_first": "Powers IROS trials and pharma trial partnerships with auditable eligibility and control arms."
+    },
+    {
+      "case_unit": "training shard",
+      "circuit_hash": "901e40088e6258e1399b1c23cf35116c4c1736202d3ce0cca8b232579eb13c0f",
+      "fixture": "docs/workload-packs/m42/workloads/med42-training-provenance/synthetic.jsonl",
+      "fixture_count": 10000,
+      "id": "med42-training-provenance",
+      "kind": "training_provenance_attestation",
+      "metric_floors": {
+        "approved_data_coverage": 0.99,
+        "consent_coverage": 0.95,
+        "data_card_completeness": 0.95,
+        "data_lineage_completeness": 0.95,
+        "poisoning_detection_rate": 0.9,
+        "unapproved_data_inclusion_max": 0
+      },
+      "model_hash": "ca2538791effd85bec8872f1e92a05987659ead8b5fcc46351e775637198a155",
+      "pack": "config/pilots/m42/workloads/med42-training-provenance.json",
+      "primary_metric": "approved_data_coverage",
+      "title": "Med42 training / fine-tuning provenance",
+      "why_first": "Lets M42 license Med42 internationally with provable training-data provenance and IP defense."
+    }
+  ]
+}

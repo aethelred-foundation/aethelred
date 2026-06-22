@@ -1,0 +1,112 @@
+{
+  "$schema": "https://aethelred.network/schemas/pilot-scorecard-v1.json",
+  "pilot": "m42-med42-synthetic-eval",
+  "customer": "M42",
+  "commercial_context": {
+    "pilot_fee_usd": 200000,
+    "target_sponsor_value_usd": 1000000,
+    "target_value_multiple": 5,
+    "duration_weeks": 4,
+    "positioning": "paid private pre-testnet sandbox with sponsor-ready evidence package",
+    "value_positioning": "Structure the $200,000 paid pilot so M42 receives a board-grade decision package with a target perceived value of $1,000,000. This is a value architecture target, not a guaranteed financial savings claim."
+  },
+  "value_architecture": {
+    "currency": "USD",
+    "target_total_value": 1000000,
+    "value_banks": [
+      {
+        "id": "sovereign-ai-assurance-blueprint",
+        "label": "Sovereign AI assurance blueprint",
+        "target_value": 250000,
+        "m42_receives": "Dedicated UAE/Abu Dhabi sandbox topology, data-boundary controls, monitoring, archive, and go-live gates that can be reused for the next private healthcare AI workload.",
+        "evidence": "sandbox.json, docker-compose.m42-pilot.yml, security-model.md, m42-sandbox-live-validation.json"
+      },
+      {
+        "id": "verifiable-clinical-ai-evidence-pack",
+        "label": "Verifiable clinical AI evidence pack",
+        "target_value": 250000,
+        "m42_receives": "Per-case hybrid TEE + zkML + Digital Seal evidence package that M42 technical, security, and clinical AI reviewers can inspect instead of accepting black-box model output.",
+        "evidence": "evidence-bundle-<job_id>.json, attestation-<job_id>.json, proof-<job_id>.json"
+      },
+      {
+        "id": "security-procurement-acceleration",
+        "label": "Security and procurement acceleration",
+        "target_value": 200000,
+        "m42_receives": "Security model, rejection controls, audit export shape, and operational validation evidence packaged for procurement, risk, and security review.",
+        "evidence": "security-model.md, negative-control-results.json, evidence-objects.json"
+      },
+      {
+        "id": "clinical-safety-protocol",
+        "label": "Clinical safety protocol",
+        "target_value": 150000,
+        "m42_receives": "Synthetic clinical evaluation protocol with factuality, safety flag recall, escalation behavior, and adverse-mode rejection measurements.",
+        "evidence": "clinical-evaluation-protocol.md, sandbox-run-summary.json"
+      },
+      {
+        "id": "scale-decision-business-case",
+        "label": "Scale decision business case",
+        "target_value": 150000,
+        "m42_receives": "Executive readout, economics comparison, next-phase options, and go/no-go criteria for choosing Med42 expansion, retrospective clinical AI, or genomics follow-on.",
+        "evidence": "m42-value-scorecard.json, m42-executive-readout.md, business-case-report.md"
+      }
+    ]
+  },
+  "kpis": [
+    {
+      "id": "data-boundary",
+      "label": "Synthetic/non-live data boundary",
+      "target": "0 live records and 0 PHI",
+      "evidence": "baseline-measurement.json, sandbox-run-summary.json"
+    },
+    {
+      "id": "evidence-completeness",
+      "label": "Hybrid evidence completeness",
+      "target": "100% TEE attestation + zkML proof + Digital Seal coverage for accepted jobs",
+      "evidence": "evidence-bundle-<job_id>.json"
+    },
+    {
+      "id": "clinical-factuality",
+      "label": "Clinical factuality on synthetic references",
+      "target": ">= 95%",
+      "evidence": "sandbox-run-summary.json"
+    },
+    {
+      "id": "safety-recall",
+      "label": "Safety flag recall on synthetic references",
+      "target": ">= 98%",
+      "evidence": "sandbox-run-summary.json"
+    },
+    {
+      "id": "negative-controls",
+      "label": "Policy rejection controls",
+      "target": "6 of 6 expected rejects",
+      "evidence": "negative-control-results.json"
+    },
+    {
+      "id": "economics",
+      "label": "Baseline vs verified cost/latency delta",
+      "target": "Measured and accepted by M42 sponsor",
+      "evidence": "m42-value-scorecard.json"
+    },
+    {
+      "id": "operations",
+      "label": "Live sandbox operations",
+      "target": "archive, Alertmanager, Prometheus, TEE, zkML, and validator endpoints validate",
+      "evidence": "m42-sandbox-live-validation.json"
+    }
+  ],
+  "go_no_go": {
+    "go": [
+      "package preflight passes with zero failures",
+      "drill package generated and reviewed",
+      "live sandbox validation passes or sponsor accepts residual warnings",
+      "no live PHI/customer data introduced without explicit written approval"
+    ],
+    "no_go": [
+      "single-evidence fallback required for accepted cases",
+      "archive or monitoring unavailable for live run",
+      "model/circuit hash cannot be registered",
+      "negative controls accepted instead of rejected"
+    ]
+  }
+}

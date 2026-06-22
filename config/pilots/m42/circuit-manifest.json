@@ -1,0 +1,44 @@
+{
+  "$schema": "https://aethelred.network/schemas/pilot-circuit-manifest-v1.json",
+  "manifest_version": "1.0.0",
+  "pilot": "m42-med42-synthetic-eval",
+  "customer": "M42",
+  "artifact_type": "circuit_manifest",
+  "created_at": "2026-06-11T00:00:00Z",
+  "circuit": {
+    "name": "m42-clinical-eval-io-commitment",
+    "version": "1.0.0",
+    "proof_system": "halo2",
+    "purpose": "Bind synthetic prompt inputs, model output commitments, policy decisions, and TEE measurement references inside the hybrid zkML/Digital Seal evidence path.",
+    "scope_limit": "This circuit fixture proves IO and policy binding for the pilot workflow. It does not prove clinical correctness of free-text model output and does not authorize TEE-only or commitments-only paid-pilot acceptance."
+  },
+  "public_inputs": [
+    "workload_id",
+    "dataset_hash",
+    "model_hash",
+    "input_hash",
+    "output_hash",
+    "policy_decision_hash",
+    "tee_measurement"
+  ],
+  "private_inputs": [
+    "synthetic_case_payload",
+    "model_response_payload"
+  ],
+  "constraints": {
+    "input_commitment": "sha256(canonical_case_payload)",
+    "output_commitment": "sha256(canonical_model_response)",
+    "policy_binding": "sha256(region || data_class || egress_policy || retention_days)",
+    "evidence_binding": "sha256(input_commitment || output_commitment || tee_measurement)"
+  },
+  "verification": {
+    "verifying_key_status": "pilot_fixture",
+    "expected_proof_system": "halo2",
+    "require_both": true,
+    "evidence_mode": "hybrid_tee_zkml_digital_seal",
+    "digital_seal_required": true,
+    "tee_only_allowed": false,
+    "commitments_only_allowed": false,
+    "fallback_allowed": false
+  }
+}

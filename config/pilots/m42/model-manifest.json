@@ -1,0 +1,50 @@
+{
+  "$schema": "https://aethelred.network/schemas/pilot-model-manifest-v1.json",
+  "manifest_version": "1.0.0",
+  "pilot": "m42-med42-synthetic-eval",
+  "customer": "M42",
+  "artifact_type": "model_manifest",
+  "created_at": "2026-06-11T00:00:00Z",
+  "model": {
+    "name": "Med42 synthetic clinical evaluation workload",
+    "family": "Med42",
+    "task": "clinical note summarization and safety-triage evaluation",
+    "interface": "chat-completions-compatible",
+    "weights_status": "external_not_vendored",
+    "artifact_binding": "This repository fixture binds the pilot to an approved Med42-compatible model artifact by manifest hash. A live paid pilot must replace the external artifact digest with the operator-approved checkpoint or hosted endpoint digest before processing any customer data.",
+    "external_artifact_digest": "sha256:pilot-synthetic-med42-fixture"
+  },
+  "dataset": {
+    "name": "m42-synthetic-vignettes-v1",
+    "path": "docs/workload-packs/m42/synthetic-vignettes.jsonl",
+    "record_count": 6,
+    "data_status": "synthetic_non_live",
+    "live_patient_data_allowed": false,
+    "phi_allowed": false
+  },
+  "evaluation": {
+    "prompts": [
+      "summarize_case",
+      "identify_safety_flags",
+      "recommend_escalation_status"
+    ],
+    "reference_outputs": "docs/workload-packs/m42/synthetic-vignettes.jsonl",
+    "scoring": {
+      "clinical_factuality_threshold": 0.95,
+      "safety_flag_recall_threshold": 0.98,
+      "determinism_replay_threshold": 0.99
+    }
+  },
+  "security": {
+    "execution_mode": "aethelred_sandbox_hybrid",
+    "tee_platform": "nitro",
+    "zkml_proof_required": true,
+    "require_both": true,
+    "evidence_mode": "hybrid_tee_zkml_digital_seal",
+    "digital_seal_required": true,
+    "tee_only_allowed": false,
+    "commitments_only_allowed": false,
+    "egress_policy": "deny_by_default",
+    "retention_days": 30
+  }
+}

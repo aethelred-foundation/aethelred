@@ -1,0 +1,85 @@
+{
+  "$schema": "https://aethelred.network/schemas/pilot-sandbox-v1.json",
+  "sandbox_id": "m42-exclusive-pretestnet",
+  "customer": "M42",
+  "status": "ready_for_private_pretestnet",
+  "selected_workload": "m42-med42-synthetic-eval",
+  "workload_choice": {
+    "chosen": "Med42 synthetic clinical AI evaluation",
+    "reason": "Matches the proposal, uses synthetic non-live healthcare data, and exercises hybrid TEE + zkML + Digital Seal evidence without introducing live PHI.",
+    "alternatives_deferred": [
+      "genomics retrospective workload",
+      "general clinical AI workload"
+    ]
+  },
+  "boundaries": {
+    "exclusive_to_customer": true,
+    "no_shared_customer_workloads": true,
+    "no_m42_production_system_changes": true,
+    "live_patient_data_allowed": false,
+    "phi_allowed": false,
+    "data_status": "synthetic_non_live",
+    "region": "me-central-1",
+    "jurisdiction": "UAE / Abu Dhabi pilot sandbox"
+  },
+  "evidence_contract": {
+    "mode": "hybrid_tee_zkml_digital_seal",
+    "require_tee_attestation": true,
+    "require_zkml_proof": true,
+    "require_both": true,
+    "single_evidence_fallback": false,
+    "tee_only_allowed": false,
+    "commitments_only_allowed": false
+  },
+  "artifacts": {
+    "workload_pack": "config/pilots/m42/workload-pack.json",
+    "pilot_scorecard": "config/pilots/m42/pilot-scorecard.json",
+    "model_manifest": "config/pilots/m42/model-manifest.json",
+    "circuit_manifest": "config/pilots/m42/circuit-manifest.json",
+    "registry_dir": "config/pilots/m42/registry",
+    "evidence_path": "config/pilots/m42/evidence",
+    "docs_pack": "docs/workload-packs/m42",
+    "clinical_protocol": "docs/workload-packs/m42/clinical-evaluation-protocol.md",
+    "value_scorecard": "docs/workload-packs/m42/value-scorecard.md",
+    "value_architecture": "docs/operations/m42-1m-value-pilot-structure.md",
+    "delivery_plan": "docs/operations/m42-pilot-delivery-plan.md"
+  },
+  "premium_deliverables": [
+    "exclusive M42 sandbox topology with isolated ports, volumes, archive, and monitoring",
+    "$1,000,000 target value architecture for the $200,000 paid pilot",
+    "sponsor alignment, evidence room, assurance challenge, and executive value board operating cadence",
+    "baseline measurement for Med42-compatible synthetic clinical workload",
+    "per-case hybrid evidence bundle drill with TEE evidence, zkML proof object, and Digital Seal fields",
+    "negative-control package for missing evidence, wrong model hash, PHI injection, fallback mode, and nonce replay",
+    "value-bank package tying evidence outputs to sovereign AI assurance, clinical safety, procurement acceleration, and scale-decision value",
+    "sponsor value scorecard with quality, safety, evidence coverage, latency, and cost deltas",
+    "executive readout for go/no-go decision",
+    "four-week delivery plan with technical, clinical, security, and executive review gates"
+  ],
+  "network": {
+    "compose_project": "aethelred-m42-pilot",
+    "compose_file": "integrations/docker/docker-compose.m42-pilot.yml",
+    "chain_id": "aethelred-m42-pilot-1",
+    "node_rpc": "localhost:36657",
+    "node_p2p": "localhost:36656",
+    "node_rest": "localhost:31317",
+    "node_grpc": "localhost:39090",
+    "node_grpc_web": "localhost:39091",
+    "tee_worker": "localhost:18545",
+    "zkml_prover": "localhost:18546",
+    "archive": "localhost:19200",
+    "prometheus": "localhost:19090",
+    "alertmanager": "localhost:19093",
+    "grafana": "localhost:13001"
+  },
+  "go_live_gates": [
+    "make m42-sandbox-preflight",
+    "make m42-sandbox-drill",
+    "make m42-sandbox-validate",
+    "M42 sponsor accepts the $1,000,000 target value architecture and week-by-week mutual action plan",
+    "live archive endpoint reachable",
+    "live Alertmanager healthy and Prometheus rules queryable",
+    "TEE worker and zkML prover reachable with simulation policy approved for the pilot mode",
+    "M42-approved model checkpoint or endpoint digest registered before any customer data is introduced"
+  ]
+}

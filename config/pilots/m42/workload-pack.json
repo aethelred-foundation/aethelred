@@ -1,0 +1,124 @@
+{
+  "$schema": "https://aethelred.network/schemas/workload-pack-v1.json",
+  "name": "m42-med42-synthetic-eval",
+  "version": "1.0.0",
+  "status": "review",
+  "customer": "M42",
+  "vertical": "healthcare",
+  "description": "Paid-pilot readiness package for a synthetic Med42 clinical evaluation workload on the Aethelred sandbox using hybrid TEE + zkML evidence and Digital Seal output.",
+  "active_workload": "med42-clinical-evaluation",
+  "workload_catalog": "config/pilots/m42/workloads/catalog.json",
+  "available_workloads": [
+    "genomic-variant-interpretation",
+    "med42-clinical-evaluation",
+    "retrospective-radiology-ai",
+    "drug-discovery-screening"
+  ],
+  "workload_selection_note": "This file is the active workload for the canonical evidence path and CI gate. M42 selects one of the four catalog workloads to drive the four-week paid pilot; all four are runnable via scripts/m42-sandbox-drill.py --workload <id> or --all.",
+  "synthetic_status": {
+    "status": "synthetic_non_live",
+    "non_live": true,
+    "synthetic": true,
+    "live_patient_data_allowed": false,
+    "phi_allowed": false,
+    "source": "Six synthetic clinical vignettes authored for pilot validation; no M42 records, no live patient records, and no retrospective patient data are included.",
+    "production_use": false
+  },
+  "model": {
+    "name": "Med42 synthetic clinical evaluation workload",
+    "family": "Med42",
+    "task": "clinical note summarization and safety-triage evaluation",
+    "hash_algorithm": "sha256",
+    "hash": "73e901338cd578d92d07e96a8521f1516a7d46134ac521c09899d59987caf82a",
+    "measurement_hash": "73e901338cd578d92d07e96a8521f1516a7d46134ac521c09899d59987caf82a",
+    "manifest": "config/pilots/m42/model-manifest.json",
+    "weights_status": "external_not_vendored",
+    "notes": "Hash binds the pilot model manifest. Live paid-pilot activation must replace the external artifact digest in the manifest with the approved checkpoint or hosted endpoint digest."
+  },
+  "circuit": {
+    "name": "m42-clinical-eval-io-commitment",
+    "version": "1.0.0",
+    "proof_system": "halo2",
+    "hash_algorithm": "sha256",
+    "hash": "9dda0ee98dca7763b72e45f5cbd77d1eb26243e7d00240c7d66817310414e1b5",
+    "circuit_hash": "9dda0ee98dca7763b72e45f5cbd77d1eb26243e7d00240c7d66817310414e1b5",
+    "manifest": "config/pilots/m42/circuit-manifest.json",
+    "scope_limit": "Hybrid evidence binding circuit for inputs, outputs, policy, and TEE measurement inside the zkML/Digital Seal evidence path. It does not claim to prove clinical correctness, and it is not a TEE-only or commitments-only evidence mode."
+  },
+  "policy": {
+    "region": "me-central-1",
+    "jurisdiction": "UAE / Abu Dhabi pilot sandbox",
+    "data_class": "synthetic-healthcare-no-phi",
+    "processing_boundary": "Aethelred sandbox only",
+    "egress_policy": "deny_by_default",
+    "retention_days": 30,
+    "require_tee_attestation": true,
+    "require_zkml_proof": true,
+    "require_both": true,
+    "evidence_mode": "hybrid_tee_zkml_digital_seal",
+    "tee_only_allowed": false,
+    "commitments_only_allowed": false,
+    "fallback_allowed": false
+  },
+  "proof_contract": {
+    "accepted_job_evidence": "Every accepted paid-pilot job must include TEE attestation, zkML proof reference, validator signature, chain id, job id, and Digital Seal seal_id.",
+    "require_both": true,
+    "digital_seal_required": true,
+    "tee_only_scope": "preflight-only",
+    "commitments_only_scope": "baseline-or-preflight-only",
+    "out_of_scope": "TEE-only, commitments-only, or single-evidence fallback cannot satisfy paid-pilot acceptance."
+  },
+  "success_metrics": {
+    "baseline_measurement_required": true,
+    "aethelred_sandbox_run_required": true,
+    "evidence_bundle_completeness": "100% of accepted cases produce model hash, circuit hash, input hash, output hash, TEE attestation, zkML proof reference, validator signature, chain id, job id, and Digital Seal seal_id.",
+    "determinism_replay_match_rate": ">= 99%",
+    "clinical_factuality_floor": ">= 95% on synthetic reference answers",
+    "safety_flag_recall_floor": ">= 98% on synthetic reference flags",
+    "baseline_vs_verified_delta": "Report p50/p95 latency and cost deltas; no production performance claim until live hardware run is complete.",
+    "zero_live_data_findings": "0 live PHI or customer records in pilot package and validation exports."
+  },
+  "evidence_outputs": {
+    "schema": "docs/api/evidence-bundle-v1.schema.json",
+    "evidence_schema_version": "v1",
+    "mode": "hybrid_tee_zkml_digital_seal",
+    "accepted_job_requires": [
+      "tee_attestation",
+      "zkml_proof",
+      "validator_signature",
+      "chain_id",
+      "job_id",
+      "seal_id"
+    ],
+    "single_evidence_fallback": false,
+    "local_path": "config/pilots/m42/evidence",
+    "attestations": "config/pilots/m42/evidence/attestations",
+    "proofs": "config/pilots/m42/evidence/proofs",
+    "exports": "config/pilots/m42/evidence/exports",
+    "archives": "config/pilots/m42/evidence/archives",
+    "expected_objects": [
+      "baseline-measurement.json",
+      "sandbox-run-summary.json",
+      "evidence-bundle-<job_id>.json",
+      "attestation-<job_id>.json",
+      "proof-<job_id>.json",
+      "business-case-report.md"
+    ]
+  },
+  "deployment": {
+    "pilot_name": "m42-med42-synthetic-eval",
+    "registry_dir": "config/pilots/m42/registry",
+    "evidence_path": "config/pilots/m42/evidence",
+    "archive_dest": "localhost:9200",
+    "alertmanager": "localhost:9093",
+    "prometheus": "localhost:9099",
+    "enterprise_baseline": "use --pre-testnet --skip-enterprise for package fixture validation; run enterprise checks and live service checks for paid-pilot go-live."
+  },
+  "docs": {
+    "pack": "docs/workload-packs/m42/pack.md",
+    "demo_flow": "docs/workload-packs/m42/demo-flow.md",
+    "benchmark_targets": "docs/workload-packs/m42/benchmark-targets.md",
+    "security_model": "docs/workload-packs/m42/security-model.md",
+    "business_case_report": "docs/workload-packs/m42/business-case-report.md"
+  }
+}

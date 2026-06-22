@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'm42-alertmanager:9093'
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: 'm42-aethelred-node'
+    static_configs:
+      - targets: ['m42-aethelred-node:26660']
+        labels:
+          customer: 'm42'
+          sandbox: 'm42-exclusive-pretestnet'
+
+  - job_name: 'm42-tee-worker'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['m42-tee-worker:8545']
+        labels:
+          customer: 'm42'
+          sandbox: 'm42-exclusive-pretestnet'
+
+  - job_name: 'm42-zkml-prover'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['m42-zkml-prover:8546']
+        labels:
+          customer: 'm42'
+          sandbox: 'm42-exclusive-pretestnet'
+
+  - job_name: 'm42-archive'
+    metrics_path: /_prometheus/metrics
+    static_configs:
+      - targets: ['m42-opensearch:9200']
+        labels:
+          customer: 'm42'
+          sandbox: 'm42-exclusive-pretestnet'
