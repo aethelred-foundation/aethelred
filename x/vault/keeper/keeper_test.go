@@ -68,18 +68,26 @@ func testEnclaveHashes() (enclaveHash, signerHash [32]byte) {
 	return
 }
 
+// p256TestScalarBaseMult derives the affine P-256 public point for a fixed
+// scalar. Test fixtures need deterministic keys from small scalars; crypto/ecdh
+// does not expose affine coordinates, so ScalarBaseMult is the only standard
+// library option. Centralizing it keeps the staticcheck suppression in one place.
+func p256TestScalarBaseMult(scalar []byte) (x, y *big.Int) {
+	return elliptic.P256().ScalarBaseMult(scalar) //nolint:staticcheck // deterministic test fixture; see doc comment
+}
+
 // p256TestPrivateKey returns a deterministic P-256 private key (D=1, pubkey = generator).
 func p256TestPrivateKey() *ecdsa.PrivateKey {
 	priv := new(ecdsa.PrivateKey)
 	priv.Curve = elliptic.P256()
 	priv.D = big.NewInt(1)
-	priv.PublicKey.X, priv.PublicKey.Y = elliptic.P256().ScalarBaseMult(big.NewInt(1).Bytes())
+	priv.PublicKey.X, priv.PublicKey.Y = p256TestScalarBaseMult(big.NewInt(1).Bytes())
 	return priv
 }
 
 // p256TestPublicKey returns the P-256 generator point (public key for D=1).
 func p256TestPublicKey() (x, y *big.Int) {
-	return elliptic.P256().ScalarBaseMult(big.NewInt(1).Bytes())
+	return p256TestScalarBaseMult(big.NewInt(1).Bytes())
 }
 
 // vendorRootTestPrivateKey returns the test vendor root P-256 private key (D=2).
@@ -87,13 +95,13 @@ func vendorRootTestPrivateKey() *ecdsa.PrivateKey {
 	priv := new(ecdsa.PrivateKey)
 	priv.Curve = elliptic.P256()
 	priv.D = big.NewInt(2)
-	priv.PublicKey.X, priv.PublicKey.Y = elliptic.P256().ScalarBaseMult(big.NewInt(2).Bytes())
+	priv.PublicKey.X, priv.PublicKey.Y = p256TestScalarBaseMult(big.NewInt(2).Bytes())
 	return priv
 }
 
 // vendorRootTestPublicKey returns the test vendor root P-256 public key (2*G).
 func vendorRootTestPublicKey() (x, y *big.Int) {
-	return elliptic.P256().ScalarBaseMult(big.NewInt(2).Bytes())
+	return p256TestScalarBaseMult(big.NewInt(2).Bytes())
 }
 
 // generateVendorKeyAttestation creates a vendor root signature over a platform key.
@@ -1174,7 +1182,7 @@ func TestRegisterEnclave_SelfIssuedKeyRejected(t *testing.T) {
 	attackerPriv := new(ecdsa.PrivateKey)
 	attackerPriv.Curve = elliptic.P256()
 	attackerPriv.D = big.NewInt(3)
-	attackerPriv.PublicKey.X, attackerPriv.PublicKey.Y = elliptic.P256().ScalarBaseMult(big.NewInt(3).Bytes())
+	attackerPriv.PublicKey.X, attackerPriv.PublicKey.Y = p256TestScalarBaseMult(big.NewInt(3).Bytes())
 
 	// Self-sign the key attestation (using attacker's own key, not vendor root)
 	var data []byte
@@ -2638,13 +2646,13 @@ func relayTestPrivateKey() *ecdsa.PrivateKey {
 	priv := new(ecdsa.PrivateKey)
 	priv.Curve = elliptic.P256()
 	priv.D = big.NewInt(3)
-	priv.PublicKey.X, priv.PublicKey.Y = elliptic.P256().ScalarBaseMult(big.NewInt(3).Bytes())
+	priv.PublicKey.X, priv.PublicKey.Y = p256TestScalarBaseMult(big.NewInt(3).Bytes())
 	return priv
 }
 
 // relayTestPublicKey returns the relay test P-256 public key (3*G).
 func relayTestPublicKey() (x, y *big.Int) {
-	return elliptic.P256().ScalarBaseMult(big.NewInt(3).Bytes())
+	return p256TestScalarBaseMult(big.NewInt(3).Bytes())
 }
 
 // rotatedRelayTestPrivateKey returns a second P-256 private key (D=4) for rotation tests.
@@ -2652,13 +2660,13 @@ func rotatedRelayTestPrivateKey() *ecdsa.PrivateKey {
 	priv := new(ecdsa.PrivateKey)
 	priv.Curve = elliptic.P256()
 	priv.D = big.NewInt(4)
-	priv.PublicKey.X, priv.PublicKey.Y = elliptic.P256().ScalarBaseMult(big.NewInt(4).Bytes())
+	priv.PublicKey.X, priv.PublicKey.Y = p256TestScalarBaseMult(big.NewInt(4).Bytes())
 	return priv
 }
 
 // rotatedRelayTestPublicKey returns the rotated relay test P-256 public key (4*G).
 func rotatedRelayTestPublicKey() (x, y *big.Int) {
-	return elliptic.P256().ScalarBaseMult(big.NewInt(4).Bytes())
+	return p256TestScalarBaseMult(big.NewInt(4).Bytes())
 }
 
 func TestRegisterAttestationRelay(t *testing.T) {

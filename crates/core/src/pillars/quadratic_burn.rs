@@ -927,7 +927,7 @@ mod tests {
         for i in 0..20 {
             tracker.record_block(BlockGasUsage {
                 block_number: i,
-                gas_used: 15_000_000 + (i as u64 * 500_000), // Increasing load
+                gas_used: 15_000_000 + (i * 500_000), // Increasing load
                 gas_limit: 30_000_000,
                 timestamp: 1000 + i,
                 transaction_count: 100,

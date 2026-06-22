@@ -7,6 +7,7 @@ import { SigningStargateClient } from '@cosmjs/stargate';
 import { AethelredConfig } from '../client/config';
 import {
   DigitalSeal,
+  EvidenceBundle,
   SealStatus,
   CreateSealRequest,
   CreateSealResponse,
@@ -15,6 +16,8 @@ import {
   SealVerificationResult,
   AuditReport,
   AuditReportRequest,
+  ExportedSeal,
+  ExportFormat,
   RevocationRequest,
   RevocationResult,
 } from '../types/seal';
@@ -40,10 +43,10 @@ export class SealModule {
    */
   async getSeal(sealId: string): Promise<DigitalSeal | null> {
     try {
-      const response = await this.httpClient.get<DigitalSeal>(
-        `/aethelred/seal/v1/seal/${sealId}`
+      const response = await this.httpClient.get<{ seal: DigitalSeal }>(
+        `/aethelred/seal/v1/seals/${sealId}`
       );
-      return response.data;
+      return response.data.seal;
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null;
@@ -56,14 +59,40 @@ export class SealModule {
    * List seals with optional filters
    */
   async listSeals(query?: SealQuery): Promise<SealListResponse> {
+    this.assertSupportedListQuery(query);
+
+    if (query?.modelHash && query?.requester) {
+      throw new Error('modelHash and requester filters must be queried separately');
+    }
+
+    if (query?.modelHash) {
+      const params = new URLSearchParams();
+      params.append('model_hash', this.hexHashToBase64(query.modelHash));
+      const response = await this.httpClient.get<{ seals: DigitalSeal[] }>(
+        `/aethelred/seal/v1/seals/by_model?${params.toString()}`
+      );
+      return {
+        seals: response.data.seals,
+        total: response.data.seals.length,
+        hasMore: false,
+      };
+    }
+
+    if (query?.requester) {
+      const params = new URLSearchParams();
+      params.append('requester', query.requester);
+      const response = await this.httpClient.get<{ seals: DigitalSeal[] }>(
+        `/aethelred/seal/v1/seals/by_requester?${params.toString()}`
+      );
+      return {
+        seals: response.data.seals,
+        total: response.data.seals.length,
+        hasMore: false,
+      };
+    }
+
     const params = new URLSearchParams();
 
-    if (query?.requester) params.append('requester', query.requester);
-    if (query?.status) params.append('status', query.status);
-    if (query?.modelHash) params.append('model_hash', query.modelHash);
-    if (query?.purpose) params.append('purpose', query.purpose);
-    if (query?.minBlockHeight) params.append('min_height', query.minBlockHeight.toString());
-    if (query?.maxBlockHeight) params.append('max_height', query.maxBlockHeight.toString());
     if (query?.limit) params.append('limit', query.limit.toString());
     if (query?.offset) params.append('offset', query.offset.toString());
 
@@ -135,10 +164,16 @@ export class SealModule {
    * Verify a seal's integrity
    */
   async verifySeal(sealId: string): Promise<SealVerificationResult> {
-    const response = await this.httpClient.get<SealVerificationResult>(
-      `/aethelred/seal/v1/verify/${sealId}`
+    const response = await this.httpClient.get<
+      SealVerificationResult & { seal_id?: string; verification_type?: SealVerificationResult['verificationType'] }
+    >(
+      `/aethelred/seal/v1/seals/${sealId}/verify`
     );
-    return response.data;
+    return {
+      ...response.data,
+      sealId: response.data.sealId ?? response.data.seal_id ?? sealId,
+      verificationType: response.data.verificationType ?? response.data.verification_type,
+    };
   }
 
   /**
@@ -168,21 +203,29 @@ export class SealModule {
    * Generate audit report for a seal
    */
   async generateAuditReport(request: AuditReportRequest): Promise<AuditReport> {
-    const response = await this.httpClient.post<AuditReport>(
-      '/aethelred/seal/v1/audit',
-      request
-    );
-    return response.data;
+    return this.exportSeal(request.sealId, 'audit');
   }
 
   /**
    * Export seal for external verification
    */
-  async exportSeal(sealId: string, format: 'json' | 'cbor' = 'json'): Promise<string> {
-    const response = await this.httpClient.get<string>(
-      `/aethelred/seal/v1/export/${sealId}?format=${format}`
+  async exportSeal(sealId: string, format: ExportFormat = 'json'): Promise<ExportedSeal> {
+    const response = await this.httpClient.get<{ export: ExportedSeal }>(
+      `/aethelred/seal/v1/seals/${sealId}/export?format=${format}`
     );
-    return response.data;
+    return response.data.export;
+  }
+
+  /**
+   * Export a canonical enterprise evidence bundle by job ID
+   */
+  async exportEvidenceBundle(jobId: string): Promise<EvidenceBundle> {
+    const response = await this.httpClient.get<{ evidenceBundle?: EvidenceBundle; evidence_bundle?: EvidenceBundle }>(
+      `/aethelred/seal/v1/evidence-bundles/${jobId}`
+    );
+    const bundle = response.data.evidenceBundle ?? response.data.evidence_bundle;
+    assertEvidenceBundle(bundle);
+    return bundle;
   }
 
   /**
@@ -326,6 +369,133 @@ export class SealModule {
       sealId: '',
       timestamp: new Date().toISOString(),
     };
+  }
+
+  private assertSupportedListQuery(query?: SealQuery): void {
+    const unsupported: string[] = [];
+    if (query?.status) unsupported.push('status');
+    if (query?.purpose) unsupported.push('purpose');
+    if (query?.minBlockHeight !== undefined) unsupported.push('minBlockHeight');
+    if (query?.maxBlockHeight !== undefined) unsupported.push('maxBlockHeight');
+    if (unsupported.length > 0) {
+      throw new Error(`Unsupported seal query filters: ${unsupported.join(', ')}`);
+    }
+  }
+
+  private hexHashToBase64(hash: string): string {
+    const normalized = hash.startsWith('0x') ? hash.slice(2) : hash;
+    if (!/^[0-9a-fA-F]+$/.test(normalized) || normalized.length % 2 !== 0) {
+      throw new Error('modelHash must be a hex-encoded SHA-256 hash');
+    }
+    return Buffer.from(normalized, 'hex').toString('base64');
+  }
+}
+
+function assertEvidenceBundle(bundle: unknown): asserts bundle is EvidenceBundle {
+  if (!bundle || typeof bundle !== 'object') {
+    throw new Error('evidence bundle response missing evidence_bundle');
+  }
+  const value = bundle as Record<string, unknown>;
+  const stringFields = [
+    'bundle_id',
+    'job_id',
+    'chain_id',
+    'seal_id',
+    'timestamp',
+    'model_hash',
+    'circuit_hash',
+    'verifying_key_hash',
+    'validator_signature',
+    'region',
+    'operator',
+  ];
+  if (value.schema_version !== '1.0.0') {
+    throw new Error('evidence bundle schema_version must be 1.0.0');
+  }
+  for (const field of stringFields) {
+    requireNonEmptyString(value, field);
+  }
+  requireBase64(value.validator_signature, 'validator_signature');
+  requireNumberRange(value.confidence_score, 'confidence_score', 0, 1);
+
+  const tee = requireObject(value.tee_evidence, 'tee_evidence');
+  for (const field of ['platform', 'enclave_id', 'measurement', 'quote', 'nonce']) {
+    requireNonEmptyString(tee, `tee_evidence.${field}`);
+  }
+  requireBase64(tee.quote, 'tee_evidence.quote');
+
+  const zkml = requireObject(value.zkml_evidence, 'zkml_evidence');
+  for (const field of ['proof_system', 'proof_bytes', 'public_inputs', 'output_commitment']) {
+    requireNonEmptyString(zkml, `zkml_evidence.${field}`);
+  }
+  requireBase64(zkml.proof_bytes, 'zkml_evidence.proof_bytes');
+  requireBase64(zkml.public_inputs, 'zkml_evidence.public_inputs');
+
+  const policy = requireObject(value.policy_decision, 'policy_decision');
+  if (policy.mode !== 'hybrid' || policy.require_both !== true || policy.fallback_allowed !== false) {
+    throw new Error('evidence bundle policy_decision must require hybrid/no fallback');
+  }
+
+  const archive = requireObject(value.archive_pointer, 'archive_pointer');
+  for (const field of ['archive_type', 'index', 'document_id', 'uri', 'write_status']) {
+    requireNonEmptyString(archive, `archive_pointer.${field}`);
+  }
+  requirePositiveNumber(archive.retention_days, 'archive_pointer.retention_days');
+
+  const verification = requireObject(value.verification, 'verification');
+  for (const field of [
+    'schema_verified',
+    'policy_verified',
+    'tee_attestation_verified',
+    'zkml_proof_verified',
+    'digital_seal_verified',
+    'live_verification_required',
+  ]) {
+    requireBoolean(verification, `verification.${field}`);
+  }
+  if (verification.schema_verified !== true || verification.policy_verified !== true) {
+    throw new Error('evidence bundle verification must mark schema and policy as verified');
+  }
+  requireNonEmptyString(verification, 'verification.verifier_version');
+}
+
+function requireObject(value: unknown, field: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`evidence bundle missing required object: ${field}`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function requireNonEmptyString(value: Record<string, unknown>, field: string): void {
+  const key = field.includes('.') ? field.split('.').pop()! : field;
+  const item = value[key];
+  if (typeof item !== 'string' || item.trim() === '') {
+    throw new Error(`evidence bundle missing required string: ${field}`);
+  }
+}
+
+function requireBase64(value: unknown, field: string): void {
+  if (typeof value !== 'string' || value.trim() === '' || !/^[A-Za-z0-9+/]+=*$/.test(value)) {
+    throw new Error(`evidence bundle ${field} must be base64`);
+  }
+}
+
+function requireNumberRange(value: unknown, field: string, min: number, max: number): void {
+  if (typeof value !== 'number' || value < min || value > max) {
+    throw new Error(`evidence bundle ${field} must be between ${min} and ${max}`);
+  }
+}
+
+function requirePositiveNumber(value: unknown, field: string): void {
+  if (typeof value !== 'number' || value < 1) {
+    throw new Error(`evidence bundle ${field} must be positive`);
+  }
+}
+
+function requireBoolean(value: Record<string, unknown>, field: string): void {
+  const key = field.includes('.') ? field.split('.').pop()! : field;
+  if (typeof value[key] !== 'boolean') {
+    throw new Error(`evidence bundle missing required boolean: ${field}`);
   }
 }
 

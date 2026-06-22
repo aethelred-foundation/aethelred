@@ -1095,12 +1095,13 @@ impl RegulatoryHypervisor {
 
         self.transfer_log.push(transfer);
 
-        if result.is_ok() {
-            // Update data location
-            self.data_locations.insert(asset_id, to);
-            Ok(transfer_id)
-        } else {
-            Err(result.unwrap_err())
+        match result {
+            Ok(_) => {
+                // Update data location
+                self.data_locations.insert(asset_id, to);
+                Ok(transfer_id)
+            }
+            Err(e) => Err(e),
         }
     }
 

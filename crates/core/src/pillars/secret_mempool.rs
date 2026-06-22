@@ -812,10 +812,10 @@ impl EnclaveExecutor {
                 }
                 #[cfg(feature = "production")]
                 {
-                    return Err(EnclaveError::ExternalRuntimeRequired(
+                    Err(EnclaveError::ExternalRuntimeRequired(
                         "deterministic dev enclave backend is disabled in production builds"
                             .to_string(),
-                    ));
+                    ))
                 }
             }
             EnclaveRuntimeBackend::ExternalAttested(_) => {

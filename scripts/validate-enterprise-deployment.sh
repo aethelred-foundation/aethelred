@@ -21,7 +21,7 @@
 #   --grafana <host:port>         Grafana endpoint (default: localhost:3000)
 #   --loki <host:port>            Loki endpoint (default: localhost:3100)
 #   --output <path>               Output JSON report path (default: stdout)
-#   --topology <A|B|C>            Expected topology (default: A)
+#   --topology <PILOT|A|B|C>      Expected topology (default: A)
 #   --help                        Show this help message
 #
 # Exit codes:
@@ -84,11 +84,12 @@ done
 # ============================================================================
 
 case "$TOPOLOGY" in
+    PILOT) MIN_VALIDATORS=1; MIN_TEE=1; MIN_PROVERS=1; MIN_BRIDGE=0 ;;
     A) MIN_VALIDATORS=4; MIN_TEE=4; MIN_PROVERS=3; MIN_BRIDGE=1 ;;
     B) MIN_VALIDATORS=7; MIN_TEE=8; MIN_PROVERS=8; MIN_BRIDGE=2 ;;
     C) MIN_VALIDATORS=10; MIN_TEE=10; MIN_PROVERS=13; MIN_BRIDGE=3 ;;
     *)
-        echo "ERROR: Invalid topology: $TOPOLOGY (must be A, B, or C)" >&2
+        echo "ERROR: Invalid topology: $TOPOLOGY (must be PILOT, A, B, or C)" >&2
         exit 2
         ;;
 esac
@@ -309,10 +310,12 @@ run_tee_checks() {
 
 run_prover_checks() {
     local category="prover"
+    local reachable=0
 
     # Check EZKL prover
     if check_grpc "$PROVER_EZKL"; then
         record_check "$category" "ezkl_reachable" "PASS" "EZKL prover endpoint is reachable" "$PROVER_EZKL"
+        reachable=$((reachable + 1))
     else
         record_check "$category" "ezkl_reachable" "FAIL" "EZKL prover endpoint is not reachable" "$PROVER_EZKL"
     fi
@@ -320,6 +323,9 @@ run_prover_checks() {
     # Check RISC Zero prover
     if check_grpc "$PROVER_RISCZERO"; then
         record_check "$category" "risczero_reachable" "PASS" "RISC Zero prover endpoint is reachable" "$PROVER_RISCZERO"
+        reachable=$((reachable + 1))
+    elif [[ "$TOPOLOGY" == "PILOT" ]]; then
+        record_check "$category" "risczero_reachable" "WARN" "RISC Zero prover endpoint is optional for PILOT topology" "$PROVER_RISCZERO"
     else
         record_check "$category" "risczero_reachable" "FAIL" "RISC Zero prover endpoint is not reachable" "$PROVER_RISCZERO"
     fi
@@ -327,8 +333,17 @@ run_prover_checks() {
     # Check Groth16 prover
     if check_grpc "$PROVER_GROTH16"; then
         record_check "$category" "groth16_reachable" "PASS" "Groth16 prover endpoint is reachable" "$PROVER_GROTH16"
+        reachable=$((reachable + 1))
+    elif [[ "$TOPOLOGY" == "PILOT" ]]; then
+        record_check "$category" "groth16_reachable" "WARN" "Groth16 prover endpoint is optional for PILOT topology" "$PROVER_GROTH16"
     else
         record_check "$category" "groth16_reachable" "FAIL" "Groth16 prover endpoint is not reachable" "$PROVER_GROTH16"
+    fi
+
+    if [[ "$reachable" -ge "$MIN_PROVERS" ]]; then
+        record_check "$category" "prover_count" "PASS" "Sufficient prover endpoints reachable" "count=$reachable, required=$MIN_PROVERS"
+    else
+        record_check "$category" "prover_count" "FAIL" "Insufficient prover endpoints reachable" "count=$reachable, required=$MIN_PROVERS"
     fi
 }
 
@@ -338,6 +353,8 @@ run_bridge_checks() {
     # Check bridge relayer endpoint
     if check_grpc "$BRIDGE_ENDPOINT"; then
         record_check "$category" "relayer_reachable" "PASS" "Bridge relayer endpoint is reachable" "$BRIDGE_ENDPOINT"
+    elif [[ "$TOPOLOGY" == "PILOT" && "$MIN_BRIDGE" -eq 0 ]]; then
+        record_check "$category" "relayer_reachable" "WARN" "Bridge relayer is optional for PILOT topology" "$BRIDGE_ENDPOINT"
     else
         record_check "$category" "relayer_reachable" "FAIL" "Bridge relayer endpoint is not reachable" "$BRIDGE_ENDPOINT"
     fi
@@ -347,6 +364,8 @@ run_bridge_checks() {
         record_check "$category" "relayer_health" "PASS" "Bridge relayer health check passed" ""
     elif check_port "$BRIDGE_ENDPOINT"; then
         record_check "$category" "relayer_health" "WARN" "Bridge port reachable but HTTP health check not available" ""
+    elif [[ "$TOPOLOGY" == "PILOT" && "$MIN_BRIDGE" -eq 0 ]]; then
+        record_check "$category" "relayer_health" "WARN" "Bridge health is optional for PILOT topology" "$BRIDGE_ENDPOINT"
     else
         record_check "$category" "relayer_health" "FAIL" "Bridge relayer not responding" "$BRIDGE_ENDPOINT"
     fi

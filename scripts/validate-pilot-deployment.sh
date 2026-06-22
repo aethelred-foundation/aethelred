@@ -19,9 +19,15 @@
 #   --circuit-hash <hex>          Expected pilot circuit hash
 #   --evidence-path <dir>         Evidence export directory (default: /var/aethelred/evidence)
 #   --archive-dest <host:port>    Audit archive destination (default: localhost:9200)
+#   --archive-scheme <scheme>     Archive scheme: http or https (default: http)
+#                                 https probes use -k for self-signed rehearsal certs and
+#                                 read AETHELRED_ARCHIVE_USER / AETHELRED_ARCHIVE_PASSWORD
+#                                 for basic auth when set.
 #   --registry-dir <dir>          Registry data directory (default: ~/.aethelred/registry)
 #   --alertmanager <host:port>    Alertmanager endpoint (default: localhost:9093)
 #   --pilot-name <name>           Pilot deployment name (default: pilot-001)
+#   --mode <mode>                 Validation mode: production or pre-testnet (default: production)
+#   --pre-testnet                 Alias for --mode pre-testnet
 #   --enterprise-script <path>    Path to enterprise validation script
 #   --skip-enterprise             Skip enterprise validation (pilot-only checks)
 #   --output <path>               Output JSON report path (default: stdout)
@@ -43,9 +49,13 @@ MODEL_HASH=""
 CIRCUIT_HASH=""
 EVIDENCE_PATH="/var/aethelred/evidence"
 ARCHIVE_DEST="localhost:9200"
+ARCHIVE_SCHEME="http"
+ARCHIVE_USER="${AETHELRED_ARCHIVE_USER:-admin}"
+ARCHIVE_PASSWORD="${AETHELRED_ARCHIVE_PASSWORD:-}"
 REGISTRY_DIR="${AETHELRED_REGISTRY_DIR:-$HOME/.aethelred/registry}"
 ALERTMANAGER_ENDPOINT="localhost:9093"
 PILOT_NAME="pilot-001"
+VALIDATION_MODE="production"
 ENTERPRISE_SCRIPT="$(dirname "$0")/validate-enterprise-deployment.sh"
 SKIP_ENTERPRISE=false
 OUTPUT_PATH=""
@@ -64,14 +74,17 @@ while [[ $# -gt 0 ]]; do
         --circuit-hash)     CIRCUIT_HASH="$2"; shift 2 ;;
         --evidence-path)    EVIDENCE_PATH="$2"; shift 2 ;;
         --archive-dest)     ARCHIVE_DEST="$2"; shift 2 ;;
+        --archive-scheme)   ARCHIVE_SCHEME="$2"; shift 2 ;;
         --registry-dir)     REGISTRY_DIR="$2"; shift 2 ;;
         --alertmanager)     ALERTMANAGER_ENDPOINT="$2"; shift 2 ;;
         --pilot-name)       PILOT_NAME="$2"; shift 2 ;;
+        --mode)             VALIDATION_MODE="$2"; shift 2 ;;
+        --pre-testnet)      VALIDATION_MODE="pre-testnet"; shift ;;
         --enterprise-script) ENTERPRISE_SCRIPT="$2"; shift 2 ;;
         --skip-enterprise)  SKIP_ENTERPRISE=true; shift ;;
         --output)           OUTPUT_PATH="$2"; shift 2 ;;
         --help)
-            head -38 "$0" | grep '^#' | sed 's/^# \?//'
+            sed -n '1,/^set -euo pipefail/p' "$0" | grep '^#' | sed 's/^# \?//'
             exit 0
             ;;
         # Pass through enterprise deployment options
@@ -85,6 +98,22 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+case "$VALIDATION_MODE" in
+    production|pre-testnet) ;;
+    *)
+        echo "ERROR: Invalid mode: $VALIDATION_MODE (must be production or pre-testnet)" >&2
+        exit 2
+        ;;
+esac
+
+case "$ARCHIVE_SCHEME" in
+    http|https) ;;
+    *)
+        echo "ERROR: Invalid archive scheme: $ARCHIVE_SCHEME (must be http or https)" >&2
+        exit 2
+        ;;
+esac
 
 # ============================================================================
 # Globals
@@ -162,6 +191,10 @@ check_http() {
     [[ "$status" == "$expected_status" ]]
 }
 
+is_pre_testnet_mode() {
+    [[ "$VALIDATION_MODE" == "pre-testnet" ]]
+}
+
 # ============================================================================
 # Pilot-specific checks
 # ============================================================================
@@ -172,6 +205,9 @@ run_workload_pack_checks() {
     # Check workload pack file exists
     if [[ -f "$WORKLOAD_PACK" ]]; then
         record_check "$category" "pack_exists" "PASS" "Workload pack config file exists" "$WORKLOAD_PACK"
+    elif is_pre_testnet_mode; then
+        record_check "$category" "pack_exists" "WARN" "Workload pack config file not found; required before testnet or production pilot promotion" "$WORKLOAD_PACK"
+        return
     else
         record_check "$category" "pack_exists" "FAIL" "Workload pack config file not found" "$WORKLOAD_PACK"
         return
@@ -367,29 +403,58 @@ run_archive_checks() {
     # Check archive destination is reachable
     if check_port "$ARCHIVE_DEST"; then
         record_check "$category" "dest_reachable" "PASS" "Audit archive destination is reachable" "$ARCHIVE_DEST"
+    elif is_pre_testnet_mode; then
+        record_check "$category" "dest_reachable" "WARN" "Audit archive destination is not reachable; explicit preflight requirement before testnet or production pilot promotion" "$ARCHIVE_DEST"
+        return
     else
         record_check "$category" "dest_reachable" "FAIL" "Audit archive destination is NOT reachable" "$ARCHIVE_DEST"
         return
     fi
 
-    # Check archive endpoint health (assuming Elasticsearch/OpenSearch)
-    if check_http "http://$ARCHIVE_DEST/_cluster/health" "200" 2>/dev/null; then
-        record_check "$category" "cluster_healthy" "PASS" "Archive cluster is healthy" "$ARCHIVE_DEST"
+    # Check archive endpoint health (assuming Elasticsearch/OpenSearch).
+    # Secured archives (https + basic auth) are probed with the configured
+    # credentials; self-signed rehearsal certificates are accepted with -k.
+    local archive_curl_args=(-s -o /dev/null -w '%{http_code}' --max-time 10)
+    if [[ "$ARCHIVE_SCHEME" == "https" ]]; then
+        archive_curl_args+=(-k)
+    fi
+    if [[ -n "$ARCHIVE_PASSWORD" ]]; then
+        archive_curl_args+=(-u "$ARCHIVE_USER:$ARCHIVE_PASSWORD")
+    fi
 
-        # Check for aethelred index
-        if command -v curl &>/dev/null; then
-            local index_check
-            index_check=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$ARCHIVE_DEST/aethelred-evidence-*" 2>/dev/null || echo "000")
-            if [[ "$index_check" == "200" ]]; then
-                record_check "$category" "evidence_index" "PASS" "Archive evidence index exists" ""
+    local archive_http_status="000"
+    if command -v curl &>/dev/null; then
+        archive_http_status=$(curl "${archive_curl_args[@]}" "$ARCHIVE_SCHEME://$ARCHIVE_DEST/_cluster/health" 2>/dev/null || echo "000")
+    fi
+
+    if [[ "$archive_http_status" == "200" ]]; then
+        record_check "$category" "cluster_healthy" "PASS" "Archive cluster is healthy" "$ARCHIVE_SCHEME://$ARCHIVE_DEST"
+
+        # Secured archives must reject anonymous access.
+        if [[ -n "$ARCHIVE_PASSWORD" ]]; then
+            local unauth_status
+            unauth_status=$(curl -ks -o /dev/null -w '%{http_code}' --max-time 10 "$ARCHIVE_SCHEME://$ARCHIVE_DEST/_cluster/health" 2>/dev/null || echo "000")
+            if [[ "$unauth_status" == "401" || "$unauth_status" == "403" ]]; then
+                record_check "$category" "auth_enforced" "PASS" "Archive rejects unauthenticated access (HTTP $unauth_status)" "$ARCHIVE_SCHEME://$ARCHIVE_DEST"
             else
-                record_check "$category" "evidence_index" "WARN" "Archive evidence index not found (will be created on first write)" ""
+                record_check "$category" "auth_enforced" "FAIL" "Archive accepted or mishandled an unauthenticated request (HTTP $unauth_status); evidence archive must require authentication" "$ARCHIVE_SCHEME://$ARCHIVE_DEST"
             fi
         fi
-    elif check_http "http://$ARCHIVE_DEST/health" "200" 2>/dev/null; then
+
+        # Check for aethelred index
+        local index_check
+        index_check=$(curl "${archive_curl_args[@]}" "$ARCHIVE_SCHEME://$ARCHIVE_DEST/aethelred-evidence-*" 2>/dev/null || echo "000")
+        if [[ "$index_check" == "200" ]]; then
+            record_check "$category" "evidence_index" "PASS" "Archive evidence index exists" ""
+        else
+            record_check "$category" "evidence_index" "WARN" "Archive evidence index not found (will be created on first write)" ""
+        fi
+    elif [[ "$archive_http_status" == "401" || "$archive_http_status" == "403" ]]; then
+        record_check "$category" "cluster_healthy" "FAIL" "Archive requires authentication (HTTP $archive_http_status); set AETHELRED_ARCHIVE_USER/AETHELRED_ARCHIVE_PASSWORD and --archive-scheme" "$ARCHIVE_SCHEME://$ARCHIVE_DEST"
+    elif check_http "$ARCHIVE_SCHEME://$ARCHIVE_DEST/health" "200" 2>/dev/null; then
         record_check "$category" "cluster_healthy" "PASS" "Archive service health check passed" ""
     else
-        record_check "$category" "cluster_healthy" "WARN" "Archive reachable but health endpoint not responding (may be non-standard)" "$ARCHIVE_DEST"
+        record_check "$category" "cluster_healthy" "WARN" "Archive reachable but health endpoint not responding (may be non-standard)" "$ARCHIVE_SCHEME://$ARCHIVE_DEST"
     fi
 }
 
@@ -401,6 +466,8 @@ run_monitoring_alerting_checks() {
         record_check "$category" "alertmanager_healthy" "PASS" "Alertmanager is healthy" "$ALERTMANAGER_ENDPOINT"
     elif check_port "$ALERTMANAGER_ENDPOINT"; then
         record_check "$category" "alertmanager_healthy" "WARN" "Alertmanager port reachable but health check failed" "$ALERTMANAGER_ENDPOINT"
+    elif is_pre_testnet_mode; then
+        record_check "$category" "alertmanager_healthy" "WARN" "Alertmanager is not reachable; explicit preflight requirement before testnet or production pilot promotion" "$ALERTMANAGER_ENDPOINT"
     else
         record_check "$category" "alertmanager_healthy" "FAIL" "Alertmanager is not reachable" "$ALERTMANAGER_ENDPOINT"
     fi
@@ -412,23 +479,26 @@ run_monitoring_alerting_checks() {
         alerts_resp=$(curl -s --max-time 10 "http://$ALERTMANAGER_ENDPOINT/api/v2/alerts" 2>/dev/null || echo "")
         if [[ -n "$alerts_resp" ]]; then
             record_check "$category" "alertmanager_api" "PASS" "Alertmanager API is responding" ""
+        elif is_pre_testnet_mode; then
+            record_check "$category" "alertmanager_api" "WARN" "Alertmanager API not responding; explicit preflight requirement before testnet or production pilot promotion" "$ALERTMANAGER_ENDPOINT"
         else
             record_check "$category" "alertmanager_api" "WARN" "Alertmanager API not responding" ""
         fi
     fi
 
     # Check for pilot-specific alert rules (via Prometheus)
+    local PROMETHEUS_ENDPOINT="localhost:9090"
+    local prom_next=false
     for ep_arg in "${ENTERPRISE_ARGS[@]+"${ENTERPRISE_ARGS[@]}"}"; do
         if [[ "$ep_arg" == "--prometheus" ]]; then
-            local prom_next=true
+            prom_next=true
             continue
         fi
-        if [[ "${prom_next:-false}" == "true" ]]; then
+        if [[ "$prom_next" == "true" ]]; then
             PROMETHEUS_ENDPOINT="$ep_arg"
             prom_next=false
         fi
     done
-    local PROMETHEUS_ENDPOINT="${PROMETHEUS_ENDPOINT:-localhost:9090}"
 
     if command -v curl &>/dev/null; then
         local rules_resp
@@ -438,6 +508,8 @@ run_monitoring_alerting_checks() {
             record_check "$category" "alert_rules_configured" "PASS" "Pilot-relevant alert rules detected in Prometheus" ""
         elif [[ -n "$rules_resp" ]]; then
             record_check "$category" "alert_rules_configured" "WARN" "Prometheus rules loaded but no pilot-specific rules detected" ""
+        elif is_pre_testnet_mode; then
+            record_check "$category" "alert_rules_configured" "WARN" "Could not query Prometheus rules; explicit preflight requirement before testnet or production pilot promotion" "$PROMETHEUS_ENDPOINT"
         else
             record_check "$category" "alert_rules_configured" "WARN" "Could not query Prometheus rules" "$PROMETHEUS_ENDPOINT"
         fi
@@ -486,11 +558,13 @@ ${RESULTS[$i]}"
     "skipped": $SKIP_COUNT
   },
   "pilot_configuration": {
+    "mode": "$VALIDATION_MODE",
     "workload_pack": "$WORKLOAD_PACK",
     "model_hash": "$MODEL_HASH",
     "circuit_hash": "$CIRCUIT_HASH",
     "evidence_path": "$EVIDENCE_PATH",
     "archive_dest": "$ARCHIVE_DEST",
+    "archive_scheme": "$ARCHIVE_SCHEME",
     "registry_dir": "$REGISTRY_DIR",
     "alertmanager": "$ALERTMANAGER_ENDPOINT"
   },
@@ -515,7 +589,10 @@ REPORT_EOF
 
 main() {
     echo "=== Aethelred Pilot Deployment Validation ===" >&2
-    echo "Pilot: $PILOT_NAME | Timestamp: $TIMESTAMP" >&2
+    echo "Pilot: $PILOT_NAME | Mode: $VALIDATION_MODE | Timestamp: $TIMESTAMP" >&2
+    if is_pre_testnet_mode; then
+        echo "Pre-testnet mode keeps local evidence checks strict while reporting archive, monitoring, and workload-pack launch gates as warnings." >&2
+    fi
     echo "" >&2
 
     # Step 1: Run enterprise validation (unless skipped)
@@ -566,6 +643,9 @@ main() {
     if [[ "$FAIL_COUNT" -gt 0 ]]; then
         echo "RESULT: FAIL -- $FAIL_COUNT pilot check(s) failed" >&2
         exit 1
+    elif [[ "$WARN_COUNT" -gt 0 ]]; then
+        echo "RESULT: WARN -- no failed checks; $WARN_COUNT warning(s) require follow-up" >&2
+        exit 0
     else
         echo "RESULT: PASS -- All pilot checks passed" >&2
         exit 0

@@ -52,7 +52,7 @@ class TestWalletCreation:
         assert len(addr) > 10
         # Bech32 charset: qpzry9x8gf2tvdw0s3jn54khce6mua7l
         valid_chars = set("qpzry9x8gf2tvdw0s3jn54khce6mua7l")
-        assert all(c in valid_chars for c in addr[5:])  # After "aethel1"
+        assert all(c in valid_chars for c in addr[7:])  # After "aethel1"
         wallet.close()
 
     def test_different_wallets_have_different_addresses(self) -> None:

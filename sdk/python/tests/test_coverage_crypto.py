@@ -7,10 +7,28 @@ Comprehensive tests for crypto fallback module:
 from __future__ import annotations
 
 import hashlib
-import importlib
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric.ec import ECDSA, SECP256K1, derive_private_key
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 import pytest
+
+
+def _fixed_ec_private_key():
+    return derive_private_key(1, SECP256K1())
+
+
+def _raw_ecdsa_signature(private_key, message: bytes) -> bytes:
+    der_sig = private_key.sign(message, ECDSA(hashes.SHA256()))
+    r, s = decode_dss_signature(der_sig)
+    return r.to_bytes(32, "big") + s.to_bytes(32, "big")
+
+
+def _ec_public_key_bytes(public_key) -> bytes:
+    return public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)[1:]
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +252,7 @@ class TestProtocols:
 
 class TestPurePythonHybridSigner:
     def _make_signer(self, **kwargs):
-        """Create a _PurePythonHybridSigner with mocked dependencies."""
+        """Create a _PurePythonHybridSigner with mocked Dilithium only."""
         from aethelred.crypto.fallback import _PurePythonHybridSigner
 
         mock_dilithium_signer = MagicMock()
@@ -242,60 +260,48 @@ class TestPurePythonHybridSigner:
         mock_dilithium_signer.verify.return_value = True
         mock_dilithium_signer.public_key_bytes.return_value = b"\x02" * 64
 
-        mock_signing_key = MagicMock()
-        mock_signing_key.sign.return_value = b"\x03" * 64
-        mock_signing_key.get_verifying_key.return_value = MagicMock(
-            to_string=MagicMock(return_value=b"\x04" * 64),
-            verify=MagicMock(return_value=True),
-        )
-
-        mock_ecdsa_module = MagicMock()
-        mock_ecdsa_module.SigningKey.generate.return_value = mock_signing_key
-        mock_ecdsa_module.SigningKey.from_string.return_value = mock_signing_key
-        mock_ecdsa_module.SECP256k1 = MagicMock()
-
         mock_dil_module = MagicMock()
         mock_dil_module.DilithiumSigner.return_value = mock_dilithium_signer
         mock_dil_module.DilithiumSecurityLevel.LEVEL3 = "LEVEL3"
 
         with patch.dict("sys.modules", {
-            "ecdsa": mock_ecdsa_module,
             "aethelred.crypto.pqc.dilithium": mock_dil_module,
             "aethelred.crypto.pqc": MagicMock(),
         }):
             signer = _PurePythonHybridSigner(**kwargs)
-            return signer, mock_signing_key, mock_dilithium_signer
+            return signer, mock_dilithium_signer
 
     def test_init_generates_keys(self):
-        signer, mock_sk, mock_dil = self._make_signer()
-        assert signer._ecdsa_sk is mock_sk
+        signer, mock_dil = self._make_signer()
+        assert signer._ecdsa_sk is not None
+        assert signer._ecdsa_vk is not None
         assert signer._dilithium is mock_dil
 
     def test_init_with_existing_ecdsa_key(self):
-        signer, mock_sk, mock_dil = self._make_signer(ecdsa_private_key=b"\x99" * 32)
-        assert signer._ecdsa_sk is mock_sk
+        private_key_bytes = b"\x01" * 32
+        signer, mock_dil = self._make_signer(ecdsa_private_key=private_key_bytes)
+        expected_public_key = _ec_public_key_bytes(
+            derive_private_key(int.from_bytes(private_key_bytes, "big"), SECP256K1()).public_key()
+        )
+        assert signer.public_key_bytes()[:64] == expected_public_key
 
     def test_sign(self):
-        signer, mock_sk, mock_dil = self._make_signer()
+        signer, mock_dil = self._make_signer()
         sig = signer.sign(b"hello")
         assert isinstance(sig, bytes)
         # Wire format: 4 bytes header + ECDSA sig + Dilithium sig
         header = sig[:4]
         ecdsa_len = int.from_bytes(header, "big")
-        assert ecdsa_len == 64  # mock returns 64 bytes
+        assert ecdsa_len == 64
 
     def test_verify_valid(self):
-        signer, mock_sk, mock_dil = self._make_signer()
-        # Construct a valid wire-format signature
-        ecdsa_sig = b"\x03" * 64
-        dil_sig = b"\x01" * 32
-        header = len(ecdsa_sig).to_bytes(4, "big")
-        combined = header + ecdsa_sig + dil_sig
+        signer, mock_dil = self._make_signer()
+        combined = signer.sign(b"hello")
         result = signer.verify(b"hello", combined)
         assert result is True
 
     def test_verify_invalid_ecdsa_len(self):
-        signer, mock_sk, mock_dil = self._make_signer()
+        signer, mock_dil = self._make_signer()
         # Header says 9999 bytes but signature is short
         header = (9999).to_bytes(4, "big")
         combined = header + b"\x00" * 10
@@ -303,29 +309,23 @@ class TestPurePythonHybridSigner:
         assert result is False
 
     def test_verify_ecdsa_raises(self):
-        signer, mock_sk, mock_dil = self._make_signer()
-        # Make ECDSA verify raise
-        signer._ecdsa_vk.verify.side_effect = Exception("bad sig")
-        ecdsa_sig = b"\x03" * 64
-        dil_sig = b"\x01" * 32
-        header = len(ecdsa_sig).to_bytes(4, "big")
-        combined = header + ecdsa_sig + dil_sig
+        signer, mock_dil = self._make_signer()
+        combined = signer.sign(b"hello")
+        signer._ecdsa_vk = MagicMock()
+        signer._ecdsa_vk.verify.side_effect = InvalidSignature("bad sig")
         result = signer.verify(b"hello", combined)
         assert result is False
 
     def test_verify_value_error(self):
-        signer, mock_sk, mock_dil = self._make_signer()
-        # Make ECDSA verify raise ValueError
+        signer, mock_dil = self._make_signer()
+        combined = signer.sign(b"hello")
+        signer._ecdsa_vk = MagicMock()
         signer._ecdsa_vk.verify.side_effect = ValueError("bad format")
-        ecdsa_sig = b"\x03" * 64
-        dil_sig = b"\x01" * 32
-        header = len(ecdsa_sig).to_bytes(4, "big")
-        combined = header + ecdsa_sig + dil_sig
         result = signer.verify(b"hello", combined)
         assert result is False
 
     def test_public_key_bytes(self):
-        signer, mock_sk, mock_dil = self._make_signer()
+        signer, mock_dil = self._make_signer()
         pk = signer.public_key_bytes()
         assert isinstance(pk, bytes)
         # Should be ECDSA pk + Dilithium pk
@@ -335,8 +335,8 @@ class TestPurePythonHybridSigner:
         from aethelred.crypto.fallback import _PurePythonHybridSigner
         assert _PurePythonHybridSigner.HEADER_SIZE == 4
 
-    def test_ecdsa_import_error(self):
-        """Test that ImportError is raised when ecdsa is not available."""
+    def test_cryptography_import_error(self):
+        """Test that ImportError is raised when cryptography EC support is unavailable."""
         from aethelred.crypto.fallback import _PurePythonHybridSigner
 
         mock_dil_module = MagicMock()
@@ -344,11 +344,11 @@ class TestPurePythonHybridSigner:
         mock_dil_module.DilithiumSecurityLevel.LEVEL3 = "LEVEL3"
 
         with patch.dict("sys.modules", {
-            "ecdsa": None,  # Force ImportError
+            "cryptography.hazmat.primitives.asymmetric.ec": None,
             "aethelred.crypto.pqc.dilithium": mock_dil_module,
             "aethelred.crypto.pqc": MagicMock(),
         }):
-            with pytest.raises(ImportError, match="ecdsa"):
+            with pytest.raises(ImportError, match="cryptography"):
                 _PurePythonHybridSigner()
 
 
@@ -358,21 +358,15 @@ class TestPurePythonHybridSigner:
 
 class TestPurePythonHybridVerifier:
     def _make_verifier(self, public_key=None):
-        """Create a _PurePythonHybridVerifier with mocked dependencies."""
+        """Create a _PurePythonHybridVerifier with mocked Dilithium only."""
         from aethelred.crypto.fallback import _PurePythonHybridVerifier
 
         dil_pk_size = 1952  # Dilithium3 public key size
-        ecdsa_pk_size = 64  # ECDSA secp256k1 public key size
+        ecdsa_sk = _fixed_ec_private_key()
+        ecdsa_pk = _ec_public_key_bytes(ecdsa_sk.public_key())
 
         if public_key is None:
-            public_key = b"\x04" * ecdsa_pk_size + b"\x02" * dil_pk_size
-
-        mock_verifying_key = MagicMock()
-        mock_verifying_key.verify.return_value = True
-
-        mock_ecdsa_module = MagicMock()
-        mock_ecdsa_module.VerifyingKey.from_string.return_value = mock_verifying_key
-        mock_ecdsa_module.SECP256k1 = MagicMock()
+            public_key = ecdsa_pk + b"\x02" * dil_pk_size
 
         mock_dil_module = MagicMock()
         mock_dil_module.DilithiumSecurityLevel.LEVEL3 = "LEVEL3"
@@ -380,16 +374,15 @@ class TestPurePythonHybridVerifier:
         mock_dil_module.DilithiumSigner.verify_with_public_key.return_value = True
 
         with patch.dict("sys.modules", {
-            "ecdsa": mock_ecdsa_module,
             "aethelred.crypto.pqc.dilithium": mock_dil_module,
             "aethelred.crypto.pqc": MagicMock(),
         }):
             verifier = _PurePythonHybridVerifier(public_key)
-            return verifier, mock_verifying_key, mock_dil_module
+            return verifier, ecdsa_sk, mock_dil_module
 
     def test_init(self):
-        verifier, mock_vk, mock_dil = self._make_verifier()
-        assert verifier._ecdsa_vk is mock_vk
+        verifier, ecdsa_sk, mock_dil = self._make_verifier()
+        assert verifier._ecdsa_pk_bytes == _ec_public_key_bytes(ecdsa_sk.public_key())
 
     def test_init_short_key(self):
         """Public key shorter than or equal to Dilithium pk size should raise ValueError."""
@@ -400,18 +393,15 @@ class TestPurePythonHybridVerifier:
         mock_dil_module.DilithiumSecurityLevel.LEVEL3 = "LEVEL3"
         mock_dil_module.DILITHIUM_SIZES = {"LEVEL3": {"public_key": dil_pk_size}}
 
-        mock_ecdsa_module = MagicMock()
-
         with patch.dict("sys.modules", {
-            "ecdsa": mock_ecdsa_module,
             "aethelred.crypto.pqc.dilithium": mock_dil_module,
             "aethelred.crypto.pqc": MagicMock(),
         }):
             with pytest.raises(ValueError, match="too short"):
                 _PurePythonHybridVerifier(b"\x00" * dil_pk_size)
 
-    def test_init_ecdsa_import_error(self):
-        """Test ImportError when ecdsa is not available."""
+    def test_init_cryptography_import_error(self):
+        """Test ImportError when cryptography EC support is unavailable."""
         from aethelred.crypto.fallback import _PurePythonHybridVerifier
 
         dil_pk_size = 1952
@@ -419,19 +409,19 @@ class TestPurePythonHybridVerifier:
         mock_dil_module.DilithiumSecurityLevel.LEVEL3 = "LEVEL3"
         mock_dil_module.DILITHIUM_SIZES = {"LEVEL3": {"public_key": dil_pk_size}}
 
-        pk = b"\x04" * 64 + b"\x02" * dil_pk_size
+        pk = _ec_public_key_bytes(_fixed_ec_private_key().public_key()) + b"\x02" * dil_pk_size
 
         with patch.dict("sys.modules", {
-            "ecdsa": None,  # Force ImportError
+            "cryptography.hazmat.primitives.asymmetric.ec": None,
             "aethelred.crypto.pqc.dilithium": mock_dil_module,
             "aethelred.crypto.pqc": MagicMock(),
         }):
-            with pytest.raises(ImportError, match="ecdsa"):
+            with pytest.raises(ImportError, match="cryptography"):
                 _PurePythonHybridVerifier(pk)
 
     def test_verify_valid(self):
-        verifier, mock_vk, mock_dil = self._make_verifier()
-        ecdsa_sig = b"\x03" * 64
+        verifier, ecdsa_sk, mock_dil = self._make_verifier()
+        ecdsa_sig = _raw_ecdsa_signature(ecdsa_sk, b"hello")
         dil_sig = b"\x01" * 32
         header = len(ecdsa_sig).to_bytes(4, "big")
         combined = header + ecdsa_sig + dil_sig
@@ -444,16 +434,17 @@ class TestPurePythonHybridVerifier:
         assert result is True
 
     def test_verify_invalid_ecdsa_len(self):
-        verifier, mock_vk, mock_dil = self._make_verifier()
+        verifier, ecdsa_sk, mock_dil = self._make_verifier()
         header = (9999).to_bytes(4, "big")
         combined = header + b"\x00" * 10
         result = verifier.verify(b"hello", combined)
         assert result is False
 
     def test_verify_ecdsa_exception(self):
-        verifier, mock_vk, mock_dil = self._make_verifier()
-        mock_vk.verify.side_effect = Exception("bad signature")
-        ecdsa_sig = b"\x03" * 64
+        verifier, ecdsa_sk, mock_dil = self._make_verifier()
+        verifier._ecdsa_vk = MagicMock()
+        verifier._ecdsa_vk.verify.side_effect = InvalidSignature("bad signature")
+        ecdsa_sig = _raw_ecdsa_signature(ecdsa_sk, b"hello")
         dil_sig = b"\x01" * 32
         header = len(ecdsa_sig).to_bytes(4, "big")
         combined = header + ecdsa_sig + dil_sig
@@ -461,9 +452,10 @@ class TestPurePythonHybridVerifier:
         assert result is False
 
     def test_verify_value_error(self):
-        verifier, mock_vk, mock_dil = self._make_verifier()
-        mock_vk.verify.side_effect = ValueError("bad format")
-        ecdsa_sig = b"\x03" * 64
+        verifier, ecdsa_sk, mock_dil = self._make_verifier()
+        verifier._ecdsa_vk = MagicMock()
+        verifier._ecdsa_vk.verify.side_effect = ValueError("bad format")
+        ecdsa_sig = _raw_ecdsa_signature(ecdsa_sk, b"hello")
         dil_sig = b"\x01" * 32
         header = len(ecdsa_sig).to_bytes(4, "big")
         combined = header + ecdsa_sig + dil_sig
@@ -717,6 +709,7 @@ class TestHybridVerifier:
 
 class TestNativeHybridSigner:
     def _make_native_signer(self, **kwargs):
+        """Create a _NativeHybridSigner with mocked OQS only."""
         from aethelred.crypto.fallback import _NativeHybridSigner
 
         mock_sig = MagicMock()
@@ -727,33 +720,20 @@ class TestNativeHybridSigner:
         mock_oqs = MagicMock()
         mock_oqs.Signature.return_value = mock_sig
 
-        mock_signing_key = MagicMock()
-        mock_signing_key.sign.return_value = b"\x03" * 64
-        mock_signing_key.get_verifying_key.return_value = MagicMock(
-            to_string=MagicMock(return_value=b"\x04" * 64),
-            verify=MagicMock(return_value=True),
-        )
-
-        mock_ecdsa_module = MagicMock()
-        mock_ecdsa_module.SigningKey.generate.return_value = mock_signing_key
-        mock_ecdsa_module.SigningKey.from_string.return_value = mock_signing_key
-        mock_ecdsa_module.SECP256k1 = MagicMock()
-
         with patch.dict("sys.modules", {
             "oqs": mock_oqs,
-            "ecdsa": mock_ecdsa_module,
         }):
             signer = _NativeHybridSigner(**kwargs)
-            return signer, mock_sig, mock_signing_key
+            return signer, mock_sig
 
     def test_init_generates_keys(self):
-        signer, mock_sig, mock_sk = self._make_native_signer()
+        signer, mock_sig = self._make_native_signer()
         assert signer._sig is mock_sig
         mock_sig.generate_keypair.assert_called_once()
         assert signer._public_key == b"\xee" * 1952
 
     def test_init_with_existing_keys(self):
-        signer, mock_sig, mock_sk = self._make_native_signer(
+        signer, mock_sig = self._make_native_signer(
             ecdsa_private_key=b"\x01" * 32,
             dilithium_secret_key=b"\x02" * 64,
             dilithium_public_key=b"\x03" * 1952,
@@ -762,39 +742,36 @@ class TestNativeHybridSigner:
         mock_sig.generate_keypair.assert_not_called()
 
     def test_sign(self):
-        signer, mock_sig, mock_sk = self._make_native_signer()
+        signer, mock_sig = self._make_native_signer()
         result = signer.sign(b"hello")
         assert isinstance(result, bytes)
         # Wire format: 4-byte header + ECDSA sig + Dilithium sig
         header = result[:4]
         ecdsa_len = int.from_bytes(header, "big")
         assert ecdsa_len == 64
-        assert result[4:4+64] == b"\x03" * 64
+        assert signer.verify(b"hello", result) is True
         assert result[4+64:] == b"\xdd" * 48
 
     def test_verify_valid(self):
-        signer, mock_sig, mock_sk = self._make_native_signer()
-        ecdsa_sig = b"\x03" * 64
-        dil_sig = b"\xdd" * 48
-        header = len(ecdsa_sig).to_bytes(4, "big")
-        combined = header + ecdsa_sig + dil_sig
+        signer, mock_sig = self._make_native_signer()
+        combined = signer.sign(b"hello")
         result = signer.verify(b"hello", combined)
         assert result is True
 
     def test_verify_exception(self):
-        signer, mock_sig, mock_sk = self._make_native_signer()
-        signer._ecdsa_vk.verify.side_effect = Exception("bad sig")
-        ecdsa_sig = b"\x03" * 64
-        dil_sig = b"\xdd" * 48
-        header = len(ecdsa_sig).to_bytes(4, "big")
-        combined = header + ecdsa_sig + dil_sig
+        signer, mock_sig = self._make_native_signer()
+        combined = signer.sign(b"hello")
+        signer._ecdsa_vk = MagicMock()
+        signer._ecdsa_vk.verify.side_effect = InvalidSignature("bad sig")
         result = signer.verify(b"hello", combined)
         assert result is False
 
     def test_public_key_bytes(self):
-        signer, mock_sig, mock_sk = self._make_native_signer()
+        signer, mock_sig = self._make_native_signer()
         pk = signer.public_key_bytes()
-        assert pk == b"\x04" * 64 + b"\xee" * 1952
+        assert len(pk) == 64 + 1952
+        assert pk[:64] == _ec_public_key_bytes(signer._ecdsa_vk)
+        assert pk[64:] == b"\xee" * 1952
 
     def test_header_size(self):
         from aethelred.crypto.fallback import _NativeHybridSigner
@@ -807,6 +784,7 @@ class TestNativeHybridSigner:
 
 class TestNativeHybridVerifier:
     def _make_native_verifier(self, public_key=None):
+        """Create a _NativeHybridVerifier with mocked OQS only."""
         from aethelred.crypto.fallback import _NativeHybridVerifier
 
         mock_sig = MagicMock()
@@ -816,32 +794,25 @@ class TestNativeHybridVerifier:
         mock_oqs = MagicMock()
         mock_oqs.Signature.return_value = mock_sig
 
-        mock_verifying_key = MagicMock()
-        mock_verifying_key.verify.return_value = True
-
-        mock_ecdsa_module = MagicMock()
-        mock_ecdsa_module.VerifyingKey.from_string.return_value = mock_verifying_key
-        mock_ecdsa_module.SECP256k1 = MagicMock()
+        ecdsa_sk = _fixed_ec_private_key()
 
         if public_key is None:
-            public_key = b"\x04" * 64 + b"\x02" * 1952
+            public_key = _ec_public_key_bytes(ecdsa_sk.public_key()) + b"\x02" * 1952
 
         with patch.dict("sys.modules", {
             "oqs": mock_oqs,
-            "ecdsa": mock_ecdsa_module,
         }):
             verifier = _NativeHybridVerifier(public_key)
-            return verifier, mock_sig, mock_verifying_key
+            return verifier, mock_sig, ecdsa_sk
 
     def test_init(self):
-        verifier, mock_sig, mock_vk = self._make_native_verifier()
+        verifier, mock_sig, ecdsa_sk = self._make_native_verifier()
         assert verifier._sig is mock_sig
-        assert verifier._ecdsa_vk is mock_vk
         assert verifier._dil_pk == b"\x02" * 1952
 
     def test_verify_valid(self):
-        verifier, mock_sig, mock_vk = self._make_native_verifier()
-        ecdsa_sig = b"\x03" * 64
+        verifier, mock_sig, ecdsa_sk = self._make_native_verifier()
+        ecdsa_sig = _raw_ecdsa_signature(ecdsa_sk, b"hello")
         dil_sig = b"\xdd" * 48
         header = len(ecdsa_sig).to_bytes(4, "big")
         combined = header + ecdsa_sig + dil_sig
@@ -849,9 +820,10 @@ class TestNativeHybridVerifier:
         assert result is True
 
     def test_verify_exception(self):
-        verifier, mock_sig, mock_vk = self._make_native_verifier()
-        mock_vk.verify.side_effect = Exception("bad signature")
-        ecdsa_sig = b"\x03" * 64
+        verifier, mock_sig, ecdsa_sk = self._make_native_verifier()
+        verifier._ecdsa_vk = MagicMock()
+        verifier._ecdsa_vk.verify.side_effect = InvalidSignature("bad signature")
+        ecdsa_sig = _raw_ecdsa_signature(ecdsa_sk, b"hello")
         dil_sig = b"\xdd" * 48
         header = len(ecdsa_sig).to_bytes(4, "big")
         combined = header + ecdsa_sig + dil_sig
@@ -871,5 +843,9 @@ class TestModuleExports:
     def test_all_defined(self):
         from aethelred.crypto import fallback
         assert hasattr(fallback, "__all__")
-        assert "ECDSASigner" in fallback.__all__
-        assert "ECDSAVerifier" in fallback.__all__
+        assert "BackendInfo" in fallback.__all__
+        assert "BackendVariant" in fallback.__all__
+        assert "HybridSigner" in fallback.__all__
+        assert "HybridVerifier" in fallback.__all__
+        assert "get_backend" in fallback.__all__
+        assert "is_native" in fallback.__all__

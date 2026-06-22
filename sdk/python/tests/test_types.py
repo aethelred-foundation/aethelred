@@ -52,7 +52,7 @@ class TestComputeJob:
 
     def test_defaults(self) -> None:
         job = ComputeJob(id="j", creator="a", model_hash=b"x", input_hash=b"y")
-        assert job.proof_type == ProofType.TEE
+        assert job.proof_type == ProofType.HYBRID
         assert job.timeout_blocks == 100
 
 
@@ -74,7 +74,7 @@ class TestSubmitJobRequest:
 
     def test_defaults(self) -> None:
         req = SubmitJobRequest(model_hash=b"\x00" * 32, input_hash=b"\x01" * 32)
-        assert req.proof_type == ProofType.TEE
+        assert req.proof_type == ProofType.HYBRID
         assert req.priority == 1
         assert req.metadata == {}
 

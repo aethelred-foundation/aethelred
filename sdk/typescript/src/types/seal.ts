@@ -10,6 +10,9 @@ export interface DigitalSeal {
   /** Unique seal identifier */
   id: string;
 
+  /** Compute job that produced this seal, when available */
+  jobId?: string;
+
   /** SHA-256 hash of the model weights */
   modelCommitment: string;
 
@@ -353,19 +356,25 @@ export interface SealListResponse {
 
 export interface SealVerificationResult {
   /** Seal ID */
-  sealId: string;
+  sealId?: string;
 
   /** Is valid */
   valid: boolean;
 
+  /** Verification type reported by the chain */
+  verificationType?: VerificationType | 'none';
+
+  /** On-chain seal status */
+  status?: string;
+
   /** Verification checks */
-  checks: VerificationCheck[];
+  checks?: VerificationCheck[];
 
   /** Summary */
-  summary: string;
+  summary?: string;
 
   /** Verified at */
-  verifiedAt: string;
+  verifiedAt?: string;
 }
 
 export interface VerificationCheck {
@@ -384,7 +393,7 @@ export interface VerificationCheck {
 
 // Export types
 
-export type ExportFormat = 'json' | 'compact' | 'portable' | 'audit' | 'cbor';
+export type ExportFormat = 'json' | 'compact' | 'portable' | 'audit';
 
 export interface ExportOptions {
   /** Export format */
@@ -420,6 +429,13 @@ export interface ExportedSeal {
   metadata: ExportMetadata;
 }
 
+export interface AuditReportRequest {
+  /** Seal ID to export as an audit evidence object */
+  sealId: string;
+}
+
+export type AuditReport = ExportedSeal;
+
 export interface ExportMetadata {
   /** Export timestamp */
   exportedAt: string;
@@ -435,4 +451,62 @@ export interface ExportMetadata {
 
   /** Content hash */
   contentHash: string;
+}
+
+export interface EvidenceBundle {
+  schema_version: '1.0.0';
+  bundle_id: string;
+  job_id: string;
+  chain_id: string;
+  seal_id: string;
+  timestamp: string;
+  model_hash: string;
+  circuit_hash: string;
+  verifying_key_hash: string;
+  validator_signature: string;
+  confidence_score: number;
+  tee_evidence: {
+    platform: 'sgx' | 'nitro' | 'sev-snp';
+    enclave_id: string;
+    measurement: string;
+    quote: string;
+    nonce: string;
+  };
+  zkml_evidence: {
+    proof_system: 'groth16' | 'plonk' | 'ezkl' | 'halo2' | 'stark';
+    proof_bytes: string;
+    public_inputs: string;
+    output_commitment: string;
+  };
+  region: string;
+  operator: string;
+  policy_decision: {
+    mode: 'hybrid';
+    require_both: true;
+    fallback_allowed: false;
+    policy_version?: string;
+    [key: string]: unknown;
+  };
+  archive_pointer: {
+    archive_type: string;
+    index: string;
+    document_id: string;
+    uri: string;
+    retention_days: number;
+    write_status: string;
+    [key: string]: unknown;
+  };
+  verification: {
+    artifact_mode?: string;
+    schema_verified: boolean;
+    policy_verified: boolean;
+    tee_attestation_verified: boolean;
+    zkml_proof_verified: boolean;
+    digital_seal_verified: boolean;
+    live_verification_required: boolean;
+    verifier_version: string;
+    [key: string]: unknown;
+  };
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 }

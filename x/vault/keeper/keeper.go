@@ -13,6 +13,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
@@ -1787,6 +1788,24 @@ func (k *Keeper) RegisterVendorRootKey(ctx context.Context, caller string, platf
 // setVendorRootKeyInternal is the unguarded internal setter used by relay lifecycle
 // methods (RegisterAttestationRelay, FinalizeRelayRotation) that have already
 // validated governance controls. External callers must use RegisterVendorRootKey().
+// p256PointOnCurve reports whether (x, y) is a valid point on the NIST P-256
+// curve. It uses crypto/ecdh.NewPublicKey, which validates that the point lies
+// on the curve and is not the identity element. This replaces the deprecated
+// elliptic.Curve.IsOnCurve API (SA1019) and is strictly stronger because it
+// also rejects the point at infinity.
+func p256PointOnCurve(x, y *big.Int) bool {
+	if x == nil || y == nil || x.Sign() < 0 || y.Sign() < 0 || x.BitLen() > 256 || y.BitLen() > 256 {
+		return false
+	}
+	// Uncompressed SEC1 encoding: 0x04 || X(32) || Y(32).
+	buf := make([]byte, 65)
+	buf[0] = 0x04
+	x.FillBytes(buf[1:33])
+	y.FillBytes(buf[33:65])
+	_, err := ecdh.P256().NewPublicKey(buf)
+	return err == nil
+}
+
 func (k *Keeper) setVendorRootKeyInternal(ctx context.Context, platform uint8, xHex, yHex string) error {
 	// Validate the key coordinates
 	xBytes, err := hex.DecodeString(xHex)
@@ -1801,7 +1820,7 @@ func (k *Keeper) setVendorRootKeyInternal(ctx context.Context, platform uint8, x
 	// Verify the point is on the P-256 curve
 	x := new(big.Int).SetBytes(xBytes)
 	y := new(big.Int).SetBytes(yBytes)
-	if !elliptic.P256().IsOnCurve(x, y) {
+	if !p256PointOnCurve(x, y) {
 		return fmt.Errorf("vendor root key is not on the P-256 curve")
 	}
 
@@ -2099,7 +2118,7 @@ func (k *Keeper) RegisterAttestationRelay(ctx context.Context, caller string, pl
 	}
 	x := new(big.Int).SetBytes(xBytes)
 	y := new(big.Int).SetBytes(yBytes)
-	if !elliptic.P256().IsOnCurve(x, y) {
+	if !p256PointOnCurve(x, y) {
 		return fmt.Errorf("relay public key is not on the P-256 curve")
 	}
 
@@ -2169,7 +2188,7 @@ func (k *Keeper) InitiateRelayRotation(ctx context.Context, caller string, platf
 	}
 	x := new(big.Int).SetBytes(xBytes)
 	y := new(big.Int).SetBytes(yBytes)
-	if !elliptic.P256().IsOnCurve(x, y) {
+	if !p256PointOnCurve(x, y) {
 		return fmt.Errorf("new relay key is not on the P-256 curve")
 	}
 

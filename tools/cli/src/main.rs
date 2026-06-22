@@ -471,7 +471,7 @@ enum SealCommands {
         #[arg(short, long)]
         output: PathBuf,
 
-        /// Export format (json, pdf, xml)
+        /// Export format (json, compact, portable, audit)
         #[arg(short, long, default_value = "json")]
         format: String,
     },

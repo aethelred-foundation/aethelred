@@ -172,7 +172,7 @@ class TestSyncVerificationModule:
         stub = StubClient()
         async_mod = VerificationModule(stub)  # type: ignore[arg-type]
         sync_client = MagicMock()
-        sync_client._run = lambda coro: asyncio.get_event_loop().run_until_complete(coro)
+        sync_client._run = lambda coro: asyncio.run(coro)
         return SyncVerificationModule(sync_client, async_mod)
 
     def test_verify_zk_proof(self, sync_module: SyncVerificationModule) -> None:

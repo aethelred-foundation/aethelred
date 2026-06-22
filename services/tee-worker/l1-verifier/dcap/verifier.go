@@ -17,6 +17,7 @@ package dcap
 import (
 	"bytes"
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
@@ -219,6 +220,23 @@ type DCAPConfig struct {
 }
 
 // DefaultDCAPConfig returns production-ready defaults
+// p256PointOnCurve reports whether (x, y) is a valid point on the NIST P-256
+// curve. It uses crypto/ecdh.NewPublicKey, which validates that the point lies
+// on the curve and is not the identity element, replacing the deprecated
+// elliptic.Curve.IsOnCurve API (SA1019) with a strictly stronger check.
+func p256PointOnCurve(x, y *big.Int) bool {
+	if x == nil || y == nil || x.Sign() < 0 || y.Sign() < 0 || x.BitLen() > 256 || y.BitLen() > 256 {
+		return false
+	}
+	// Uncompressed SEC1 encoding: 0x04 || X(32) || Y(32).
+	buf := make([]byte, 65)
+	buf[0] = 0x04
+	x.FillBytes(buf[1:33])
+	y.FillBytes(buf[33:65])
+	_, err := ecdh.P256().NewPublicKey(buf)
+	return err == nil
+}
+
 func DefaultDCAPConfig() DCAPConfig {
 	return DCAPConfig{
 		PCCSEndpoint:     "https://localhost:8081/sgx/certification/v4",
@@ -525,7 +543,7 @@ func (v *DCAPVerifier) parseQuoteSignatureData(quote *Quote) error {
 	}
 
 	// Validate the point is on the curve
-	if !quote.AttestationKey.Curve.IsOnCurve(x, y) {
+	if !p256PointOnCurve(x, y) {
 		return errors.New("attestation key is not on P-256 curve")
 	}
 

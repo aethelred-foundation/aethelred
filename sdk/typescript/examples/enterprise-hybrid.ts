@@ -11,7 +11,7 @@
  * Run with: npx ts-node examples/enterprise-hybrid.ts
  */
 
-import { AethelredClient, ProofType } from '../src';
+import { AethelredClient, type EvidenceBundle } from '../src';
 
 async function main() {
   console.log('='.repeat(60));
@@ -70,29 +70,29 @@ async function main() {
 
   // ── Step 4: Fetch the evidence bundle ──────────────────────
   //
-  // For a HYBRID job the evidence bundle contains:
-  //   • TEE attestation (platform, enclave hash, quote)
-  //   • zkML proof (proof bytes, public inputs, verifying key hash)
-  //   • Digital Seal anchored on-chain
+  // For a HYBRID job the canonical evidence bundle contains:
+  //   - TEE attestation
+  //   - zkML proof
+  //   - Digital Seal ID and validator signature
+  //   - archive pointer and verification flags
 
   console.log('[4/5] Fetching evidence bundle...');
 
-  if (completedJob.metadata?.seal_id) {
-    const seal = await client.seals.get(completedJob.metadata.seal_id);
-    console.log(`      Seal ID        : ${seal.id}`);
-    console.log(`      Seal Status    : ${seal.status}`);
+  const bundle = await client.seals.exportEvidenceBundle(submitResponse.jobId);
+  assertPilotEvidenceBundle(bundle);
 
-    if (seal.teeAttestation) {
-      console.log(`      TEE Platform   : ${seal.teeAttestation.platform}`);
-      console.log(`      Enclave Hash   : ${seal.teeAttestation.enclaveHash.slice(0, 16)}...`);
-    }
-    if (seal.zkmlProof) {
-      console.log(`      Proof System   : ${seal.zkmlProof.proofSystem}`);
-      console.log(`      Public Inputs  : ${seal.zkmlProof.publicInputs.length} elements`);
-    }
-  } else {
-    console.log('      (No seal returned — expected in testnet dry-run mode)');
+  if (completedJob.metadata?.seal_id && completedJob.metadata.seal_id !== bundle.seal_id) {
+    throw new Error('completed job seal_id does not match evidence bundle seal_id');
   }
+
+  console.log(`      Bundle ID      : ${bundle.bundle_id}`);
+  console.log(`      Chain ID       : ${bundle.chain_id}`);
+  console.log(`      Seal ID        : ${bundle.seal_id}`);
+  console.log(`      TEE Platform   : ${bundle.tee_evidence.platform}`);
+  console.log(`      Proof System   : ${bundle.zkml_evidence.proof_system}`);
+  console.log(`      Archive        : ${bundle.archive_pointer.archive_type}/${bundle.archive_pointer.index}`);
+  console.log(`      Confidence     : ${bundle.confidence_score}`);
+  console.log(`      Validator Sig  : ${bundle.validator_signature.slice(0, 16)}...`);
   console.log();
 
   // ── Step 5: Verify the audit trail ─────────────────────────
@@ -102,16 +102,10 @@ async function main() {
 
   console.log('[5/5] Verifying audit trail...');
 
-  if (completedJob.metadata?.seal_id) {
-    const verification = await client.verification.verifySeal(
-      completedJob.metadata.seal_id,
-    );
-    console.log(`      On-chain valid : ${verification.valid}`);
-    console.log(`      Proof checked  : ${verification.proofVerified ?? 'N/A'}`);
-    console.log(`      TEE checked    : ${verification.teeVerified ?? 'N/A'}`);
-  } else {
-    console.log('      (Skipped — no seal to verify in dry-run)');
-  }
+  const verification = await client.seals.verify(bundle.seal_id);
+  console.log(`      On-chain valid : ${verification.valid}`);
+  console.log(`      Proof checked  : ${verification.verificationDetails?.zkml ?? bundle.verification.zkml_proof_verified}`);
+  console.log(`      TEE checked    : ${verification.verificationDetails?.tee ?? bundle.verification.tee_attestation_verified}`);
 
   console.log();
   console.log('='.repeat(60));
@@ -126,3 +120,24 @@ async function main() {
 }
 
 main().catch(console.error);
+
+function assertPilotEvidenceBundle(bundle: EvidenceBundle): void {
+  if (bundle.policy_decision.mode !== 'hybrid') {
+    throw new Error('enterprise evidence bundle must use hybrid policy mode');
+  }
+  if (bundle.policy_decision.require_both !== true || bundle.policy_decision.fallback_allowed !== false) {
+    throw new Error('enterprise evidence bundle must require both TEE and zkML with fallback disabled');
+  }
+  if (!bundle.chain_id || !bundle.seal_id || !bundle.validator_signature) {
+    throw new Error('enterprise evidence bundle is missing chain_id, seal_id, or validator_signature');
+  }
+  if (bundle.confidence_score < 0 || bundle.confidence_score > 1) {
+    throw new Error('enterprise evidence bundle confidence_score must be between 0 and 1');
+  }
+  if (!bundle.archive_pointer.document_id || !bundle.archive_pointer.uri) {
+    throw new Error('enterprise evidence bundle archive pointer is incomplete');
+  }
+  if (!bundle.verification.schema_verified || !bundle.verification.policy_verified) {
+    throw new Error('enterprise evidence bundle must pass schema and policy verification');
+  }
+}

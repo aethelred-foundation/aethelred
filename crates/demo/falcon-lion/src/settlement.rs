@@ -234,6 +234,9 @@ pub enum TxStatus {
 // SETTLEMENT ENGINE
 // =============================================================================
 
+/// Boxed callback invoked for each emitted settlement event.
+type SettlementEventCallback = Box<dyn Fn(&SettlementEvent) + Send + Sync>;
+
 /// Cross-border settlement engine
 pub struct SettlementEngine {
     /// Contract address
@@ -249,7 +252,7 @@ pub struct SettlementEngine {
     /// Settlement metrics
     metrics: Arc<RwLock<SettlementMetrics>>,
     /// Event subscribers
-    event_callbacks: Arc<RwLock<Vec<Box<dyn Fn(&SettlementEvent) + Send + Sync>>>>,
+    event_callbacks: Arc<RwLock<Vec<SettlementEventCallback>>>,
 }
 
 /// Network configuration

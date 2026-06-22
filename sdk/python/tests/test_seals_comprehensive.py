@@ -238,7 +238,7 @@ class TestSyncSealsModule:
         stub = StubClient()
         async_module = SealsModule(stub)  # type: ignore[arg-type]
         sync_client = MagicMock()
-        sync_client._run = lambda coro: asyncio.get_event_loop().run_until_complete(coro)
+        sync_client._run = lambda coro: asyncio.run(coro)
         return SyncSealsModule(sync_client, async_module)
 
     def test_create(self, sync_module: SyncSealsModule) -> None:

@@ -6,7 +6,7 @@ ROOT_DIR="${1:-.}"
 compose_files=()
 while IFS= read -r file; do
   compose_files+=("$file")
-done < <(find "$ROOT_DIR" -type f \( -name 'docker-compose.yml' -o -name 'docker-compose.yaml' \) | sort)
+done < <(find "$ROOT_DIR" -type f \( -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' \) | sort)
 
 if [[ ${#compose_files[@]} -eq 0 ]]; then
   echo "No docker-compose files found under $ROOT_DIR"

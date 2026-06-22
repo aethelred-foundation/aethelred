@@ -36,6 +36,9 @@ use crate::error::{FalconLionError, FalconLionResult};
 use crate::settlement::{SettlementEngine, VerifiableLetterOfCredit};
 use crate::types::*;
 
+/// Boxed callback invoked for each emitted demo event.
+type DemoEventCallback = Box<dyn Fn(&DemoEvent) + Send + Sync>;
+
 // =============================================================================
 // DEMO CONFIGURATION
 // =============================================================================
@@ -236,7 +239,7 @@ pub struct FalconLionDemo {
     /// Current state
     state: Arc<RwLock<DemoState>>,
     /// Event callbacks
-    event_callbacks: Arc<RwLock<Vec<Box<dyn Fn(&DemoEvent) + Send + Sync>>>>,
+    event_callbacks: Arc<RwLock<Vec<DemoEventCallback>>>,
 }
 
 /// Demo event

@@ -11,9 +11,10 @@ The fallback is transparent: all public APIs remain identical regardless of back
 
 .. admonition:: Security Audit
 
-   Audited 2026-02-22. The ``ecdsa`` package is REQUIRED for ECDSA operations;
+   Audited 2026-02-22. ECDSA operations use the ``cryptography`` package;
    the previous HMAC-based pseudo-ECDSA fallback has been removed (PY-03 finding).
-   Exception handlers now catch specific types, not bare Exception (PY-06 finding).
+   Verification failures are logged and return ``False`` without falling back
+   to pseudo-signature behavior.
 
 Usage:
     >>> from aethelred.crypto.fallback import get_backend, HybridSigner, HybridVerifier
@@ -38,8 +39,14 @@ logger = logging.getLogger(__name__)
 
 # PY-21 fix: Explicit public API surface
 __all__ = [
-    "ECDSASigner",
-    "ECDSAVerifier",
+    "BackendInfo",
+    "BackendVariant",
+    "HybridSigner",
+    "HybridVerifier",
+    "KEMProtocol",
+    "SignerProtocol",
+    "get_backend",
+    "is_native",
 ]
 
 
@@ -232,7 +239,7 @@ class _PurePythonHybridSigner:
     ) -> None:
         from aethelred.crypto.pqc.dilithium import DilithiumSigner, DilithiumSecurityLevel
 
-        # Initialize ECDSA (secp256k1) via cryptography (FIPS-compliant, replaces ecdsa pkg)
+        # Initialize ECDSA (secp256k1) via cryptography; no pseudo-ECDSA fallback.
         from cryptography.hazmat.primitives.asymmetric.ec import (
             generate_private_key as _ec_gen, derive_private_key as _ec_derive, SECP256K1
         )
@@ -251,7 +258,7 @@ class _PurePythonHybridSigner:
         )
 
     def sign(self, message: bytes) -> bytes:
-        # ECDSA signature (raw r||s, 64 bytes) via cryptography RFC 6979
+        # ECDSA signature as raw r||s (64 bytes) via cryptography.
         from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
@@ -288,7 +295,7 @@ class _PurePythonHybridSigner:
             logger.debug("Signature verification failed: %s", e)
             return False
         except Exception as e:
-            # Catch ecdsa.keys.BadSignatureError and other verification failures
+            # Catch ECDSA verification failures.
             logger.debug("Signature verification failed: %s", e)
             return False
 
@@ -378,7 +385,7 @@ class _NativeHybridSigner:
     ) -> None:
         import oqs  # type: ignore[import-untyped]
 
-        # ECDSA via cryptography (FIPS-compliant, replaces ecdsa pkg)
+        # ECDSA via cryptography; no pseudo-ECDSA fallback.
         from cryptography.hazmat.primitives.asymmetric.ec import (
             generate_private_key as _ec_gen, derive_private_key as _ec_derive, SECP256K1
         )

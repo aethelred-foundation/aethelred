@@ -346,7 +346,7 @@ class TestSyncJobsModule:
         stub = StubClient()
         async_module = JobsModule(stub)  # type: ignore[arg-type]
         sync_client = MagicMock()
-        sync_client._run = lambda coro: asyncio.get_event_loop().run_until_complete(coro)
+        sync_client._run = lambda coro: asyncio.run(coro)
         return SyncJobsModule(sync_client, async_module)
 
     def test_submit(self, sync_module: SyncJobsModule) -> None:
@@ -395,7 +395,7 @@ class TestSyncJobsModule:
         stub = CompletedStub()
         async_module = JobsModule(stub)  # type: ignore[arg-type]
         sync_client = MagicMock()
-        sync_client._run = lambda coro: asyncio.get_event_loop().run_until_complete(coro)
+        sync_client._run = lambda coro: asyncio.run(coro)
         sync_module = SyncJobsModule(sync_client, async_module)
         job = sync_module.wait_for_completion("job_sync", poll_interval=0.001, timeout=0.01)
         assert job.status == JobStatus.COMPLETED

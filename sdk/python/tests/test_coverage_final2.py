@@ -869,7 +869,7 @@ class TestWalletExtra:
     def test_dual_key_wallet_full_lifecycle(self):
         from aethelred.core.wallet import DualKeyWallet
         wallet = DualKeyWallet()
-        assert wallet.address.startswith("aeth1")
+        assert wallet.address.startswith("aethel1")
 
         # Sign transaction
         tx = b"test transaction data"
@@ -922,7 +922,7 @@ class TestWalletExtra:
         # Restore and verify classical key survived
         restored = DualKeyWallet.from_export(exported, password)
         assert restored.classical.private_key == wallet.classical.private_key
-        assert restored.address.startswith("aeth1")
+        assert restored.address.startswith("aethel1")
 
     def test_wallet_export_short_password(self):
         from aethelred.core.wallet import DualKeyWallet
@@ -939,7 +939,7 @@ class TestWalletExtra:
         from aethelred.core.wallet import DualKeyWallet
         mnemonic = " ".join(["abandon"] * 24)
         wallet = DualKeyWallet.from_mnemonic(mnemonic, passphrase="test")
-        assert wallet.address.startswith("aeth1")
+        assert wallet.address.startswith("aethel1")
 
     def test_wallet_verify_with_public_keys_static(self):
         from aethelred.core.wallet import DualKeyWallet
@@ -955,7 +955,7 @@ class TestWalletExtra:
     def test_wallet_utility_functions(self):
         from aethelred.core.wallet import create_wallet, verify_composite_signature, address_from_public_keys
         w = create_wallet()
-        assert w.address.startswith("aeth1")
+        assert w.address.startswith("aethel1")
 
         tx = b"utils test"
         sig = w.sign_transaction(tx)
@@ -963,7 +963,7 @@ class TestWalletExtra:
         assert verify_composite_signature(tx, sig, pkeys["classical"], pkeys["quantum"]) is True
 
         addr = address_from_public_keys(pkeys["classical"], pkeys["quantum"])
-        assert addr.startswith("aeth1")
+        assert addr.startswith("aethel1")
         assert addr == w.address
 
 
@@ -1507,7 +1507,7 @@ class TestProvenanceTypes:
     def test_did_method_enum(self):
         from aethelred.oracles.provenance import DIDMethod
         assert DIDMethod.KEY.value == "key"
-        assert DIDMethod.AETHELRED.value == "aeth"
+        assert DIDMethod.AETHELRED.value == "aethel"
 
     def test_credential_status_to_dict(self):
         from aethelred.oracles.provenance import CredentialStatus
