@@ -1,0 +1,9 @@
+{
+  "artifact_mode": "real_cryptographic_evidence",
+  "case_id": "med42-003750",
+  "evidence_mode": "tee_attested_commitments",
+  "job_id": "aa59e12964eb705d5f061fcc0ee0b48c9308fe2a6c3c76c1ffa9eb5fa9f395df",
+  "workload": "med42-clinical-evaluation",
+  "zk_proof": null,
+  "zk_proof_digest": "37f052dd7a3922f68ad236b09509d64ae0b84f26183e5bc080b019a078f5c7ff"
+}

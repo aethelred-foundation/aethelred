@@ -1,0 +1,7 @@
+{
+  "artifact_mode": "real_cryptographic_evidence",
+  "case_id": "med42-004250",
+  "job_id": "c0dfec06f24631a498cf94fc22efd7f0c8a6905369c093dd9df327383cd23eaa",
+  "note": "TEE attestation is batch-level (one per batch); see batch-proof.json.",
+  "workload": "med42-clinical-evaluation"
+}

@@ -1,0 +1,279 @@
+{
+  "artifact_mode": "real_public_benchmark_verified",
+  "generated_at": "2026-06-14T11:48:58Z",
+  "scorecard": {
+    "artifact_mode": "real_public_benchmark",
+    "data_status": "real_experimental_non_synthetic",
+    "benchmark": "ChEMBL EGFR (CHEMBL203) IC50 bioactivity",
+    "benchmark_hash": "2f7267fcc95cc0bb7e62b9cb81d94e89b46987313c7c755f0a8d80af6ef29c2c",
+    "compounds": 1148,
+    "provenance": {
+      "source": "ChEMBL",
+      "target": "CHEMBL203",
+      "target_name": "Epidermal growth factor receptor (EGFR)",
+      "organism": "Homo sapiens",
+      "active_def": "IC50 <= 100 nM (pChEMBL >= 7)",
+      "inactive_def": "IC50 >= 10000 nM (10 uM)",
+      "assay_type": "IC50",
+      "actives": 296,
+      "inactives": 852,
+      "dropped_ambiguous": 5,
+      "retrieved_via": "bio-research ChEMBL MCP",
+      "note": "Real experimental bioactivity; labels are wet-lab IC50, not synthetic."
+    },
+    "method": "ligand-based virtual screen; max-Tanimoto to held-out query actives; pure-Python path fingerprint",
+    "evaluation": "held-out actives never seen by the query set (no label leakage)",
+    "metrics": {
+      "auroc": 0.9621,
+      "auroc_ci95": [
+        0.9477,
+        0.9765
+      ],
+      "enrichment_factor_1pct": 5.0962,
+      "enrichment_factor_5pct": 5.0962,
+      "enrichment_factor_max_possible": 5.0962,
+      "early_enrichment_fraction_of_ideal": 1.0,
+      "bedroc_alpha20": 0.9618,
+      "top100_hit_rate": 0.97
+    },
+    "split": {
+      "query_actives": 88,
+      "held_out_actives": 208,
+      "inactives": 852,
+      "library_size": 1060,
+      "active_prevalence": 0.1962
+    },
+    "not_for_clinical_use": true,
+    "honesty": "Data and labels are real wet-lab IC50 from ChEMBL \u2014 not synthetic. The fingerprint is a dependency-free baseline (not RDKit Morgan); the metrics are a real measurement of that baseline on real data with a DeLong CI."
+  },
+  "digital_seal": {
+    "schema_version": "m42.digital-seal.v2",
+    "workload": "drug-discovery-screening-realdata",
+    "model_hash": "ebe58e75a067b87de85d3326cde2e0befd2694654200b92bdb37a91ecbb4e13a",
+    "circuit_hash": "6f210234c30a7de2e61ba52361ccc6d16ea75701eae28d90cfa739bde4ef8ce0",
+    "input_commitment": "a9b3bf41fb8298b06819e57823124a0f93ff61c28a5f182ba34af969ac44d68a",
+    "output_commitment": "617a0eefffe988208d7515d6d28fa11fc8a14bbdecaef4c4191841c0e0c44f37",
+    "policy": {
+      "mode": "hybrid",
+      "require_both": true,
+      "require_tee": true,
+      "require_zkml": true,
+      "require_commitments": true,
+      "fallback_allowed": false,
+      "policy_version": "m42-seal-policy-v1"
+    },
+    "evidence_mode": "hybrid_tee_zkml",
+    "zk_proof": {
+      "public_y": "94c57647a6be29f98abc12e2cfa7582a3fa652c061327f46148d1a2de8ec12d7108964c182ad00dc8c812fb21248c328b6eaa5f3823c3660c48a1214cab0f0ac615615184efa2766d46d4b279260436a12750ddcf44c14c89887ec3dbcdcda5e680d00cb83a7534318bb7fd274f1ec258598c407a7c5324107ce0516109071c3347f3daac4cc2f4a943758c1e4a4efe3b734cbc80772211b29ef1252c00b4d4ca64c3240790dda38600bd5a4920606cc6240e231bc1f1659fe9e1a71e48328546acd8bc83f03ecf009e719b895756962e97590292c3d18e34fa802d6cf65d6bba2442f0992860296add3c79497cde9e320b59add8d0fb348dfa5d2f0d0a4b44c",
+      "commitment": "62db8ba37c97986ec22a46d795d43f773951b2f6d714fec7a0d99a49b980e8c0caea9272f7e2c4a229d2df726b9786be5de242502deb36eb977c3d1cb11f80065bd53a2aee4a96aa5e8d4a1eed71eebe1b3696703575bec90b13b6cee6cd6546321db7208bac80f28ef3268cfb57c4fe87e4ab2b1932a5dacec9641ae56b3f302252361e6d83b6c9635ccaf9be0e5ee143a31c9db6a63962af0a9b76e0107be2a02e838bef79d670b414616e685d4a12a836e33d471ab08864f18338760104eb5565183f94a04e6abf447fc7e372a7092bb58f37af7db654695f8d00efc2ea53d0a01844df45f76650b9fdab1ed1bca5f11f8d9ab716fc9ecb3fbf571967e19b",
+      "challenge": "f1437c0c7e90d728a581698e3e7b25f5c845f1d25069d400dbff45c28d890de5915fd282df77b8259e1f95ab2d06f01c55878db4692e563555388aa8fa1d2476",
+      "response": "9dd28ff6909fd8449f97a216184a0aa3d5857c364f41fec9bb30f4098e6e193bd74f33bca968ac036ccf9547d0b0294ad6a166cecd0e2ee1cb6d616d344cff034542f350a1654ebb31e4bd4a5a80f80a646bddbedb783f6cbbee9fff00b36ac",
+      "statement": "knowledge of committed input opening bound to committed output and circuit"
+    },
+    "zk_proof_digest": "9c00d74f9f7bfd0be995275553d618e33543b20e509880f9e247a88c9b9a34d1",
+    "chain_id": "aethelred-m42-pilot-1",
+    "timestamp": "2026-06-14T11:48:58Z",
+    "nonce": "2f7267fcc95cc0bb",
+    "seal_id": "dbbc8d9e07f843dbc968aaf73e93c3a4cf9e55563b374280b2f60f20a31a2d6c",
+    "batch_index": 900,
+    "seal_batch_root": "ce056a1f8827e4c1952588aa4221b14f5217af6a8c1202394022893840e1c024",
+    "attestation_batch_root": "30e770b124be2544408edf25d857bf61390b12fb0568c5db8e722686bb54d174",
+    "seal_inclusion_proof": {
+      "leaf_index": 0,
+      "siblings": []
+    },
+    "report_data_inclusion_proof": {
+      "leaf_index": 0,
+      "siblings": []
+    }
+  },
+  "batch_proof": {
+    "schema_version": "m42.batch-proof.v1",
+    "chain_id": "aethelred-m42-pilot-1",
+    "batch_index": 900,
+    "seal_count": 1,
+    "seal_batch_root": "ce056a1f8827e4c1952588aa4221b14f5217af6a8c1202394022893840e1c024",
+    "attestation_batch_root": "30e770b124be2544408edf25d857bf61390b12fb0568c5db8e722686bb54d174",
+    "batch_nonce": "ec1f2104e3c49e56b4fa0f2853c117de03545ff8ce17fb7428202a5401092ddf",
+    "attestation": {
+      "format": "aethelred-attestation-v1",
+      "report": {
+        "platform": "sev-snp",
+        "measurement": "6d6af73b7da784242a4be782f978f6e17fadcf8c1c137befd7f306e30900331d",
+        "nonce": "ec1f2104e3c49e56b4fa0f2853c117de03545ff8ce17fb7428202a5401092ddf",
+        "report_data": "30e770b124be2544408edf25d857bf61390b12fb0568c5db8e722686bb54d174",
+        "enclave_pubkey": "c578a38737912f2ad42fbdcef47eedca7778b6080554fe94b7a209f10c01e01e"
+      },
+      "report_signature": "4d74f1a333e8f694eb9b3b7817dddc0fabe00788192f8ca705af90b88977ded21ab91f33aed087947bc16c575992658bd89ebaf98068351512fd496b4ed71007",
+      "certificate": {
+        "enclave_pubkey": "c578a38737912f2ad42fbdcef47eedca7778b6080554fe94b7a209f10c01e01e",
+        "root_pubkey": "424e6e6a0b23addf71fb2e206f773712fab7b0023cb636767ee4fc1b2a1a7cd4",
+        "platform": "sev-snp"
+      },
+      "certificate_signature": "20fddc773705064da120199eff2762324172dc44f723b5ebadbfd93b68e9596d38f747a2de8fc92ba06def2df2ef34b346628cb14f71a5717268ff35d6099408",
+      "trust_root": "aethelred-test-attestation-root",
+      "hardware_backed": false,
+      "boundary_note": "Software enclave signer; production swaps trust_root for AMD SEV-SNP / AWS Nitro roots. Verification logic is identical."
+    },
+    "validator_hybrid_signature": {
+      "scheme": "hybrid-ed25519-xmss",
+      "ed25519": "8dfa716f6156569c6fc7229bdb530cc7b8197f5d559e049ea0b08e0ac5e630fb2b0444aa80520b08b7765fe0080a66701c7f7e1a2da53ca81b849bd932d82905",
+      "pqc": {
+        "scheme": "xmss-wotsp-sha3-256",
+        "index": 900,
+        "randomizer": "3d4253bd8355ffc436acec8604ab5c7b6e3b7f900dc678a8f598f5078537f80f",
+        "wots_sig": [
+          "8c0f9dd1c4fd4c99307de6f063bf340e0bbbcb1162090f4cb682ecf3df049140",
+          "da4d570037e1a02f629adfdc705570026dc83070db97edad9f4cc1234c6e16d7",
+          "ad85b64fbf0acc1062e6fca16a7c4e7399a2ee0f0d5705be2a594a4611c52809",
+          "4bb245c437f6a472c71b4786ab7eac82f7ad34905eb298ad3f0b202cc590e396",
+          "0bda5a16f93e1ddbdb8f2df6903b166c2bcd05275dca647ad6cae8f7ab2e81f7",
+          "ce4ceef8ad41178a52c5014eb9efb24ab242442299f45b76447f6789f5103eae",
+          "1cd159771c026940dd2891ee96c3ffef44d2348acf7f94837298bfbac32c67b8",
+          "f50eaf6470034b10c6bd288574c58848b10ce4c9725901e8d52fbb21fe6888a9",
+          "cda3bf3a10b2ccad555057b837529690830c1950f6fae33271b790d722b68f52",
+          "ce55d90c1e237628ea3616a7d33b469f9bc75e412b17059653e1e0d5c74de726",
+          "8f311d160c7878db115cfe792f6e9921252e0b3c9ec2a8573af67991c1f4dd6f",
+          "6ce21ad15c0d19c5b16af28b7eb33480a450ce2ac22b842e025e187c6e24071b",
+          "2dc38e031a9b064d1b2fb26af4a9e55aa06c260103ccb521694523bc346ff768",
+          "c399b16f3dda04776cb32f50249fe0b92a1fedce1bf428d2ad946c04332cb1fa",
+          "e7e9aebf289be2d0f000baa646e8b737e9954b6e75bc32ce5149ced7eeeac35f",
+          "72acbc53d6d03591725214e53baeee07eea03a974303e708fa5abf16b075bd75",
+          "57200d1fcbd194284df20c3e51bca7af6158aa0ae3d725468345f1039714d4c2",
+          "ad41e205899ef68d502dc862b28d96ac518241b68a9de2361daade56f360cd9c",
+          "275d60355fec4d88dd5dd47795a9223e09720887098d5a4549d3d479b6b33596",
+          "6041cc6f1e3e2df4ef70247f41cc7ccbb2b43da8c92525284a5cbc6eb6808c87",
+          "f53e70e950a46ec8652ff00a3e7f9c791bea98283941baada60b2010aaf6f9ee",
+          "2ad11d6e007cdced684557c3db181c37f0c88088d0f48c4361ec58bb15841768",
+          "1829afbf4f00693c8b113b6b4f9cd13ea935a9ff32fb5ec8f8d0fded46eb541e",
+          "94eab81918aed34b4c2c75f2d81abedb3c31a5064d91b903b6d188b2306c49fc",
+          "0547bbe9b2a718553a79514b7fd6a24ac507dc5712d7bdc0cda79c39968c4191",
+          "1fb6d4441a61d5c740cf04740058c714e773d145170d9f13acfb0f843f2569e8",
+          "5391dc7c5215cae3c18ea9291b762d0937315ca9a5a77b578b35d0a712707b59",
+          "8cd7aa036d9c62d7b75b9641d342ba4953d854b79fe3168c8dbe0994c004f083",
+          "29e4e158fd1d6827412fa25f4eaf0b778af3e7892a629224883170ce67119561",
+          "acedc22d15d2aafcd0ab1d4b17ddf085fd2b8c85e83fafb6ee3c59cb44dd0328",
+          "b1193673be99bd0140eb627748a5cd75418f0ace3001100aee80655b461d5569",
+          "d3415ce7df1b5af387c510702d7bb8c376395ee89d7cec35fe9f81cdbdb66f83",
+          "8e68dd2b9edd89d593b5372549215b9ac85bab95e7b1fee171eace37666bd48e",
+          "e8fb94608e9398a9c26e486dd7cf67a423455f1a13ce9854d89affac000d4232",
+          "01e145b6a22d603ab804e841bf6168f3c1a391eb50191dedae6900b76b5598e6",
+          "d8596a201663e9a6265fa41ee1bb84e09aa46dc61910011c4e115d9c975b765e",
+          "80501c322696238849d52ff7f47a1007df71cdf8ad78a17134789e694689a235",
+          "adebb65ec640d224b997d50a7436750f2f906ee53b28c2e8ef43a56cae779926",
+          "6e1b998ddba8a36846b73cfd4e280d268746bc55a35ce4d368902a4971967666",
+          "379ab7f5b34cdbd9086d66a447a349030580b9435b6991484e90dfaa1beb875e",
+          "e10334a5602cf2e41d93072631480874b6ec9b2425759ba3d6f782abb31a208e",
+          "26b43eaaae218f674afc65d6624d54659065df9824040c47b73c5d137a02a04c",
+          "e0c098ee5777034afe038c480f177a28896bdf14e3cecb2f0e73b08a8b6e7c96",
+          "9faf369cbc8fecd2d001c5dcd7a7389a52f9493184faf1134d282149a768a303",
+          "4e75c7b7447c19542e32ed69172a80c6a1a969de03364c9c4fe3ea41cc3cfe7a",
+          "70c72d3ee50bd3c4c519137f52c0ea2aac1225ea17e76b5e80058cbea0e159a6",
+          "4346596220887f85289994475ccb0344c297ec4841c979c4fa22a840b889295c",
+          "4c4aa2298678a4255b6617e85635b5b9ea768c123b0cb961b1b291b609f7a01a",
+          "1cd654b56f8b85a1974f32c41665e2d9beaafc6d8ccfb9704eda72891f616ada",
+          "3992dbe6d670507af7fa22bdbdee56079ecf128f5ad6425b0962646d1108fd2a",
+          "baccc0f304dc9de3ab4a2a19de9c6d5721231aa002f33a931e447ced1b6860e8",
+          "30255e557929ced151af0e8243427ba873e894f5d2febe1e143f3b24f7b2d033",
+          "0174b326cd3f002b81875e3053fe82b05b1e0f0fa2629bafcf7810135367126d",
+          "9c89c125eafe0f9b7e8ac195829695ea58054390cdd3fc2b0ceb75777f6fc94a",
+          "0387be74a1e89006fd209189a00d1f88cf302ef77050bea2291ed3a8d2aec0d8",
+          "1a4f911765f93dea80b12c4768aa4c1e03170b68793bcb5eef2f1bbfb2b1169c",
+          "79c447e5e46756d980f124735c9419a28ae0cdb16a5f2c3b2751be207ab43f04",
+          "acb855403e6c00182cfb9d1261c04a2f495d4338f2ca5d7b9b1906f73c47d400",
+          "e699efa35dabf2115981b1b777dea09fc6e4a260356fa1d8be53101ba5272725",
+          "bec8503c3956562262abfe45788b10a7ab70d7968aa5bcf09cc89b3c081b207f",
+          "671989394513e1acc86ecaafbd06daf28ad763e3db539c5fe1c25845bacecc84",
+          "958cbba5aebe23add20582a1a0fed9f4401eeb79a5bc5e5cd7977b5963c2b637",
+          "9799594335c6bc99dd6f55ab313d3c13af168fa60e989749571c53271ad2d84d",
+          "781ee5e3246e65f87e507262f5e498805ff19cc9018525ac640c7549fe1d1cf4",
+          "348b3690d6751191f85f496124b914b209d89d068ac00312e8cd8728d12f96f8",
+          "1c0fbf42b1c40c45b5ed76b59626c32ba1d5eb3ab35786ba4501dbce4ac54349",
+          "c3921a753e2cd83c124d27b5cd63f6b9efcfe52934ffc5e380c6eb797df78ce8"
+        ],
+        "auth_path": [
+          "2195598efa7b6a8ec205bb212c05a4aef8942ca27a56667c68712ffc0d87eb11",
+          "7f0f9a2d7d77da0b2e0644f9381fde4d52c50e6f89c0de6c8de0d1ce4244721c",
+          "da0ae79f3692549ab58f5de5519e383a0456b40d55b7e37117b6c878870bc1a7",
+          "5c186733ac0352bff14df32a4fd9b874802b6152c275b67b98c16b68c5419ece",
+          "e8dc25a7602c5cafacb56c1843e325f74c47d36d4a5d79e64f76c8818fe5ef30",
+          "71e81236cbb3ab3414250c047396f00db31221351ad82bbc1f0436db9d7da3c0",
+          "d6af239623ea992513a27f6ce7af4ddc49c1cc3537995569d1c78a133bbfd8f9",
+          "6cd7cabf029bee755b095a2f6025bdcaf37ce5a97bd30fbf62e14491f105d01e",
+          "f49665c581598491111638a879e4a68ee8239c5ef5e1cb90aa9e9739b5be3757",
+          "ca6343ed48e86ea46299e85ea2bdef17a90d9459b91174a3e9b58acfb5f91650"
+        ]
+      },
+      "security": {
+        "classical_bits": 256,
+        "quantum_bits": 128,
+        "nist_category": 5,
+        "assumptions": [
+          "ecc_discrete_log",
+          "sha3_256_preimage"
+        ]
+      }
+    },
+    "validator_pubkey": "b0ae0e6233c1f2f0f553c96ba49160ced967f35f3c0ef42ee2775a4253bae8c9",
+    "validator_xmss_root": "8f4794e75fa492e837285f8024838169925407ebbe8c53fae0a8605f0714c62d959495dc8c5b020611662998b195e4b03be91c76f7e74e8ab97ff3715e9b8fff"
+  },
+  "verification": {
+    "verified": true,
+    "summary": {
+      "batch_ok": true,
+      "batch_checks": [
+        {
+          "name": "validator_classical_signature",
+          "passed": true,
+          "detail": "Ed25519 batch signature valid"
+        },
+        {
+          "name": "validator_pqc_signature",
+          "passed": true,
+          "detail": "post-quantum XMSS batch signature valid (NIST Category 5)"
+        },
+        {
+          "name": "batch_tee_attestation",
+          "passed": true,
+          "detail": "attestation chain, measurement, freshness, and binding verified"
+        }
+      ],
+      "seal_results": [
+        [
+          "dbbc8d9e07f843dbc968aaf73e93c3a4cf9e55563b374280b2f60f20a31a2d6c",
+          true,
+          [
+            {
+              "name": "seal_id_integrity",
+              "passed": true,
+              "detail": "seal_id is the hash of the bound body"
+            },
+            {
+              "name": "seal_merkle_inclusion",
+              "passed": true,
+              "detail": "seal is in the validator-signed batch"
+            },
+            {
+              "name": "attestation_binding",
+              "passed": true,
+              "detail": "model/IO/policy are bound by the TEE attestation"
+            },
+            {
+              "name": "zkml_proof",
+              "passed": true,
+              "detail": "Schnorr NIZK verifies, bound to the committed IO"
+            },
+            {
+              "name": "policy_no_fallback",
+              "passed": true,
+              "detail": "no single-evidence fallback permitted"
+            }
+          ],
+          true
+        ]
+      ],
+      "verified_count": 1,
+      "total": 1
+    }
+  }
+}

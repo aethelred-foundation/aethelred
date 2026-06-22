@@ -1,0 +1,29 @@
+{
+  "aggregation": "batch-root: one hybrid signature + one attestation per batch, per-seal Merkle inclusion",
+  "allowed_measurements": [
+    "67f13c66fc4cb0c18010b279f07f0493c8de6336bd0d68c46b91673548be5eb2",
+    "6d6af73b7da784242a4be782f978f6e17fadcf8c1c137befd7f306e30900331d",
+    "cab04c4cf6a11c1ef9d5c0103f151ddf82262fdc5cda43dff82aca62517b66bb"
+  ],
+  "attestation_root_pubkey": "424e6e6a0b23addf71fb2e206f773712fab7b0023cb636767ee4fc1b2a1a7cd4",
+  "commitment": "sha3-256",
+  "merkle": "sha256-domain-separated",
+  "nizk": "schnorr-fiat-shamir-modp2048",
+  "note": "Public verification parameters for the M42 pilot. Private keys never leave the producer.",
+  "pqc": {
+    "baseline_category1_bits": 128,
+    "classical_security_bits": 256,
+    "family": "hash-based (NIST FIPS 205 / SLH-DSA lineage)",
+    "harvest_now_decrypt_later_resistant": true,
+    "hybrid": "ed25519 + XMSS co-signature; a forger must break BOTH ecc-dlog AND a 256-bit hash",
+    "nist_category": 5,
+    "note": "Security rests only on hash preimage resistance (Grover-bounded). 256-bit hardness vastly exceeds the 20x margin over the 128-bit baseline (factor 2^128).",
+    "pqc_scheme": "XMSS(WOTS+, SHA3-256)",
+    "quantum_security_bits": 128,
+    "work_factor_vs_baseline": "2^128",
+    "work_factor_vs_baseline_decimal": 3.402823669209385e+38
+  },
+  "signature_scheme": "hybrid-ed25519-xmss",
+  "validator_pubkey": "b0ae0e6233c1f2f0f553c96ba49160ced967f35f3c0ef42ee2775a4253bae8c9",
+  "validator_xmss_root": "8f4794e75fa492e837285f8024838169925407ebbe8c53fae0a8605f0714c62d959495dc8c5b020611662998b195e4b03be91c76f7e74e8ab97ff3715e9b8fff"
+}

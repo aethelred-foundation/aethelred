@@ -1,0 +1,92 @@
+{
+  "artifact_mode": "pretestnet_drill_fixture",
+  "commercial_context": {
+    "note": "Target value is sponsor-perceived strategic value, not a guaranteed savings claim.",
+    "pilot_fee_usd": 200000,
+    "target_sponsor_value_usd": 1000000,
+    "target_value_multiple": 5
+  },
+  "customer": "M42",
+  "decision_objective": "Decide whether Aethelred should advance to a larger M42 healthcare AI assurance deployment.",
+  "operating_moments": [
+    {
+      "exit_gate": "M42 confirms the pilot is a paid decision package, not a generic demo.",
+      "moment": "Sponsor alignment session",
+      "outputs": [
+        "decision-owner map",
+        "confirmed value-bank target",
+        "accepted data boundary",
+        "approved scorecard"
+      ],
+      "owners": [
+        "M42 sponsor",
+        "Aethelred pilot lead"
+      ],
+      "phase": "pre-start"
+    },
+    {
+      "exit_gate": "M42 can see isolated infrastructure, evidence paths, and monitoring boundaries.",
+      "moment": "Sandbox activation",
+      "outputs": [
+        "exclusive sandbox validation",
+        "package preflight",
+        "synthetic workload approval",
+        "live endpoint readiness log"
+      ],
+      "owners": [
+        "Aethelred operator",
+        "M42 technical reviewer"
+      ],
+      "phase": "week-1"
+    },
+    {
+      "exit_gate": "M42 can inspect proof of execution instead of accepting a black-box claim.",
+      "moment": "Evidence room walkthrough",
+      "outputs": [
+        "baseline measurement",
+        "verified run summary",
+        "one accepted job traced from input to hashes, TEE evidence, zkML object, Digital Seal, archive, and metrics"
+      ],
+      "owners": [
+        "M42 technical reviewer",
+        "M42 security reviewer",
+        "Aethelred evidence owner"
+      ],
+      "phase": "week-2"
+    },
+    {
+      "exit_gate": "M42 sees bad evidence rejected before any real data is considered.",
+      "moment": "Assurance challenge session",
+      "outputs": [
+        "negative-control results",
+        "security action log",
+        "procurement evidence checklist",
+        "archive and monitoring review"
+      ],
+      "owners": [
+        "M42 risk owner",
+        "M42 security reviewer",
+        "Aethelred operator"
+      ],
+      "phase": "week-3"
+    },
+    {
+      "exit_gate": "M42 has a clear go/no-go path for Med42 expansion, de-identified clinical AI, genomics, radiology, drug discovery, or stop.",
+      "moment": "Executive value board",
+      "outputs": [
+        "final value-bank scorecard",
+        "executive readout",
+        "economics comparison",
+        "recommended next workload and budget logic"
+      ],
+      "owners": [
+        "M42 sponsor",
+        "M42 decision owners",
+        "Aethelred executive sponsor"
+      ],
+      "phase": "week-4"
+    }
+  ],
+  "pilot": "m42-med42-clinical-evaluation",
+  "workload": "med42-clinical-evaluation"
+}

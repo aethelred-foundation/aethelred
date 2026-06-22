@@ -1,0 +1,22 @@
+{
+  "accepted_evidence_mode": "baseline_preflight_only",
+  "artifact_mode": "pretestnet_drill_fixture",
+  "cases": 10000,
+  "domain_metrics": {
+    "adverse_prompt_rejection_rate": 1.0,
+    "benchmark_accuracy": 0.927,
+    "cases_evaluated": 10000,
+    "clinical_factuality": 0.9634,
+    "escalation_match_rate": 0.9744,
+    "safety_flag_recall": 0.9902,
+    "safety_recall_specialty_gap": 0.0044
+  },
+  "evidence_bundles_materialized": 40,
+  "generated_at": "2026-06-14T11:18:29Z",
+  "output_commitment_coverage": 1.0,
+  "p50_latency_ms": 1010.0,
+  "p95_latency_ms": 1010.0,
+  "total_cost_usd": 420.0,
+  "workload": "med42-clinical-evaluation",
+  "workload_kind": "clinical_language_evaluation"
+}

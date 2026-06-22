@@ -1,0 +1,6 @@
+{
+  "attestation_batch_root": "0ec60b9a8c675e51f1021ef958c28ed007c72cf98214458b6162f68491a52e08",
+  "seal_batch_root": "62c16cd7b28ff96ce1483baacbd5d754eed3761093f454d101959c9981ad741b",
+  "seal_count": 40,
+  "workload": "med42-clinical-evaluation"
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://aethelred.network/schemas/pilot-evidence-objects-v1.json",
+  "pilot": "m42-med42-synthetic-eval",
+  "status": "expected_objects_only",
+  "synthetic_non_live": true,
+  "evidence_mode": "hybrid_tee_zkml_digital_seal",
+  "require_both": true,
+  "single_evidence_fallback": false,
+  "model_hash": "73e901338cd578d92d07e96a8521f1516a7d46134ac521c09899d59987caf82a",
+  "circuit_hash": "9dda0ee98dca7763b72e45f5cbd77d1eb26243e7d00240c7d66817310414e1b5",
+  "objects": [
+    {
+      "name": "baseline-measurement.json",
+      "producer": "baseline evaluator",
+      "required": true,
+      "description": "Latency, cost, and quality baseline for the synthetic Med42-compatible evaluation without Aethelred verification."
+    },
+    {
+      "name": "sandbox-run-summary.json",
+      "producer": "Aethelred sandbox run",
+      "required": true,
+      "description": "Case counts, pass/fail summary, model and circuit hashes, evidence completeness, and replay determinism."
+    },
+    {
+      "name": "evidence-bundle-<job_id>.json",
+      "producer": "Aethelred evidence bundle builder",
+      "required": true,
+      "schema": "docs/api/evidence-bundle-v1.schema.json",
+      "description": "Accepted job bundle containing TEE attestation, zkML proof reference, validator signature, chain id, job id, and Digital Seal seal_id."
+    },
+    {
+      "name": "attestation-<job_id>.json",
+      "producer": "TEE attestation collector",
+      "required": true
+    },
+    {
+      "name": "proof-<job_id>.json",
+      "producer": "zkML prover",
+      "required": true,
+      "description": "Required zkML proof object; commitments without this proof are baseline or preflight only."
+    },
+    {
+      "name": "negative-control-results.json",
+      "producer": "M42 sandbox drill",
+      "required": true,
+      "description": "Expected rejection controls for missing evidence, wrong hashes, PHI injection, fallback mode, and nonce replay."
+    },
+    {
+      "name": "phi-scan.json",
+      "producer": "M42 pilot gap audit",
+      "required": true,
+      "description": "DLP-style scan result for the synthetic vignette fixture, including patterns checked and finding count."
+    },
+    {
+      "name": "m42-value-scorecard.json",
+      "producer": "M42 sandbox drill",
+      "required": true,
+      "description": "Sponsor-facing value scorecard tying clinical quality, evidence completeness, cost/latency deltas, and risk controls together."
+    },
+    {
+      "name": "m42-value-bank.json",
+      "producer": "M42 sandbox drill",
+      "required": true,
+      "description": "Machine-readable $1,000,000 target value architecture for the $200,000 paid pilot."
+    },
+    {
+      "name": "m42-mutual-action-plan.json",
+      "producer": "M42 sandbox drill",
+      "required": true,
+      "description": "Week-by-week sponsor operating model with value moments, owners, gates, and decision outputs."
+    },
+    {
+      "name": "m42-executive-readout.md",
+      "producer": "M42 sandbox drill",
+      "required": true,
+      "description": "Plain-language executive readout generated from baseline, verified, and negative-control drill outputs."
+    },
+    {
+      "name": "business-case-report.md",
+      "producer": "pilot reporting workflow",
+      "required": true,
+      "description": "Executive report comparing baseline and verified runs with evidence completeness and security posture."
+    }
+  ]
+}

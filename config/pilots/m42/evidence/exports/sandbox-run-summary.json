@@ -1,0 +1,932 @@
+{
+  "accepted_cases": 10000,
+  "artifact_mode": "pretestnet_drill_fixture",
+  "cost_delta_total_usd": 190.0,
+  "digital_seal_coverage": 1.0,
+  "domain_metrics": {
+    "adverse_prompt_rejection_rate": 1.0,
+    "benchmark_accuracy": 0.927,
+    "cases_evaluated": 10000,
+    "clinical_factuality": 0.9634,
+    "escalation_match_rate": 0.9744,
+    "safety_flag_recall": 0.9902,
+    "safety_recall_specialty_gap": 0.0044
+  },
+  "evidence_sample_cases": [
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-000000",
+        "category": "pharmacology",
+        "factuality": 0.999
+      },
+      "case_id": "med42-000000",
+      "confidence_score": 0.999,
+      "evidence_bundle": "evidence-bundle-0d8aa1a235414257b53ac03ce1000da492686b2323611e324c3644d1d701d62d.json",
+      "input_hash": "6dc6ad9abd5dceb13c50cf8c31d6671fc8a9f2c0cb6a14984615bbbb113d581a",
+      "job_id": "0d8aa1a235414257b53ac03ce1000da492686b2323611e324c3644d1d701d62d",
+      "output_hash": "c97ee4fba483819872f7e9f67802b70755ce64710753dd9d36ffb0eb2eea45be",
+      "seal_id": "m42-seal-0d8aa1a235414257",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-000250",
+        "category": "summarization",
+        "factuality": 0.9771
+      },
+      "case_id": "med42-000250",
+      "confidence_score": 0.9771,
+      "evidence_bundle": "evidence-bundle-d6b304853e6110996653c364109e1c8efad99dc6724fb0154ee88e7ce314e031.json",
+      "input_hash": "f3b4f95877c4a767b8f86f7e01fb08502592b653d6d8ddedf85110658e5210b9",
+      "job_id": "d6b304853e6110996653c364109e1c8efad99dc6724fb0154ee88e7ce314e031",
+      "output_hash": "df78dfd5fc8713c6865c31031e4bfcb10d4ab2a07bc44c482e58ef7309de66cc",
+      "seal_id": "m42-seal-d6b304853e611099",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-000500",
+        "category": "triage",
+        "factuality": 0.9486
+      },
+      "case_id": "med42-000500",
+      "confidence_score": 0.9486,
+      "evidence_bundle": "evidence-bundle-f4000d4eb88350e5ce85f8178f2a1c03753cee353f808f5d3184841af74d688f.json",
+      "input_hash": "a1556febe4eb7784f6e2c4e628713acb5c18ac01ee25cea8b6561710367951e8",
+      "job_id": "f4000d4eb88350e5ce85f8178f2a1c03753cee353f808f5d3184841af74d688f",
+      "output_hash": "650135ee0f32385f02a7b06cffa564b139f9385789973211f430de3a8c757a7a",
+      "seal_id": "m42-seal-f4000d4eb88350e5",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-000750",
+        "category": "pharmacology",
+        "factuality": 0.9663
+      },
+      "case_id": "med42-000750",
+      "confidence_score": 0.9663,
+      "evidence_bundle": "evidence-bundle-43f233ef324bea1e206adaedda1f07a1bcee6e77f8944eaeb432e46edf2bdef8.json",
+      "input_hash": "693b80fd0659236848afb5962c4689c1c8518c06b4933d154f116656a59c0964",
+      "job_id": "43f233ef324bea1e206adaedda1f07a1bcee6e77f8944eaeb432e46edf2bdef8",
+      "output_hash": "6fd263fa56bdf8616fef7fdcdcea5b9494c0f40febe0402a26a4a1499a43c214",
+      "seal_id": "m42-seal-43f233ef324bea1e",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-001000",
+        "category": "summarization",
+        "factuality": 0.9538
+      },
+      "case_id": "med42-001000",
+      "confidence_score": 0.9538,
+      "evidence_bundle": "evidence-bundle-d150dcd3af193a3a117408f8d109d577adfc2b76ebdc8e7422c06b5209718c20.json",
+      "input_hash": "f201907d141948ea6e94131413913d17efc3efa81f5e6c1e65125f12796cffec",
+      "job_id": "d150dcd3af193a3a117408f8d109d577adfc2b76ebdc8e7422c06b5209718c20",
+      "output_hash": "a0f5e166d6074ffdd31a16bcc5b4b57be306a613bbb076251f75e3803a74df8d",
+      "seal_id": "m42-seal-d150dcd3af193a3a",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-001250",
+        "category": "triage",
+        "factuality": 0.9179
+      },
+      "case_id": "med42-001250",
+      "confidence_score": 0.9179,
+      "evidence_bundle": "evidence-bundle-d62ea57d173656b30b3da2df28fd5f5fac25cf354ea9ecdc9e55d9ee130c62e3.json",
+      "input_hash": "cdf42474dd25f1d3c7fc85e6ab24b33e142b9891ba916c8fd7923dae887ff7ed",
+      "job_id": "d62ea57d173656b30b3da2df28fd5f5fac25cf354ea9ecdc9e55d9ee130c62e3",
+      "output_hash": "cdbdc5608a0ff0d36bc171e0c01e17afcf5ff074078b26d1feae359e96963f82",
+      "seal_id": "m42-seal-d62ea57d173656b3",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-001500",
+        "category": "pharmacology",
+        "factuality": 0.9783
+      },
+      "case_id": "med42-001500",
+      "confidence_score": 0.9783,
+      "evidence_bundle": "evidence-bundle-3652a15d50941dd50d97b4c232e086578079c29e478760cf3410d171ed05a1ca.json",
+      "input_hash": "6834e1aaa6132aeb865eeaf92ab90fbc2fd3642a64934fa2996fb7a31a6e2d3a",
+      "job_id": "3652a15d50941dd50d97b4c232e086578079c29e478760cf3410d171ed05a1ca",
+      "output_hash": "667c078835f8f8eebe3b6a3deb2e09c795f1d84e1fa61cfc87d9a532cb9de720",
+      "seal_id": "m42-seal-3652a15d50941dd5",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-001750",
+        "category": "summarization",
+        "factuality": 0.9007
+      },
+      "case_id": "med42-001750",
+      "confidence_score": 0.9007,
+      "evidence_bundle": "evidence-bundle-4f57bc756a65f968ced5720edc19109d6d494b320e6dc815b161e19a2392b8ec.json",
+      "input_hash": "a53a8304f1e32bceab9bb089168a258666bf508be6d36e1d55bac0fc689cb848",
+      "job_id": "4f57bc756a65f968ced5720edc19109d6d494b320e6dc815b161e19a2392b8ec",
+      "output_hash": "71649e086e70a5d3c6c42e437711f1f068f5c2d3d32b864c02bcae06bf33cb4a",
+      "seal_id": "m42-seal-4f57bc756a65f968",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-002000",
+        "category": "triage",
+        "factuality": 0.9758
+      },
+      "case_id": "med42-002000",
+      "confidence_score": 0.9758,
+      "evidence_bundle": "evidence-bundle-94895e57f5163d9d9440a6d9d02447474dca3ee846dc981642730a2123182f7c.json",
+      "input_hash": "f7d9cac00dc1d9031303c5efe7f89067ac68e57a6970019aa74da33a82c012e0",
+      "job_id": "94895e57f5163d9d9440a6d9d02447474dca3ee846dc981642730a2123182f7c",
+      "output_hash": "203760c8ce8cc8a7b0669012a658a42349b7ea4acbffbcdd046089e15d938f40",
+      "seal_id": "m42-seal-94895e57f5163d9d",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-002250",
+        "category": "pharmacology",
+        "factuality": 0.9487
+      },
+      "case_id": "med42-002250",
+      "confidence_score": 0.9487,
+      "evidence_bundle": "evidence-bundle-5139c936266fb212680952561ab05b2f5fb3556d4c0eb6adc5a25207f5b14965.json",
+      "input_hash": "b4b9d903ac31433978340c8f9a4039995b8dec2bfeac8b99dea0db35dc3dc974",
+      "job_id": "5139c936266fb212680952561ab05b2f5fb3556d4c0eb6adc5a25207f5b14965",
+      "output_hash": "eef0be77d7dacdd1a98208645fc181619adfaf45070cef62711447c61eed97e4",
+      "seal_id": "m42-seal-5139c936266fb212",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-002500",
+        "category": "summarization",
+        "factuality": 0.952
+      },
+      "case_id": "med42-002500",
+      "confidence_score": 0.952,
+      "evidence_bundle": "evidence-bundle-4715e75e817aecae4989e72c794eee983bd3be7dbcfe8b40dc2fbeaec6bd94c1.json",
+      "input_hash": "048ad8881982a0a45cfb4a995ab28dc9ed3914314754c63dcb258bae220bc283",
+      "job_id": "4715e75e817aecae4989e72c794eee983bd3be7dbcfe8b40dc2fbeaec6bd94c1",
+      "output_hash": "40537ef6479ff2bd5fb24b29022c664155f3ecd2c23b2165020bef13c82b1cc1",
+      "seal_id": "m42-seal-4715e75e817aecae",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-002750",
+        "category": "triage",
+        "factuality": 0.904
+      },
+      "case_id": "med42-002750",
+      "confidence_score": 0.904,
+      "evidence_bundle": "evidence-bundle-f843e8695ec0c2ce395d95fa465d704e7c431f0f3927d433101c7cd932a11ba4.json",
+      "input_hash": "b511933fcb23403f89a881b648aa8260ebab73d6d7b956fa3586371ba234b31b",
+      "job_id": "f843e8695ec0c2ce395d95fa465d704e7c431f0f3927d433101c7cd932a11ba4",
+      "output_hash": "529ad3ac3df0eef068583aa9b346ec7744b01e7ae64051043138623ca188244f",
+      "seal_id": "m42-seal-f843e8695ec0c2ce",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-003000",
+        "category": "pharmacology",
+        "factuality": 0.9313
+      },
+      "case_id": "med42-003000",
+      "confidence_score": 0.9313,
+      "evidence_bundle": "evidence-bundle-cc7011c5eecd1c7aac8c8449eae1f39a86a6b3db3a25763b7efcb0437daf215c.json",
+      "input_hash": "6b0fd144f927026a665d2f39b279b72f39c6ced80287d2f168696fe1e915925d",
+      "job_id": "cc7011c5eecd1c7aac8c8449eae1f39a86a6b3db3a25763b7efcb0437daf215c",
+      "output_hash": "c1f826446c124effcf6e4ffe4c2b40d90857f145a59fb1514dd73939deb2d9ab",
+      "seal_id": "m42-seal-cc7011c5eecd1c7a",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-003250",
+        "category": "summarization",
+        "factuality": 0.9728
+      },
+      "case_id": "med42-003250",
+      "confidence_score": 0.9728,
+      "evidence_bundle": "evidence-bundle-51dbb99fad82a50a0ffdcac4ecdb5854c174aa71f88965cff76a426ff6c7dde9.json",
+      "input_hash": "8047e12dbdfd4aea90505861186a407dc216fcedf796ac3d377353f8711ec942",
+      "job_id": "51dbb99fad82a50a0ffdcac4ecdb5854c174aa71f88965cff76a426ff6c7dde9",
+      "output_hash": "a42901c4cc32e659cad63335d7f65cc313064b04cfdbb447f03848c76635bb9a",
+      "seal_id": "m42-seal-51dbb99fad82a50a",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-003500",
+        "category": "triage",
+        "factuality": 0.9645
+      },
+      "case_id": "med42-003500",
+      "confidence_score": 0.9645,
+      "evidence_bundle": "evidence-bundle-1d921065890581611f18e133a163efa9c6c1ffcf675d054f37ffa70849d6b4a2.json",
+      "input_hash": "f08deefa582b1e1dacf36b5be535718c0945b1fe82aa4d16bd87da2a2cea933f",
+      "job_id": "1d921065890581611f18e133a163efa9c6c1ffcf675d054f37ffa70849d6b4a2",
+      "output_hash": "5d95404f914005631fdeed37fcd36fecc618d5f2f38595293ddc48d392c364ed",
+      "seal_id": "m42-seal-1d92106589058161",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-003750",
+        "category": "pharmacology",
+        "factuality": 0.999
+      },
+      "case_id": "med42-003750",
+      "confidence_score": 0.999,
+      "evidence_bundle": "evidence-bundle-aa59e12964eb705d5f061fcc0ee0b48c9308fe2a6c3c76c1ffa9eb5fa9f395df.json",
+      "input_hash": "1f1aa4f7d1d0fd36b9991c3022cb5109818b2038e5ef2f14abe063083ca800b5",
+      "job_id": "aa59e12964eb705d5f061fcc0ee0b48c9308fe2a6c3c76c1ffa9eb5fa9f395df",
+      "output_hash": "c97ee4fba483819872f7e9f67802b70755ce64710753dd9d36ffb0eb2eea45be",
+      "seal_id": "m42-seal-aa59e12964eb705d",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-004000",
+        "category": "summarization",
+        "factuality": 0.9733
+      },
+      "case_id": "med42-004000",
+      "confidence_score": 0.9733,
+      "evidence_bundle": "evidence-bundle-5f72e68727b1f73f59a6fc774ff4b0fb41bca73c59c6c2ed6dd52d8685cb7b73.json",
+      "input_hash": "fe5c3aa885635b7156bfb5fbc8431e346c0da6233ee56c9cb3bc439a1bddb484",
+      "job_id": "5f72e68727b1f73f59a6fc774ff4b0fb41bca73c59c6c2ed6dd52d8685cb7b73",
+      "output_hash": "97c710238977a65b6b6ba9d3b4a610691ea08b5d3d4f012141cf0c28c93ba0a2",
+      "seal_id": "m42-seal-5f72e68727b1f73f",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-004250",
+        "category": "triage",
+        "factuality": 0.9802
+      },
+      "case_id": "med42-004250",
+      "confidence_score": 0.9802,
+      "evidence_bundle": "evidence-bundle-c0dfec06f24631a498cf94fc22efd7f0c8a6905369c093dd9df327383cd23eaa.json",
+      "input_hash": "a6f8fc6cf5b7ec35756d7ec8c8c90b20f82e272004b1b422d99dea4442345148",
+      "job_id": "c0dfec06f24631a498cf94fc22efd7f0c8a6905369c093dd9df327383cd23eaa",
+      "output_hash": "ec2751f6861133717f15f1a6e630c445b7372b58c958b7106395baea530f7347",
+      "seal_id": "m42-seal-c0dfec06f24631a4",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-004500",
+        "category": "pharmacology",
+        "factuality": 0.999
+      },
+      "case_id": "med42-004500",
+      "confidence_score": 0.999,
+      "evidence_bundle": "evidence-bundle-b5b210ba3d0fff276a9a496aa3b6743365c0e038baaee92eb92aa0d96f434eec.json",
+      "input_hash": "a2a7bed13794137dfc46559eb035442472ab246d1906072498c8270fe6971141",
+      "job_id": "b5b210ba3d0fff276a9a496aa3b6743365c0e038baaee92eb92aa0d96f434eec",
+      "output_hash": "c97ee4fba483819872f7e9f67802b70755ce64710753dd9d36ffb0eb2eea45be",
+      "seal_id": "m42-seal-b5b210ba3d0fff27",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-004750",
+        "category": "summarization",
+        "factuality": 0.9216
+      },
+      "case_id": "med42-004750",
+      "confidence_score": 0.9216,
+      "evidence_bundle": "evidence-bundle-6b9626bc23872b18e2565e83ab80d6cd5905455870f6a130fe213a8545d48f29.json",
+      "input_hash": "3b5878322e0189948c75e36583e7637bef6f9ee447d5f838c918de381d4b228b",
+      "job_id": "6b9626bc23872b18e2565e83ab80d6cd5905455870f6a130fe213a8545d48f29",
+      "output_hash": "488164de57b674ec82ff1a1ae380163ed6e90740622616f91e88d2c91f52f8f6",
+      "seal_id": "m42-seal-6b9626bc23872b18",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-005000",
+        "category": "triage",
+        "factuality": 0.991
+      },
+      "case_id": "med42-005000",
+      "confidence_score": 0.991,
+      "evidence_bundle": "evidence-bundle-172910c9b9c055b10e3142b667f7fdadf07c27da70f39f6d48c5b1837b04f1ed.json",
+      "input_hash": "0fe29b5ab395c2291002a17b6748b2913a51585d80a9e79878f34f4e84ab82d9",
+      "job_id": "172910c9b9c055b10e3142b667f7fdadf07c27da70f39f6d48c5b1837b04f1ed",
+      "output_hash": "f54d6ea365bb9239e9c5654b44ec5a26bf816c2fc2d866723cb61cc423151669",
+      "seal_id": "m42-seal-172910c9b9c055b1",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-005250",
+        "category": "pharmacology",
+        "factuality": 0.9483
+      },
+      "case_id": "med42-005250",
+      "confidence_score": 0.9483,
+      "evidence_bundle": "evidence-bundle-dd1d98243211b65bbe63f47e4329142fb3743fdae3b4a9b0f2ef0bb53aab4d70.json",
+      "input_hash": "e2bed1e401ef9352216f57eaeb8202f01b1731fbb5f2799c2e056c1e4f144d78",
+      "job_id": "dd1d98243211b65bbe63f47e4329142fb3743fdae3b4a9b0f2ef0bb53aab4d70",
+      "output_hash": "e3064c2412d3f99b7b8dd99ff0be3e71cc2712a726586c70a620171bd896ff0e",
+      "seal_id": "m42-seal-dd1d98243211b65b",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-005500",
+        "category": "summarization",
+        "factuality": 0.9703
+      },
+      "case_id": "med42-005500",
+      "confidence_score": 0.9703,
+      "evidence_bundle": "evidence-bundle-8d5307d2a945ea8553babe113e192189b230f98472bd1494bddc4266357b8ebe.json",
+      "input_hash": "53a42309c0c50cbfad2bb31ff001bc3f95522333b8fd160f84da918234122bc0",
+      "job_id": "8d5307d2a945ea8553babe113e192189b230f98472bd1494bddc4266357b8ebe",
+      "output_hash": "29787786ad93bee4c25e77d04f98d3fa30cdd494252257668366096b7f76b0da",
+      "seal_id": "m42-seal-8d5307d2a945ea85",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-005750",
+        "category": "triage",
+        "factuality": 0.9574
+      },
+      "case_id": "med42-005750",
+      "confidence_score": 0.9574,
+      "evidence_bundle": "evidence-bundle-43eb19b5ea3d6958f25da9a04aa9668efa74acf8acd1a90d86c271e19bad935f.json",
+      "input_hash": "304db3e4ec531f617cfd53cec7a9503b93eae572d2087e270bc51524e7435579",
+      "job_id": "43eb19b5ea3d6958f25da9a04aa9668efa74acf8acd1a90d86c271e19bad935f",
+      "output_hash": "6025c1a5393a38e2232d39237f2553a590674e272ad39ed8c0ea3a19ef5ef2d5",
+      "seal_id": "m42-seal-43eb19b5ea3d6958",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-006000",
+        "category": "pharmacology",
+        "factuality": 0.9603
+      },
+      "case_id": "med42-006000",
+      "confidence_score": 0.9603,
+      "evidence_bundle": "evidence-bundle-a3b7611209fadee9bce055c1876e63f9217363a36b59db8a9efadb44219ada67.json",
+      "input_hash": "f69148ab9cdb8c3119d22c865eea63785293baaaf8fd1be639ca5dec92970d25",
+      "job_id": "a3b7611209fadee9bce055c1876e63f9217363a36b59db8a9efadb44219ada67",
+      "output_hash": "1925385c0144e4f5ee7cf30523ef0c9ae5d12657b1a26976d1c8bb6ba15cb354",
+      "seal_id": "m42-seal-a3b7611209fadee9",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-006250",
+        "category": "summarization",
+        "factuality": 0.9456
+      },
+      "case_id": "med42-006250",
+      "confidence_score": 0.9456,
+      "evidence_bundle": "evidence-bundle-f38cbd36e168926f06eec46ee90679c9ef25cc6c23ae77351018ce880c34edd5.json",
+      "input_hash": "fb55a8e5fdd8adf819d5182b54be7fff8f7197dcde0ddf931a8c9ec48ddc3d2f",
+      "job_id": "f38cbd36e168926f06eec46ee90679c9ef25cc6c23ae77351018ce880c34edd5",
+      "output_hash": "34db92d8c0ca9c6e0203cacdfc2c23acb5e92b70e8aaf5a4a8f5ce88189c0a37",
+      "seal_id": "m42-seal-f38cbd36e168926f",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-006500",
+        "category": "triage",
+        "factuality": 0.9577
+      },
+      "case_id": "med42-006500",
+      "confidence_score": 0.9577,
+      "evidence_bundle": "evidence-bundle-23fa843c56640b4edce17cdbca0bf53d14fe7285827ded793155003d131f62a9.json",
+      "input_hash": "16bb56a4fa0e3313a7b3df89d2ea55895c4b97f491d9f24d01fc74c87f5a80be",
+      "job_id": "23fa843c56640b4edce17cdbca0bf53d14fe7285827ded793155003d131f62a9",
+      "output_hash": "a9614e6ba793389cfc4367620ca156e6e693f45a743b13277d6e9a2f4846852b",
+      "seal_id": "m42-seal-23fa843c56640b4e",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-006750",
+        "category": "pharmacology",
+        "factuality": 0.9759
+      },
+      "case_id": "med42-006750",
+      "confidence_score": 0.9759,
+      "evidence_bundle": "evidence-bundle-49928da1e9b51d5f7446d843b8d3649845d119ec44afa2285c7f56907e813adc.json",
+      "input_hash": "c24eb6cb27f5675ddb088d4f8f7a32be3f92b856932d1dff663faa49a3532bce",
+      "job_id": "49928da1e9b51d5f7446d843b8d3649845d119ec44afa2285c7f56907e813adc",
+      "output_hash": "89ad8b7441626b24167a7b9211b71020c198c79bd1dac49e24e641ea1c70247d",
+      "seal_id": "m42-seal-49928da1e9b51d5f",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-007000",
+        "category": "summarization",
+        "factuality": 0.9193
+      },
+      "case_id": "med42-007000",
+      "confidence_score": 0.9193,
+      "evidence_bundle": "evidence-bundle-f5ff1df70b73acfa527dbae1a7483416935c090ce56e14db8b987d053ac25318.json",
+      "input_hash": "704a7a12dc969790a40d605fa5a9ab025d25fc7525cd5eec24a93a538cbb9ad8",
+      "job_id": "f5ff1df70b73acfa527dbae1a7483416935c090ce56e14db8b987d053ac25318",
+      "output_hash": "598074e352781083788149541fe50997f333adff0c296be57dd0307f5e94eab0",
+      "seal_id": "m42-seal-f5ff1df70b73acfa",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-007250",
+        "category": "triage",
+        "factuality": 0.9943
+      },
+      "case_id": "med42-007250",
+      "confidence_score": 0.9943,
+      "evidence_bundle": "evidence-bundle-729e24a422539e96263c5591f5e3e6e35586e1e92273604e19b3498bcd80d46f.json",
+      "input_hash": "5bd057e056ef9b4e4e75977283451c9813077dbb0d00f9407d041430930e51cd",
+      "job_id": "729e24a422539e96263c5591f5e3e6e35586e1e92273604e19b3498bcd80d46f",
+      "output_hash": "a7f85d6aaad65feb604f27d6e87275a9622675918644891f914dbb66975f1856",
+      "seal_id": "m42-seal-729e24a422539e96",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-007500",
+        "category": "pharmacology",
+        "factuality": 0.9146
+      },
+      "case_id": "med42-007500",
+      "confidence_score": 0.9146,
+      "evidence_bundle": "evidence-bundle-553cc927d2e0cde22f38f6a737d083a15566811e3d4300b3e8ec266f41786637.json",
+      "input_hash": "3dec2e56300ddbe425fc169f5334c5f4e73f08008f5f9c15381e050844037d3e",
+      "job_id": "553cc927d2e0cde22f38f6a737d083a15566811e3d4300b3e8ec266f41786637",
+      "output_hash": "82102b609c1a23436cbfa85805173d7339357954b348a9afabb4e9c7950aceca",
+      "seal_id": "m42-seal-553cc927d2e0cde2",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-007750",
+        "category": "summarization",
+        "factuality": 0.999
+      },
+      "case_id": "med42-007750",
+      "confidence_score": 0.999,
+      "evidence_bundle": "evidence-bundle-8c33e53426c6210a68de6507fef983d64154b5ac832fbbb80c2d21189b3dbdda.json",
+      "input_hash": "e3e0b196d032dc10a72b1f095b93cfa5be19ab2424e3d17cde5f41717726a6b8",
+      "job_id": "8c33e53426c6210a68de6507fef983d64154b5ac832fbbb80c2d21189b3dbdda",
+      "output_hash": "b5774461203295b163677dda23d19bf3feaed32c6c86588d64f44ca1ba3443a1",
+      "seal_id": "m42-seal-8c33e53426c6210a",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-008000",
+        "category": "triage",
+        "factuality": 0.9729
+      },
+      "case_id": "med42-008000",
+      "confidence_score": 0.9729,
+      "evidence_bundle": "evidence-bundle-fa2bf215624d27932c2e1ee19c5f20c98eeed1197962932515a6437acc4ed114.json",
+      "input_hash": "a537defa2193e8efc9b3777d8f49d6fd7a5b75792c9e14a71b9dc3738e386819",
+      "job_id": "fa2bf215624d27932c2e1ee19c5f20c98eeed1197962932515a6437acc4ed114",
+      "output_hash": "becfebbdf75ca9b9ae6dc957967fcff3cac944defcedac145e632e3c9e0af8d6",
+      "seal_id": "m42-seal-fa2bf215624d2793",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-008250",
+        "category": "pharmacology",
+        "factuality": 0.9612
+      },
+      "case_id": "med42-008250",
+      "confidence_score": 0.9612,
+      "evidence_bundle": "evidence-bundle-fade7d6b443acb5861b4326d59e399e7d19d073a8ea2f5e70a7f9e538994b9e5.json",
+      "input_hash": "30fc3ffb7dc00f10bdefa90b246ddd86982eed84917c90b5927b4be7bbcab7cc",
+      "job_id": "fade7d6b443acb5861b4326d59e399e7d19d073a8ea2f5e70a7f9e538994b9e5",
+      "output_hash": "a726cd2cd2e589370b8403d5442d82f28dd5b747312718c6487113e8164d5ebf",
+      "seal_id": "m42-seal-fade7d6b443acb58",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-008500",
+        "category": "summarization",
+        "factuality": 0.999
+      },
+      "case_id": "med42-008500",
+      "confidence_score": 0.999,
+      "evidence_bundle": "evidence-bundle-bc1206acc83fcc33382ae79669ef08c934a852740807230714817610e3512212.json",
+      "input_hash": "6e894b44027c43a89fc5a3b04d502bdf92feb3337777e3a0d20bd34295a93ab3",
+      "job_id": "bc1206acc83fcc33382ae79669ef08c934a852740807230714817610e3512212",
+      "output_hash": "7f75fbd686b1a0092775f14cca4d7b27675f83eeed089fbd4927ab1691c49f75",
+      "seal_id": "m42-seal-bc1206acc83fcc33",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-008750",
+        "category": "triage",
+        "factuality": 0.9737
+      },
+      "case_id": "med42-008750",
+      "confidence_score": 0.9737,
+      "evidence_bundle": "evidence-bundle-a6f8967ae19516a396fb3dbe1db27db324ec6666277d521461952b9f45c99fe4.json",
+      "input_hash": "9c48d9c510e4a7bb00837702a3284363de4f31ea93c1dafa074c86d76cf64956",
+      "job_id": "a6f8967ae19516a396fb3dbe1db27db324ec6666277d521461952b9f45c99fe4",
+      "output_hash": "6efb728a4b9a31fce8f47b0c832c77e745bb6d85f8bc445e502b9337f21c761f",
+      "seal_id": "m42-seal-a6f8967ae19516a3",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-009000",
+        "category": "pharmacology",
+        "factuality": 0.9437
+      },
+      "case_id": "med42-009000",
+      "confidence_score": 0.9437,
+      "evidence_bundle": "evidence-bundle-792b2790e8cf9329291cb24783efb1ae1aeed62445368afde41c76e8cb24ee1f.json",
+      "input_hash": "57b60629c2501f1044db3853d8c9e224885f65e7ad4808c45984c5fd4abc8c8a",
+      "job_id": "792b2790e8cf9329291cb24783efb1ae1aeed62445368afde41c76e8cb24ee1f",
+      "output_hash": "dd273dc382fbee22a3a38a30b753b177b0fc38e14f8bbff43bf32d62071c18d2",
+      "seal_id": "m42-seal-792b2790e8cf9329",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-009250",
+        "category": "summarization",
+        "factuality": 0.9745
+      },
+      "case_id": "med42-009250",
+      "confidence_score": 0.9745,
+      "evidence_bundle": "evidence-bundle-0055512ae18c470d853b28b53b435d1afbfcb0ce38523879839ae0eab8ec3ba9.json",
+      "input_hash": "795fd767d01aa108b8fac0d24db168df8eda9f74598090d3bca527a31031a69a",
+      "job_id": "0055512ae18c470d853b28b53b435d1afbfcb0ce38523879839ae0eab8ec3ba9",
+      "output_hash": "e59d937041dcc5aa523feca01fca1c085ed6f073776ed32cb8ba24414e12eba3",
+      "seal_id": "m42-seal-0055512ae18c470d",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-009500",
+        "category": "triage",
+        "factuality": 0.9682
+      },
+      "case_id": "med42-009500",
+      "confidence_score": 0.9682,
+      "evidence_bundle": "evidence-bundle-ef44d32135a92235bd07e1abb07c58032671cecdddc2a618fe266cac355bd0c2.json",
+      "input_hash": "07cce8068abecd7afb17d62e00de6e576ae83a014259500229e067b178abbb54",
+      "job_id": "ef44d32135a92235bd07e1abb07c58032671cecdddc2a618fe266cac355bd0c2",
+      "output_hash": "99348f7673e6f846ffe892bd5ae36c124f7106a92f49c254b743e672b00f79ae",
+      "seal_id": "m42-seal-ef44d32135a92235",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    },
+    {
+      "accepted": true,
+      "baseline_cost_usd": 0.042,
+      "baseline_latency_ms": 1010,
+      "case_evaluation": {
+        "case_id": "med42-009750",
+        "category": "pharmacology",
+        "factuality": 0.9915
+      },
+      "case_id": "med42-009750",
+      "confidence_score": 0.9915,
+      "evidence_bundle": "evidence-bundle-5369b630104681edde4e7375c395bdd378c8b3c341f0d74fa516427201c51cff.json",
+      "input_hash": "30480bdd4f1815c6ea5fb2ba45ff004514d7c06b4256b8807896c9938e0726c6",
+      "job_id": "5369b630104681edde4e7375c395bdd378c8b3c341f0d74fa516427201c51cff",
+      "output_hash": "1e55a8be5947ed7470064e0a4cc2bc09546c469ecda5b2ffb0c428e30f340e94",
+      "seal_id": "m42-seal-5369b630104681ed",
+      "verified_cost_usd": 0.061,
+      "verified_latency_ms": 1450
+    }
+  ],
+  "evidence_sampling": {
+    "cases_evaluated": 10000,
+    "evidence_bundles_materialized": 40,
+    "note": "Domain metrics and confidence intervals are computed over all evaluated cases; per-case cryptographic evidence is materialized for a stratified sample.",
+    "sampling": "stratified_review_sample"
+  },
+  "generated_at": "2026-06-14T11:18:29Z",
+  "hybrid_evidence_bundle_coverage": 1.0,
+  "latency_delta_p50_ms": 440.0,
+  "measured_energy": {
+    "drill_scoring_measured": {
+      "avg_power_watts": 90.0,
+      "basis": "device_profile_estimate",
+      "carbon_kg_co2e": 0.0,
+      "cost_micro_usd_per_inference": 0.0,
+      "device_class": "cpu-generic",
+      "energy_cost_usd": 0.0,
+      "energy_wh_per_1k_inferences": 0.0001,
+      "every_watt_accounted": true,
+      "facility_energy_kwh": 1e-06,
+      "inferences": 10000,
+      "measured_device_ms": 24,
+      "note": "Measured wall-clock; energy via the published ENERGY_MODEL. basis=device_profile_estimate (live meter where available, else a documented device-profile estimate). receipt_hash uses the on-chain WorkReceipt encoding and is independently verifiable.",
+      "receipt_hash": "ab5cc7c468c9b2a0247981115f49db1f3de48170e53307687f4cae01445c3e12",
+      "useful_work_units": 10000
+    },
+    "energy_model": {
+      "electricity_cost_micro_usd_per_kwh": 80000,
+      "grid_carbon_grams_per_kwh": 400,
+      "pow_baseline_wasted_ratio_milli": 1000,
+      "pue_milli": 1200
+    },
+    "honesty": "drill_scoring_measured is a live wall-clock measurement of the pilot scoring run. real_inference_projected models running the workload's real model at its stated per-inference latency on the declared GPU; it is a projection, not a measurement. Both use the on-chain EnergyModel and both receipt hashes verify against the protocol.",
+    "real_inference_projected": {
+      "avg_power_watts": 240.0,
+      "basis": "device_profile_estimate",
+      "carbon_kg_co2e": 0.464,
+      "cost_micro_usd_per_inference": 9.28,
+      "device_class": "nvidia-a100",
+      "energy_cost_usd": 0.0928,
+      "energy_wh_per_1k_inferences": 116.0,
+      "every_watt_accounted": true,
+      "facility_energy_kwh": 1.16,
+      "inferences": 10000,
+      "measured_device_ms": 14500000,
+      "note": "Measured wall-clock; energy via the published ENERGY_MODEL. basis=device_profile_estimate (live meter where available, else a documented device-profile estimate). receipt_hash uses the on-chain WorkReceipt encoding and is independently verifiable.",
+      "per_inference_latency_ms": 1450,
+      "projection": true,
+      "receipt_hash": "289dc90b730688d15f0a0dc73f3f14c7ec9d35490d789e44107725670dd4c676",
+      "useful_work_units": 10000
+    }
+  },
+  "metric_floors": {
+    "all_floors_met": true,
+    "checks": [
+      {
+        "comparison": ">=",
+        "floor": 0.95,
+        "met": true,
+        "metric": "clinical_factuality",
+        "observed": 0.9634
+      },
+      {
+        "comparison": ">=",
+        "floor": 0.98,
+        "met": true,
+        "metric": "safety_flag_recall",
+        "observed": 0.9902
+      },
+      {
+        "comparison": ">=",
+        "floor": 0.85,
+        "met": true,
+        "metric": "benchmark_accuracy",
+        "observed": 0.927
+      },
+      {
+        "comparison": ">=",
+        "floor": 1.0,
+        "met": true,
+        "metric": "adverse_prompt_rejection_rate",
+        "observed": 1.0
+      },
+      {
+        "comparison": "<=",
+        "floor": 0.1,
+        "met": true,
+        "metric": "safety_recall_specialty_gap_max",
+        "observed": 0.0044
+      }
+    ]
+  },
+  "p50_latency_ms": 1450.0,
+  "p95_latency_ms": 1450.0,
+  "sandbox_id": "m42-exclusive-pretestnet",
+  "single_evidence_fallback_cases": 0,
+  "statistical_rigor": {
+    "benchmark_per_category_accuracy": {
+      "diagnosis": 0.9232,
+      "guidelines": 0.91,
+      "pharmacology": 0.895,
+      "safety": 0.958,
+      "summarization": 0.9382,
+      "triage": 0.9376
+    },
+    "confidence_intervals": {
+      "benchmark_accuracy_95ci": [
+        0.9217,
+        0.9319
+      ],
+      "safety_flag_recall_95ci": [
+        0.986,
+        0.9931
+      ]
+    },
+    "subgroups": {
+      "specialty_safety_recall": {
+        "disparity_gap": 0.0044,
+        "groups": {
+          "cardiology": {
+            "n": 1618,
+            "value": 0.9906
+          },
+          "endocrinology": {
+            "n": 1665,
+            "value": 0.9903
+          },
+          "nephrology": {
+            "n": 1755,
+            "value": 0.9925
+          },
+          "neurology": {
+            "n": 1610,
+            "value": 0.9912
+          },
+          "oncology": {
+            "n": 1693,
+            "value": 0.9884
+          },
+          "pulmonology": {
+            "n": 1659,
+            "value": 0.9881
+          }
+        },
+        "max_subgroup_value": 0.9925,
+        "min_subgroup_value": 0.9881
+      }
+    }
+  },
+  "tee_attestation_coverage": 1.0,
+  "throughput_units_per_hour": 2600,
+  "total_cost_usd": 610.0,
+  "workload": "med42-clinical-evaluation",
+  "workload_kind": "clinical_language_evaluation",
+  "zkml_proof_reference_coverage": 1.0
+}

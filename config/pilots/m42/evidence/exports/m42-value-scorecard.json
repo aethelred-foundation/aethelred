@@ -1,0 +1,133 @@
+{
+  "artifact_mode": "pretestnet_drill_fixture",
+  "customer": "M42",
+  "executive_value": {
+    "all_metric_floors_met": true,
+    "decision_package": "baseline, verified run, evidence bundles, value bank, mutual action plan, negative controls, and executive readout",
+    "evidence_completeness": "100% drill coverage across accepted synthetic cases",
+    "negative_controls": "6 rejection controls defined for live run",
+    "pilot_fee_usd": 200000,
+    "primary_metric": "clinical_factuality",
+    "primary_metric_value": 0.9634,
+    "sovereign_processing_boundary": "UAE / Abu Dhabi pilot sandbox",
+    "target_sponsor_value_usd": 1000000,
+    "target_value_multiple": 5
+  },
+  "metrics": {
+    "baseline_p50_latency_ms": 1010.0,
+    "baseline_total_cost_usd": 420.0,
+    "cases": 40,
+    "cost_delta_total_usd": 190.0,
+    "digital_seal_coverage": 1.0,
+    "domain_metrics": {
+      "adverse_prompt_rejection_rate": 1.0,
+      "benchmark_accuracy": 0.927,
+      "cases_evaluated": 10000,
+      "clinical_factuality": 0.9634,
+      "escalation_match_rate": 0.9744,
+      "safety_flag_recall": 0.9902,
+      "safety_recall_specialty_gap": 0.0044
+    },
+    "hybrid_evidence_bundle_coverage": 1.0,
+    "latency_delta_p50_ms": 440.0,
+    "metric_floors": {
+      "all_floors_met": true,
+      "checks": [
+        {
+          "comparison": ">=",
+          "floor": 0.95,
+          "met": true,
+          "metric": "clinical_factuality",
+          "observed": 0.9634
+        },
+        {
+          "comparison": ">=",
+          "floor": 0.98,
+          "met": true,
+          "metric": "safety_flag_recall",
+          "observed": 0.9902
+        },
+        {
+          "comparison": ">=",
+          "floor": 0.85,
+          "met": true,
+          "metric": "benchmark_accuracy",
+          "observed": 0.927
+        },
+        {
+          "comparison": ">=",
+          "floor": 1.0,
+          "met": true,
+          "metric": "adverse_prompt_rejection_rate",
+          "observed": 1.0
+        },
+        {
+          "comparison": "<=",
+          "floor": 0.1,
+          "met": true,
+          "metric": "safety_recall_specialty_gap_max",
+          "observed": 0.0044
+        }
+      ]
+    },
+    "single_evidence_fallback_cases": 0,
+    "verified_p50_latency_ms": 1450.0,
+    "verified_total_cost_usd": 610.0
+  },
+  "next_live_gate": "make m42-sandbox-up && make m42-sandbox-validate",
+  "statistical_rigor": {
+    "benchmark_per_category_accuracy": {
+      "diagnosis": 0.9232,
+      "guidelines": 0.91,
+      "pharmacology": 0.895,
+      "safety": 0.958,
+      "summarization": 0.9382,
+      "triage": 0.9376
+    },
+    "confidence_intervals": {
+      "benchmark_accuracy_95ci": [
+        0.9217,
+        0.9319
+      ],
+      "safety_flag_recall_95ci": [
+        0.986,
+        0.9931
+      ]
+    },
+    "subgroups": {
+      "specialty_safety_recall": {
+        "disparity_gap": 0.0044,
+        "groups": {
+          "cardiology": {
+            "n": 1618,
+            "value": 0.9906
+          },
+          "endocrinology": {
+            "n": 1665,
+            "value": 0.9903
+          },
+          "nephrology": {
+            "n": 1755,
+            "value": 0.9925
+          },
+          "neurology": {
+            "n": 1610,
+            "value": 0.9912
+          },
+          "oncology": {
+            "n": 1693,
+            "value": 0.9884
+          },
+          "pulmonology": {
+            "n": 1659,
+            "value": 0.9881
+          }
+        },
+        "max_subgroup_value": 0.9925,
+        "min_subgroup_value": 0.9881
+      }
+    }
+  },
+  "workload": "med42-clinical-evaluation",
+  "workload_kind": "clinical_language_evaluation"
+}

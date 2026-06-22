@@ -1,0 +1,84 @@
+{
+  "artifact_mode": "verifiable_inference",
+  "generated_at": "2026-06-14T11:54:45Z",
+  "scheme": "Freivalds matmul verification over GF(2^61-1) + IO commitments + Digital Seal",
+  "layer": {
+    "d_out": 256,
+    "d_in": 128,
+    "batch": 32
+  },
+  "freivalds": {
+    "rounds": 3,
+    "soundness_error": 8.156630584998156e-56,
+    "correct_output_verified": true,
+    "single_element_tamper_rejected": true,
+    "prove_ms": 222.95,
+    "verify_ms": 34.5,
+    "recompute_ops": 1048576,
+    "freivalds_verify_ops": 135168,
+    "speedup": 7.76
+  },
+  "commitments": {
+    "weights_hash": "73bf7760d850715485ddfdb188a6f886830ab30a664f8e93dca61c66df0fc35c",
+    "activations_hash": "a3d95dce8c948ca166b4c069e95805e4925ff3fca66314d70ca371a93ec407c0",
+    "output_hash": "7a6ec5bbbe3207bb1eded3fad81b32d3a20926932b5d09f5ed410cae41206546"
+  },
+  "digital_seal_verified": true,
+  "verification_summary": {
+    "batch_ok": true,
+    "batch_checks": [
+      {
+        "name": "validator_classical_signature",
+        "passed": true,
+        "detail": "Ed25519 batch signature valid"
+      },
+      {
+        "name": "validator_pqc_signature",
+        "passed": true,
+        "detail": "post-quantum XMSS batch signature valid (NIST Category 5)"
+      },
+      {
+        "name": "batch_tee_attestation",
+        "passed": true,
+        "detail": "attestation chain, measurement, freshness, and binding verified"
+      }
+    ],
+    "seal_results": [
+      [
+        "e8f1daad25e6fed42a065132d8184e490da8371f3977f25b7761ebf0d4aabdbf",
+        true,
+        [
+          {
+            "name": "seal_id_integrity",
+            "passed": true,
+            "detail": "seal_id is the hash of the bound body"
+          },
+          {
+            "name": "seal_merkle_inclusion",
+            "passed": true,
+            "detail": "seal is in the validator-signed batch"
+          },
+          {
+            "name": "attestation_binding",
+            "passed": true,
+            "detail": "model/IO/policy are bound by the TEE attestation"
+          },
+          {
+            "name": "zkml_proof",
+            "passed": true,
+            "detail": "Schnorr NIZK verifies, bound to the committed IO"
+          },
+          {
+            "name": "policy_no_fallback",
+            "passed": true,
+            "detail": "no single-evidence fallback permitted"
+          }
+        ],
+        true
+      ]
+    ],
+    "verified_count": 1,
+    "total": 1
+  },
+  "honesty": "Freivalds gives probabilistic (not zero-knowledge) verification of the matmuls that dominate transformer compute, with soundness error p^-rounds. It does not hide inputs; confidentiality is provided by the TEE. This is the real verification path for models too large to zk-SNARK."
+}

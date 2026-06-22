@@ -1,0 +1,145 @@
+{
+  "artifact_mode": "pretestnet_drill_fixture",
+  "controls": [
+    {
+      "control": "output_substitution",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "seal_id_integrity",
+        "seal_merkle_inclusion",
+        "attestation_binding"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "324f43eaae8b95c754e7d26877c24cc3b6e86809bb36a5eb3404b631dc9ec21e",
+      "mutation": "swap the committed output under the signed seal",
+      "observed_rejection_code": "M42_CRYPTO_OUTPUT_SUBSTITUTION",
+      "observed_rejection_reason": "seal_id mismatch (tampered)",
+      "observed_result": "reject",
+      "reason": "The validator-signed seal root and the attested report-data bind the exact output commitment.",
+      "request_id": "98839ca8-8673-42ff-a8ab-d31040c3980d",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    },
+    {
+      "control": "wrong_model_hash",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "seal_id_integrity",
+        "seal_merkle_inclusion",
+        "attestation_binding"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "871f262016e557a6f0090dc346645a8c2c1151fe2e05281571380c074ddc24fb",
+      "mutation": "substitute the model hash",
+      "observed_rejection_code": "M42_CRYPTO_WRONG_MODEL_HASH",
+      "observed_rejection_reason": "seal_id mismatch (tampered)",
+      "observed_result": "reject",
+      "reason": "The signed seal body and the attestation binding bind the model hash.",
+      "request_id": "b3f313d4-4e6c-4df6-86b9-831ed1e6b4b0",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    },
+    {
+      "control": "policy_fallback",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "seal_id_integrity",
+        "seal_merkle_inclusion",
+        "attestation_binding",
+        "policy_no_fallback"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "40367419841907e9ca44dbf6f8355779f9847b77e19ec32f4450c941e0df45f7",
+      "mutation": "weaken policy to allow a single-evidence fallback",
+      "observed_rejection_code": "M42_CRYPTO_POLICY_FALLBACK",
+      "observed_rejection_reason": "seal_id mismatch (tampered)",
+      "observed_result": "reject",
+      "reason": "No single-evidence fallback is accepted.",
+      "request_id": "f93d5b93-c8a5-4cb6-bb11-fbc3421ad7c1",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    },
+    {
+      "control": "forged_inclusion_proof",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "seal_merkle_inclusion"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "dea6fcc60d5ebdb6aaec5f505e7ea0b5cbe3b11fe87120010d397df5ddcb368f",
+      "mutation": "forge the Merkle inclusion proof",
+      "observed_rejection_code": "M42_CRYPTO_FORGED_INCLUSION_PROOF",
+      "observed_rejection_reason": "seal not in the signed batch (forged/altered)",
+      "observed_result": "reject",
+      "reason": "The seal must be included in the validator-signed batch root.",
+      "request_id": "cab3daa0-7b74-4697-ad9b-25079f419cdc",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    },
+    {
+      "control": "forged_validator_signature",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "validator_classical_signature"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "ce70c09a368b56f264860c2f78a2288dd3b736600143f03b158b5444fa86ffab",
+      "mutation": "replace the validator hybrid signature",
+      "observed_rejection_code": "M42_CRYPTO_FORGED_VALIDATOR_SIGNATURE",
+      "observed_rejection_reason": "classical signature invalid",
+      "observed_result": "reject",
+      "reason": "Both the Ed25519 and post-quantum XMSS legs must verify.",
+      "request_id": "c47abcd7-190b-4963-a61b-d7792c6c5e2a",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    },
+    {
+      "control": "forged_pqc_signature",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "validator_pqc_signature"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "ce70c09a368b56f264860c2f78a2288dd3b736600143f03b158b5444fa86ffab",
+      "mutation": "forge the post-quantum (XMSS) signature leg",
+      "observed_rejection_code": "M42_CRYPTO_FORGED_PQC_SIGNATURE",
+      "observed_rejection_reason": "post-quantum signature invalid",
+      "observed_result": "reject",
+      "reason": "The post-quantum signature must verify against the published XMSS root.",
+      "request_id": "9e3a5bbf-a9ea-49ac-8dba-1489ea31b7b4",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    },
+    {
+      "control": "untrusted_attestation_root",
+      "execution_mode": "real_cryptographic_verifier",
+      "expected_result": "reject",
+      "failed_checks": [
+        "batch_tee_attestation"
+      ],
+      "live_submission_required": false,
+      "mutated_seal_hash": "ce70c09a368b56f264860c2f78a2288dd3b736600143f03b158b5444fa86ffab",
+      "mutation": "re-sign the batch attestation with an attacker root",
+      "observed_rejection_code": "M42_CRYPTO_UNTRUSTED_ATTESTATION_ROOT",
+      "observed_rejection_reason": "certificate signature invalid (untrusted enclave key)",
+      "observed_result": "reject",
+      "reason": "The attestation certificate must chain to the published provisioning root.",
+      "request_id": "ab976e4d-7965-493f-8695-550a64f278a0",
+      "reviewer_signoff_status": "verifiable_now",
+      "submitted_to": "m42_seal.verify_batch / verify_seal (independent verifier)"
+    }
+  ],
+  "summary": {
+    "accepted_bad_cases": 0,
+    "controls_defined": 7,
+    "expected_rejections": 7,
+    "observed_rejections": 7
+  },
+  "workload": "med42-clinical-evaluation"
+}

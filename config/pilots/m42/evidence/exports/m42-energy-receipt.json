@@ -1,0 +1,65 @@
+{
+  "inference_receipt": {
+    "avg_power_milliwatts": 240000,
+    "basis": "device_profile_estimate",
+    "device_class": "nvidia-a100",
+    "device_milliseconds": 14500000,
+    "job_id": "m42-med42-clinical-evaluation-inference",
+    "receipt_hash": "289dc90b730688d15f0a0dc73f3f14c7ec9d35490d789e44107725670dd4c676",
+    "useful_work_units": 10000,
+    "validator": "aethelred-m42-pilot-validator"
+  },
+  "report": {
+    "drill_scoring_measured": {
+      "avg_power_watts": 90.0,
+      "basis": "device_profile_estimate",
+      "carbon_kg_co2e": 0.0,
+      "cost_micro_usd_per_inference": 0.0,
+      "device_class": "cpu-generic",
+      "energy_cost_usd": 0.0,
+      "energy_wh_per_1k_inferences": 0.0001,
+      "every_watt_accounted": true,
+      "facility_energy_kwh": 1e-06,
+      "inferences": 10000,
+      "measured_device_ms": 24,
+      "note": "Measured wall-clock; energy via the published ENERGY_MODEL. basis=device_profile_estimate (live meter where available, else a documented device-profile estimate). receipt_hash uses the on-chain WorkReceipt encoding and is independently verifiable.",
+      "receipt_hash": "ab5cc7c468c9b2a0247981115f49db1f3de48170e53307687f4cae01445c3e12",
+      "useful_work_units": 10000
+    },
+    "energy_model": {
+      "electricity_cost_micro_usd_per_kwh": 80000,
+      "grid_carbon_grams_per_kwh": 400,
+      "pow_baseline_wasted_ratio_milli": 1000,
+      "pue_milli": 1200
+    },
+    "honesty": "drill_scoring_measured is a live wall-clock measurement of the pilot scoring run. real_inference_projected models running the workload's real model at its stated per-inference latency on the declared GPU; it is a projection, not a measurement. Both use the on-chain EnergyModel and both receipt hashes verify against the protocol.",
+    "real_inference_projected": {
+      "avg_power_watts": 240.0,
+      "basis": "device_profile_estimate",
+      "carbon_kg_co2e": 0.464,
+      "cost_micro_usd_per_inference": 9.28,
+      "device_class": "nvidia-a100",
+      "energy_cost_usd": 0.0928,
+      "energy_wh_per_1k_inferences": 116.0,
+      "every_watt_accounted": true,
+      "facility_energy_kwh": 1.16,
+      "inferences": 10000,
+      "measured_device_ms": 14500000,
+      "note": "Measured wall-clock; energy via the published ENERGY_MODEL. basis=device_profile_estimate (live meter where available, else a documented device-profile estimate). receipt_hash uses the on-chain WorkReceipt encoding and is independently verifiable.",
+      "per_inference_latency_ms": 1450,
+      "projection": true,
+      "receipt_hash": "289dc90b730688d15f0a0dc73f3f14c7ec9d35490d789e44107725670dd4c676",
+      "useful_work_units": 10000
+    }
+  },
+  "scoring_receipt": {
+    "avg_power_milliwatts": 90000,
+    "basis": "device_profile_estimate",
+    "device_class": "cpu-generic",
+    "device_milliseconds": 24,
+    "job_id": "m42-med42-clinical-evaluation-scoring",
+    "receipt_hash": "ab5cc7c468c9b2a0247981115f49db1f3de48170e53307687f4cae01445c3e12",
+    "useful_work_units": 10000,
+    "validator": "aethelred-m42-pilot-validator"
+  }
+}
