@@ -1,0 +1,14 @@
+{
+  "source": "ChEMBL",
+  "target": "CHEMBL203",
+  "target_name": "Epidermal growth factor receptor (EGFR)",
+  "organism": "Homo sapiens",
+  "active_def": "IC50 <= 100 nM (pChEMBL >= 7)",
+  "inactive_def": "IC50 >= 10000 nM (10 uM)",
+  "assay_type": "IC50",
+  "actives": 296,
+  "inactives": 852,
+  "dropped_ambiguous": 5,
+  "retrieved_via": "bio-research ChEMBL MCP",
+  "note": "Real experimental bioactivity; labels are wet-lab IC50, not synthetic."
+}
