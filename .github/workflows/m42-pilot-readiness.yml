@@ -1,0 +1,118 @@
+name: M42 Pilot Readiness
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop, "release/**"]
+  pull_request:
+    branches: [main, develop, "release/**"]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: "1.25.8"
+  NODE_VERSION: "20"
+
+jobs:
+  m42-pilot-required-gate:
+    name: M42 Pilot Required Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install TypeScript SDK dependencies
+        run: npm ci
+        working-directory: sdk/typescript
+
+      - name: Validate M42 Python scripts compile
+        run: python3 -m py_compile scripts/m42_crypto.py scripts/m42_pqc.py scripts/m42_seal.py scripts/m42_stats.py scripts/m42_workloads.py scripts/m42_chemfp.py scripts/m42_realscreen.py scripts/m42_freivalds.py scripts/m42-sandbox-drill.py scripts/m42-pilot-gap-audit.py scripts/m42-verify.py scripts/m42-bench.py scripts/m42-realdata-validate.py scripts/m42-verifiable-inference.py
+
+      - name: Install M42 test dependencies
+        run: python3 -m pip install --quiet pytest scipy
+
+      - name: Run M42 workload-platform test suite
+        run: python3 -m pytest tests/m42 -q
+
+      - name: Verify M42 workload packs and catalog are in sync
+        run: |
+          set -euo pipefail
+          python3 scripts/m42_workloads.py generate
+          # Synthetic fixtures (~35MB, 100k cases) are generated and gitignored;
+          # their determinism is covered by the test suite. The committed packs,
+          # catalog, and evaluation protocols must not drift from the generator.
+          if ! git diff --quiet -- config/pilots/m42/workloads docs/workload-packs/m42/workloads; then
+            echo "Workload packs/catalog are out of sync with scripts/m42_workloads.py. Run: python3 scripts/m42_workloads.py generate" >&2
+            git --no-pager diff --stat -- config/pilots/m42/workloads docs/workload-packs/m42/workloads >&2
+            exit 1
+          fi
+
+      - name: Verify M42 workload metrics clear their acceptance floors
+        run: python3 scripts/m42_workloads.py score
+
+      - name: Generate M42 drill evidence for all ten workloads
+        run: python3 scripts/m42-sandbox-drill.py --all
+
+      - name: Independently verify every Digital Seal and prove tamper rejection
+        run: python3 scripts/m42-verify.py --all --demo-tamper
+
+      - name: Benchmark Digital Seal throughput and post-quantum security profile
+        run: python3 scripts/m42-bench.py
+
+      - name: Validate drug discovery on real ChEMBL data with a verifiable seal
+        run: python3 scripts/m42-realdata-validate.py
+
+      - name: Prove verifiable LLM-scale inference (Freivalds) with a verifiable seal
+        run: python3 scripts/m42-verifiable-inference.py
+
+      - name: Validate M42 package preflight
+        run: make m42-sandbox-preflight
+
+      - name: Audit M42 package and all-workload evidence without live services
+        run: python3 scripts/m42-pilot-gap-audit.py --skip-live
+
+      - name: Enforce no package FAIL findings
+        run: |
+          set -euo pipefail
+          jq -e '.summary.counts.FAIL == 0' .cache/m42-pilot-evidence/exports/m42-pilot-gap-register.json
+          jq -e '.summary.live_checks_skipped == true' .cache/m42-pilot-evidence/exports/m42-pilot-gap-register.json
+          jq -e '.summary.go_live_ready == false' .cache/m42-pilot-evidence/exports/m42-pilot-gap-register.json
+
+      - name: Test evidence bundle enforcement
+        run: go test -mod=mod ./x/seal/... ./cmd/aethelred-tee-worker ./cmd/aethelred-zkml-prover
+
+      - name: Test hardware-agnostic attestation verifier (6 platforms) and attested energy
+        run: go test -mod=mod ./internal/attestation/... ./x/pouw/...
+
+      - name: Verify a real attestation from all six platforms end-to-end
+        run: go run -mod=mod ./cmd/aethelred-attestation-demo/
+
+      - name: Typecheck TypeScript SDK
+        run: npm run typecheck
+        working-directory: sdk/typescript
+
+      - name: Test TypeScript evidence bundle contract
+        run: npx vitest run src/seals/index.test.ts
+        working-directory: sdk/typescript
+
+      - name: Validate JSON and OpenAPI artifacts
+        run: |
+          set -euo pipefail
+          jq . docs/api/evidence-bundle-v1.schema.json >/dev/null
+          jq . sdk/spec/openapi.json >/dev/null
+          jq . docs/api/openapi/aethelred.swagger.json >/dev/null
+          cmp -s sdk/spec/openapi.yaml docs/api/openapi/aethelred.openapi.yaml
+          cmp -s sdk/spec/openapi.json docs/api/openapi/aethelred.swagger.json

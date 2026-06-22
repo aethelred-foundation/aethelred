@@ -34,7 +34,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate public-testnet-readiness release-preflight fuzz-check
+.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate public-testnet-readiness m42-pilot-pretestnet m42-sandbox-prepare m42-sandbox-preflight m42-sandbox-drill m42-pilot-gap-audit m42-pilot-go-live m42-sandbox-up m42-sandbox-down m42-sandbox-status m42-sandbox-logs m42-sandbox-validate m42-pin-images m42-conversion-docs m42-workloads-generate m42-workloads-score m42-test m42-verify m42-bench m42-realdata m42-verifiable-inference m42-attestation m42-sandbox-drill-all release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -219,6 +219,104 @@ validator-helm-validate:
 ## public-testnet-readiness: Validate public testnet launch blockers and handoff consistency
 public-testnet-readiness:
 	@python3 ./scripts/validate-public-testnet-readiness.py
+
+## finalize-testnet-genesis: Inject launch time, real node IDs, and bridge posture into the
+## testnet genesis, recompute the checksum, sync the runbook/RC docs, and run the readiness gate.
+## Pass launch parameters via ARGS, e.g.:
+##   make finalize-testnet-genesis ARGS="--launch-in 48h --disable-bridge --seed <id>@host:26656 ..."
+finalize-testnet-genesis:
+	@python3 ./scripts/finalize-testnet-genesis.py $(ARGS)
+
+## m42-pilot-pretestnet: Prepare local M42 pilot evidence dirs and run pre-testnet validation
+m42-pilot-pretestnet:
+	@bash ./scripts/validate-m42-pilot-pretestnet.sh
+
+## m42-sandbox-prepare: Prepare dedicated M42 sandbox evidence dirs and local secrets
+m42-sandbox-prepare:
+	@bash ./scripts/m42-sandbox.sh prepare
+
+## m42-sandbox-preflight: Validate the dedicated M42 sandbox package before services are live
+m42-sandbox-preflight:
+	@bash ./scripts/m42-sandbox.sh preflight
+
+## m42-sandbox-drill: Generate M42 evidence/value drill artifacts for sponsor review (active workload)
+m42-sandbox-drill:
+	@bash ./scripts/m42-sandbox.sh drill
+
+## m42-sandbox-drill-all: Generate drill evidence for all four M42 workloads plus catalog scorecard
+m42-sandbox-drill-all:
+	@python3 ./scripts/m42-sandbox-drill.py --all
+
+## m42-workloads-generate: Regenerate the four M42 workload packs and synthetic fixtures
+m42-workloads-generate:
+	@python3 ./scripts/m42_workloads.py generate
+
+## m42-workloads-score: Compute domain metrics for all workloads and enforce acceptance floors
+m42-workloads-score:
+	@python3 ./scripts/m42_workloads.py score
+
+## m42-test: Run the M42 workload-platform test suite (metrics, statistics, evidence, catalog, crypto)
+m42-test:
+	@python3 -m pytest tests/m42 -q
+
+## m42-verify: Independently verify every Digital Seal (the verifier M42 runs) + tamper demo
+m42-verify:
+	@python3 ./scripts/m42-verify.py --all --demo-tamper
+
+## m42-bench: Benchmark Digital Seal throughput (validator fast path vs full audit) and PQC profile
+m42-bench:
+	@python3 ./scripts/m42-bench.py
+
+## m42-realdata: Validate drug discovery on REAL ChEMBL EGFR data + verifiable seal
+m42-realdata:
+	@python3 ./scripts/m42-realdata-validate.py
+
+## m42-verifiable-inference: Freivalds matmul verification of an LLM-scale layer + seal
+m42-verifiable-inference:
+	@python3 ./scripts/m42-verifiable-inference.py
+
+## m42-attestation: Verify a real attestation from all six platforms + show the vendor/test-root boundary
+m42-attestation:
+	@go run ./cmd/aethelred-attestation-demo/
+
+## m42-pilot-gap-audit: Generate M42 gap register, investor report, and sponsor evidence portal
+m42-pilot-gap-audit:
+	@bash ./scripts/m42-sandbox.sh gap-audit
+
+## m42-pilot-go-live: Strict M42 go-live gate; fails on any open blocker
+m42-pilot-go-live:
+	@bash ./scripts/m42-sandbox.sh gap-audit-strict
+	@bash ./scripts/m42-sandbox.sh validate
+
+## m42-sandbox-up: Start the dedicated M42 pilot sandbox
+m42-sandbox-up:
+	@bash ./scripts/m42-sandbox.sh up
+
+## m42-sandbox-down: Stop the dedicated M42 pilot sandbox
+m42-sandbox-down:
+	@bash ./scripts/m42-sandbox.sh down
+
+## m42-sandbox-status: Show dedicated M42 pilot sandbox services
+m42-sandbox-status:
+	@bash ./scripts/m42-sandbox.sh status
+
+## m42-sandbox-logs: Stream dedicated M42 pilot sandbox logs
+m42-sandbox-logs:
+	@bash ./scripts/m42-sandbox.sh logs
+
+## m42-sandbox-validate: Validate live dedicated M42 sandbox endpoints and package
+m42-sandbox-validate:
+	@bash ./scripts/m42-sandbox.sh validate
+
+## m42-pin-images: Resolve M42 sandbox image digests into config/pilots/m42/images.lock.env
+m42-pin-images:
+	@bash ./scripts/m42-sandbox.sh pin-images
+
+## m42-conversion-docs: Regenerate M42 conversion deliverables (dossier/memo PDFs, LOI/MOU Word drafts, Tier-2 brief)
+m42-conversion-docs:
+	@python3 scripts/generate-m42-conversion-pdfs.py
+	@python3 scripts/generate-m42-tier2-brief-pdf.py
+	@NODE_PATH="$$(npm root -g)" node scripts/generate-m42-legal-drafts.js
 
 ## release-preflight: Run all pre-release validation checks
 release-preflight: local-readiness validator-helm-validate audit-signoff-check coverage-critical sdk-version-check openapi-validate
