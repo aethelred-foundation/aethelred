@@ -286,6 +286,127 @@ pub enum TEERequirement {
 }
 
 // ============================================================================
+// Energy & cost metering
+// ============================================================================
+//
+// PoUW's claim — "every watt is spent on useful inference" — is only credible if
+// the watts are *measured*, not asserted. These types carry a real per-job
+// measurement of energy and cost, with an explicit honesty label distinguishing
+// a live hardware power reading from a device-profile estimate. Nothing here
+// fabricates a number: aggregates are summed from measurements, and the only
+// constants are governance-set conversion factors in `EnergyModel`.
+
+/// Where a power figure came from — the energy analogue of the TEE hardware
+/// boundary. An aggregate is only `Measured` if every contributing job was.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EnergyBasis {
+    /// Average power read from a live hardware meter (RAPL, NVML, BMC, PDU).
+    Measured,
+    /// Average power inferred from a device power profile (e.g. TDP x
+    /// utilization) because no live meter was available. Honest estimate.
+    DeviceProfileEstimate,
+}
+
+impl EnergyBasis {
+    /// Combine two bases: the result is `Measured` only if both are.
+    pub fn combine(self, other: EnergyBasis) -> EnergyBasis {
+        match (self, other) {
+            (EnergyBasis::Measured, EnergyBasis::Measured) => EnergyBasis::Measured,
+            _ => EnergyBasis::DeviceProfileEstimate,
+        }
+    }
+}
+
+/// A real measurement of the work one compute job consumed.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct WorkMeasurement {
+    /// Device-seconds consumed (wall-clock seconds x active accelerators).
+    pub device_seconds: f64,
+    /// Average power draw of the accelerators during execution, in watts.
+    pub average_power_watts: f64,
+    /// Whether `average_power_watts` is a live reading or a profile estimate.
+    pub energy_basis: EnergyBasis,
+}
+
+impl WorkMeasurement {
+    /// A measurement taken from a live hardware power meter.
+    pub fn measured(device_seconds: f64, average_power_watts: f64) -> Self {
+        WorkMeasurement {
+            device_seconds: device_seconds.max(0.0),
+            average_power_watts: average_power_watts.max(0.0),
+            energy_basis: EnergyBasis::Measured,
+        }
+    }
+
+    /// A measurement inferred from a device power profile when no meter exists:
+    /// `average_power = rated_tdp_watts * utilization`. Labeled as an estimate.
+    pub fn from_device_profile(
+        device_seconds: f64,
+        rated_tdp_watts: f64,
+        utilization: f64,
+    ) -> Self {
+        WorkMeasurement {
+            device_seconds: device_seconds.max(0.0),
+            average_power_watts: rated_tdp_watts.max(0.0) * utilization.clamp(0.0, 1.0),
+            energy_basis: EnergyBasis::DeviceProfileEstimate,
+        }
+    }
+
+    /// Energy at the accelerator, in joules (watts x seconds).
+    pub fn device_joules(&self) -> f64 {
+        self.average_power_watts * self.device_seconds
+    }
+}
+
+/// Governance-set conversion factors. These are the *only* constants in the
+/// energy accounting, and each is an explicit, auditable parameter rather than
+/// a literal buried in a function. Defaults are documented and UAE-representative.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct EnergyModel {
+    /// Power Usage Effectiveness: total facility power / IT power. Accounts for
+    /// cooling and delivery overhead on top of the accelerator draw.
+    pub pue: f64,
+    /// Grid carbon intensity in kg CO2e per kWh.
+    pub grid_carbon_intensity_kg_per_kwh: f64,
+    /// Delivered electricity cost in USD per kWh.
+    pub electricity_cost_usd_per_kwh: f64,
+    /// Fraction of equivalent-security proof-of-work energy that yields no
+    /// useful output. 1.0 = a PoW chain wastes 100% on hashes. Used only for the
+    /// clearly-labeled "energy saved vs PoW" comparison.
+    pub pow_baseline_wasted_ratio: f64,
+}
+
+impl Default for EnergyModel {
+    fn default() -> Self {
+        EnergyModel {
+            pue: 1.2,
+            grid_carbon_intensity_kg_per_kwh: 0.40,
+            electricity_cost_usd_per_kwh: 0.08,
+            pow_baseline_wasted_ratio: 1.0,
+        }
+    }
+}
+
+impl EnergyModel {
+    const JOULES_PER_KWH: f64 = 3_600_000.0;
+
+    /// Facility energy in kWh for a device-level measurement, including PUE.
+    pub fn facility_kwh(&self, m: &WorkMeasurement) -> f64 {
+        (m.device_joules() / Self::JOULES_PER_KWH) * self.pue
+    }
+
+    /// Delivered electricity cost in USD for a measurement.
+    pub fn cost_usd(&self, m: &WorkMeasurement) -> f64 {
+        self.facility_kwh(m) * self.electricity_cost_usd_per_kwh
+    }
+
+    /// Carbon footprint in kg CO2e for a measurement.
+    pub fn carbon_kg(&self, m: &WorkMeasurement) -> f64 {
+        self.facility_kwh(m) * self.grid_carbon_intensity_kg_per_kwh
+    }
+}
+
+// ============================================================================
 // The Useful Work Router
 // ============================================================================
 
@@ -327,6 +448,8 @@ pub struct RouterConfig {
     pub max_parallel_jobs: usize,
     /// Block time target
     pub block_time_target: Duration,
+    /// Conversion factors for energy, cost, and carbon accounting.
+    pub energy_model: EnergyModel,
 }
 
 impl Default for RouterConfig {
@@ -338,6 +461,7 @@ impl Default for RouterConfig {
             min_compute_bounty: 1_000_000, // Minimum 0.001 AETHEL
             max_parallel_jobs: 64,
             block_time_target: Duration::from_millis(400),
+            energy_model: EnergyModel::default(),
         }
     }
 }
@@ -388,6 +512,10 @@ pub struct CompletedJob {
     pub tee_attestation: Vec<u8>,
     pub useful_work_units: u64,
     pub completed_at: SystemTime,
+    /// Measured energy/cost for this job. `None` means the worker reported no
+    /// measurement, in which case the job contributes zero energy to the
+    /// aggregates — we never fabricate a figure for an unmetered job.
+    pub measurement: Option<WorkMeasurement>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -398,10 +526,24 @@ pub struct RouterMetrics {
     pub total_compute_jobs: u64,
     /// Total useful work units generated
     pub total_useful_work_units: u64,
-    /// Energy spent on useful work (in kWh equivalent)
+    /// Measured facility energy spent on useful work, in kWh (summed from job
+    /// measurements, including PUE). Zero for unmetered jobs.
     pub useful_work_energy_kwh: f64,
-    /// Energy that would have been wasted (saved)
+    /// Measured energy attributed to consensus/overhead, in kWh, as reported by
+    /// validators. Kept separate so the useful-work ratio is computed from real
+    /// numbers, not a configured target.
+    pub consensus_overhead_energy_kwh: f64,
+    /// Estimated kWh an equivalent-security PoW chain would burn on useless
+    /// hashing for the same useful output. A clearly-labeled comparison.
     pub energy_saved_kwh: f64,
+    /// Measured delivered electricity cost of useful work, in USD.
+    pub useful_work_energy_cost_usd: f64,
+    /// Measured carbon footprint of useful work, in kg CO2e.
+    pub useful_work_carbon_kg: f64,
+    /// Number of completed jobs that carried a real measurement.
+    pub measured_job_count: u64,
+    /// Worst (least trustworthy) energy basis seen across measured jobs.
+    pub energy_basis: Option<EnergyBasis>,
     /// Average compute job execution time
     pub avg_job_execution_time: Duration,
     /// Current useful work ratio
@@ -618,11 +760,36 @@ impl UsefulWorkRouter {
         base_gas + category_gas
     }
 
-    /// Record a completed job
+    /// Record a completed job, accumulating its *measured* energy, cost, and
+    /// carbon into the metrics. Unmetered jobs contribute no energy — we never
+    /// invent a figure.
     pub fn complete_job(&mut self, completed: CompletedJob) {
         self.metrics.total_compute_jobs += 1;
         self.metrics.total_useful_work_units += completed.useful_work_units;
+
+        if let Some(m) = completed.measurement {
+            let model = &self.config.energy_model;
+            let kwh = model.facility_kwh(&m);
+            self.metrics.useful_work_energy_kwh += kwh;
+            self.metrics.useful_work_energy_cost_usd += model.cost_usd(&m);
+            self.metrics.useful_work_carbon_kg += model.carbon_kg(&m);
+            // On a PoW chain this same useful output would require burning
+            // comparable energy on hashes that produce nothing.
+            self.metrics.energy_saved_kwh += kwh * model.pow_baseline_wasted_ratio;
+            self.metrics.measured_job_count += 1;
+            self.metrics.energy_basis = Some(match self.metrics.energy_basis {
+                Some(existing) => existing.combine(m.energy_basis),
+                None => m.energy_basis,
+            });
+        }
+
         self.completed_jobs.insert(completed.job_id, completed);
+    }
+
+    /// Report measured energy attributed to consensus/overhead for a block, so
+    /// the useful-work ratio reflects measured reality rather than a target.
+    pub fn record_consensus_overhead_kwh(&mut self, kwh: f64) {
+        self.metrics.consensus_overhead_energy_kwh += kwh.max(0.0);
     }
 
     /// Get current metrics
@@ -630,31 +797,38 @@ impl UsefulWorkRouter {
         &self.metrics
     }
 
-    /// Calculate ESG impact
+    /// Calculate ESG impact from *measured* energy. Every figure here is either
+    /// summed from real per-job measurements or derived via an explicit
+    /// `EnergyModel` factor — there are no fabricated baselines or magic
+    /// divisors. `energy_basis` reports whether the underlying power figures
+    /// were live readings or device-profile estimates.
     pub fn calculate_esg_impact(&self) -> ESGImpact {
-        // Traditional PoW would waste ~100% on useless hashes
-        // Aethelred uses 80% for useful work
-        let wasted_energy_ratio = 1.0 - self.config.useful_work_ratio;
-        let useful_energy_ratio = self.config.useful_work_ratio;
-
-        // Estimate based on Bitcoin's energy usage as baseline
-        // Bitcoin: ~150 TWh/year for zero useful computation
-        // Aethelred: Same energy, 80% useful
-        let estimated_annual_energy_twh = 0.1; // Much smaller network initially
-        let useful_computation_twh = estimated_annual_energy_twh * useful_energy_ratio;
-
+        let useful_kwh = self.metrics.useful_work_energy_kwh;
+        let overhead_kwh = self.metrics.consensus_overhead_energy_kwh;
+        let total_kwh = useful_kwh + overhead_kwh;
+        // Measured ratio of energy that went to useful work. Undefined with no
+        // measured energy, in which case we report 0.0 rather than a target.
+        let measured_useful_work_ratio = if total_kwh > 0.0 {
+            useful_kwh / total_kwh
+        } else {
+            0.0
+        };
         ESGImpact {
-            useful_work_ratio: useful_energy_ratio,
-            useful_computation_twh,
-            wasted_energy_twh: estimated_annual_energy_twh * wasted_energy_ratio,
-            equivalent_research_value_usd: useful_computation_twh * 1_000_000.0, // $1M per TWh of compute
-            carbon_offset_potential_tons: useful_computation_twh * 500.0,        // Rough estimate
-            research_contributions: ResearchContributions {
-                protein_structures_predicted: self.metrics.total_useful_work_units / 1000,
-                drug_candidates_screened: self.metrics.total_useful_work_units / 500,
-                climate_simulations_run: self.metrics.total_useful_work_units / 10000,
-                medical_images_analyzed: self.metrics.total_useful_work_units / 100,
-            },
+            measured_useful_energy_kwh: useful_kwh,
+            measured_total_energy_kwh: total_kwh,
+            measured_useful_work_ratio,
+            energy_cost_usd: self.metrics.useful_work_energy_cost_usd,
+            carbon_footprint_kg: self.metrics.useful_work_carbon_kg,
+            estimated_pow_equivalent_waste_kwh: self.metrics.energy_saved_kwh,
+            useful_work_units: self.metrics.total_useful_work_units,
+            completed_jobs: self.metrics.total_compute_jobs,
+            measured_jobs: self.metrics.measured_job_count,
+            // Default to an estimate label until at least one real measurement
+            // upgrades it; an all-measured run reports `Measured`.
+            energy_basis: self
+                .metrics
+                .energy_basis
+                .unwrap_or(EnergyBasis::DeviceProfileEstimate),
         }
     }
 }
@@ -669,28 +843,31 @@ pub struct BlockProposal {
     pub estimated_gas: u64,
 }
 
+/// Measured ESG impact of the network's useful work. Every field is grounded in
+/// real measurements or explicit `EnergyModel` factors — no fabricated baselines.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ESGImpact {
-    /// Ratio of energy used for useful work
-    pub useful_work_ratio: f64,
-    /// Useful computation in TWh
-    pub useful_computation_twh: f64,
-    /// Wasted energy in TWh
-    pub wasted_energy_twh: f64,
-    /// Equivalent research value in USD
-    pub equivalent_research_value_usd: f64,
-    /// Carbon offset potential in tons
-    pub carbon_offset_potential_tons: f64,
-    /// Research contributions
-    pub research_contributions: ResearchContributions,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResearchContributions {
-    pub protein_structures_predicted: u64,
-    pub drug_candidates_screened: u64,
-    pub climate_simulations_run: u64,
-    pub medical_images_analyzed: u64,
+    /// Measured facility energy that went to useful work, in kWh.
+    pub measured_useful_energy_kwh: f64,
+    /// Measured total energy (useful + reported consensus overhead), in kWh.
+    pub measured_total_energy_kwh: f64,
+    /// Measured useful-work ratio (useful / total); 0.0 if nothing measured yet.
+    pub measured_useful_work_ratio: f64,
+    /// Measured delivered electricity cost of useful work, in USD.
+    pub energy_cost_usd: f64,
+    /// Measured carbon footprint of useful work, in kg CO2e.
+    pub carbon_footprint_kg: f64,
+    /// Estimated kWh an equivalent-security PoW chain would waste for the same
+    /// useful output. A clearly-labeled comparison, not a measurement.
+    pub estimated_pow_equivalent_waste_kwh: f64,
+    /// Measured useful work units produced.
+    pub useful_work_units: u64,
+    /// Total completed compute jobs.
+    pub completed_jobs: u64,
+    /// Completed jobs that carried a real measurement.
+    pub measured_jobs: u64,
+    /// Whether the energy figures rest on live meters or device-profile estimates.
+    pub energy_basis: EnergyBasis,
 }
 
 #[derive(Debug, Clone)]
@@ -933,12 +1110,125 @@ mod tests {
         assert!(proposal.useful_work_ratio > 0.5);
     }
 
+    fn completed(id: u8, measurement: Option<WorkMeasurement>, uwu: u64) -> CompletedJob {
+        CompletedJob {
+            job_id: [id; 32],
+            result_hash: [1u8; 32],
+            validator: [2u8; 32],
+            execution_time: Duration::from_secs(1),
+            tee_attestation: vec![],
+            useful_work_units: uwu,
+            completed_at: SystemTime::UNIX_EPOCH,
+            measurement,
+        }
+    }
+
     #[test]
-    fn test_esg_impact() {
+    fn test_esg_impact_empty_is_zero_not_fabricated() {
+        // The whole point of the rewrite: with no measured work, every ESG
+        // figure is zero. A fresh chain does not get to claim research value.
         let router = UsefulWorkRouter::new(RouterConfig::default());
         let impact = router.calculate_esg_impact();
+        assert_eq!(impact.measured_useful_energy_kwh, 0.0);
+        assert_eq!(impact.measured_total_energy_kwh, 0.0);
+        assert_eq!(impact.measured_useful_work_ratio, 0.0);
+        assert_eq!(impact.energy_cost_usd, 0.0);
+        assert_eq!(impact.carbon_footprint_kg, 0.0);
+        assert_eq!(impact.measured_jobs, 0);
+        assert_eq!(impact.energy_basis, EnergyBasis::DeviceProfileEstimate);
+    }
 
-        assert_eq!(impact.useful_work_ratio, 0.80);
-        assert!(impact.equivalent_research_value_usd > 0.0);
+    #[test]
+    fn test_measured_job_accumulates_energy_cost_carbon() {
+        let mut router = UsefulWorkRouter::new(RouterConfig::default());
+        // 720 W for 100 device-seconds = 72 kJ = 0.02 kWh at the device; x1.2 PUE.
+        router.complete_job(completed(
+            1,
+            Some(WorkMeasurement::measured(100.0, 720.0)),
+            500,
+        ));
+        let m = router.metrics();
+        assert!((m.useful_work_energy_kwh - 0.024).abs() < 1e-9);
+        assert!((m.useful_work_energy_cost_usd - 0.024 * 0.08).abs() < 1e-9);
+        assert!((m.useful_work_carbon_kg - 0.024 * 0.40).abs() < 1e-9);
+        assert!((m.energy_saved_kwh - 0.024).abs() < 1e-9); // pow_baseline_wasted_ratio = 1.0
+        assert_eq!(m.measured_job_count, 1);
+        assert_eq!(m.energy_basis, Some(EnergyBasis::Measured));
+        let impact = router.calculate_esg_impact();
+        assert_eq!(impact.energy_basis, EnergyBasis::Measured);
+        assert_eq!(impact.useful_work_units, 500);
+    }
+
+    #[test]
+    fn test_unmetered_job_contributes_zero_energy_but_counts() {
+        let mut router = UsefulWorkRouter::new(RouterConfig::default());
+        router.complete_job(completed(1, None, 300));
+        let m = router.metrics();
+        assert_eq!(m.total_compute_jobs, 1);
+        assert_eq!(m.total_useful_work_units, 300);
+        assert_eq!(m.useful_work_energy_kwh, 0.0); // never fabricated
+        assert_eq!(m.measured_job_count, 0);
+        assert_eq!(m.energy_basis, None);
+    }
+
+    #[test]
+    fn test_energy_basis_downgrades_to_estimate_when_mixed() {
+        let mut router = UsefulWorkRouter::new(RouterConfig::default());
+        router.complete_job(completed(
+            1,
+            Some(WorkMeasurement::measured(10.0, 300.0)),
+            1,
+        ));
+        assert_eq!(router.metrics().energy_basis, Some(EnergyBasis::Measured));
+        // A device-profile estimate downgrades the aggregate basis.
+        router.complete_job(completed(
+            2,
+            Some(WorkMeasurement::from_device_profile(10.0, 300.0, 0.5)),
+            1,
+        ));
+        assert_eq!(
+            router.metrics().energy_basis,
+            Some(EnergyBasis::DeviceProfileEstimate)
+        );
+    }
+
+    #[test]
+    fn test_measured_useful_work_ratio_uses_real_overhead() {
+        let mut router = UsefulWorkRouter::new(RouterConfig::default());
+        // 0.024 kWh useful (computed as above), plus 0.006 kWh reported overhead.
+        router.complete_job(completed(
+            1,
+            Some(WorkMeasurement::measured(100.0, 720.0)),
+            1,
+        ));
+        router.record_consensus_overhead_kwh(0.006);
+        let impact = router.calculate_esg_impact();
+        assert!((impact.measured_total_energy_kwh - 0.030).abs() < 1e-9);
+        assert!((impact.measured_useful_work_ratio - 0.024 / 0.030).abs() < 1e-9);
+        // 0.8
+    }
+
+    #[test]
+    fn test_work_measurement_profile_and_joules() {
+        let measured = WorkMeasurement::measured(5.0, 200.0);
+        assert_eq!(measured.energy_basis, EnergyBasis::Measured);
+        assert!((measured.device_joules() - 1000.0).abs() < 1e-9);
+        // Profile: power = tdp x utilization, clamped, labeled as an estimate.
+        let est = WorkMeasurement::from_device_profile(5.0, 400.0, 0.5);
+        assert_eq!(est.energy_basis, EnergyBasis::DeviceProfileEstimate);
+        assert!((est.average_power_watts - 200.0).abs() < 1e-9);
+        // Negative/over-range inputs are sanitized, never negative energy.
+        let clamped = WorkMeasurement::from_device_profile(-1.0, 400.0, 2.0);
+        assert_eq!(clamped.device_seconds, 0.0);
+        assert!((clamped.average_power_watts - 400.0).abs() < 1e-9); // utilization clamped to 1.0
+    }
+
+    #[test]
+    fn test_energy_model_conversions_include_pue() {
+        let model = EnergyModel::default();
+        let m = WorkMeasurement::measured(3600.0, 1000.0); // 1000 W for 1 hour = 1 kWh device
+        assert!((model.facility_kwh(&m) - 1.2).abs() < 1e-9); // x PUE
+        assert!((model.cost_usd(&m) - 1.2 * 0.08).abs() < 1e-9);
+        assert!((model.carbon_kg(&m) - 1.2 * 0.40).abs() < 1e-9);
     }
 }

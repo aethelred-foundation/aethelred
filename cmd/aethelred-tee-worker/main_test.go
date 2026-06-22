@@ -8,8 +8,33 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aethelred/aethelred/internal/energy"
 	"github.com/aethelred/aethelred/x/verify/tee"
 )
+
+func TestAppExecutionEmitsEnergyMetadata(t *testing.T) {
+	s := &server{cfg: config{AllowSimulated: true, EnclaveID: "enclave-1", DeviceClass: "nvidia-h100"}}
+	res := s.simulateAppExecution(&appExecutionRequest{
+		JobID:     "job-1",
+		ModelHash: []byte("model"),
+		InputHash: []byte("input"),
+		InputData: []byte("payload"),
+		Nonce:     []byte("nonce"),
+	})
+	md := res.EnergyMetadata
+	if md == nil {
+		t.Fatal("worker must emit measured energy metadata")
+	}
+	for _, k := range []string{energy.MetaKeyDeviceClass, energy.MetaKeyDeviceMs, energy.MetaKeyAvgPowerMw, energy.MetaKeyBasis} {
+		if md[k] == "" {
+			t.Fatalf("missing energy key %q in %v", k, md)
+		}
+	}
+	// A GPU class with no live meter must report the honest estimate label.
+	if md[energy.MetaKeyBasis] != energy.BasisDeviceProfile {
+		t.Fatalf("expected device-profile estimate basis, got %s", md[energy.MetaKeyBasis])
+	}
+}
 
 func TestHandleExecuteFailClosedWhenSimulationDisabled(t *testing.T) {
 	s := &server{cfg: config{AllowSimulated: false}}

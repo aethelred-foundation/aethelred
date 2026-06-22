@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aethelred/aethelred/internal/energy"
 	"github.com/aethelred/aethelred/x/verify/ezkl"
 )
 
@@ -28,6 +29,7 @@ type config struct {
 	BackendURL     string
 	AllowSimulated bool
 	Timeout        time.Duration
+	DeviceClass    string
 }
 
 type server struct {
@@ -110,6 +112,7 @@ func loadConfig() config {
 		BackendURL:     strings.TrimRight(strings.TrimSpace(os.Getenv("AETHELRED_ZKML_BACKEND_URL")), "/"),
 		AllowSimulated: allowSimulated,
 		Timeout:        timeout,
+		DeviceClass:    envOrDefault("AETHELRED_WORKER_DEVICE_CLASS", "nvidia-a100"),
 	}
 }
 
@@ -135,13 +138,24 @@ func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	statusCode := http.StatusOK
+	statusText := "ok"
+	ready := true
+	if s.cfg.BackendURL == "" && !s.cfg.AllowSimulated {
+		statusCode = http.StatusServiceUnavailable
+		statusText = "backend_required"
+		ready = false
+	}
+
 	status := map[string]any{
 		"service":         "aethelred-zkml-prover",
-		"status":          "ok",
+		"status":          statusText,
+		"ready":           ready,
 		"allow_simulated": s.cfg.AllowSimulated,
 		"backend_url":     s.cfg.BackendURL != "",
+		"message":         "backend_url is required when simulation is disabled",
 	}
-	writeJSON(w, http.StatusOK, status)
+	writeJSON(w, statusCode, status)
 }
 
 func (s *server) handleProve(w http.ResponseWriter, r *http.Request) {
@@ -177,12 +191,16 @@ func (s *server) handleProve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	start := time.Now()
-	result, err := simulateProof(&req)
+	var result *ezkl.ProofResult
+	measurement := energy.NewMeter(s.cfg.DeviceClass).Measure(func() {
+		result, err = simulateProof(&req)
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	result.GenerationTimeMs = time.Since(start).Milliseconds()
+	result.EnergyMetadata = measurement.MetadataMap()
 	writeJSON(w, http.StatusOK, result)
 }
 

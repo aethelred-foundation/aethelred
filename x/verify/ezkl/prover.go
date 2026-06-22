@@ -189,6 +189,10 @@ type ProofResult struct {
 
 	// RequestID for correlation
 	RequestID string `json:"request_id"`
+
+	// EnergyMetadata carries the measured energy.* keys recorded on chain as a
+	// WorkReceipt. Nil when no measurement was taken.
+	EnergyMetadata map[string]string `json:"energy_metadata,omitempty"`
 }
 
 // PublicInputs contains the public inputs to the proof

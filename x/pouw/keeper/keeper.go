@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -485,6 +486,29 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 	// Mark job as completed (state machine enforces valid transition)
 	if err := job.MarkCompleted(outputHash, seal.Id); err != nil {
 		return fmt.Errorf("invalid job state transition: %w", err)
+	}
+
+	// Best-effort measured energy accounting. If the worker reported a power
+	// measurement on the job, record a verifiable WorkReceipt and bind its hash
+	// to the job so the cost/energy is as tamper-evident as the IO. This is
+	// additive observability: a missing or malformed measurement is skipped and
+	// never blocks completion or seal creation.
+	performer := ""
+	for _, result := range verificationResults {
+		if result.Success && result.ValidatorAddress != "" {
+			performer = result.ValidatorAddress
+			break
+		}
+	}
+	if performer != "" {
+		if receipt, ok := types.ParseWorkReceiptFromMetadata(job.Id, performer, job.UsefulWorkUnits, job.Metadata); ok {
+			if receiptHash, recErr := k.RecordWorkReceipt(sdkCtx, receipt); recErr == nil {
+				if job.Metadata == nil {
+					job.Metadata = make(map[string]string)
+				}
+				job.Metadata[types.MetaEnergyReceiptHash] = hex.EncodeToString(receiptHash)
+			}
+		}
 	}
 
 	// Update job

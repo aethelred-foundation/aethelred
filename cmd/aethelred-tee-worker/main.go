@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aethelred/aethelred/internal/energy"
 	"github.com/aethelred/aethelred/x/verify/tee"
 )
 
@@ -30,6 +31,7 @@ type config struct {
 	MaxAttestationAge  time.Duration
 	Timeout            time.Duration
 	SupportsZKProofGen bool
+	DeviceClass        string
 }
 
 type server struct {
@@ -69,6 +71,9 @@ type appExecutionResult struct {
 	ErrorCode       string             `json:"ErrorCode,omitempty"`
 	ErrorMessage    string             `json:"ErrorMessage,omitempty"`
 	GasUsed         int64              `json:"GasUsed"`
+	// EnergyMetadata carries the measured energy.* keys the chain records as a
+	// WorkReceipt. Nil when no measurement was taken.
+	EnergyMetadata map[string]string `json:"EnergyMetadata,omitempty"`
 }
 
 type appTEEAttestation struct {
@@ -180,6 +185,7 @@ func loadConfig() config {
 		MaxAttestationAge:  maxAge,
 		Timeout:            timeout,
 		SupportsZKProofGen: envBool("AETHELRED_TEE_SUPPORTS_ZKML"),
+		DeviceClass:        envOrDefault("AETHELRED_WORKER_DEVICE_CLASS", "cpu-generic"),
 	}
 }
 
@@ -205,12 +211,23 @@ func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	statusCode := http.StatusOK
+	status := "ok"
+	ready := true
+	if s.cfg.BackendURL == "" && !s.cfg.AllowSimulated {
+		statusCode = http.StatusServiceUnavailable
+		status = "backend_required"
+		ready = false
+	}
+
+	writeJSON(w, statusCode, map[string]any{
 		"service":         "aethelred-tee-worker",
-		"status":          "ok",
+		"status":          status,
+		"ready":           ready,
 		"platform":        s.cfg.Platform,
 		"allow_simulated": s.cfg.AllowSimulated,
 		"backend_url":     s.cfg.BackendURL != "",
+		"message":         "backend_url is required when simulation is disabled",
 	})
 }
 
@@ -374,8 +391,11 @@ func (s *server) simulateEnclaveExecution(req *tee.EnclaveExecutionRequest) *tee
 
 func (s *server) simulateAppExecution(req *appExecutionRequest) *appExecutionResult {
 	start := time.Now()
-	output := []byte(fmt.Sprintf(`{"job_id":"%s","status":"ok","worker":"%s"}`, req.JobID, s.cfg.EnclaveID))
-	outputHash := hashMany(req.ModelHash, req.InputHash, req.InputData, req.Nonce, output)
+	var output, outputHash []byte
+	measurement := energy.NewMeter(s.cfg.DeviceClass).Measure(func() {
+		output = []byte(fmt.Sprintf(`{"job_id":"%s","status":"ok","worker":"%s"}`, req.JobID, s.cfg.EnclaveID))
+		outputHash = hashMany(req.ModelHash, req.InputHash, req.InputData, req.Nonce, output)
+	})
 
 	// ── Attestation Timestamp Binding ──
 	// Bind the block height and chain ID into UserData so that attestation
@@ -417,6 +437,7 @@ func (s *server) simulateAppExecution(req *appExecutionRequest) *appExecutionRes
 		Attestation:     attestation,
 		ExecutionTimeMs: time.Since(start).Milliseconds(),
 		GasUsed:         1000,
+		EnergyMetadata:  measurement.MetadataMap(),
 	}
 	if req.RequireZKProof && s.cfg.SupportsZKProofGen {
 		proof := hashMany(outputHash, []byte("zk-proof"))
