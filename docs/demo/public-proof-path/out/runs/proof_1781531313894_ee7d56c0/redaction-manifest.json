@@ -1,0 +1,108 @@
+{
+  "schema_version": "aethelred-redaction-manifest-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "use_case": "finance.high_risk_transaction_review",
+  "data_boundary": "Synthetic",
+  "public_artifact_policy": "hash-commitments-and-synthetic-fields-only",
+  "raw_regulated_data_exported": false,
+  "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+  "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+  "field_classifications": [
+    {
+      "field": "transaction_id",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "a481dc127799ba2cb2f7f085cf904e863c2e3a6e8d9924d56f56ee2290e31e4e",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "data_boundary",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "4a85827ad80e8635fb4a2b41a3fce1d0f23ba1eb27db0aa84113a7b0ca415d42",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "jurisdiction",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "e60398fc9b283d6a74d9de597caddf46d15a1234b84b782dd6b8276d874a7b61",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "amount_usd",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "cbd5cb2caa86aa8af99eb6b93812455e23359226a9ceac40422459e458d5e253",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "channel",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "af587d660296f78f124cd840ebf53b3749b7d6723591fdfd90c8e17e443b5c70",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "counterparty_risk",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "c082456a7766e23a18db084cd34b6ff510baef506548b897cc80e9b7d3e121c8",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "sanctions_screen",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "913a4cb91be20332f3559f8070255d7ac3e6228bb423f4441551d3f783e7d4f4",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "adverse_media",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "140bedbf9c3f6d56a9846d2ba7088798683f4da0c248231336e6a05679e4fdfe",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "raw_pii_present",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "reason": "synthetic-or-approved-public-proof-field"
+    },
+    {
+      "field": "human_approval",
+      "classification": "public-demo-safe",
+      "public_export": true,
+      "value_hash": "3a3918f8f578169007a57b3f9919e124bc1a5d77a1eeac196a1fd338aa965272",
+      "reason": "synthetic-or-approved-public-proof-field"
+    }
+  ],
+  "restricted_fields": [],
+  "export_controls": [
+    {
+      "control": "raw-data-minimization",
+      "status": "pass",
+      "evidence": "no restricted fields detected"
+    },
+    {
+      "control": "hash-only-commitments",
+      "status": "pass",
+      "evidence": "input_hash and output_hash"
+    },
+    {
+      "control": "public-demo-boundary",
+      "status": "pass",
+      "evidence": "Synthetic"
+    }
+  ],
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "manifest_hash": "c131679fd89e9734ab690f2cfb02263c95263fa51b21f0665b9a9305b53a460e",
+  "signature": "Z6hgjqJm0zv7mKSxMjDUm4ysQ+F9saJ/RybQUBqQWwYhTU+RZP8ilh4PCMa+LlpN6sDWqMBekNQRcEKN4b/MBQ=="
+}

@@ -1,0 +1,57 @@
+{
+  "schema_version": "aethelred-liability-route-v0.2",
+  "route_id": "route_08b6da180d18ba0bd525",
+  "generated_at": "2026-06-19T21:39:00.189Z",
+  "status": "bound",
+  "liability_model": "enterprise-sponsored-human-accountable",
+  "decision_boundary": "supporting-control-only-human-controller-required",
+  "parties": [
+    {
+      "role": "sponsor-of-record",
+      "did": "did:aethelred:institution:demo-bank",
+      "obligation": "Owns institutional accountability for agent deployment and controls.",
+      "status": "bound"
+    },
+    {
+      "role": "human-controller",
+      "did": "did:aethelred:human:fcc-approver-1",
+      "obligation": "Approves high-risk action and remains final accountable decision controller.",
+      "status": "approved"
+    },
+    {
+      "role": "model-risk-owner",
+      "did": "did:aethelred:council:model-risk",
+      "obligation": "Maintains model approval, version control, risk rating, and sunset policy.",
+      "status": "registered"
+    },
+    {
+      "role": "protocol-operator",
+      "did": "did:aethelred:institution:aethelred-labs",
+      "obligation": "Maintains seal protocol, verifier policy, and evidence schema.",
+      "status": "bound-for-demo"
+    },
+    {
+      "role": "external-auditor",
+      "did": "did:aethelred:verifier:policy-auditor",
+      "obligation": "Countersigns verifier report for regulated pilot and production use.",
+      "status": "simulated-public-proof-path"
+    }
+  ],
+  "escalation_matrix": [
+    {
+      "trigger": "policy-denied",
+      "owner": "sponsor-of-record",
+      "action": "block seal and create exception review"
+    },
+    {
+      "trigger": "verifier-quorum-failed",
+      "owner": "protocol-operator",
+      "action": "quarantine evidence and require independent auditor review"
+    },
+    {
+      "trigger": "post-decision-harm",
+      "owner": "human-controller",
+      "action": "activate liability review and regulator evidence export"
+    }
+  ]
+}

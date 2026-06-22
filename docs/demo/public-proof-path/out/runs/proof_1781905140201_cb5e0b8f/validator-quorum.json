@@ -1,0 +1,114 @@
+{
+  "schema_version": "aethelred-validator-quorum-v0.2",
+  "quorum_id": "quorum_a159013530c1254cc698",
+  "strategy": "regulated-multi-verifier-public-proof-path",
+  "required_accepts": 3,
+  "accepted": 4,
+  "rejected": 0,
+  "quorum_reached": true,
+  "categories": [
+    "regulated-cloud-provider",
+    "cybersecurity-auditor",
+    "compliance-auditor",
+    "sovereign-infrastructure-observer"
+  ],
+  "votes": [
+    {
+      "schema_version": "aethelred-verifier-vote-v0.2",
+      "quorum_id": "quorum_a159013530c1254cc698",
+      "verifier_id": "did:aethelred:verifier:regulated-cloud-ae",
+      "verifier_name": "Regulated Cloud Verifier AE",
+      "category": "regulated-cloud-provider",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "attestation",
+        "data-residency"
+      ],
+      "decision": "accept",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "issued_at": "2026-06-19T21:39:00.189Z",
+      "signer": {
+        "id": "did:aethelred:verifier:regulated-cloud-ae",
+        "key_id": "did:aethelred:verifier:regulated-cloud-ae-95965b12b45eac1c",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAZHoaQw7/s2lxer3K+UJMZJZmINu+KQOuiW4g0RXNbpA=\n-----END PUBLIC KEY-----\n"
+      },
+      "vote_hash": "2d7ec4e3f130952311d4f7785512057bd75c550cc22f893712fc377789b6c6d9",
+      "signature": "ZihV2AMHBNPGN8kPv/daOPQPPaF7pcAWakIFGN1aJIAko3yiT6q1lQ8lHYhnmcQN+s2REqQjqDV1RdPPly5BBg=="
+    },
+    {
+      "schema_version": "aethelred-verifier-vote-v0.2",
+      "quorum_id": "quorum_a159013530c1254cc698",
+      "verifier_id": "did:aethelred:verifier:cyber-auditor",
+      "verifier_name": "Cyber Assurance Verifier",
+      "category": "cybersecurity-auditor",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "container-measurement",
+        "signature-integrity"
+      ],
+      "decision": "accept",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "issued_at": "2026-06-19T21:39:00.189Z",
+      "signer": {
+        "id": "did:aethelred:verifier:cyber-auditor",
+        "key_id": "did:aethelred:verifier:cyber-auditor-e587f0fdfcfd4d00",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbUM8ca9LGbP0VR+MMIX2uanc2Gf02QGYWGf0/dZ53q4=\n-----END PUBLIC KEY-----\n"
+      },
+      "vote_hash": "8a91d796027ecb17e710a1e656a6ac6bfd6586edfe76b360aca496d774381368",
+      "signature": "zAQgwDz+7eJMxXXdwJeUo3bKNnWA+bF6X7Cvgr6wT9bw04zAahMp5bEXfIUK0u+gjJtGBqXSjqcgPu/XNIVRDA=="
+    },
+    {
+      "schema_version": "aethelred-verifier-vote-v0.2",
+      "quorum_id": "quorum_a159013530c1254cc698",
+      "verifier_id": "did:aethelred:verifier:policy-auditor",
+      "verifier_name": "Policy and Compliance Verifier",
+      "category": "compliance-auditor",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "policy",
+        "human-approval",
+        "liability"
+      ],
+      "decision": "accept",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "issued_at": "2026-06-19T21:39:00.189Z",
+      "signer": {
+        "id": "did:aethelred:verifier:policy-auditor",
+        "key_id": "did:aethelred:verifier:policy-auditor-90d2285a4497ccdd",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA2Oir0LrYbcGJSvLh/H+j6Uljvk7aHErQG2PUKBIaZhA=\n-----END PUBLIC KEY-----\n"
+      },
+      "vote_hash": "55abaf4fa1196a7069dc4e7693a798d407ddc6e494c9e4125991e362497a423a",
+      "signature": "to+a3prkM6XhGBWgYhj+yAOm4betyzBaJ1L0AJGDlqHDi2L7i65nQR5zJBeCw9lt2PqmKThlUtRDLJyVpyGSAA=="
+    },
+    {
+      "schema_version": "aethelred-verifier-vote-v0.2",
+      "quorum_id": "quorum_a159013530c1254cc698",
+      "verifier_id": "did:aethelred:verifier:sovereign-observer",
+      "verifier_name": "Sovereign Observer Verifier",
+      "category": "sovereign-infrastructure-observer",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "jurisdiction",
+        "audit-export"
+      ],
+      "decision": "accept",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "issued_at": "2026-06-19T21:39:00.189Z",
+      "signer": {
+        "id": "did:aethelred:verifier:sovereign-observer",
+        "key_id": "did:aethelred:verifier:sovereign-observer-659b0b50e682cabf",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbHsjyK/piWHK7iOskhMR6AhL/APlqJXRww40sIy9bcU=\n-----END PUBLIC KEY-----\n"
+      },
+      "vote_hash": "371151b04ef17b6cdae81aa5583cf4fd6b00a72f7259b8da4dbfab3a1710f8b2",
+      "signature": "76fh+igRgyv4g4zbW2DGZEA+RucViDcovCmW81tC5TCW87Gx+Raorfs2Y8q1RvowlWDpko/V0RndCburQNGYDQ=="
+    }
+  ]
+}

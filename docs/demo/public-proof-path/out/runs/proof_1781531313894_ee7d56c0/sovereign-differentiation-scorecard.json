@@ -1,0 +1,138 @@
+{
+  "schema_version": "aethelred-sovereign-differentiation-scorecard-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "seal_id": "seal_0c1e4fee119699938e9f648c",
+  "use_case": "finance.high_risk_transaction_review",
+  "upstream_compute_provider": {
+    "provider": "aethelred-docker-public-proof",
+    "name": "Aethelred Docker Public Proof Path",
+    "category": "public-demo",
+    "accepted": true,
+    "role": "upstream compute proof source, not the final institutional trust layer"
+  },
+  "positioning": "Aethelred is the sovereign verification layer for regulated AI decisions, not a generic verifiable-compute clone.",
+  "strategic_verdict": "Aethelred can wrap external compute proof and add policy, jurisdiction, liability, quorum, audit, and anchor evidence.",
+  "dimensions": [
+    {
+      "id": "compute-proof",
+      "dimension": "Compute proof",
+      "generic_verifiable_cloud": "Proves a workload ran under a provider attestation boundary.",
+      "aethelred_10x_control": "Normalizes Docker, external confidential compute, sovereign-cloud, and on-prem proof claims into one seal-bound compute report.",
+      "status": "pass",
+      "evidence": "4600f386cb79ec0bf120e4f05400681f19ffed50bb60d139d1a6dd649df8a8f5"
+    },
+    {
+      "id": "policy-native",
+      "dimension": "Policy enforcement",
+      "generic_verifiable_cloud": "Usually application-defined or left to integrators.",
+      "aethelred_10x_control": "Signed policy receipt with required controls, denial reasons, and policy ID bound into the seal.",
+      "status": "pass",
+      "evidence": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6"
+    },
+    {
+      "id": "jurisdiction-native",
+      "dimension": "Jurisdiction and data residency",
+      "generic_verifiable_cloud": "Region is a cloud deployment parameter.",
+      "aethelred_10x_control": "Jurisdiction registry, permitted regions, data boundary, and export posture are first-class verifier inputs.",
+      "status": "pass",
+      "evidence": "AE-ADGM"
+    },
+    {
+      "id": "regulated-identity",
+      "dimension": "Institutional identity",
+      "generic_verifiable_cloud": "Developer or app identity proves deployment ownership.",
+      "aethelred_10x_control": "Institution, agent, sponsor, human controller, model owner, verifiers, and auditor roles are registry-backed.",
+      "status": "pass",
+      "evidence": "did:aethelred:institution:demo-bank"
+    },
+    {
+      "id": "liability-route",
+      "dimension": "Liability routing",
+      "generic_verifiable_cloud": "Proof says what executed, not who is accountable for harm.",
+      "aethelred_10x_control": "Sponsor, human controller, model-risk owner, protocol operator, and auditor path are packaged per decision.",
+      "status": "pass",
+      "evidence": "route_2da89b57cf6d3a2f327b"
+    },
+    {
+      "id": "regulated-quorum",
+      "dimension": "Verifier governance",
+      "generic_verifiable_cloud": "Provider attestation may be enough for developer trust.",
+      "aethelred_10x_control": "Multi-category verifier quorum signs the evidence hash for regulated review.",
+      "status": "pass",
+      "evidence": "4/3 accepts"
+    },
+    {
+      "id": "audit-export",
+      "dimension": "Regulator and auditor packaging",
+      "generic_verifiable_cloud": "Raw proofs often need bespoke explanation.",
+      "aethelred_10x_control": "Regulator pack, evidence index, audit report, readiness gate, and chain-ready anchor are generated every run.",
+      "status": "pass",
+      "evidence": "d38df0c6332e5f5dda0e037c038bd5599007e0ddad71ad8b7c5b0df97e94b1a1"
+    },
+    {
+      "id": "sovereign-deployment",
+      "dimension": "Deployment posture",
+      "generic_verifiable_cloud": "Cloud-first by default.",
+      "aethelred_10x_control": "Public seal, permissioned zone, sovereign cloud, and on-prem enclave modes are represented in protocol artifacts.",
+      "status": "pass",
+      "evidence": "hybrid-public-seal"
+    },
+    {
+      "id": "production-honesty",
+      "dimension": "Production claim boundary",
+      "generic_verifiable_cloud": "Early systems can over-market alpha-grade trust.",
+      "aethelred_10x_control": "Verifier returns explicit warnings for hardware TEE, zkML, key custody, auditor, and anchor blockers.",
+      "status": "warning",
+      "evidence": "5 blockers disclosed"
+    }
+  ],
+  "10x_targets": [
+    "Match developer proof-path simplicity with Docker, CLI, SDKs, and public verifier APIs.",
+    "Add policy-native verification that compute clouds do not own by default.",
+    "Make jurisdiction, identity, liability, and audit export inseparable from every sealed AI decision.",
+    "Support external compute providers as substrates while keeping Aethelred as the institutional trust layer.",
+    "Convert production blockers into dated procurement-ready gates for sovereign cloud, HSM, validators, auditors, and anchoring."
+  ],
+  "remaining_gaps": [
+    {
+      "id": "production-hardware-tee",
+      "owner": "compute-provider",
+      "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+    },
+    {
+      "id": "production-zkml-proof",
+      "owner": "model-verification",
+      "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+    },
+    {
+      "id": "external-compute-quote-verifier",
+      "owner": "compute-adapter",
+      "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+    },
+    {
+      "id": "governed-key-custody",
+      "owner": "protocol-governance",
+      "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+    },
+    {
+      "id": "external-audit-countersignature",
+      "owner": "assurance-council",
+      "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+    }
+  ],
+  "score": {
+    "dimensions_total": 9,
+    "pass_count": 8,
+    "warning_count": 1,
+    "fail_count": 0,
+    "public_proof_ready": true
+  },
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "scorecard_hash": "616769517566b91489b2845c642f2935467e99e1cabe695b4c4956b82527a166",
+  "signature": "SRm8HXAr8y6S7likNPuykmERXwANSnG3TEREZL/gCmGkL8kyuHDw4Mf6C3NvKSVNw6LU4bzRar+F9FKUh+75CA=="
+}

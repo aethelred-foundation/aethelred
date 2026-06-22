@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "bundle_id": "0b312e9c-cebf-4cfa-96e9-5deccf3b5240",
+  "job_id": "BA64DA450166516E0A60AF332BF9E1FCF55B4750AB1CB54C95A01B1E96C27E7E",
+  "timestamp": "2026-06-15T13:48:33.864Z",
+  "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+  "circuit_hash": "7bd36d3c8147212271e2d2e36b4c48315db2aaa052fcde9d371c97aa94895c71",
+  "verifying_key_hash": "edee803c2cd85e695be6d33058e473c900708e42323a93fb152f3d3f338ac66d",
+  "tee_evidence": {
+    "platform": "nitro",
+    "enclave_id": "docker-local-public-proof-path",
+    "measurement": "cde382606dec743fae85f6a92e3275d5f4edfa80d9dd96f6edb799fb27b7f405",
+    "quote": "eyJjb250YWluZXJfaW1hZ2UiOiJhZXRoZWxyZWQvcHVibGljLXByb29mLXBhdGg6bG9jYWwiLCJjb250YWluZXJfbWVhc3VyZW1lbnQiOiJjZGUzODI2MDZkZWM3NDNmYWU4NWY2YTkyZTMyNzVkNWY0ZWRmYTgwZDlkZDk2ZjZlZGI3OTlmYjI3YjdmNDA1IiwiZXh0ZXJuYWxfY29tcHV0ZV9wcm92aWRlciI6ImFldGhlbHJlZC1kb2NrZXItcHVibGljLXByb29mIiwiZXh0ZXJuYWxfY29tcHV0ZV9yZXBvcnRfaGFzaCI6IjZkZmM5NjM2OWMyZGZjODUyMTUwMGY3MGFjZjhkN2QxZGNmNzg4NzNkOGJiZDFhNmVhOWU5M2I3NmZmYTU0NTkiLCJpZCI6ImF0dF9iYTY0ZGE0NTAxNjY1MTZlMGE2MCIsImlucHV0X2hhc2giOiIyMTNmY2IwMjQzOWNiOWNlNmNlNGU0MDJmZGI3NDVmY2Y3MDEwNDRlMDMyMzc3NjE1YjJmN2I4MWIxN2RjZGU5IiwiaXNzdWVkX2F0IjoiMjAyNi0wNi0xNVQxMzo0ODozMy44NjRaIiwibW9kZSI6ImRvY2tlci1wdWJsaWMtcHJvb2YtZGVtbyIsIm1vZGVsX2hhc2giOiI1MDZiMGNiM2E4N2EzYWY2MDg0ZGIwZjQ4MWMwOGQzNGQwYTJlZjUxZTMyZDViMjI0MGMzNGQyYTBlMjk2MGMwIiwibm9uY2UiOiI1NDJhYmYxMmNjNmM3NDFlNmM1MTE0ZDE0YTdmNGJmYTkzYTQxYTI2NTI0MDZhNTYyMDljM2MwMjBiYzc0NjBiIiwib3V0cHV0X2hhc2giOiJjZTEwOTA3MzM2OWEzZWUwN2FhZDdmY2RlMjk1NjQ4NDM4ZDI0ZDZhMDhjOWMwNGQ4OGI2N2ZlZTk0NjlhY2I2IiwicGxhdGZvcm1fc2hhcGUiOiJuaXRyby1jb21wYXRpYmxlLWV2aWRlbmNlLXNoYXBlIiwicHJvZHVjdGlvbl9zdGF0dXMiOiJkZW1vLW9ubHktbm90LWhhcmR3YXJlLXRlZSIsInNjaGVtYV92ZXJzaW9uIjoiYWV0aGVscmVkLWRvY2tlci1hdHRlc3RhdGlvbi12MC4yIiwic2lnbmVyIjp7ImFsZ29yaXRobSI6IkVkMjU1MTkiLCJpZCI6ImRpZDphZXRoZWxyZWQ6c2lnbmVyOmRvY2tlci1hdHRlc3RhdGlvbi1kZW1vIiwia2V5X2lkIjoiZGlkOmFldGhlbHJlZDpzaWduZXI6ZG9ja2VyLWF0dGVzdGF0aW9uLWRlbW8tNTc5YzU1MGRkMDhhYzhmMCIsInB1YmxpY19rZXlfcGVtIjoiLS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1cbk1Db3dCUVlESzJWd0F5RUFlUWhXNnlLd2V1eUVxSVBvdUFNUlJ4bTRGSTIrVVJZMWpwN3dYYTN5L0lVPVxuLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tXG4ifX0=",
+    "nonce": "542abf12cc6c741e6c5114d14a7f4bfa93a41a2652406a56209c3c020bc7460b"
+  },
+  "zkml_evidence": {
+    "proof_system": "ezkl",
+    "proof_bytes": "eyJpbnB1dF9oYXNoIjoiMjEzZmNiMDI0MzljYjljZTZjZTRlNDAyZmRiNzQ1ZmNmNzAxMDQ0ZTAzMjM3NzYxNWIyZjdiODFiMTdkY2RlOSIsIm1vZGUiOiJkZW1vLXRyYW5zY3JpcHQiLCJtb2RlbF9oYXNoIjoiNTA2YjBjYjNhODdhM2FmNjA4NGRiMGY0ODFjMDhkMzRkMGEyZWY1MWUzMmQ1YjIyNDBjMzRkMmEwZTI5NjBjMCIsIm91dHB1dF9oYXNoIjoiY2UxMDkwNzMzNjlhM2VlMDdhYWQ3ZmNkZTI5NTY0ODQzOGQyNGQ2YTA4YzljMDRkODhiNjdmZWU5NDY5YWNiNiIsInZlcmlmaWVyX25vdGUiOiJQcm9kdWN0aW9uIHBhdGggbXVzdCByZXBsYWNlIHRoaXMgdHJhbnNjcmlwdCB3aXRoIGEgcmVhbCBwcm9vZi4ifQ==",
+    "public_inputs": "eyJpbnB1dF9oYXNoIjoiMjEzZmNiMDI0MzljYjljZTZjZTRlNDAyZmRiNzQ1ZmNmNzAxMDQ0ZTAzMjM3NzYxNWIyZjdiODFiMTdkY2RlOSIsIm1vZGVsX2hhc2giOiI1MDZiMGNiM2E4N2EzYWY2MDg0ZGIwZjQ4MWMwOGQzNGQwYTJlZjUxZTMyZDViMjI0MGMzNGQyYTBlMjk2MGMwIiwib3V0cHV0X2hhc2giOiJjZTEwOTA3MzM2OWEzZWUwN2FhZDdmY2RlMjk1NjQ4NDM4ZDI0ZDZhMDhjOWMwNGQ4OGI2N2ZlZTk0NjlhY2I2In0=",
+    "output_commitment": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+  },
+  "region": "AE-ADGM",
+  "operator": "aethel1qypqxpq9qcrsszg2pvxq6rs0zqg3yyc5lzv7xu",
+  "policy_decision": {
+    "mode": "hybrid",
+    "require_both": true,
+    "fallback_allowed": false,
+    "policy_version": "finance-high-risk-ai-decision-v0.2",
+    "decision": "allow",
+    "policy_receipt_hash": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6"
+  },
+  "metadata": {
+    "proof_path": "docker-public-demo",
+    "production_status": "not-production-tee-or-zk-certified",
+    "requested_assurance_tier": 4,
+    "data_boundary": "Synthetic",
+    "use_case": "finance.high_risk_transaction_review",
+    "agent_did": "did:aethelred:agent:finance-risk-seal",
+    "sponsor_of_record": "did:aethelred:institution:demo-bank",
+    "institutional_context_hash": "d0baa712bdb6ea8bde22a3e35a6649a7bbd60eb3b5b2f2371e2127559c2e1800",
+    "jurisdiction_report_hash": "afb0818262cce0335f2b91ca405cfc6be23b1433aeb625df0cab83d62d15b49b",
+    "liability_route_hash": "4a5ede9e4e0b4bce7b9590d75e8697429158ba2b66b23bbbfc19f90b525a13f5",
+    "external_compute_report_hash": "6dfc96369c2dfc8521500f70acf8d7d1dcf78873d8bbd1a6ea9e93b76ffa5459",
+    "external_compute_provider": "aethelred-docker-public-proof"
+  }
+}

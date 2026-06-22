@@ -1,0 +1,10 @@
+{
+  "run_id": "proof_1781905140201_cb5e0b8f",
+  "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+  "created_at": "2026-06-19T21:39:00.189Z",
+  "verifier_valid": true,
+  "assurance_tier": 4,
+  "quorum_reached": true,
+  "latest_dir": "/data/latest",
+  "run_dir": "/data/runs/proof_1781905140201_cb5e0b8f"
+}

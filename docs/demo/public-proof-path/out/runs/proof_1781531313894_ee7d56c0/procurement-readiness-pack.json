@@ -1,0 +1,122 @@
+{
+  "schema_version": "aethelred-procurement-readiness-pack-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "tenant": {
+    "name": "Aethelred Demo Bank",
+    "institution_did": "did:aethelred:institution:demo-bank",
+    "institution_type": "regulated-financial-institution",
+    "sector": "banking",
+    "jurisdiction": "AE-ADGM",
+    "regulator": "ADGM FSRA"
+  },
+  "use_case": "finance.high_risk_transaction_review",
+  "buyer_status": "pilot-procurement-ready-with-conditions",
+  "controls": [
+    {
+      "domain": "policy",
+      "buyer_question": "Can the institution prove the decision was allowed by a governed policy?",
+      "aethelred_evidence": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6",
+      "status": "pass"
+    },
+    {
+      "domain": "data-residency",
+      "buyer_question": "Can the institution prove where the decision workflow was allowed to run?",
+      "aethelred_evidence": "AE-ADGM",
+      "status": "pass"
+    },
+    {
+      "domain": "privacy",
+      "buyer_question": "Can public artifacts be reviewed without exposing raw regulated data?",
+      "aethelred_evidence": "c131679fd89e9734ab690f2cfb02263c95263fa51b21f0665b9a9305b53a460e",
+      "status": "pass"
+    },
+    {
+      "domain": "liability",
+      "buyer_question": "Can accountability be routed to sponsor, human controller, model owner, operator, and auditor path?",
+      "aethelred_evidence": "route_2da89b57cf6d3a2f327b",
+      "status": "pass"
+    },
+    {
+      "domain": "verifier-governance",
+      "buyer_question": "Can verifier categories be onboarded as legal entities for pilot quorum operation?",
+      "aethelred_evidence": "078c405adf86946a1935d82443c6bed445d06fc0f9687c608678b3c68bd7afb5",
+      "status": "conditional"
+    },
+    {
+      "domain": "key-custody",
+      "buyer_question": "Is production key custody ready?",
+      "aethelred_evidence": "f2b9e5f583515fd5903e5c1b8ba380b507add6827529248603242b8590b5de46",
+      "status": "conditional"
+    },
+    {
+      "domain": "anchoring",
+      "buyer_question": "Can the seal be anchored to a public testnet or permissioned institutional zone?",
+      "aethelred_evidence": "anchor_342df6b5847ebab2b53a3826",
+      "status": "conditional"
+    },
+    {
+      "domain": "pilot-readiness",
+      "buyer_question": "Is the workload ready for a controlled regulated pilot?",
+      "aethelred_evidence": "d38df0c6332e5f5dda0e037c038bd5599007e0ddad71ad8b7c5b0df97e94b1a1",
+      "status": "conditional"
+    }
+  ],
+  "required_buyer_documents": [
+    "Pilot scope and data classification memo.",
+    "Deployment mode selection: public seal, permissioned zone, sovereign private deployment, or hybrid settlement.",
+    "Security owner approval for key custody and incident response.",
+    "Legal owner approval for liability route and claim boundary.",
+    "Regulator or auditor evidence export acceptance.",
+    "Verifier council onboarding plan."
+  ],
+  "commercial_packaging": {
+    "recommended_offer": "regulated-ai-decision-seal-pilot",
+    "deployment_modes": [
+      "hybrid-public-seal",
+      "permissioned-institutional-zone",
+      "sovereign-private"
+    ],
+    "pilot_duration_days": 90,
+    "success_metrics": [
+      "Every pilot decision receives a verifiable seal.",
+      "Verifier report returns no failed checks.",
+      "Regulator pack exports without raw regulated data.",
+      "Incident and exception workflows are exercised at least once."
+    ]
+  },
+  "open_conditions": [
+    {
+      "id": "production-hardware-tee",
+      "owner": "compute-provider",
+      "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+    },
+    {
+      "id": "production-zkml-proof",
+      "owner": "model-verification",
+      "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+    },
+    {
+      "id": "external-compute-quote-verifier",
+      "owner": "compute-adapter",
+      "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+    },
+    {
+      "id": "governed-key-custody",
+      "owner": "protocol-governance",
+      "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+    },
+    {
+      "id": "external-audit-countersignature",
+      "owner": "assurance-council",
+      "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+    }
+  ],
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "pack_hash": "c90263efcc789a250450b27b1d350fb45b2eb576a3e3b3c83a3d94b4f18278d6",
+  "signature": "zhIzJ0ZKToAC3mTop9FsdKL4EIMZ036RUG2eA0GI5HZIf+grwU7ml2IXN4vY2XSjzQi8hoZK9czqZL2vkjoGDg=="
+}

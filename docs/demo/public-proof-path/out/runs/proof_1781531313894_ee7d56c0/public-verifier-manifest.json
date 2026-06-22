@@ -1,0 +1,41 @@
+{
+  "schema_version": "aethelred-public-verifier-manifest-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "run_id": "proof_1781531313894_ee7d56c0",
+  "seal_id": "seal_0c1e4fee119699938e9f648c",
+  "policy_id": "finance-high-risk-ai-decision-v0.2",
+  "assurance_tier": 4,
+  "verifier_endpoints": [
+    "/v1/proof-path/latest",
+    "/v1/seals/latest",
+    "/v1/seals/latest/verify",
+    "/v1/external-compute/latest",
+    "/v1/institutional/context",
+    "/v1/assurance/latest",
+    "/v1/quorum/latest",
+    "/v1/jurisdiction/latest",
+    "/v1/liability/latest",
+    "/v1/key-custody/latest",
+    "/v1/anchor/latest",
+    "/v1/auditor/latest",
+    "/v1/readiness/latest",
+    "/v1/redaction/latest",
+    "/v1/verifier-onboarding/latest",
+    "/v1/procurement/latest",
+    "/v1/sovereign-differentiation/latest",
+    "/v1/evidence-index/latest",
+    "/v1/regulator-pack/latest",
+    "/v1/ledger/verify"
+  ],
+  "public_claims": [
+    "Aethelred can produce a portable AI decision seal.",
+    "The seal binds policy, identity, jurisdiction, verifier quorum, liability, and evidence commitments.",
+    "External compute proofs can be wrapped by Aethelred policy, jurisdiction, liability, audit, quorum, and anchor controls.",
+    "The Docker path is publicly verifiable and regulator-pack exportable."
+  ],
+  "claim_boundaries": [
+    "No production hardware TEE claim is made by this Docker path.",
+    "No production zkML claim is made by this Docker path.",
+    "No customer funds or private production data should be used in this public proof path."
+  ]
+}

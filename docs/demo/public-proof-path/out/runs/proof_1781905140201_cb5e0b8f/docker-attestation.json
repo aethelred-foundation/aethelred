@@ -1,0 +1,24 @@
+{
+  "schema_version": "aethelred-docker-attestation-v0.2",
+  "id": "att_b6affa8a6820513edee6",
+  "mode": "docker-public-proof-demo",
+  "production_status": "demo-only-not-hardware-tee",
+  "platform_shape": "nitro-compatible-evidence-shape",
+  "container_image": "aethelred/public-proof-path:local",
+  "container_measurement": "214664825ed0afe065e12e2bf508a7b2986272a6ebd12fd65019efd52ec94167",
+  "nonce": "ee2fe4500fb1652538a9338a9a77199f498719eb3ed91a23f2547286b37580b4",
+  "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+  "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+  "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+  "external_compute_report_hash": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+  "external_compute_provider": "aethelred-docker-public-proof",
+  "issued_at": "2026-06-19T21:39:00.189Z",
+  "signer": {
+    "id": "did:aethelred:signer:docker-attestation-demo",
+    "key_id": "did:aethelred:signer:docker-attestation-demo-d235e4f0f9b8e133",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVIBislhL+7KlGNY33xO8w6HqlyfcPvySksEaYg7JTkI=\n-----END PUBLIC KEY-----\n"
+  },
+  "attestation_hash": "74b64de4a2dfe385c204414960620f7b522814b1dc80bd7af8e77183e187b445",
+  "signature": "BJpNGviAx1eoZ51evaj2csx0VQ7uMQiBDx0dLakshFG6rqNYRAxPGDKO+Cw+GkKa2tDO+zohHMIa9Ia0sggXCg=="
+}

@@ -1,0 +1,96 @@
+{
+  "schema_version": "aethelred-verifier-onboarding-pack-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "quorum_id": "quorum_84c5591abf3161abee65",
+  "target_jurisdiction": "AE-ADGM",
+  "required_categories": [
+    "regulated-cloud-provider",
+    "cybersecurity-auditor",
+    "compliance-auditor",
+    "sovereign-infrastructure-observer"
+  ],
+  "onboarding_stages": [
+    {
+      "stage": "legal-identity",
+      "exit_evidence": "Verifier legal entity, jurisdiction, beneficial ownership, and authorized signer mapped to verifier DID."
+    },
+    {
+      "stage": "technical-readiness",
+      "exit_evidence": "Verifier key custody, uptime target, incident contact, and evidence-retention controls documented."
+    },
+    {
+      "stage": "policy-scope",
+      "exit_evidence": "Allowed sectors, disallowed conflicts, liability boundary, and escalation duty accepted."
+    },
+    {
+      "stage": "pilot-countersignature",
+      "exit_evidence": "Verifier signs pilot evidence hash and accepts regulator cooperation obligations."
+    }
+  ],
+  "verifier_requirements": [
+    "Legal entity mapping for verifier DID.",
+    "Public key registry and rotation contact.",
+    "Sector scope and conflict policy.",
+    "Evidence retention and incident cooperation terms.",
+    "Service-level target for pilot quorum participation."
+  ],
+  "pilot_roster_template": [
+    {
+      "verifier_id": "did:aethelred:verifier:regulated-cloud-ae",
+      "verifier_name": "Regulated Cloud Verifier AE",
+      "category": "regulated-cloud-provider",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "attestation",
+        "data-residency"
+      ],
+      "current_demo_vote_hash": "3ee5b02849aba383a8efaae3c0e8e002dcef4e17251b463e3cb4e3a55cdbde52",
+      "production_status": "requires-legal-onboarding"
+    },
+    {
+      "verifier_id": "did:aethelred:verifier:cyber-auditor",
+      "verifier_name": "Cyber Assurance Verifier",
+      "category": "cybersecurity-auditor",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "container-measurement",
+        "signature-integrity"
+      ],
+      "current_demo_vote_hash": "8f8e5d435a6dcf46e3b96fdf66b35367d9c6d2bebc113a5cc255760401a1b289",
+      "production_status": "requires-legal-onboarding"
+    },
+    {
+      "verifier_id": "did:aethelred:verifier:policy-auditor",
+      "verifier_name": "Policy and Compliance Verifier",
+      "category": "compliance-auditor",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "policy",
+        "human-approval",
+        "liability"
+      ],
+      "current_demo_vote_hash": "c219047cbc786e8ef35c47c1a7db1c2dd56dc95212ec4dacb7a3a8610ae63307",
+      "production_status": "requires-legal-onboarding"
+    },
+    {
+      "verifier_id": "did:aethelred:verifier:sovereign-observer",
+      "verifier_name": "Sovereign Observer Verifier",
+      "category": "sovereign-infrastructure-observer",
+      "jurisdiction": "AE-ADGM",
+      "controls": [
+        "jurisdiction",
+        "audit-export"
+      ],
+      "current_demo_vote_hash": "3c1f42fc5239845ca3469f4c23ade2856696150101ab16124cf5a6552fb0c1a4",
+      "production_status": "requires-legal-onboarding"
+    }
+  ],
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "pack_hash": "078c405adf86946a1935d82443c6bed445d06fc0f9687c608678b3c68bd7afb5",
+  "signature": "9P8x43v2WmUztJWJ4T+XbeW4bESilZgEJuO01ZlzV8rt4CQcxqCGk/HlD0YIdI/w7skLbjtBVem8dIDOVdiHBw=="
+}

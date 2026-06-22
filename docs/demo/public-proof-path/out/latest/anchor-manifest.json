@@ -1,0 +1,46 @@
+{
+  "schema_version": "aethelred-anchor-manifest-v0.2",
+  "anchor_id": "anchor_c0129d0c8d2fc67a797772b4",
+  "generated_at": "2026-06-19T21:39:00.189Z",
+  "run_id": "proof_1781905140201_cb5e0b8f",
+  "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+  "mode": "local-ledger-with-chain-ready-payload",
+  "status": "locally-anchored-public-proof",
+  "target_networks": [
+    {
+      "network": "aethelred-testnet",
+      "status": "ready-payload-not-submitted",
+      "submission_method": "future RPC transaction or permissioned-zone anchor"
+    },
+    {
+      "network": "permissioned-institutional-zone",
+      "status": "ready-payload-not-submitted",
+      "submission_method": "private validator council anchor"
+    }
+  ],
+  "commitments": {
+    "seal_hash": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+    "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+    "validator_quorum_hash": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+  },
+  "chain_payload": {
+    "type_url": "/aethelred.seal.v1.MsgAnchorSeal",
+    "body": {
+      "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+      "seal_hash": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "quorum_hash": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+    }
+  },
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+  },
+  "anchor_hash": "d2681efe2f63497baf14857a799274236e8c4adcccf18f56a7f0d267e2212bd2",
+  "signature": "IvvRZmWSwxWl9WNaPmChkiZ7daWBJuebMHfpClD1a6pSYhIPJKH1sO5hW9aS7e+PewHGX19UdxHQS1HCdpDQCQ=="
+}

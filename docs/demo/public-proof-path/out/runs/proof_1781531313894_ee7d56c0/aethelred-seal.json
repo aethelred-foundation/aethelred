@@ -1,0 +1,62 @@
+{
+  "schema_version": "aethelred-seal-v0.2",
+  "seal_id": "seal_0c1e4fee119699938e9f648c",
+  "run_id": "proof_1781531313894_ee7d56c0",
+  "job_id": "BA64DA450166516E0A60AF332BF9E1FCF55B4750AB1CB54C95A01B1E96C27E7E",
+  "issued_at": "2026-06-15T13:48:33.864Z",
+  "status": "sealed_public_proof_verified",
+  "purpose": "finance.high_risk_transaction_review",
+  "assurance_tier": 4,
+  "commitments": {
+    "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+    "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+    "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+    "policy_receipt_hash": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6",
+    "attestation_hash": "53b9f7c4540c1f3cacac3a295d935674d534d8f1c0b9b9a952dc93de40554a8a",
+    "evidence_bundle_hash": "f5dc68808aad6b1ce8d3e500b9fae0cfcbf1be37503c85c0eb391f4665dc21c5",
+    "institutional_context_hash": "d0baa712bdb6ea8bde22a3e35a6649a7bbd60eb3b5b2f2371e2127559c2e1800",
+    "jurisdiction_report_hash": "afb0818262cce0335f2b91ca405cfc6be23b1433aeb625df0cab83d62d15b49b",
+    "liability_route_hash": "4a5ede9e4e0b4bce7b9590d75e8697429158ba2b66b23bbbfc19f90b525a13f5",
+    "external_compute_report_hash": "6dfc96369c2dfc8521500f70acf8d7d1dcf78873d8bbd1a6ea9e93b76ffa5459",
+    "validator_quorum_hash": "8ddf58e0e2efa5292370bc4448579295c3919fe802104faa5cdcff10eb95fb0d",
+    "assurance_plan_hash": "9e8d54a68aa005cafaf0dbf73680f537e2fd432cd6fa20ed18a41b1688d7670f"
+  },
+  "verifier_quorum": {
+    "quorum_id": "quorum_84c5591abf3161abee65",
+    "strategy": "regulated-multi-verifier-public-proof-path",
+    "required_accepts": 3,
+    "accepted": 4,
+    "rejected": 0,
+    "quorum_reached": true,
+    "categories": [
+      "regulated-cloud-provider",
+      "cybersecurity-auditor",
+      "compliance-auditor",
+      "sovereign-infrastructure-observer"
+    ],
+    "quorum_hash": "8ddf58e0e2efa5292370bc4448579295c3919fe802104faa5cdcff10eb95fb0d"
+  },
+  "liability": {
+    "route_id": "route_2da89b57cf6d3a2f327b",
+    "sponsor_of_record": "did:aethelred:institution:demo-bank",
+    "liability_model": "enterprise-sponsored-human-accountable",
+    "human_owner": "Head of Financial Crime Controls"
+  },
+  "jurisdiction": {
+    "policy_jurisdiction": "AE-ADGM",
+    "execution_region": "AE-ADGM",
+    "data_residency_zone": "AE"
+  },
+  "signer": {
+    "id": "did:aethelred:signer:seal-authority-demo",
+    "key_id": "did:aethelred:signer:seal-authority-demo-728ad15860e6a04c",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAzM8jjNtdpy/JI00eB7p4HTS42iZ7LjVVW7/juPUw0kg=\n-----END PUBLIC KEY-----\n"
+  },
+  "caveats": [
+    "Docker proof path uses demo attestation and proof transcripts.",
+    "Production requires real TEE attestation, real zkML where required, governed key custody, and validator/auditor policy."
+  ],
+  "seal_hash": "dec0c7da870a783bb0a4f983ebdbf2c988f7ca6cbfde4de5ba723c66c078deaa",
+  "signature": "GDMLo+GBItXZaY+pY8Tg78s/W1eiUpxbBmlMsz7TjDIQmEkJek+bqW+YYGKL1xA/mqQ/pbJVGD7lF76F1F8GDQ=="
+}

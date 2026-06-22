@@ -1,0 +1,115 @@
+{
+  "schema_version": "aethelred-assurance-plan-v0.2",
+  "generated_at": "2026-06-19T21:39:00.189Z",
+  "target_tier": {
+    "tier": 4,
+    "name": "Tier 4 Sovereign Regulated AI Decision",
+    "summary": "Tier 3 plus jurisdiction controls, liability routing, and zkML-ready output commitment.",
+    "required_controls": [
+      "hash-commitments",
+      "audit-log",
+      "attestation",
+      "identity",
+      "policy",
+      "quorum",
+      "human-approval",
+      "jurisdiction",
+      "liability",
+      "zkml-ready"
+    ]
+  },
+  "current_path": {
+    "classification": "public-docker-proof-path",
+    "production_grade": false,
+    "public_verifiability": true,
+    "regulator_pack_exportable": true
+  },
+  "controls": [
+    {
+      "id": "policy-native",
+      "label": "Policy receipt is bound into the seal",
+      "status": "pass",
+      "evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+    },
+    {
+      "id": "jurisdiction-aware",
+      "label": "Jurisdiction and data residency controls are explicit",
+      "status": "pass",
+      "evidence": "AE-ADGM"
+    },
+    {
+      "id": "regulated-quorum",
+      "label": "Multiple verifier categories countersigned the evidence hash",
+      "status": "pass",
+      "evidence": "4/3 accepts"
+    },
+    {
+      "id": "audit-export",
+      "label": "Regulator-readable evidence pack is generated",
+      "status": "pass",
+      "evidence": "audit-pack.json and audit-report.md"
+    },
+    {
+      "id": "external-compute-ingestion",
+      "label": "External compute proof is normalized before sealing",
+      "status": "pass",
+      "evidence": "external-compute-report.json"
+    },
+    {
+      "id": "hardware-tee",
+      "label": "Production hardware TEE quote",
+      "status": "warning",
+      "evidence": "Docker demo attestation only"
+    },
+    {
+      "id": "zkml-production",
+      "label": "Production zkML proof",
+      "status": "warning",
+      "evidence": "Demo proof transcript only"
+    },
+    {
+      "id": "hsm-custody",
+      "label": "Governed key custody",
+      "status": "warning",
+      "evidence": "Ephemeral demo keys only"
+    }
+  ],
+  "production_blockers": [
+    {
+      "id": "production-hardware-tee",
+      "status": "open",
+      "owner": "compute-provider",
+      "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+    },
+    {
+      "id": "production-zkml-proof",
+      "status": "open",
+      "owner": "model-verification",
+      "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+    },
+    {
+      "id": "external-compute-quote-verifier",
+      "status": "open",
+      "owner": "compute-adapter",
+      "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+    },
+    {
+      "id": "governed-key-custody",
+      "status": "open",
+      "owner": "protocol-governance",
+      "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+    },
+    {
+      "id": "external-audit-countersignature",
+      "status": "open",
+      "owner": "assurance-council",
+      "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+    }
+  ],
+  "promotion_path": [
+    "Run same proof path in a sovereign cloud confidential VM.",
+    "Bind validator identities to legal entities and service-level terms.",
+    "Add external auditor countersignature and publish audit letter.",
+    "Anchor seal commitments to Aethelred testnet or permissioned institutional zone."
+  ]
+}

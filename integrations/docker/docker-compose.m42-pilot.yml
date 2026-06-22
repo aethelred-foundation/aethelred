@@ -1,0 +1,234 @@
+# Dedicated private sandbox for the M42 paid pilot.
+# This compose file intentionally uses M42-specific container names, ports,
+# volumes, evidence paths, and monitoring endpoints so the pilot is isolated
+# from generic devnet/testnet services.
+#
+# Image references are env-overridable so the paid go-live gate can pin every
+# image by digest: run `scripts/m42-sandbox.sh pin-images` to resolve the
+# current digests into config/pilots/m42/images.lock.env (sourced by
+# scripts/m42-sandbox.sh before any compose command).
+
+services:
+  m42-aethelred-node:
+    image: ${M42_NODE_IMAGE:-ghcr.io/aethelred-foundation/aethelred/aethelredd:m42-pilot}
+    build:
+      context: ../..
+      dockerfile: integrations/docker/Dockerfile.node
+    container_name: m42-aethelred-node
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:36657:26657"
+      - "127.0.0.1:36656:26656"
+      - "127.0.0.1:31317:1317"
+      - "127.0.0.1:39090:9090"
+      - "127.0.0.1:39091:9091"
+    volumes:
+      - m42-aethelred-data:/root/.aethelred
+      - ../../config/pilots/m42/workload-pack.json:/etc/aethelred/pilots/m42/workload-pack.json:ro
+      - ../../config/pilots/m42/registry:/etc/aethelred/pilots/m42/registry:ro
+      - ../../config/pilots/m42/evidence:/var/aethelred/evidence
+    environment:
+      AETHELRED_CHAIN_ID: ${M42_CHAIN_ID:-aethelred-m42-pilot-1}
+      AETHELRED_MONIKER: ${M42_MONIKER:-m42-exclusive-validator}
+      AETHELRED_LOG_LEVEL: ${AETHELRED_LOG_LEVEL:-info}
+      AETHELRED_PILOT_NAME: m42-med42-synthetic-eval
+      AETHELRED_WORKLOAD_PACK: /etc/aethelred/pilots/m42/workload-pack.json
+      AETHELRED_REGISTRY_DIR: /etc/aethelred/pilots/m42/registry
+      AETHELRED_EVIDENCE_PATH: /var/aethelred/evidence
+      AETHELRED_REQUIRE_HYBRID_EVIDENCE: "true"
+      AETHELRED_ALLOW_SIMULATED: ${AETHELRED_ALLOW_SIMULATED:-false}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:26657/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - m42-sandbox
+      - m42-observability
+
+  m42-tee-worker:
+    image: ${M42_TEE_WORKER_IMAGE:-aethelred/tee-worker:m42-pilot}
+    build:
+      context: ../..
+      dockerfile: integrations/docker/Dockerfile.tee-worker
+    container_name: m42-tee-worker
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:18545:8545"
+    volumes:
+      - ../../config/pilots/m42/workload-pack.json:/etc/aethelred/pilots/m42/workload-pack.json:ro
+      - ../../config/pilots/m42/evidence:/var/aethelred/evidence
+    environment:
+      TEE_MODE: ${TEE_MODE:-production}
+      AETHELRED_TEE_LISTEN_ADDR: :8545
+      AETHELRED_TEE_BACKEND_URL: ${AETHELRED_TEE_BACKEND_URL:-}
+      AETHELRED_TEE_SUPPORTS_ZKML: "true"
+      AETHELRED_ALLOW_SIMULATED: ${AETHELRED_ALLOW_SIMULATED:-false}
+      AETHELRED_PILOT_NAME: m42-med42-synthetic-eval
+      AETHELRED_WORKLOAD_PACK: /etc/aethelred/pilots/m42/workload-pack.json
+      AETHELRED_EVIDENCE_PATH: /var/aethelred/evidence
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8545/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      - m42-aethelred-node
+    networks:
+      - m42-sandbox
+      - m42-observability
+
+  m42-zkml-prover:
+    image: ${M42_ZKML_PROVER_IMAGE:-aethelred/zkml-prover:m42-pilot}
+    build:
+      context: ../..
+      dockerfile: integrations/docker/Dockerfile.zkml
+    container_name: m42-zkml-prover
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:18546:8546"
+    volumes:
+      - ../../config/pilots/m42/circuit-manifest.json:/etc/aethelred/pilots/m42/circuit-manifest.json:ro
+      - ../../config/pilots/m42/evidence:/var/aethelred/evidence
+    environment:
+      PROVER_MODE: ${PROVER_MODE:-production}
+      AETHELRED_ZKML_LISTEN_ADDR: :8546
+      AETHELRED_ZKML_BACKEND_URL: ${AETHELRED_ZKML_BACKEND_URL:-}
+      AETHELRED_ALLOW_SIMULATED: ${AETHELRED_ALLOW_SIMULATED:-false}
+      AETHELRED_PILOT_NAME: m42-med42-synthetic-eval
+      AETHELRED_CIRCUIT_MANIFEST: /etc/aethelred/pilots/m42/circuit-manifest.json
+      AETHELRED_EVIDENCE_PATH: /var/aethelred/evidence
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8546/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      - m42-aethelred-node
+    networks:
+      - m42-sandbox
+      - m42-observability
+
+  m42-opensearch:
+    image: ${M42_OPENSEARCH_IMAGE:-opensearchproject/opensearch:2.19.1}
+    container_name: m42-evidence-archive
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:19200:9200"
+    environment:
+      discovery.type: single-node
+      # Security plugin stays enabled: the evidence archive requires
+      # authenticated HTTPS access even for loopback rehearsal.
+      # scripts/m42-sandbox.sh exports the password from
+      # config/pilots/m42/secrets/opensearch_admin_password.txt.
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${M42_ARCHIVE_ADMIN_PASSWORD:?run scripts/m42-sandbox.sh prepare to generate the archive admin secret}
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - m42-archive-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsk -u \"admin:$${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\" https://localhost:9200/_cluster/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    networks:
+      - m42-observability
+
+  m42-prometheus:
+    image: ${M42_PROMETHEUS_IMAGE:-prom/prometheus:v2.48.0}
+    container_name: m42-prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    ports:
+      - "127.0.0.1:19090:9090"
+    volumes:
+      - ../../config/pilots/m42/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../infrastructure/monitoring/prometheus-rules.yml:/etc/prometheus/rules/aethelred.yml:ro
+      - m42-prometheus-data:/prometheus
+    depends_on:
+      - m42-alertmanager
+    networks:
+      - m42-observability
+
+  m42-alertmanager:
+    image: ${M42_ALERTMANAGER_IMAGE:-prom/alertmanager:v0.26.0}
+    container_name: m42-alertmanager
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - "127.0.0.1:19093:9093"
+    volumes:
+      - ../../config/pilots/m42/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - m42-alertmanager-data:/alertmanager
+    networks:
+      - m42-observability
+
+  m42-alert-webhook:
+    image: ${M42_ALERT_WEBHOOK_IMAGE:-hashicorp/http-echo:1.0}
+    container_name: m42-alert-webhook
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    command:
+      - -listen=:5678
+      - -text=m42-alert-received
+    networks:
+      - m42-observability
+
+  m42-grafana:
+    image: ${M42_GRAFANA_IMAGE:-grafana/grafana:10.2.3}
+    container_name: m42-grafana
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:13001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/m42_grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    secrets:
+      - m42_grafana_admin_password
+    volumes:
+      - m42-grafana-data:/var/lib/grafana
+    depends_on:
+      - m42-prometheus
+    networks:
+      - m42-observability
+
+volumes:
+  m42-aethelred-data:
+  m42-archive-data:
+  m42-prometheus-data:
+  m42-alertmanager-data:
+  m42-grafana-data:
+
+networks:
+  m42-sandbox:
+    name: m42-sandbox
+    driver: bridge
+  m42-observability:
+    name: m42-observability
+    driver: bridge
+
+secrets:
+  m42_grafana_admin_password:
+    file: ../../config/pilots/m42/secrets/grafana_admin_password.txt

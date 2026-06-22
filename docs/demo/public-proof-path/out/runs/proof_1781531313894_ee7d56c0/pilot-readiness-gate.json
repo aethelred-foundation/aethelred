@@ -1,0 +1,105 @@
+{
+  "schema_version": "aethelred-pilot-readiness-gate-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "use_case": "finance.high_risk_transaction_review",
+  "tenant": "Aethelred Demo Bank",
+  "public_proof_ready": true,
+  "regulated_pilot_status": "conditional-pass",
+  "production_status": "not-production-ready",
+  "gates": [
+    {
+      "id": "public-proof-verification",
+      "label": "Public proof path can be independently verified",
+      "status": "pass",
+      "evidence": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6"
+    },
+    {
+      "id": "regulated-quorum",
+      "label": "Regulated verifier quorum is reached",
+      "status": "pass",
+      "evidence": "4/3"
+    },
+    {
+      "id": "jurisdiction-readiness",
+      "label": "Jurisdiction and residency checks pass",
+      "status": "pass",
+      "evidence": "AE-ADGM"
+    },
+    {
+      "id": "external-compute-acceptance",
+      "label": "External compute proof adapter accepted the workload claims",
+      "status": "pass",
+      "evidence": "aethelred-docker-public-proof"
+    },
+    {
+      "id": "regulator-pack-export",
+      "label": "Regulator pack can be exported",
+      "status": "pass",
+      "evidence": "regulator-pack/latest"
+    },
+    {
+      "id": "chain-anchor-payload",
+      "label": "Chain anchor payload is ready",
+      "status": "pass",
+      "evidence": "anchor_342df6b5847ebab2b53a3826"
+    },
+    {
+      "id": "production-key-custody",
+      "label": "Production key custody is configured",
+      "status": "warning",
+      "evidence": "ephemeral-demo-keys"
+    },
+    {
+      "id": "production-tee",
+      "label": "Production TEE attestation is configured",
+      "status": "warning",
+      "evidence": "Docker transcript only"
+    },
+    {
+      "id": "production-zkml",
+      "label": "Production zkML proof is configured",
+      "status": "warning",
+      "evidence": "Demo transcript only"
+    }
+  ],
+  "open_production_blockers": [
+    {
+      "id": "production-hardware-tee",
+      "status": "open",
+      "owner": "compute-provider",
+      "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+    },
+    {
+      "id": "production-zkml-proof",
+      "status": "open",
+      "owner": "model-verification",
+      "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+    },
+    {
+      "id": "external-compute-quote-verifier",
+      "status": "open",
+      "owner": "compute-adapter",
+      "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+    },
+    {
+      "id": "governed-key-custody",
+      "status": "open",
+      "owner": "protocol-governance",
+      "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+    },
+    {
+      "id": "external-audit-countersignature",
+      "status": "open",
+      "owner": "assurance-council",
+      "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+    }
+  ],
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "gate_hash": "d38df0c6332e5f5dda0e037c038bd5599007e0ddad71ad8b7c5b0df97e94b1a1",
+  "signature": "70mlfkZR6k4O0ijtC6NPLadclfJkaiV9jjesOGrrgmrPqCgjrBVDfrsFpwLL4Dg/aFrZYbZkVQiJ23L9CALyCA=="
+}

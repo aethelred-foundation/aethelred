@@ -1,0 +1,346 @@
+{
+  "schema_version": "aethelred-verifier-report-v0.2",
+  "checked_at": "2026-06-15T13:48:33.935Z",
+  "valid": true,
+  "seal_id": "seal_0c1e4fee119699938e9f648c",
+  "run_id": "proof_1781531313894_ee7d56c0",
+  "checks": [
+    {
+      "id": "input-hash",
+      "label": "Input hash recomputes from public proof request",
+      "status": "pass",
+      "evidence": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9"
+    },
+    {
+      "id": "output-hash",
+      "label": "Output hash recomputes from model output",
+      "status": "pass",
+      "evidence": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+    },
+    {
+      "id": "institutional-context-hash",
+      "label": "Institutional context hash matches seal commitment",
+      "status": "pass",
+      "evidence": "d0baa712bdb6ea8bde22a3e35a6649a7bbd60eb3b5b2f2371e2127559c2e1800"
+    },
+    {
+      "id": "policy-receipt-hash",
+      "label": "Policy receipt content hash is stable",
+      "status": "pass",
+      "evidence": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6"
+    },
+    {
+      "id": "policy-receipt-signature",
+      "label": "Policy receipt signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:policy-engine-demo-e076a197f2074fd1"
+    },
+    {
+      "id": "policy-required-controls",
+      "label": "All required policy controls passed",
+      "status": "pass",
+      "evidence": "12 controls"
+    },
+    {
+      "id": "policy-decision",
+      "label": "Policy decision allowed the sealed action",
+      "status": "pass",
+      "evidence": "allow"
+    },
+    {
+      "id": "model-registry",
+      "label": "Model version is present in the model registry",
+      "status": "pass",
+      "evidence": "model:aethelred-risk-reviewer 2026.05-demo"
+    },
+    {
+      "id": "agent-registry",
+      "label": "Agent and sponsor identities are registered",
+      "status": "pass",
+      "evidence": "did:aethelred:agent:finance-risk-seal"
+    },
+    {
+      "id": "jurisdiction-report-hash",
+      "label": "Jurisdiction report hash matches seal commitment",
+      "status": "pass",
+      "evidence": "afb0818262cce0335f2b91ca405cfc6be23b1433aeb625df0cab83d62d15b49b"
+    },
+    {
+      "id": "jurisdiction-allowed",
+      "label": "Jurisdiction and data residency controls are allowed",
+      "status": "pass",
+      "evidence": "AE-ADGM"
+    },
+    {
+      "id": "liability-route-hash",
+      "label": "Liability route hash matches seal commitment",
+      "status": "pass",
+      "evidence": "4a5ede9e4e0b4bce7b9590d75e8697429158ba2b66b23bbbfc19f90b525a13f5"
+    },
+    {
+      "id": "liability-route-bound",
+      "label": "Liability route binds sponsor, human controller, operator, and auditor path",
+      "status": "pass",
+      "evidence": "route_2da89b57cf6d3a2f327b"
+    },
+    {
+      "id": "attestation-hash",
+      "label": "Docker attestation hash is stable",
+      "status": "pass",
+      "evidence": "53b9f7c4540c1f3cacac3a295d935674d534d8f1c0b9b9a952dc93de40554a8a"
+    },
+    {
+      "id": "attestation-signature",
+      "label": "Docker attestation signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:docker-attestation-demo-579c550dd08ac8f0"
+    },
+    {
+      "id": "external-compute-report-hash",
+      "label": "External compute report hash is stable",
+      "status": "pass",
+      "evidence": "4600f386cb79ec0bf120e4f05400681f19ffed50bb60d139d1a6dd649df8a8f5"
+    },
+    {
+      "id": "external-compute-report-signature",
+      "label": "External compute report signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:external-compute-adapter-demo-60a16394dc5d3f27"
+    },
+    {
+      "id": "external-compute-provider-accepted",
+      "label": "External compute provider proof is accepted by adapter policy",
+      "status": "pass",
+      "evidence": "aethelred-docker-public-proof"
+    },
+    {
+      "id": "external-compute-seal-binding",
+      "label": "External compute report hash matches seal commitment",
+      "status": "pass",
+      "evidence": "6dfc96369c2dfc8521500f70acf8d7d1dcf78873d8bbd1a6ea9e93b76ffa5459"
+    },
+    {
+      "id": "evidence-bundle-hash",
+      "label": "Evidence bundle hash matches seal commitment",
+      "status": "pass",
+      "evidence": "f5dc68808aad6b1ce8d3e500b9fae0cfcbf1be37503c85c0eb391f4665dc21c5"
+    },
+    {
+      "id": "validator-quorum-hash",
+      "label": "Validator quorum hash matches seal commitment",
+      "status": "pass",
+      "evidence": "8ddf58e0e2efa5292370bc4448579295c3919fe802104faa5cdcff10eb95fb0d"
+    },
+    {
+      "id": "validator-quorum-threshold",
+      "label": "Regulated verifier quorum threshold is reached",
+      "status": "pass",
+      "evidence": "4/3 accepts"
+    },
+    {
+      "id": "validator-vote-signatures",
+      "label": "All verifier vote hashes and signatures verify",
+      "status": "pass",
+      "evidence": "4/4 votes verified"
+    },
+    {
+      "id": "assurance-plan-hash",
+      "label": "Assurance plan hash matches seal commitment",
+      "status": "pass",
+      "evidence": "9e8d54a68aa005cafaf0dbf73680f537e2fd432cd6fa20ed18a41b1688d7670f"
+    },
+    {
+      "id": "assurance-tier-target",
+      "label": "Requested assurance tier is at least the policy minimum",
+      "status": "pass",
+      "evidence": "Tier 4"
+    },
+    {
+      "id": "seal-hash",
+      "label": "Aethelred Seal hash is stable",
+      "status": "pass",
+      "evidence": "dec0c7da870a783bb0a4f983ebdbf2c988f7ca6cbfde4de5ba723c66c078deaa"
+    },
+    {
+      "id": "seal-signature",
+      "label": "Aethelred Seal signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:seal-authority-demo-728ad15860e6a04c"
+    },
+    {
+      "id": "key-custody-manifest-hash",
+      "label": "Key custody manifest hash is stable",
+      "status": "pass",
+      "evidence": "f2b9e5f583515fd5903e5c1b8ba380b507add6827529248603242b8590b5de46"
+    },
+    {
+      "id": "key-custody-manifest-signature",
+      "label": "Key custody manifest signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "anchor-manifest-hash",
+      "label": "Anchor manifest hash is stable",
+      "status": "pass",
+      "evidence": "20c0dc26f70abcad4f44cdef5406dd4f2342977a2c2ad03eb1d7eb37e8eb507d"
+    },
+    {
+      "id": "anchor-manifest-signature",
+      "label": "Anchor manifest signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "anchor-payload-seal-binding",
+      "label": "Anchor payload binds the verified seal hash",
+      "status": "pass",
+      "evidence": "anchor_342df6b5847ebab2b53a3826"
+    },
+    {
+      "id": "pilot-readiness-gate-hash",
+      "label": "Pilot readiness gate hash is stable",
+      "status": "pass",
+      "evidence": "d38df0c6332e5f5dda0e037c038bd5599007e0ddad71ad8b7c5b0df97e94b1a1"
+    },
+    {
+      "id": "pilot-readiness-gate-signature",
+      "label": "Pilot readiness gate signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "pilot-readiness-gate",
+      "label": "Pilot readiness gate is not blocked",
+      "status": "pass",
+      "evidence": "conditional-pass"
+    },
+    {
+      "id": "redaction-manifest-hash",
+      "label": "Redaction manifest hash is stable",
+      "status": "pass",
+      "evidence": "c131679fd89e9734ab690f2cfb02263c95263fa51b21f0665b9a9305b53a460e"
+    },
+    {
+      "id": "redaction-manifest-signature",
+      "label": "Redaction manifest signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "redaction-manifest-public-export",
+      "label": "Redaction manifest blocks raw regulated data export",
+      "status": "pass",
+      "evidence": "hash-commitments-and-synthetic-fields-only"
+    },
+    {
+      "id": "verifier-onboarding-pack-hash",
+      "label": "Verifier onboarding pack hash is stable",
+      "status": "pass",
+      "evidence": "078c405adf86946a1935d82443c6bed445d06fc0f9687c608678b3c68bd7afb5"
+    },
+    {
+      "id": "verifier-onboarding-pack-signature",
+      "label": "Verifier onboarding pack signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "procurement-readiness-pack-hash",
+      "label": "Procurement readiness pack hash is stable",
+      "status": "pass",
+      "evidence": "c90263efcc789a250450b27b1d350fb45b2eb576a3e3b3c83a3d94b4f18278d6"
+    },
+    {
+      "id": "procurement-readiness-pack-signature",
+      "label": "Procurement readiness pack signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "procurement-readiness-pack-status",
+      "label": "Procurement readiness pack is not blocked",
+      "status": "pass",
+      "evidence": "pilot-procurement-ready-with-conditions"
+    },
+    {
+      "id": "sovereign-differentiation-scorecard-hash",
+      "label": "Sovereign differentiation scorecard hash is stable",
+      "status": "pass",
+      "evidence": "616769517566b91489b2845c642f2935467e99e1cabe695b4c4956b82527a166"
+    },
+    {
+      "id": "sovereign-differentiation-scorecard-signature",
+      "label": "Sovereign differentiation scorecard signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "regulatory-index-hash",
+      "label": "Regulatory evidence index hash is stable",
+      "status": "pass",
+      "evidence": "68114cc627c37193e2569353cd73fe6cd17fba12d735ebd7a59f96ccc869f6ce"
+    },
+    {
+      "id": "regulatory-index-signature",
+      "label": "Regulatory evidence index signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "regulatory-index-artifacts",
+      "label": "Regulatory evidence index artifact hashes match current artifacts",
+      "status": "pass",
+      "evidence": "18 indexed artifacts"
+    },
+    {
+      "id": "auditor-attestation-hash",
+      "label": "Auditor attestation hash is stable",
+      "status": "pass",
+      "evidence": "1ac413729e02227e0a7a09be07dd1592f87815e6107927b3f8cbab949d9656f3"
+    },
+    {
+      "id": "auditor-attestation-signature",
+      "label": "Auditor attestation signature verifies",
+      "status": "pass",
+      "evidence": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5"
+    },
+    {
+      "id": "auditor-attestation-artifacts",
+      "label": "Auditor attestation artifact hashes match current artifacts",
+      "status": "pass",
+      "evidence": "19 attested artifacts"
+    },
+    {
+      "id": "hardware-tee-production",
+      "label": "Production hardware TEE attestation present",
+      "status": "warning",
+      "evidence": "Docker demo attestation only"
+    },
+    {
+      "id": "zkml-production",
+      "label": "Production zkML proof present where required",
+      "status": "warning",
+      "evidence": "Demo proof transcript only"
+    },
+    {
+      "id": "governed-key-custody",
+      "label": "Signer keys are governed by KMS/HSM custody",
+      "status": "warning",
+      "evidence": "Ephemeral demo keys only"
+    }
+  ],
+  "readiness": {
+    "public_proof_path": "complete",
+    "regulated_pilot": "conditional-after-production-blockers",
+    "production_grade": false,
+    "warning_count": 3
+  },
+  "next_production_steps": [
+    "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation.",
+    "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence.",
+    "Bind seal signer to governed KMS/HSM custody and publish verifier public-key policy.",
+    "Add external validator or auditor countersignature before regulated pilot use.",
+    "Anchor seal commitments to Aethelred testnet or a permissioned institutional zone."
+  ]
+}

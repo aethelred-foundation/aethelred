@@ -1,0 +1,23 @@
+{
+  "schema_version": "aethelred-jurisdiction-report-v0.2",
+  "generated_at": "2026-06-19T21:39:00.189Z",
+  "jurisdiction": "AE-ADGM",
+  "regulator": "ADGM FSRA",
+  "data_residency_zone": "AE",
+  "execution_region": "AE-ADGM",
+  "permitted_regions": [
+    "AE-ADGM",
+    "AE-CBUAE",
+    "AE-SOVEREIGN-DC"
+  ],
+  "data_boundary": "Synthetic",
+  "public_demo_safe": true,
+  "jurisdiction_allowed": true,
+  "data_residency_allowed": true,
+  "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+  "export_controls": {
+    "raw_data_exported": false,
+    "public_artifacts_use_hash_commitments": true,
+    "regulator_pack_contains_synthetic_input_only": true
+  }
+}

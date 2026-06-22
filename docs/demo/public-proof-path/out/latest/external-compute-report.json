@@ -1,0 +1,96 @@
+{
+  "schema_version": "aethelred-external-compute-report-v0.2",
+  "generated_at": "2026-06-19T21:39:00.189Z",
+  "provider": "aethelred-docker-public-proof",
+  "provider_profile": {
+    "name": "Aethelred Docker Public Proof Path",
+    "category": "public-demo",
+    "jurisdiction_model": "local-public-proof",
+    "accepted_attestation_types": [
+      "docker-demo-transcript"
+    ],
+    "production_grade": false,
+    "strategic_role": "native public proof path for demonstrations and regression tests"
+  },
+  "workload_id": "docker-local-public-proof-path",
+  "execution_region": "AE-ADGM",
+  "attestation_type": "docker-demo-transcript",
+  "external_proof_hash": "f3fe96cfcf616c255cb4a90380f4fe1ece56517a20c2b14e5a3495e71458ccfa",
+  "accepted": true,
+  "checks": [
+    {
+      "id": "provider-registered",
+      "label": "Compute proof provider is registered",
+      "required": true,
+      "passed": true,
+      "evidence": "aethelred-docker-public-proof"
+    },
+    {
+      "id": "attestation-type-supported",
+      "label": "Attestation type is supported for the provider adapter",
+      "required": true,
+      "passed": true,
+      "evidence": "docker-demo-transcript"
+    },
+    {
+      "id": "model-hash-bound",
+      "label": "External proof binds the expected model hash",
+      "required": true,
+      "passed": true,
+      "evidence": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0"
+    },
+    {
+      "id": "input-hash-bound",
+      "label": "External proof binds the expected input hash",
+      "required": true,
+      "passed": true,
+      "evidence": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9"
+    },
+    {
+      "id": "output-hash-bound",
+      "label": "External proof binds the expected output hash",
+      "required": true,
+      "passed": true,
+      "evidence": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+    },
+    {
+      "id": "proof-hash-present",
+      "label": "External proof has a stable proof hash",
+      "required": true,
+      "passed": true,
+      "evidence": "ac75a99fa8786dd13d919727d658503189e533efea424b917af7754f5c89023a"
+    },
+    {
+      "id": "execution-region-allowed",
+      "label": "External execution region is allowed for the policy jurisdiction",
+      "required": true,
+      "passed": true,
+      "evidence": "AE-ADGM"
+    },
+    {
+      "id": "no-public-data-export",
+      "label": "External provider exported commitments only, not raw regulated data",
+      "required": true,
+      "passed": true,
+      "evidence": "commitments only"
+    }
+  ],
+  "failed_required_checks": [],
+  "normalized_claims": {
+    "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+    "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+    "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+    "proof_hash": "ac75a99fa8786dd13d919727d658503189e533efea424b917af7754f5c89023a",
+    "raw_claims_hash": "7e79a3e8e356bf9ba0a4e48afcf82e76531c4b21a33cb2167af489b2e907b271",
+    "public_data_exported": false
+  },
+  "strategic_interop_note": "External compute proof source is wrapped by Aethelred sovereign verification controls.",
+  "signer": {
+    "id": "did:aethelred:signer:external-compute-adapter-demo",
+    "key_id": "did:aethelred:signer:external-compute-adapter-demo-3de05541774abb6b",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAUeSffCpg1KkLPGs2nn8DRzrechhBT3Hc7ptOQd3zB+c=\n-----END PUBLIC KEY-----\n"
+  },
+  "report_hash": "342adadae4d00530a2de94517a4ab6c8f111c66c3e7c8218c6d60fd5083fa0ce",
+  "signature": "2zJ9l74MJX16dtVyGLKPNSEtTTOQ2p0/InbIGJXKssMyLRUKKTpczAmVyKbv9tXUGWRBjKrunKUz5t1y9KJGCA=="
+}

@@ -1,0 +1,212 @@
+{
+  "schema_version": "aethelred-regulatory-evidence-index-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "run_id": "proof_1781531313894_ee7d56c0",
+  "seal_id": "seal_0c1e4fee119699938e9f648c",
+  "audience": [
+    "regulator",
+    "external-auditor",
+    "institutional-buyer",
+    "sovereign-investor"
+  ],
+  "artifacts": [
+    {
+      "name": "aethelred-seal.json",
+      "sha256": "eb6205a5c6d395f9a5ee8dce44b3690cf6689a014a18a93ad850d751b9701609",
+      "purpose": "Portable Aethelred Seal for the AI decision."
+    },
+    {
+      "name": "policy-receipt.json",
+      "sha256": "0d8841d0c760248101ec7d3a575686b215386e6619118af428adbabf34ff18ea",
+      "purpose": "Signed policy engine decision and control checklist."
+    },
+    {
+      "name": "docker-attestation.json",
+      "sha256": "1856d7a10ee4a6aa26070c48f3d57e52695a69d774854c5fd53685dc44b88135",
+      "purpose": "Docker public proof path attestation transcript."
+    },
+    {
+      "name": "evidence-bundle.json",
+      "sha256": "f5dc68808aad6b1ce8d3e500b9fae0cfcbf1be37503c85c0eb391f4665dc21c5",
+      "purpose": "TEE-shaped and zkML-shaped evidence bundle."
+    },
+    {
+      "name": "external-compute-report.json",
+      "sha256": "6dfc96369c2dfc8521500f70acf8d7d1dcf78873d8bbd1a6ea9e93b76ffa5459",
+      "purpose": "Normalized compute-substrate proof report for Docker, external confidential compute, sovereign cloud, or on-prem execution."
+    },
+    {
+      "name": "institutional-context.json",
+      "sha256": "d0baa712bdb6ea8bde22a3e35a6649a7bbd60eb3b5b2f2371e2127559c2e1800",
+      "purpose": "Registry-backed institutional packaging context."
+    },
+    {
+      "name": "assurance-plan.json",
+      "sha256": "9e8d54a68aa005cafaf0dbf73680f537e2fd432cd6fa20ed18a41b1688d7670f",
+      "purpose": "Assurance tier target, production gaps, and promotion path."
+    },
+    {
+      "name": "validator-quorum.json",
+      "sha256": "8ddf58e0e2efa5292370bc4448579295c3919fe802104faa5cdcff10eb95fb0d",
+      "purpose": "Signed multi-verifier quorum votes."
+    },
+    {
+      "name": "jurisdiction-report.json",
+      "sha256": "afb0818262cce0335f2b91ca405cfc6be23b1433aeb625df0cab83d62d15b49b",
+      "purpose": "Data residency and jurisdiction control report."
+    },
+    {
+      "name": "liability-route.json",
+      "sha256": "4a5ede9e4e0b4bce7b9590d75e8697429158ba2b66b23bbbfc19f90b525a13f5",
+      "purpose": "Accountability and escalation route."
+    },
+    {
+      "name": "key-custody-manifest.json",
+      "sha256": "cdb38f5f54214708a58b49be9ab9cc26f80cf1e244b0499da529a63d77013a64",
+      "purpose": "Signer custody posture, rotation expectations, and HSM/KMS production requirements."
+    },
+    {
+      "name": "anchor-manifest.json",
+      "sha256": "e10dab92acb784f16c5079e0d2ccefb3479fe9fede495edc552d233f2d75a436",
+      "purpose": "Local-ledger anchor plus chain-ready payload for testnet or permissioned-zone anchoring."
+    },
+    {
+      "name": "pilot-readiness-gate.json",
+      "sha256": "94a02643e97c88084b70d5759c87ef9078b26b9ddf1ce790d35892e96b52842a",
+      "purpose": "Conditional pilot readiness gate with production blockers."
+    },
+    {
+      "name": "redaction-manifest.json",
+      "sha256": "7eab6c66f8c703493c8129cb8477645cca1dcdd5d94902cf061879f2ef802207",
+      "purpose": "Public export-control and redaction manifest for regulated data minimization."
+    },
+    {
+      "name": "verifier-onboarding-pack.json",
+      "sha256": "33b714d1f10cf9a70b0c9c2372600ba98c2d06ad0397a0939304d202f4ff5542",
+      "purpose": "Verifier council onboarding requirements, roster template, and pilot legal-readiness checklist."
+    },
+    {
+      "name": "procurement-readiness-pack.json",
+      "sha256": "b9a757af780faf7a79e9a887044d49d750d2ab530055926e9a20bbbffe76b8a0",
+      "purpose": "Institutional buyer procurement controls, required documents, and commercial pilot packaging."
+    },
+    {
+      "name": "sovereign-differentiation-scorecard.json",
+      "sha256": "6660327e1613c281c3af0e576fe9c7191333f964774808e37e24837667eea921",
+      "purpose": "Aethelred-vs-generic-verifiable-cloud scorecard for sovereign and regulated buyers."
+    },
+    {
+      "name": "public-verifier-manifest.json",
+      "sha256": "60eb5e1ea3a11ff88570a67947de020ee639cdb89badebfe871a1c78ee6d4913",
+      "purpose": "Public endpoints, claims, and claim boundaries."
+    }
+  ],
+  "control_map": [
+    {
+      "control": "identity",
+      "artifacts": [
+        "institutional-context.json",
+        "policy-receipt.json"
+      ]
+    },
+    {
+      "control": "policy",
+      "artifacts": [
+        "policy-receipt.json",
+        "assurance-plan.json"
+      ]
+    },
+    {
+      "control": "compute-substrate",
+      "artifacts": [
+        "external-compute-report.json",
+        "docker-attestation.json"
+      ]
+    },
+    {
+      "control": "jurisdiction",
+      "artifacts": [
+        "jurisdiction-report.json",
+        "evidence-bundle.json"
+      ]
+    },
+    {
+      "control": "quorum",
+      "artifacts": [
+        "validator-quorum.json",
+        "aethelred-seal.json"
+      ]
+    },
+    {
+      "control": "liability",
+      "artifacts": [
+        "liability-route.json",
+        "audit-pack.json"
+      ]
+    },
+    {
+      "control": "key-custody",
+      "artifacts": [
+        "key-custody-manifest.json",
+        "auditor-attestation.json"
+      ]
+    },
+    {
+      "control": "anchoring",
+      "artifacts": [
+        "anchor-manifest.json",
+        "ledger.json"
+      ]
+    },
+    {
+      "control": "pilot-readiness",
+      "artifacts": [
+        "pilot-readiness-gate.json",
+        "assurance-plan.json"
+      ]
+    },
+    {
+      "control": "privacy-redaction",
+      "artifacts": [
+        "redaction-manifest.json",
+        "evidence-bundle.json"
+      ]
+    },
+    {
+      "control": "verifier-onboarding",
+      "artifacts": [
+        "verifier-onboarding-pack.json",
+        "validator-quorum.json"
+      ]
+    },
+    {
+      "control": "procurement-readiness",
+      "artifacts": [
+        "procurement-readiness-pack.json",
+        "pilot-readiness-gate.json"
+      ]
+    },
+    {
+      "control": "sovereign-differentiation",
+      "artifacts": [
+        "sovereign-differentiation-scorecard.json",
+        "external-compute-report.json"
+      ]
+    },
+    {
+      "control": "audit-export",
+      "artifacts": [
+        "audit-pack.json",
+        "audit-report.md"
+      ]
+    }
+  ],
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "index_hash": "68114cc627c37193e2569353cd73fe6cd17fba12d735ebd7a59f96ccc869f6ce",
+  "signature": "swEKfepzzMbdH1MAXaE/u964iwUGluK5gRQIQdI2wEb3Q1zwFgTDdKjugposIOHKHFLtWPFOaoKKTuwQOVeRCA=="
+}

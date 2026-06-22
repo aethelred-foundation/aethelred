@@ -1,0 +1,2744 @@
+{
+  "schema_version": "aethelred-public-proof-path-v0.2",
+  "service_version": "0.2.0-sovereign-proof-path",
+  "run_id": "proof_1781905140201_cb5e0b8f",
+  "created_at": "2026-06-19T21:39:00.189Z",
+  "request": {
+    "schema_version": "aethelred-proof-request-v0.2",
+    "use_case": "finance.high_risk_transaction_review",
+    "policy_id": "finance-high-risk-ai-decision-v0.2",
+    "requested_assurance_tier": 4,
+    "deployment_mode": "hybrid-public-seal",
+    "tenant": {
+      "name": "Aethelred Demo Bank",
+      "institution_did": "did:aethelred:institution:demo-bank",
+      "institution_type": "regulated-financial-institution",
+      "sector": "banking",
+      "jurisdiction": "AE-ADGM",
+      "regulator": "ADGM FSRA"
+    },
+    "processing": {
+      "data_residency_zone": "AE",
+      "execution_region": "AE-ADGM",
+      "permitted_regions": [
+        "AE-ADGM",
+        "AE-CBUAE",
+        "AE-SOVEREIGN-DC"
+      ],
+      "cloud_posture": "sovereign-cloud-ready",
+      "retention_policy": "public-demo-synthetic-only"
+    },
+    "regulatory_context": {
+      "frameworks": [
+        "ADGM FSRA governance expectation",
+        "UAE PDPL-aligned data minimization",
+        "financial-crime model-risk controls"
+      ],
+      "control_objectives": [
+        "Prove who requested the AI decision.",
+        "Prove what model and policy were applied.",
+        "Prove where the workflow was allowed to run.",
+        "Prove who is accountable for the final decision.",
+        "Export a regulator-readable evidence pack without exposing raw sensitive data."
+      ]
+    },
+    "agent": {
+      "did": "did:aethelred:agent:finance-risk-seal",
+      "name": "Finance Risk Review Agent",
+      "capabilities": [
+        "risk.score",
+        "policy.evaluate",
+        "seal.request"
+      ],
+      "sponsor_of_record": "did:aethelred:institution:demo-bank",
+      "liability_model": "enterprise-sponsored-human-accountable",
+      "human_owner": "Head of Financial Crime Controls",
+      "max_autonomous_authority_usd": 0
+    },
+    "model": {
+      "model_id": "model:aethelred-risk-reviewer",
+      "name": "aethelred-risk-reviewer",
+      "version": "2026.05-demo",
+      "approval_status": "approved-for-shadow-demo",
+      "risk_rating": "high-impact-supporting-control"
+    },
+    "evidence_input": {
+      "transaction_id": "txn-demo-ae-00042",
+      "data_boundary": "Synthetic",
+      "jurisdiction": "AE-ADGM",
+      "amount_usd": 920000,
+      "channel": "cross-border-corporate-payment",
+      "counterparty_risk": "medium",
+      "sanctions_screen": "clear",
+      "adverse_media": "none",
+      "raw_pii_present": false,
+      "human_approval": {
+        "approver_role": "Financial Crime Compliance Officer",
+        "approver_did": "did:aethelred:human:fcc-approver-1",
+        "approved": true,
+        "reason": "Synthetic high-risk payment approved for public proof-path demonstration."
+      }
+    }
+  },
+  "model_output": {
+    "schema_version": "aethelred-model-output-v0.2",
+    "recommendation": "approve_with_controls",
+    "risk_score": 68,
+    "decision_boundary": "supporting-control-only-human-controller-required",
+    "reason_codes": [
+      "large-value-transfer",
+      "medium-counterparty-risk",
+      "sanctions-clear"
+    ],
+    "controls_required": [
+      "human-controller-approval",
+      "audit-pack-retention",
+      "post-decision-monitoring"
+    ],
+    "reviewer_action": "approved_by_human_controller"
+  },
+  "institutional_context": {
+    "schema_version": "aethelred-institutional-context-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "tenant": {
+      "name": "Aethelred Demo Bank",
+      "institution_did": "did:aethelred:institution:demo-bank",
+      "institution_type": "regulated-financial-institution",
+      "sector": "banking",
+      "jurisdiction": "AE-ADGM",
+      "regulator": "ADGM FSRA"
+    },
+    "policy": {
+      "policy_id": "finance-high-risk-ai-decision-v0.2",
+      "title": "High-risk AI decision policy for regulated finance",
+      "sector": "banking",
+      "regulator": "ADGM FSRA",
+      "jurisdiction": "AE-ADGM",
+      "min_assurance_tier": 4,
+      "human_approval_threshold_usd": 500000,
+      "use_cases": [
+        "finance.high_risk_transaction_review"
+      ],
+      "required_controls": [
+        "data-boundary",
+        "jurisdiction",
+        "data-residency",
+        "model-approval",
+        "agent-accountability",
+        "human-approval",
+        "pii-guard",
+        "liability-route"
+      ]
+    },
+    "jurisdiction": {
+      "jurisdiction": "AE-ADGM",
+      "country": "United Arab Emirates",
+      "regulator": "ADGM FSRA",
+      "data_residency_zone": "AE",
+      "allowed_processing_regions": [
+        "AE-ADGM",
+        "AE-CBUAE",
+        "AE-SOVEREIGN-DC"
+      ],
+      "public_demo_allowed_boundaries": [
+        "Synthetic",
+        "Anonymized"
+      ],
+      "sovereign_posture": "regulated-financial-free-zone"
+    },
+    "model_registration": {
+      "model_id": "model:aethelred-risk-reviewer",
+      "profile": {
+        "owner": "did:aethelred:institution:aethelred-labs",
+        "purpose": "financial-crime risk review support",
+        "version": "2026.05-demo",
+        "version_status": {
+          "approval_status": "approved-for-shadow-demo",
+          "risk_rating": "high-impact-supporting-control",
+          "assurance_floor": 4,
+          "approved_by": "did:aethelred:council:model-risk"
+        }
+      }
+    },
+    "identity_registration": {
+      "agent": {
+        "name": "Finance Risk Review Agent",
+        "owner": "did:aethelred:institution:demo-bank",
+        "allowed_actions": [
+          "risk.score",
+          "policy.evaluate",
+          "seal.request"
+        ],
+        "max_autonomous_authority_usd": 0
+      },
+      "sponsor": {
+        "legal_name": "Aethelred Demo Bank",
+        "institution_type": "regulated-financial-institution",
+        "jurisdiction": "AE-ADGM",
+        "accountability_role": "sponsor-of-record"
+      },
+      "human_controller": {
+        "role": "Financial Crime Compliance Officer",
+        "institution": "did:aethelred:institution:demo-bank",
+        "approval_scope": [
+          "finance.high_risk_transaction_review"
+        ]
+      }
+    },
+    "deployment_profile": {
+      "mode": "hybrid-public-seal",
+      "description": "Private or controlled execution with public seal anchoring.",
+      "suitable_for": [
+        "banking",
+        "healthcare",
+        "carbon-markets",
+        "public-sector"
+      ],
+      "public_data_allowed": false,
+      "public_commitments_allowed": true
+    },
+    "assurance_target": {
+      "tier": 4,
+      "name": "Tier 4 Sovereign Regulated AI Decision",
+      "summary": "Tier 3 plus jurisdiction controls, liability routing, and zkML-ready output commitment.",
+      "required_controls": [
+        "hash-commitments",
+        "audit-log",
+        "attestation",
+        "identity",
+        "policy",
+        "quorum",
+        "human-approval",
+        "jurisdiction",
+        "liability",
+        "zkml-ready"
+      ]
+    },
+    "governance_posture": {
+      "foundation": "ADGM DLT Foundation target",
+      "assurance_council": "Technical, legal, security, and regulatory review body target",
+      "regulated_validator_council": "Banks, sovereign cloud, auditors, research labs, and sector verifiers target",
+      "public_claim_boundary": "Public Docker path proves evidence architecture, not production TEE or zkML finality."
+    }
+  },
+  "policy_receipt": {
+    "schema_version": "aethelred-policy-receipt-v0.2",
+    "id": "pol_cca1eb46927589234258",
+    "request_id": "req_b2dd39d797bd38e12e",
+    "actor": "did:aethelred:agent:finance-risk-seal",
+    "action": "finance.high_risk_transaction_review.seal",
+    "resource": "transaction:txn-demo-ae-00042",
+    "decision": "allow",
+    "policy_id": "finance-high-risk-ai-decision-v0.2",
+    "evaluated_at": "2026-06-19T21:39:00.189Z",
+    "checks": [
+      {
+        "id": "policy-supported-use-case",
+        "label": "Use case is governed by the selected policy",
+        "required": true,
+        "passed": true,
+        "evidence": "finance.high_risk_transaction_review",
+        "control_owner": "policy-registry"
+      },
+      {
+        "id": "data-boundary",
+        "label": "Approved public-demo data boundary",
+        "required": true,
+        "passed": true,
+        "evidence": "Synthetic",
+        "control_owner": "data-governance"
+      },
+      {
+        "id": "jurisdiction",
+        "label": "Jurisdiction is registered and policy allowed",
+        "required": true,
+        "passed": true,
+        "evidence": "AE-ADGM",
+        "control_owner": "jurisdiction-registry"
+      },
+      {
+        "id": "data-residency",
+        "label": "Execution region is allowed for the data residency zone",
+        "required": true,
+        "passed": true,
+        "evidence": "AE-ADGM within AE",
+        "control_owner": "jurisdiction-registry"
+      },
+      {
+        "id": "model-approval",
+        "label": "Model version is approved for the workflow",
+        "required": true,
+        "passed": true,
+        "evidence": "model:aethelred-risk-reviewer 2026.05-demo",
+        "control_owner": "model-registry"
+      },
+      {
+        "id": "assurance-floor",
+        "label": "Requested assurance tier meets model and policy floor",
+        "required": true,
+        "passed": true,
+        "evidence": "requested Tier 4",
+        "control_owner": "assurance-registry"
+      },
+      {
+        "id": "agent-accountability",
+        "label": "Agent identity, sponsor, and liability profile are registered",
+        "required": true,
+        "passed": true,
+        "evidence": "did:aethelred:institution:demo-bank",
+        "control_owner": "identity-registry"
+      },
+      {
+        "id": "agent-permissions",
+        "label": "Agent capabilities authorize scoring, policy evaluation, and seal request",
+        "required": true,
+        "passed": true,
+        "evidence": "risk.score, policy.evaluate, seal.request",
+        "control_owner": "identity-registry"
+      },
+      {
+        "id": "human-approval",
+        "label": "Human approval is bound for high-risk action",
+        "required": true,
+        "passed": true,
+        "evidence": "Financial Crime Compliance Officer",
+        "control_owner": "human-in-the-loop"
+      },
+      {
+        "id": "autonomy-limit",
+        "label": "Agent cannot autonomously execute the high-value transaction",
+        "required": true,
+        "passed": true,
+        "evidence": "amount=920000; autonomous_limit=0",
+        "control_owner": "human-in-the-loop"
+      },
+      {
+        "id": "pii-guard",
+        "label": "No raw PII markers are present in the public proof input",
+        "required": true,
+        "passed": true,
+        "evidence": "synthetic/public-safe input",
+        "control_owner": "privacy-control"
+      },
+      {
+        "id": "liability-route",
+        "label": "Sponsor, human owner, and operator liability route can be formed",
+        "required": true,
+        "passed": true,
+        "evidence": "enterprise-sponsored-human-accountable",
+        "control_owner": "liability-engine"
+      }
+    ],
+    "failed_required_checks": [],
+    "signer": {
+      "id": "did:aethelred:signer:policy-engine-demo",
+      "key_id": "did:aethelred:signer:policy-engine-demo-89621a7bfd152869",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAQ4TDn1/ZoHbE0DwmWCR0dz6Tkuo/RYlH73dczR27t88=\n-----END PUBLIC KEY-----\n"
+    },
+    "content_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+    "signature": "g+WNUu+HSEGXd7XVY1btcQ4TifNuLTxIoM6RJGA/m6cp9Gwdc6Yt23qvhDl1egiYB4e+j0MFmbe6XEgb75Z/Ag=="
+  },
+  "jurisdiction_report": {
+    "schema_version": "aethelred-jurisdiction-report-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "jurisdiction": "AE-ADGM",
+    "regulator": "ADGM FSRA",
+    "data_residency_zone": "AE",
+    "execution_region": "AE-ADGM",
+    "permitted_regions": [
+      "AE-ADGM",
+      "AE-CBUAE",
+      "AE-SOVEREIGN-DC"
+    ],
+    "data_boundary": "Synthetic",
+    "public_demo_safe": true,
+    "jurisdiction_allowed": true,
+    "data_residency_allowed": true,
+    "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+    "export_controls": {
+      "raw_data_exported": false,
+      "public_artifacts_use_hash_commitments": true,
+      "regulator_pack_contains_synthetic_input_only": true
+    }
+  },
+  "liability_route": {
+    "schema_version": "aethelred-liability-route-v0.2",
+    "route_id": "route_08b6da180d18ba0bd525",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "status": "bound",
+    "liability_model": "enterprise-sponsored-human-accountable",
+    "decision_boundary": "supporting-control-only-human-controller-required",
+    "parties": [
+      {
+        "role": "sponsor-of-record",
+        "did": "did:aethelred:institution:demo-bank",
+        "obligation": "Owns institutional accountability for agent deployment and controls.",
+        "status": "bound"
+      },
+      {
+        "role": "human-controller",
+        "did": "did:aethelred:human:fcc-approver-1",
+        "obligation": "Approves high-risk action and remains final accountable decision controller.",
+        "status": "approved"
+      },
+      {
+        "role": "model-risk-owner",
+        "did": "did:aethelred:council:model-risk",
+        "obligation": "Maintains model approval, version control, risk rating, and sunset policy.",
+        "status": "registered"
+      },
+      {
+        "role": "protocol-operator",
+        "did": "did:aethelred:institution:aethelred-labs",
+        "obligation": "Maintains seal protocol, verifier policy, and evidence schema.",
+        "status": "bound-for-demo"
+      },
+      {
+        "role": "external-auditor",
+        "did": "did:aethelred:verifier:policy-auditor",
+        "obligation": "Countersigns verifier report for regulated pilot and production use.",
+        "status": "simulated-public-proof-path"
+      }
+    ],
+    "escalation_matrix": [
+      {
+        "trigger": "policy-denied",
+        "owner": "sponsor-of-record",
+        "action": "block seal and create exception review"
+      },
+      {
+        "trigger": "verifier-quorum-failed",
+        "owner": "protocol-operator",
+        "action": "quarantine evidence and require independent auditor review"
+      },
+      {
+        "trigger": "post-decision-harm",
+        "owner": "human-controller",
+        "action": "activate liability review and regulator evidence export"
+      }
+    ]
+  },
+  "external_compute_report": {
+    "schema_version": "aethelred-external-compute-report-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "provider": "aethelred-docker-public-proof",
+    "provider_profile": {
+      "name": "Aethelred Docker Public Proof Path",
+      "category": "public-demo",
+      "jurisdiction_model": "local-public-proof",
+      "accepted_attestation_types": [
+        "docker-demo-transcript"
+      ],
+      "production_grade": false,
+      "strategic_role": "native public proof path for demonstrations and regression tests"
+    },
+    "workload_id": "docker-local-public-proof-path",
+    "execution_region": "AE-ADGM",
+    "attestation_type": "docker-demo-transcript",
+    "external_proof_hash": "f3fe96cfcf616c255cb4a90380f4fe1ece56517a20c2b14e5a3495e71458ccfa",
+    "accepted": true,
+    "checks": [
+      {
+        "id": "provider-registered",
+        "label": "Compute proof provider is registered",
+        "required": true,
+        "passed": true,
+        "evidence": "aethelred-docker-public-proof"
+      },
+      {
+        "id": "attestation-type-supported",
+        "label": "Attestation type is supported for the provider adapter",
+        "required": true,
+        "passed": true,
+        "evidence": "docker-demo-transcript"
+      },
+      {
+        "id": "model-hash-bound",
+        "label": "External proof binds the expected model hash",
+        "required": true,
+        "passed": true,
+        "evidence": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0"
+      },
+      {
+        "id": "input-hash-bound",
+        "label": "External proof binds the expected input hash",
+        "required": true,
+        "passed": true,
+        "evidence": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9"
+      },
+      {
+        "id": "output-hash-bound",
+        "label": "External proof binds the expected output hash",
+        "required": true,
+        "passed": true,
+        "evidence": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+      },
+      {
+        "id": "proof-hash-present",
+        "label": "External proof has a stable proof hash",
+        "required": true,
+        "passed": true,
+        "evidence": "ac75a99fa8786dd13d919727d658503189e533efea424b917af7754f5c89023a"
+      },
+      {
+        "id": "execution-region-allowed",
+        "label": "External execution region is allowed for the policy jurisdiction",
+        "required": true,
+        "passed": true,
+        "evidence": "AE-ADGM"
+      },
+      {
+        "id": "no-public-data-export",
+        "label": "External provider exported commitments only, not raw regulated data",
+        "required": true,
+        "passed": true,
+        "evidence": "commitments only"
+      }
+    ],
+    "failed_required_checks": [],
+    "normalized_claims": {
+      "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+      "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+      "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+      "proof_hash": "ac75a99fa8786dd13d919727d658503189e533efea424b917af7754f5c89023a",
+      "raw_claims_hash": "7e79a3e8e356bf9ba0a4e48afcf82e76531c4b21a33cb2167af489b2e907b271",
+      "public_data_exported": false
+    },
+    "strategic_interop_note": "External compute proof source is wrapped by Aethelred sovereign verification controls.",
+    "signer": {
+      "id": "did:aethelred:signer:external-compute-adapter-demo",
+      "key_id": "did:aethelred:signer:external-compute-adapter-demo-3de05541774abb6b",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAUeSffCpg1KkLPGs2nn8DRzrechhBT3Hc7ptOQd3zB+c=\n-----END PUBLIC KEY-----\n"
+    },
+    "report_hash": "342adadae4d00530a2de94517a4ab6c8f111c66c3e7c8218c6d60fd5083fa0ce",
+    "signature": "2zJ9l74MJX16dtVyGLKPNSEtTTOQ2p0/InbIGJXKssMyLRUKKTpczAmVyKbv9tXUGWRBjKrunKUz5t1y9KJGCA=="
+  },
+  "attestation": {
+    "schema_version": "aethelred-docker-attestation-v0.2",
+    "id": "att_b6affa8a6820513edee6",
+    "mode": "docker-public-proof-demo",
+    "production_status": "demo-only-not-hardware-tee",
+    "platform_shape": "nitro-compatible-evidence-shape",
+    "container_image": "aethelred/public-proof-path:local",
+    "container_measurement": "214664825ed0afe065e12e2bf508a7b2986272a6ebd12fd65019efd52ec94167",
+    "nonce": "ee2fe4500fb1652538a9338a9a77199f498719eb3ed91a23f2547286b37580b4",
+    "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+    "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+    "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+    "external_compute_report_hash": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+    "external_compute_provider": "aethelred-docker-public-proof",
+    "issued_at": "2026-06-19T21:39:00.189Z",
+    "signer": {
+      "id": "did:aethelred:signer:docker-attestation-demo",
+      "key_id": "did:aethelred:signer:docker-attestation-demo-d235e4f0f9b8e133",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVIBislhL+7KlGNY33xO8w6HqlyfcPvySksEaYg7JTkI=\n-----END PUBLIC KEY-----\n"
+    },
+    "attestation_hash": "74b64de4a2dfe385c204414960620f7b522814b1dc80bd7af8e77183e187b445",
+    "signature": "BJpNGviAx1eoZ51evaj2csx0VQ7uMQiBDx0dLakshFG6rqNYRAxPGDKO+Cw+GkKa2tDO+zohHMIa9Ia0sggXCg=="
+  },
+  "evidence_bundle": {
+    "schema_version": "1.0.0",
+    "bundle_id": "bdaf4c0d-2f7f-49ba-9e5f-f0df4d810893",
+    "job_id": "B6AFFA8A6820513EDEE6D7E52B875C55700657D92BFAF325945490A4B33478A4",
+    "timestamp": "2026-06-19T21:39:00.189Z",
+    "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+    "circuit_hash": "7bd36d3c8147212271e2d2e36b4c48315db2aaa052fcde9d371c97aa94895c71",
+    "verifying_key_hash": "edee803c2cd85e695be6d33058e473c900708e42323a93fb152f3d3f338ac66d",
+    "tee_evidence": {
+      "platform": "nitro",
+      "enclave_id": "docker-local-public-proof-path",
+      "measurement": "214664825ed0afe065e12e2bf508a7b2986272a6ebd12fd65019efd52ec94167",
+      "quote": "eyJjb250YWluZXJfaW1hZ2UiOiJhZXRoZWxyZWQvcHVibGljLXByb29mLXBhdGg6bG9jYWwiLCJjb250YWluZXJfbWVhc3VyZW1lbnQiOiIyMTQ2NjQ4MjVlZDBhZmUwNjVlMTJlMmJmNTA4YTdiMjk4NjI3MmE2ZWJkMTJmZDY1MDE5ZWZkNTJlYzk0MTY3IiwiZXh0ZXJuYWxfY29tcHV0ZV9wcm92aWRlciI6ImFldGhlbHJlZC1kb2NrZXItcHVibGljLXByb29mIiwiZXh0ZXJuYWxfY29tcHV0ZV9yZXBvcnRfaGFzaCI6IjIwMWQ3MDhlZTgxOTY3YzRjZjY2ZDc3MmM5MDAxNzhjMDc3YWU0YTI5MTJlYjY0ZDViZWUyNDNiZjk1YTAzMWQiLCJpZCI6ImF0dF9iNmFmZmE4YTY4MjA1MTNlZGVlNiIsImlucHV0X2hhc2giOiIyMTNmY2IwMjQzOWNiOWNlNmNlNGU0MDJmZGI3NDVmY2Y3MDEwNDRlMDMyMzc3NjE1YjJmN2I4MWIxN2RjZGU5IiwiaXNzdWVkX2F0IjoiMjAyNi0wNi0xOVQyMTozOTowMC4xODlaIiwibW9kZSI6ImRvY2tlci1wdWJsaWMtcHJvb2YtZGVtbyIsIm1vZGVsX2hhc2giOiI1MDZiMGNiM2E4N2EzYWY2MDg0ZGIwZjQ4MWMwOGQzNGQwYTJlZjUxZTMyZDViMjI0MGMzNGQyYTBlMjk2MGMwIiwibm9uY2UiOiJlZTJmZTQ1MDBmYjE2NTI1MzhhOTMzOGE5YTc3MTk5ZjQ5ODcxOWViM2VkOTFhMjNmMjU0NzI4NmIzNzU4MGI0Iiwib3V0cHV0X2hhc2giOiJjZTEwOTA3MzM2OWEzZWUwN2FhZDdmY2RlMjk1NjQ4NDM4ZDI0ZDZhMDhjOWMwNGQ4OGI2N2ZlZTk0NjlhY2I2IiwicGxhdGZvcm1fc2hhcGUiOiJuaXRyby1jb21wYXRpYmxlLWV2aWRlbmNlLXNoYXBlIiwicHJvZHVjdGlvbl9zdGF0dXMiOiJkZW1vLW9ubHktbm90LWhhcmR3YXJlLXRlZSIsInNjaGVtYV92ZXJzaW9uIjoiYWV0aGVscmVkLWRvY2tlci1hdHRlc3RhdGlvbi12MC4yIiwic2lnbmVyIjp7ImFsZ29yaXRobSI6IkVkMjU1MTkiLCJpZCI6ImRpZDphZXRoZWxyZWQ6c2lnbmVyOmRvY2tlci1hdHRlc3RhdGlvbi1kZW1vIiwia2V5X2lkIjoiZGlkOmFldGhlbHJlZDpzaWduZXI6ZG9ja2VyLWF0dGVzdGF0aW9uLWRlbW8tZDIzNWU0ZjBmOWI4ZTEzMyIsInB1YmxpY19rZXlfcGVtIjoiLS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1cbk1Db3dCUVlESzJWd0F5RUFWSUJpc2xoTCs3S2xHTlkzM3hPOHc2SHFseWZjUHZ5U2tzRWFZZzdKVGtJPVxuLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tXG4ifX0=",
+      "nonce": "ee2fe4500fb1652538a9338a9a77199f498719eb3ed91a23f2547286b37580b4"
+    },
+    "zkml_evidence": {
+      "proof_system": "ezkl",
+      "proof_bytes": "eyJpbnB1dF9oYXNoIjoiMjEzZmNiMDI0MzljYjljZTZjZTRlNDAyZmRiNzQ1ZmNmNzAxMDQ0ZTAzMjM3NzYxNWIyZjdiODFiMTdkY2RlOSIsIm1vZGUiOiJkZW1vLXRyYW5zY3JpcHQiLCJtb2RlbF9oYXNoIjoiNTA2YjBjYjNhODdhM2FmNjA4NGRiMGY0ODFjMDhkMzRkMGEyZWY1MWUzMmQ1YjIyNDBjMzRkMmEwZTI5NjBjMCIsIm91dHB1dF9oYXNoIjoiY2UxMDkwNzMzNjlhM2VlMDdhYWQ3ZmNkZTI5NTY0ODQzOGQyNGQ2YTA4YzljMDRkODhiNjdmZWU5NDY5YWNiNiIsInZlcmlmaWVyX25vdGUiOiJQcm9kdWN0aW9uIHBhdGggbXVzdCByZXBsYWNlIHRoaXMgdHJhbnNjcmlwdCB3aXRoIGEgcmVhbCBwcm9vZi4ifQ==",
+      "public_inputs": "eyJpbnB1dF9oYXNoIjoiMjEzZmNiMDI0MzljYjljZTZjZTRlNDAyZmRiNzQ1ZmNmNzAxMDQ0ZTAzMjM3NzYxNWIyZjdiODFiMTdkY2RlOSIsIm1vZGVsX2hhc2giOiI1MDZiMGNiM2E4N2EzYWY2MDg0ZGIwZjQ4MWMwOGQzNGQwYTJlZjUxZTMyZDViMjI0MGMzNGQyYTBlMjk2MGMwIiwib3V0cHV0X2hhc2giOiJjZTEwOTA3MzM2OWEzZWUwN2FhZDdmY2RlMjk1NjQ4NDM4ZDI0ZDZhMDhjOWMwNGQ4OGI2N2ZlZTk0NjlhY2I2In0=",
+      "output_commitment": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+    },
+    "region": "AE-ADGM",
+    "operator": "aethel1qypqxpq9qcrsszg2pvxq6rs0zqg3yyc5lzv7xu",
+    "policy_decision": {
+      "mode": "hybrid",
+      "require_both": true,
+      "fallback_allowed": false,
+      "policy_version": "finance-high-risk-ai-decision-v0.2",
+      "decision": "allow",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+    },
+    "metadata": {
+      "proof_path": "docker-public-demo",
+      "production_status": "not-production-tee-or-zk-certified",
+      "requested_assurance_tier": 4,
+      "data_boundary": "Synthetic",
+      "use_case": "finance.high_risk_transaction_review",
+      "agent_did": "did:aethelred:agent:finance-risk-seal",
+      "sponsor_of_record": "did:aethelred:institution:demo-bank",
+      "institutional_context_hash": "7c9ad96f8d177b8d93aaa4952b6f1a753234d9d848f5a1b2aa6b11152b4c69e0",
+      "jurisdiction_report_hash": "9eb6969718b7995298155172a15b2047c5656421319fe1f3cf5671a85609bbed",
+      "liability_route_hash": "31305ad1f07bdd654f9a048f27533bb496f5e240b32eb0c4aa1c2e51cb7b0535",
+      "external_compute_report_hash": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+      "external_compute_provider": "aethelred-docker-public-proof"
+    }
+  },
+  "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+  "validator_quorum": {
+    "schema_version": "aethelred-validator-quorum-v0.2",
+    "quorum_id": "quorum_a159013530c1254cc698",
+    "strategy": "regulated-multi-verifier-public-proof-path",
+    "required_accepts": 3,
+    "accepted": 4,
+    "rejected": 0,
+    "quorum_reached": true,
+    "categories": [
+      "regulated-cloud-provider",
+      "cybersecurity-auditor",
+      "compliance-auditor",
+      "sovereign-infrastructure-observer"
+    ],
+    "votes": [
+      {
+        "schema_version": "aethelred-verifier-vote-v0.2",
+        "quorum_id": "quorum_a159013530c1254cc698",
+        "verifier_id": "did:aethelred:verifier:regulated-cloud-ae",
+        "verifier_name": "Regulated Cloud Verifier AE",
+        "category": "regulated-cloud-provider",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "attestation",
+          "data-residency"
+        ],
+        "decision": "accept",
+        "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+        "issued_at": "2026-06-19T21:39:00.189Z",
+        "signer": {
+          "id": "did:aethelred:verifier:regulated-cloud-ae",
+          "key_id": "did:aethelred:verifier:regulated-cloud-ae-95965b12b45eac1c",
+          "algorithm": "Ed25519",
+          "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAZHoaQw7/s2lxer3K+UJMZJZmINu+KQOuiW4g0RXNbpA=\n-----END PUBLIC KEY-----\n"
+        },
+        "vote_hash": "2d7ec4e3f130952311d4f7785512057bd75c550cc22f893712fc377789b6c6d9",
+        "signature": "ZihV2AMHBNPGN8kPv/daOPQPPaF7pcAWakIFGN1aJIAko3yiT6q1lQ8lHYhnmcQN+s2REqQjqDV1RdPPly5BBg=="
+      },
+      {
+        "schema_version": "aethelred-verifier-vote-v0.2",
+        "quorum_id": "quorum_a159013530c1254cc698",
+        "verifier_id": "did:aethelred:verifier:cyber-auditor",
+        "verifier_name": "Cyber Assurance Verifier",
+        "category": "cybersecurity-auditor",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "container-measurement",
+          "signature-integrity"
+        ],
+        "decision": "accept",
+        "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+        "issued_at": "2026-06-19T21:39:00.189Z",
+        "signer": {
+          "id": "did:aethelred:verifier:cyber-auditor",
+          "key_id": "did:aethelred:verifier:cyber-auditor-e587f0fdfcfd4d00",
+          "algorithm": "Ed25519",
+          "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbUM8ca9LGbP0VR+MMIX2uanc2Gf02QGYWGf0/dZ53q4=\n-----END PUBLIC KEY-----\n"
+        },
+        "vote_hash": "8a91d796027ecb17e710a1e656a6ac6bfd6586edfe76b360aca496d774381368",
+        "signature": "zAQgwDz+7eJMxXXdwJeUo3bKNnWA+bF6X7Cvgr6wT9bw04zAahMp5bEXfIUK0u+gjJtGBqXSjqcgPu/XNIVRDA=="
+      },
+      {
+        "schema_version": "aethelred-verifier-vote-v0.2",
+        "quorum_id": "quorum_a159013530c1254cc698",
+        "verifier_id": "did:aethelred:verifier:policy-auditor",
+        "verifier_name": "Policy and Compliance Verifier",
+        "category": "compliance-auditor",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "policy",
+          "human-approval",
+          "liability"
+        ],
+        "decision": "accept",
+        "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+        "issued_at": "2026-06-19T21:39:00.189Z",
+        "signer": {
+          "id": "did:aethelred:verifier:policy-auditor",
+          "key_id": "did:aethelred:verifier:policy-auditor-90d2285a4497ccdd",
+          "algorithm": "Ed25519",
+          "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA2Oir0LrYbcGJSvLh/H+j6Uljvk7aHErQG2PUKBIaZhA=\n-----END PUBLIC KEY-----\n"
+        },
+        "vote_hash": "55abaf4fa1196a7069dc4e7693a798d407ddc6e494c9e4125991e362497a423a",
+        "signature": "to+a3prkM6XhGBWgYhj+yAOm4betyzBaJ1L0AJGDlqHDi2L7i65nQR5zJBeCw9lt2PqmKThlUtRDLJyVpyGSAA=="
+      },
+      {
+        "schema_version": "aethelred-verifier-vote-v0.2",
+        "quorum_id": "quorum_a159013530c1254cc698",
+        "verifier_id": "did:aethelred:verifier:sovereign-observer",
+        "verifier_name": "Sovereign Observer Verifier",
+        "category": "sovereign-infrastructure-observer",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "jurisdiction",
+          "audit-export"
+        ],
+        "decision": "accept",
+        "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+        "issued_at": "2026-06-19T21:39:00.189Z",
+        "signer": {
+          "id": "did:aethelred:verifier:sovereign-observer",
+          "key_id": "did:aethelred:verifier:sovereign-observer-659b0b50e682cabf",
+          "algorithm": "Ed25519",
+          "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbHsjyK/piWHK7iOskhMR6AhL/APlqJXRww40sIy9bcU=\n-----END PUBLIC KEY-----\n"
+        },
+        "vote_hash": "371151b04ef17b6cdae81aa5583cf4fd6b00a72f7259b8da4dbfab3a1710f8b2",
+        "signature": "76fh+igRgyv4g4zbW2DGZEA+RucViDcovCmW81tC5TCW87Gx+Raorfs2Y8q1RvowlWDpko/V0RndCburQNGYDQ=="
+      }
+    ]
+  },
+  "assurance_plan": {
+    "schema_version": "aethelred-assurance-plan-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "target_tier": {
+      "tier": 4,
+      "name": "Tier 4 Sovereign Regulated AI Decision",
+      "summary": "Tier 3 plus jurisdiction controls, liability routing, and zkML-ready output commitment.",
+      "required_controls": [
+        "hash-commitments",
+        "audit-log",
+        "attestation",
+        "identity",
+        "policy",
+        "quorum",
+        "human-approval",
+        "jurisdiction",
+        "liability",
+        "zkml-ready"
+      ]
+    },
+    "current_path": {
+      "classification": "public-docker-proof-path",
+      "production_grade": false,
+      "public_verifiability": true,
+      "regulator_pack_exportable": true
+    },
+    "controls": [
+      {
+        "id": "policy-native",
+        "label": "Policy receipt is bound into the seal",
+        "status": "pass",
+        "evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+      },
+      {
+        "id": "jurisdiction-aware",
+        "label": "Jurisdiction and data residency controls are explicit",
+        "status": "pass",
+        "evidence": "AE-ADGM"
+      },
+      {
+        "id": "regulated-quorum",
+        "label": "Multiple verifier categories countersigned the evidence hash",
+        "status": "pass",
+        "evidence": "4/3 accepts"
+      },
+      {
+        "id": "audit-export",
+        "label": "Regulator-readable evidence pack is generated",
+        "status": "pass",
+        "evidence": "audit-pack.json and audit-report.md"
+      },
+      {
+        "id": "external-compute-ingestion",
+        "label": "External compute proof is normalized before sealing",
+        "status": "pass",
+        "evidence": "external-compute-report.json"
+      },
+      {
+        "id": "hardware-tee",
+        "label": "Production hardware TEE quote",
+        "status": "warning",
+        "evidence": "Docker demo attestation only"
+      },
+      {
+        "id": "zkml-production",
+        "label": "Production zkML proof",
+        "status": "warning",
+        "evidence": "Demo proof transcript only"
+      },
+      {
+        "id": "hsm-custody",
+        "label": "Governed key custody",
+        "status": "warning",
+        "evidence": "Ephemeral demo keys only"
+      }
+    ],
+    "production_blockers": [
+      {
+        "id": "production-hardware-tee",
+        "status": "open",
+        "owner": "compute-provider",
+        "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+      },
+      {
+        "id": "production-zkml-proof",
+        "status": "open",
+        "owner": "model-verification",
+        "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+      },
+      {
+        "id": "external-compute-quote-verifier",
+        "status": "open",
+        "owner": "compute-adapter",
+        "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+      },
+      {
+        "id": "governed-key-custody",
+        "status": "open",
+        "owner": "protocol-governance",
+        "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+      },
+      {
+        "id": "external-audit-countersignature",
+        "status": "open",
+        "owner": "assurance-council",
+        "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+      }
+    ],
+    "promotion_path": [
+      "Run same proof path in a sovereign cloud confidential VM.",
+      "Bind validator identities to legal entities and service-level terms.",
+      "Add external auditor countersignature and publish audit letter.",
+      "Anchor seal commitments to Aethelred testnet or permissioned institutional zone."
+    ]
+  },
+  "key_custody_manifest": {
+    "schema_version": "aethelred-key-custody-manifest-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "custody_mode": "ephemeral-demo-keys",
+    "production_status": "not-production-custody",
+    "signers": {
+      "policy_engine": {
+        "id": "did:aethelred:signer:policy-engine-demo",
+        "key_id": "did:aethelred:signer:policy-engine-demo-89621a7bfd152869",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAQ4TDn1/ZoHbE0DwmWCR0dz6Tkuo/RYlH73dczR27t88=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "attestation_authority": {
+        "id": "did:aethelred:signer:docker-attestation-demo",
+        "key_id": "did:aethelred:signer:docker-attestation-demo-d235e4f0f9b8e133",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVIBislhL+7KlGNY33xO8w6HqlyfcPvySksEaYg7JTkI=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "external_compute_adapter": {
+        "id": "did:aethelred:signer:external-compute-adapter-demo",
+        "key_id": "did:aethelred:signer:external-compute-adapter-demo-3de05541774abb6b",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAUeSffCpg1KkLPGs2nn8DRzrechhBT3Hc7ptOQd3zB+c=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "seal_authority": {
+        "id": "did:aethelred:signer:seal-authority-demo",
+        "key_id": "did:aethelred:signer:seal-authority-demo-8b9e9453a0c3e5a0",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVkEVy7ccCdh80TJi0PYhvClkMu3TcizNrLWhiXH+8eI=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "audit_vault": {
+        "id": "did:aethelred:signer:audit-vault-demo",
+        "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "did:aethelred:verifier:regulated-cloud-ae": {
+        "id": "did:aethelred:verifier:regulated-cloud-ae",
+        "key_id": "did:aethelred:verifier:regulated-cloud-ae-95965b12b45eac1c",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAZHoaQw7/s2lxer3K+UJMZJZmINu+KQOuiW4g0RXNbpA=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "did:aethelred:verifier:cyber-auditor": {
+        "id": "did:aethelred:verifier:cyber-auditor",
+        "key_id": "did:aethelred:verifier:cyber-auditor-e587f0fdfcfd4d00",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbUM8ca9LGbP0VR+MMIX2uanc2Gf02QGYWGf0/dZ53q4=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "did:aethelred:verifier:policy-auditor": {
+        "id": "did:aethelred:verifier:policy-auditor",
+        "key_id": "did:aethelred:verifier:policy-auditor-90d2285a4497ccdd",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA2Oir0LrYbcGJSvLh/H+j6Uljvk7aHErQG2PUKBIaZhA=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      },
+      "did:aethelred:verifier:sovereign-observer": {
+        "id": "did:aethelred:verifier:sovereign-observer",
+        "key_id": "did:aethelred:verifier:sovereign-observer-659b0b50e682cabf",
+        "algorithm": "Ed25519",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbHsjyK/piWHK7iOskhMR6AhL/APlqJXRww40sIy9bcU=\n-----END PUBLIC KEY-----\n",
+        "custody_class": "ephemeral-in-memory-demo-key",
+        "rotation_policy": "per proof run",
+        "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+      }
+    },
+    "required_production_controls": [
+      "HSM or cloud KMS custody for seal authority keys",
+      "dual-control rotation procedure",
+      "auditor-visible key registry",
+      "signer revocation list",
+      "break-glass and incident rotation runbook"
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "manifest_hash": "e629915bbb8f1be69f683f45df451cee792d65145319e3ec460446a838f8aec1",
+    "signature": "0xwzE/T5YhPQg+xd96iQ9t3CcOfNGRg6eFNrOt577g8ss1flo2Uq5Zf9HfTA5aC8YdQ8yE8sxK/iAx4/2/V1Bg=="
+  },
+  "anchor_manifest": {
+    "schema_version": "aethelred-anchor-manifest-v0.2",
+    "anchor_id": "anchor_c0129d0c8d2fc67a797772b4",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "mode": "local-ledger-with-chain-ready-payload",
+    "status": "locally-anchored-public-proof",
+    "target_networks": [
+      {
+        "network": "aethelred-testnet",
+        "status": "ready-payload-not-submitted",
+        "submission_method": "future RPC transaction or permissioned-zone anchor"
+      },
+      {
+        "network": "permissioned-institutional-zone",
+        "status": "ready-payload-not-submitted",
+        "submission_method": "private validator council anchor"
+      }
+    ],
+    "commitments": {
+      "seal_hash": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11",
+      "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "validator_quorum_hash": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+    },
+    "chain_payload": {
+      "type_url": "/aethelred.seal.v1.MsgAnchorSeal",
+      "body": {
+        "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+        "seal_hash": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11",
+        "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+        "quorum_hash": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+      }
+    },
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "anchor_hash": "d2681efe2f63497baf14857a799274236e8c4adcccf18f56a7f0d267e2212bd2",
+    "signature": "IvvRZmWSwxWl9WNaPmChkiZ7daWBJuebMHfpClD1a6pSYhIPJKH1sO5hW9aS7e+PewHGX19UdxHQS1HCdpDQCQ=="
+  },
+  "pilot_readiness_gate": {
+    "schema_version": "aethelred-pilot-readiness-gate-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "use_case": "finance.high_risk_transaction_review",
+    "tenant": "Aethelred Demo Bank",
+    "public_proof_ready": true,
+    "regulated_pilot_status": "conditional-pass",
+    "production_status": "not-production-ready",
+    "gates": [
+      {
+        "id": "public-proof-verification",
+        "label": "Public proof path can be independently verified",
+        "status": "pass",
+        "evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+      },
+      {
+        "id": "regulated-quorum",
+        "label": "Regulated verifier quorum is reached",
+        "status": "pass",
+        "evidence": "4/3"
+      },
+      {
+        "id": "jurisdiction-readiness",
+        "label": "Jurisdiction and residency checks pass",
+        "status": "pass",
+        "evidence": "AE-ADGM"
+      },
+      {
+        "id": "external-compute-acceptance",
+        "label": "External compute proof adapter accepted the workload claims",
+        "status": "pass",
+        "evidence": "aethelred-docker-public-proof"
+      },
+      {
+        "id": "regulator-pack-export",
+        "label": "Regulator pack can be exported",
+        "status": "pass",
+        "evidence": "regulator-pack/latest"
+      },
+      {
+        "id": "chain-anchor-payload",
+        "label": "Chain anchor payload is ready",
+        "status": "pass",
+        "evidence": "anchor_c0129d0c8d2fc67a797772b4"
+      },
+      {
+        "id": "production-key-custody",
+        "label": "Production key custody is configured",
+        "status": "warning",
+        "evidence": "ephemeral-demo-keys"
+      },
+      {
+        "id": "production-tee",
+        "label": "Production TEE attestation is configured",
+        "status": "warning",
+        "evidence": "Docker transcript only"
+      },
+      {
+        "id": "production-zkml",
+        "label": "Production zkML proof is configured",
+        "status": "warning",
+        "evidence": "Demo transcript only"
+      }
+    ],
+    "open_production_blockers": [
+      {
+        "id": "production-hardware-tee",
+        "status": "open",
+        "owner": "compute-provider",
+        "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+      },
+      {
+        "id": "production-zkml-proof",
+        "status": "open",
+        "owner": "model-verification",
+        "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+      },
+      {
+        "id": "external-compute-quote-verifier",
+        "status": "open",
+        "owner": "compute-adapter",
+        "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+      },
+      {
+        "id": "governed-key-custody",
+        "status": "open",
+        "owner": "protocol-governance",
+        "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+      },
+      {
+        "id": "external-audit-countersignature",
+        "status": "open",
+        "owner": "assurance-council",
+        "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+      }
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "gate_hash": "2e847b9ad60a159856495658e98c1e19c19a60f8cd6c1649eb79e88fb7dd9bb6",
+    "signature": "/mQyoZiedInuGqCQfKLQPCLAkB3DCBONUNDvCfCHkbezBmUXz+qwO/FLvt/XNjYR47MoP+yz3eUVlpgEHJnFAQ=="
+  },
+  "redaction_manifest": {
+    "schema_version": "aethelred-redaction-manifest-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "use_case": "finance.high_risk_transaction_review",
+    "data_boundary": "Synthetic",
+    "public_artifact_policy": "hash-commitments-and-synthetic-fields-only",
+    "raw_regulated_data_exported": false,
+    "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+    "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+    "field_classifications": [
+      {
+        "field": "transaction_id",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "a481dc127799ba2cb2f7f085cf904e863c2e3a6e8d9924d56f56ee2290e31e4e",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "data_boundary",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "4a85827ad80e8635fb4a2b41a3fce1d0f23ba1eb27db0aa84113a7b0ca415d42",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "jurisdiction",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "e60398fc9b283d6a74d9de597caddf46d15a1234b84b782dd6b8276d874a7b61",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "amount_usd",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "cbd5cb2caa86aa8af99eb6b93812455e23359226a9ceac40422459e458d5e253",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "channel",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "af587d660296f78f124cd840ebf53b3749b7d6723591fdfd90c8e17e443b5c70",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "counterparty_risk",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "c082456a7766e23a18db084cd34b6ff510baef506548b897cc80e9b7d3e121c8",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "sanctions_screen",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "913a4cb91be20332f3559f8070255d7ac3e6228bb423f4441551d3f783e7d4f4",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "adverse_media",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "140bedbf9c3f6d56a9846d2ba7088798683f4da0c248231336e6a05679e4fdfe",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "raw_pii_present",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+        "reason": "synthetic-or-approved-public-proof-field"
+      },
+      {
+        "field": "human_approval",
+        "classification": "public-demo-safe",
+        "public_export": true,
+        "value_hash": "3a3918f8f578169007a57b3f9919e124bc1a5d77a1eeac196a1fd338aa965272",
+        "reason": "synthetic-or-approved-public-proof-field"
+      }
+    ],
+    "restricted_fields": [],
+    "export_controls": [
+      {
+        "control": "raw-data-minimization",
+        "status": "pass",
+        "evidence": "no restricted fields detected"
+      },
+      {
+        "control": "hash-only-commitments",
+        "status": "pass",
+        "evidence": "input_hash and output_hash"
+      },
+      {
+        "control": "public-demo-boundary",
+        "status": "pass",
+        "evidence": "Synthetic"
+      }
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "manifest_hash": "a323067855002a977e7436ef1027601299aec2704e488d23abadbda80ae23203",
+    "signature": "TZtLMbAdpoBf7I0v3kkYyMDRiQ6kQp3eRtavwPKHuhet/S/Uarky7Ecc6LZL2eoTQbp7g9zA46p2eM8JydsSBg=="
+  },
+  "verifier_onboarding_pack": {
+    "schema_version": "aethelred-verifier-onboarding-pack-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "quorum_id": "quorum_a159013530c1254cc698",
+    "target_jurisdiction": "AE-ADGM",
+    "required_categories": [
+      "regulated-cloud-provider",
+      "cybersecurity-auditor",
+      "compliance-auditor",
+      "sovereign-infrastructure-observer"
+    ],
+    "onboarding_stages": [
+      {
+        "stage": "legal-identity",
+        "exit_evidence": "Verifier legal entity, jurisdiction, beneficial ownership, and authorized signer mapped to verifier DID."
+      },
+      {
+        "stage": "technical-readiness",
+        "exit_evidence": "Verifier key custody, uptime target, incident contact, and evidence-retention controls documented."
+      },
+      {
+        "stage": "policy-scope",
+        "exit_evidence": "Allowed sectors, disallowed conflicts, liability boundary, and escalation duty accepted."
+      },
+      {
+        "stage": "pilot-countersignature",
+        "exit_evidence": "Verifier signs pilot evidence hash and accepts regulator cooperation obligations."
+      }
+    ],
+    "verifier_requirements": [
+      "Legal entity mapping for verifier DID.",
+      "Public key registry and rotation contact.",
+      "Sector scope and conflict policy.",
+      "Evidence retention and incident cooperation terms.",
+      "Service-level target for pilot quorum participation."
+    ],
+    "pilot_roster_template": [
+      {
+        "verifier_id": "did:aethelred:verifier:regulated-cloud-ae",
+        "verifier_name": "Regulated Cloud Verifier AE",
+        "category": "regulated-cloud-provider",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "attestation",
+          "data-residency"
+        ],
+        "current_demo_vote_hash": "2d7ec4e3f130952311d4f7785512057bd75c550cc22f893712fc377789b6c6d9",
+        "production_status": "requires-legal-onboarding"
+      },
+      {
+        "verifier_id": "did:aethelred:verifier:cyber-auditor",
+        "verifier_name": "Cyber Assurance Verifier",
+        "category": "cybersecurity-auditor",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "container-measurement",
+          "signature-integrity"
+        ],
+        "current_demo_vote_hash": "8a91d796027ecb17e710a1e656a6ac6bfd6586edfe76b360aca496d774381368",
+        "production_status": "requires-legal-onboarding"
+      },
+      {
+        "verifier_id": "did:aethelred:verifier:policy-auditor",
+        "verifier_name": "Policy and Compliance Verifier",
+        "category": "compliance-auditor",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "policy",
+          "human-approval",
+          "liability"
+        ],
+        "current_demo_vote_hash": "55abaf4fa1196a7069dc4e7693a798d407ddc6e494c9e4125991e362497a423a",
+        "production_status": "requires-legal-onboarding"
+      },
+      {
+        "verifier_id": "did:aethelred:verifier:sovereign-observer",
+        "verifier_name": "Sovereign Observer Verifier",
+        "category": "sovereign-infrastructure-observer",
+        "jurisdiction": "AE-ADGM",
+        "controls": [
+          "jurisdiction",
+          "audit-export"
+        ],
+        "current_demo_vote_hash": "371151b04ef17b6cdae81aa5583cf4fd6b00a72f7259b8da4dbfab3a1710f8b2",
+        "production_status": "requires-legal-onboarding"
+      }
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "pack_hash": "628b78986ea6225cf23d6823aabe02160aceba21d4c17e7cbcabfb21f557cc77",
+    "signature": "MmG6e3TVxR4hm1RhVFMbz3t8AIc5BVjpH+OQ5e7K+GqIbT+Uf1ZCmdnRT440Fd3zlZtHkck7VWXpDYY5N28+BA=="
+  },
+  "procurement_readiness_pack": {
+    "schema_version": "aethelred-procurement-readiness-pack-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "tenant": {
+      "name": "Aethelred Demo Bank",
+      "institution_did": "did:aethelred:institution:demo-bank",
+      "institution_type": "regulated-financial-institution",
+      "sector": "banking",
+      "jurisdiction": "AE-ADGM",
+      "regulator": "ADGM FSRA"
+    },
+    "use_case": "finance.high_risk_transaction_review",
+    "buyer_status": "pilot-procurement-ready-with-conditions",
+    "controls": [
+      {
+        "domain": "policy",
+        "buyer_question": "Can the institution prove the decision was allowed by a governed policy?",
+        "aethelred_evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+        "status": "pass"
+      },
+      {
+        "domain": "data-residency",
+        "buyer_question": "Can the institution prove where the decision workflow was allowed to run?",
+        "aethelred_evidence": "AE-ADGM",
+        "status": "pass"
+      },
+      {
+        "domain": "privacy",
+        "buyer_question": "Can public artifacts be reviewed without exposing raw regulated data?",
+        "aethelred_evidence": "a323067855002a977e7436ef1027601299aec2704e488d23abadbda80ae23203",
+        "status": "pass"
+      },
+      {
+        "domain": "liability",
+        "buyer_question": "Can accountability be routed to sponsor, human controller, model owner, operator, and auditor path?",
+        "aethelred_evidence": "route_08b6da180d18ba0bd525",
+        "status": "pass"
+      },
+      {
+        "domain": "verifier-governance",
+        "buyer_question": "Can verifier categories be onboarded as legal entities for pilot quorum operation?",
+        "aethelred_evidence": "628b78986ea6225cf23d6823aabe02160aceba21d4c17e7cbcabfb21f557cc77",
+        "status": "conditional"
+      },
+      {
+        "domain": "key-custody",
+        "buyer_question": "Is production key custody ready?",
+        "aethelred_evidence": "e629915bbb8f1be69f683f45df451cee792d65145319e3ec460446a838f8aec1",
+        "status": "conditional"
+      },
+      {
+        "domain": "anchoring",
+        "buyer_question": "Can the seal be anchored to a public testnet or permissioned institutional zone?",
+        "aethelred_evidence": "anchor_c0129d0c8d2fc67a797772b4",
+        "status": "conditional"
+      },
+      {
+        "domain": "pilot-readiness",
+        "buyer_question": "Is the workload ready for a controlled regulated pilot?",
+        "aethelred_evidence": "2e847b9ad60a159856495658e98c1e19c19a60f8cd6c1649eb79e88fb7dd9bb6",
+        "status": "conditional"
+      }
+    ],
+    "required_buyer_documents": [
+      "Pilot scope and data classification memo.",
+      "Deployment mode selection: public seal, permissioned zone, sovereign private deployment, or hybrid settlement.",
+      "Security owner approval for key custody and incident response.",
+      "Legal owner approval for liability route and claim boundary.",
+      "Regulator or auditor evidence export acceptance.",
+      "Verifier council onboarding plan."
+    ],
+    "commercial_packaging": {
+      "recommended_offer": "regulated-ai-decision-seal-pilot",
+      "deployment_modes": [
+        "hybrid-public-seal",
+        "permissioned-institutional-zone",
+        "sovereign-private"
+      ],
+      "pilot_duration_days": 90,
+      "success_metrics": [
+        "Every pilot decision receives a verifiable seal.",
+        "Verifier report returns no failed checks.",
+        "Regulator pack exports without raw regulated data.",
+        "Incident and exception workflows are exercised at least once."
+      ]
+    },
+    "open_conditions": [
+      {
+        "id": "production-hardware-tee",
+        "owner": "compute-provider",
+        "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+      },
+      {
+        "id": "production-zkml-proof",
+        "owner": "model-verification",
+        "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+      },
+      {
+        "id": "external-compute-quote-verifier",
+        "owner": "compute-adapter",
+        "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+      },
+      {
+        "id": "governed-key-custody",
+        "owner": "protocol-governance",
+        "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+      },
+      {
+        "id": "external-audit-countersignature",
+        "owner": "assurance-council",
+        "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+      }
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "pack_hash": "16a4febaaa57b8176b457d604e783ea6cba415629d3220631442ef3e61ac48f2",
+    "signature": "mVP1lAWyDsSm5/1r1CiWOtAnbzYTAdJqYlVK/vHXKV8A6RJQniASJAv9DGHJpTdoVeoXOFanM1WQYb5kPpWJCw=="
+  },
+  "sovereign_differentiation_scorecard": {
+    "schema_version": "aethelred-sovereign-differentiation-scorecard-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "use_case": "finance.high_risk_transaction_review",
+    "upstream_compute_provider": {
+      "provider": "aethelred-docker-public-proof",
+      "name": "Aethelred Docker Public Proof Path",
+      "category": "public-demo",
+      "accepted": true,
+      "role": "upstream compute proof source, not the final institutional trust layer"
+    },
+    "positioning": "Aethelred is the sovereign verification layer for regulated AI decisions, not a generic verifiable-compute clone.",
+    "strategic_verdict": "Aethelred can wrap external compute proof and add policy, jurisdiction, liability, quorum, audit, and anchor evidence.",
+    "dimensions": [
+      {
+        "id": "compute-proof",
+        "dimension": "Compute proof",
+        "generic_verifiable_cloud": "Proves a workload ran under a provider attestation boundary.",
+        "aethelred_10x_control": "Normalizes Docker, external confidential compute, sovereign-cloud, and on-prem proof claims into one seal-bound compute report.",
+        "status": "pass",
+        "evidence": "342adadae4d00530a2de94517a4ab6c8f111c66c3e7c8218c6d60fd5083fa0ce"
+      },
+      {
+        "id": "policy-native",
+        "dimension": "Policy enforcement",
+        "generic_verifiable_cloud": "Usually application-defined or left to integrators.",
+        "aethelred_10x_control": "Signed policy receipt with required controls, denial reasons, and policy ID bound into the seal.",
+        "status": "pass",
+        "evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+      },
+      {
+        "id": "jurisdiction-native",
+        "dimension": "Jurisdiction and data residency",
+        "generic_verifiable_cloud": "Region is a cloud deployment parameter.",
+        "aethelred_10x_control": "Jurisdiction registry, permitted regions, data boundary, and export posture are first-class verifier inputs.",
+        "status": "pass",
+        "evidence": "AE-ADGM"
+      },
+      {
+        "id": "regulated-identity",
+        "dimension": "Institutional identity",
+        "generic_verifiable_cloud": "Developer or app identity proves deployment ownership.",
+        "aethelred_10x_control": "Institution, agent, sponsor, human controller, model owner, verifiers, and auditor roles are registry-backed.",
+        "status": "pass",
+        "evidence": "did:aethelred:institution:demo-bank"
+      },
+      {
+        "id": "liability-route",
+        "dimension": "Liability routing",
+        "generic_verifiable_cloud": "Proof says what executed, not who is accountable for harm.",
+        "aethelred_10x_control": "Sponsor, human controller, model-risk owner, protocol operator, and auditor path are packaged per decision.",
+        "status": "pass",
+        "evidence": "route_08b6da180d18ba0bd525"
+      },
+      {
+        "id": "regulated-quorum",
+        "dimension": "Verifier governance",
+        "generic_verifiable_cloud": "Provider attestation may be enough for developer trust.",
+        "aethelred_10x_control": "Multi-category verifier quorum signs the evidence hash for regulated review.",
+        "status": "pass",
+        "evidence": "4/3 accepts"
+      },
+      {
+        "id": "audit-export",
+        "dimension": "Regulator and auditor packaging",
+        "generic_verifiable_cloud": "Raw proofs often need bespoke explanation.",
+        "aethelred_10x_control": "Regulator pack, evidence index, audit report, readiness gate, and chain-ready anchor are generated every run.",
+        "status": "pass",
+        "evidence": "2e847b9ad60a159856495658e98c1e19c19a60f8cd6c1649eb79e88fb7dd9bb6"
+      },
+      {
+        "id": "sovereign-deployment",
+        "dimension": "Deployment posture",
+        "generic_verifiable_cloud": "Cloud-first by default.",
+        "aethelred_10x_control": "Public seal, permissioned zone, sovereign cloud, and on-prem enclave modes are represented in protocol artifacts.",
+        "status": "pass",
+        "evidence": "hybrid-public-seal"
+      },
+      {
+        "id": "production-honesty",
+        "dimension": "Production claim boundary",
+        "generic_verifiable_cloud": "Early systems can over-market alpha-grade trust.",
+        "aethelred_10x_control": "Verifier returns explicit warnings for hardware TEE, zkML, key custody, auditor, and anchor blockers.",
+        "status": "warning",
+        "evidence": "5 blockers disclosed"
+      }
+    ],
+    "10x_targets": [
+      "Match developer proof-path simplicity with Docker, CLI, SDKs, and public verifier APIs.",
+      "Add policy-native verification that compute clouds do not own by default.",
+      "Make jurisdiction, identity, liability, and audit export inseparable from every sealed AI decision.",
+      "Support external compute providers as substrates while keeping Aethelred as the institutional trust layer.",
+      "Convert production blockers into dated procurement-ready gates for sovereign cloud, HSM, validators, auditors, and anchoring."
+    ],
+    "remaining_gaps": [
+      {
+        "id": "production-hardware-tee",
+        "owner": "compute-provider",
+        "requirement": "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation."
+      },
+      {
+        "id": "production-zkml-proof",
+        "owner": "model-verification",
+        "requirement": "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence."
+      },
+      {
+        "id": "external-compute-quote-verifier",
+        "owner": "compute-adapter",
+        "requirement": "Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification."
+      },
+      {
+        "id": "governed-key-custody",
+        "owner": "protocol-governance",
+        "requirement": "Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy."
+      },
+      {
+        "id": "external-audit-countersignature",
+        "owner": "assurance-council",
+        "requirement": "Add independent security and regulatory auditor countersignature before regulated pilot claims."
+      }
+    ],
+    "score": {
+      "dimensions_total": 9,
+      "pass_count": 8,
+      "warning_count": 1,
+      "fail_count": 0,
+      "public_proof_ready": true
+    },
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "scorecard_hash": "b091ae5cf4533d72a3e854bdaffcef021d53406b2893e39b8707eea760448729",
+    "signature": "RhlWy4V8hWAWOlE7984CPpxYuvL5zExvLJXbOlGJugkfTW2K21mxnS9rDDShS/wQkFnsSj01FG4KkQKMU+rbDA=="
+  },
+  "seal": {
+    "schema_version": "aethelred-seal-v0.2",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "job_id": "B6AFFA8A6820513EDEE6D7E52B875C55700657D92BFAF325945490A4B33478A4",
+    "issued_at": "2026-06-19T21:39:00.189Z",
+    "status": "sealed_public_proof_verified",
+    "purpose": "finance.high_risk_transaction_review",
+    "assurance_tier": 4,
+    "commitments": {
+      "model_hash": "506b0cb3a87a3af6084db0f481c08d34d0a2ef51e32d5b2240c34d2a0e2960c0",
+      "input_hash": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9",
+      "output_hash": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6",
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "attestation_hash": "74b64de4a2dfe385c204414960620f7b522814b1dc80bd7af8e77183e187b445",
+      "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "institutional_context_hash": "7c9ad96f8d177b8d93aaa4952b6f1a753234d9d848f5a1b2aa6b11152b4c69e0",
+      "jurisdiction_report_hash": "9eb6969718b7995298155172a15b2047c5656421319fe1f3cf5671a85609bbed",
+      "liability_route_hash": "31305ad1f07bdd654f9a048f27533bb496f5e240b32eb0c4aa1c2e51cb7b0535",
+      "external_compute_report_hash": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+      "validator_quorum_hash": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2",
+      "assurance_plan_hash": "8d697d65fcd364f510187cacff0260749f3741214642cea2ac68525e48b5108f"
+    },
+    "verifier_quorum": {
+      "quorum_id": "quorum_a159013530c1254cc698",
+      "strategy": "regulated-multi-verifier-public-proof-path",
+      "required_accepts": 3,
+      "accepted": 4,
+      "rejected": 0,
+      "quorum_reached": true,
+      "categories": [
+        "regulated-cloud-provider",
+        "cybersecurity-auditor",
+        "compliance-auditor",
+        "sovereign-infrastructure-observer"
+      ],
+      "quorum_hash": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+    },
+    "liability": {
+      "route_id": "route_08b6da180d18ba0bd525",
+      "sponsor_of_record": "did:aethelred:institution:demo-bank",
+      "liability_model": "enterprise-sponsored-human-accountable",
+      "human_owner": "Head of Financial Crime Controls"
+    },
+    "jurisdiction": {
+      "policy_jurisdiction": "AE-ADGM",
+      "execution_region": "AE-ADGM",
+      "data_residency_zone": "AE"
+    },
+    "signer": {
+      "id": "did:aethelred:signer:seal-authority-demo",
+      "key_id": "did:aethelred:signer:seal-authority-demo-8b9e9453a0c3e5a0",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVkEVy7ccCdh80TJi0PYhvClkMu3TcizNrLWhiXH+8eI=\n-----END PUBLIC KEY-----\n"
+    },
+    "caveats": [
+      "Docker proof path uses demo attestation and proof transcripts.",
+      "Production requires real TEE attestation, real zkML where required, governed key custody, and validator/auditor policy."
+    ],
+    "seal_hash": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11",
+    "signature": "oWEY4a3VO5c0TxZ+4GyljOTTqUHkHe+oWxUxBoSyUyy5fJ3AQAcRZ7M9JIMkJy4rmwF3QQQm2p4DFjz6x8/oCg=="
+  },
+  "regulatory_evidence_index": {
+    "schema_version": "aethelred-regulatory-evidence-index-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "audience": [
+      "regulator",
+      "external-auditor",
+      "institutional-buyer",
+      "sovereign-investor"
+    ],
+    "artifacts": [
+      {
+        "name": "aethelred-seal.json",
+        "sha256": "c46d748ffdde9f8eaa2c80bd292d7159b959d7727a35687999a61c27d71e040d",
+        "purpose": "Portable Aethelred Seal for the AI decision."
+      },
+      {
+        "name": "policy-receipt.json",
+        "sha256": "f55e3c9e24c510e9c0830acf0e40b6dd5e12c2cf1b5d811e261c327496acb70c",
+        "purpose": "Signed policy engine decision and control checklist."
+      },
+      {
+        "name": "docker-attestation.json",
+        "sha256": "89e5c0b413607838dbf25f02250ff746b09b21fd39d5bcb74f309d57aa4fac3d",
+        "purpose": "Docker public proof path attestation transcript."
+      },
+      {
+        "name": "evidence-bundle.json",
+        "sha256": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "purpose": "TEE-shaped and zkML-shaped evidence bundle."
+      },
+      {
+        "name": "external-compute-report.json",
+        "sha256": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+        "purpose": "Normalized compute-substrate proof report for Docker, external confidential compute, sovereign cloud, or on-prem execution."
+      },
+      {
+        "name": "institutional-context.json",
+        "sha256": "7c9ad96f8d177b8d93aaa4952b6f1a753234d9d848f5a1b2aa6b11152b4c69e0",
+        "purpose": "Registry-backed institutional packaging context."
+      },
+      {
+        "name": "assurance-plan.json",
+        "sha256": "8d697d65fcd364f510187cacff0260749f3741214642cea2ac68525e48b5108f",
+        "purpose": "Assurance tier target, production gaps, and promotion path."
+      },
+      {
+        "name": "validator-quorum.json",
+        "sha256": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2",
+        "purpose": "Signed multi-verifier quorum votes."
+      },
+      {
+        "name": "jurisdiction-report.json",
+        "sha256": "9eb6969718b7995298155172a15b2047c5656421319fe1f3cf5671a85609bbed",
+        "purpose": "Data residency and jurisdiction control report."
+      },
+      {
+        "name": "liability-route.json",
+        "sha256": "31305ad1f07bdd654f9a048f27533bb496f5e240b32eb0c4aa1c2e51cb7b0535",
+        "purpose": "Accountability and escalation route."
+      },
+      {
+        "name": "key-custody-manifest.json",
+        "sha256": "81f51b3499cb213c31deacfb37f1fc82429963a3182142e7edd90043dc735e76",
+        "purpose": "Signer custody posture, rotation expectations, and HSM/KMS production requirements."
+      },
+      {
+        "name": "anchor-manifest.json",
+        "sha256": "63e6ebc239ad591932f1fc556289f3911623627cfb56606ea1fcb8a63e27169c",
+        "purpose": "Local-ledger anchor plus chain-ready payload for testnet or permissioned-zone anchoring."
+      },
+      {
+        "name": "pilot-readiness-gate.json",
+        "sha256": "867f6e9cc118d08ced333e769f793a85583be4b0d47a56736321db0b37b70284",
+        "purpose": "Conditional pilot readiness gate with production blockers."
+      },
+      {
+        "name": "redaction-manifest.json",
+        "sha256": "1b3d1d43b076a40d023ad3dc120df9bea4ae0f576258853689b392ab86e00c9d",
+        "purpose": "Public export-control and redaction manifest for regulated data minimization."
+      },
+      {
+        "name": "verifier-onboarding-pack.json",
+        "sha256": "4d713a01df09d5857d56533816c7e99873971929eb461e1d4df4d97118901d95",
+        "purpose": "Verifier council onboarding requirements, roster template, and pilot legal-readiness checklist."
+      },
+      {
+        "name": "procurement-readiness-pack.json",
+        "sha256": "3d2f8ad1bbd6fd88a674b27fe95f07408a1bbf33c7a1b7af9f7a66c9150029f3",
+        "purpose": "Institutional buyer procurement controls, required documents, and commercial pilot packaging."
+      },
+      {
+        "name": "sovereign-differentiation-scorecard.json",
+        "sha256": "fc4bdbac725951888fe1f8ddc19e09a001881c68ade988f4ca606df726e079eb",
+        "purpose": "Aethelred-vs-generic-verifiable-cloud scorecard for sovereign and regulated buyers."
+      },
+      {
+        "name": "public-verifier-manifest.json",
+        "sha256": "05bee1b0affcdb0cdab3cf7caeca40f9bfd721897b7fd7d32261d651858d09d9",
+        "purpose": "Public endpoints, claims, and claim boundaries."
+      }
+    ],
+    "control_map": [
+      {
+        "control": "identity",
+        "artifacts": [
+          "institutional-context.json",
+          "policy-receipt.json"
+        ]
+      },
+      {
+        "control": "policy",
+        "artifacts": [
+          "policy-receipt.json",
+          "assurance-plan.json"
+        ]
+      },
+      {
+        "control": "compute-substrate",
+        "artifacts": [
+          "external-compute-report.json",
+          "docker-attestation.json"
+        ]
+      },
+      {
+        "control": "jurisdiction",
+        "artifacts": [
+          "jurisdiction-report.json",
+          "evidence-bundle.json"
+        ]
+      },
+      {
+        "control": "quorum",
+        "artifacts": [
+          "validator-quorum.json",
+          "aethelred-seal.json"
+        ]
+      },
+      {
+        "control": "liability",
+        "artifacts": [
+          "liability-route.json",
+          "audit-pack.json"
+        ]
+      },
+      {
+        "control": "key-custody",
+        "artifacts": [
+          "key-custody-manifest.json",
+          "auditor-attestation.json"
+        ]
+      },
+      {
+        "control": "anchoring",
+        "artifacts": [
+          "anchor-manifest.json",
+          "ledger.json"
+        ]
+      },
+      {
+        "control": "pilot-readiness",
+        "artifacts": [
+          "pilot-readiness-gate.json",
+          "assurance-plan.json"
+        ]
+      },
+      {
+        "control": "privacy-redaction",
+        "artifacts": [
+          "redaction-manifest.json",
+          "evidence-bundle.json"
+        ]
+      },
+      {
+        "control": "verifier-onboarding",
+        "artifacts": [
+          "verifier-onboarding-pack.json",
+          "validator-quorum.json"
+        ]
+      },
+      {
+        "control": "procurement-readiness",
+        "artifacts": [
+          "procurement-readiness-pack.json",
+          "pilot-readiness-gate.json"
+        ]
+      },
+      {
+        "control": "sovereign-differentiation",
+        "artifacts": [
+          "sovereign-differentiation-scorecard.json",
+          "external-compute-report.json"
+        ]
+      },
+      {
+        "control": "audit-export",
+        "artifacts": [
+          "audit-pack.json",
+          "audit-report.md"
+        ]
+      }
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "index_hash": "730ff83e34fa943679e3188943820c37b43d2bd96391835f3fdc097d2abbff95",
+    "signature": "iJBpw44JI6qmUWZHl4/i2G9vZHQta1B83zqMR7qnuTJ8JXqfbCbXYv3OEOUAMe8sm/xBOxENqPKol6tJ3KXWDQ=="
+  },
+  "auditor_attestation": {
+    "schema_version": "aethelred-auditor-attestation-v0.2",
+    "attestation_id": "audit_6c0d36cb9a2bdf35032e74b4",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "auditor": {
+      "did": "did:aethelred:verifier:policy-auditor",
+      "role": "simulated external auditor for public proof path",
+      "production_claim": false
+    },
+    "opinion": "public-proof-path-evidence-consistent",
+    "scope": [
+      "hash commitments",
+      "policy receipt",
+      "jurisdiction report",
+      "validator quorum",
+      "liability route",
+      "key custody manifest",
+      "anchor manifest",
+      "redaction manifest",
+      "verifier onboarding pack",
+      "procurement readiness pack",
+      "sovereign differentiation scorecard",
+      "regulatory evidence index"
+    ],
+    "artifact_hashes": {
+      "aethelred-seal.json": "c46d748ffdde9f8eaa2c80bd292d7159b959d7727a35687999a61c27d71e040d",
+      "policy-receipt.json": "f55e3c9e24c510e9c0830acf0e40b6dd5e12c2cf1b5d811e261c327496acb70c",
+      "docker-attestation.json": "89e5c0b413607838dbf25f02250ff746b09b21fd39d5bcb74f309d57aa4fac3d",
+      "evidence-bundle.json": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+      "external-compute-report.json": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+      "institutional-context.json": "7c9ad96f8d177b8d93aaa4952b6f1a753234d9d848f5a1b2aa6b11152b4c69e0",
+      "assurance-plan.json": "8d697d65fcd364f510187cacff0260749f3741214642cea2ac68525e48b5108f",
+      "validator-quorum.json": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2",
+      "jurisdiction-report.json": "9eb6969718b7995298155172a15b2047c5656421319fe1f3cf5671a85609bbed",
+      "liability-route.json": "31305ad1f07bdd654f9a048f27533bb496f5e240b32eb0c4aa1c2e51cb7b0535",
+      "key-custody-manifest.json": "81f51b3499cb213c31deacfb37f1fc82429963a3182142e7edd90043dc735e76",
+      "anchor-manifest.json": "63e6ebc239ad591932f1fc556289f3911623627cfb56606ea1fcb8a63e27169c",
+      "pilot-readiness-gate.json": "867f6e9cc118d08ced333e769f793a85583be4b0d47a56736321db0b37b70284",
+      "redaction-manifest.json": "1b3d1d43b076a40d023ad3dc120df9bea4ae0f576258853689b392ab86e00c9d",
+      "verifier-onboarding-pack.json": "4d713a01df09d5857d56533816c7e99873971929eb461e1d4df4d97118901d95",
+      "procurement-readiness-pack.json": "3d2f8ad1bbd6fd88a674b27fe95f07408a1bbf33c7a1b7af9f7a66c9150029f3",
+      "sovereign-differentiation-scorecard.json": "fc4bdbac725951888fe1f8ddc19e09a001881c68ade988f4ca606df726e079eb",
+      "public-verifier-manifest.json": "05bee1b0affcdb0cdab3cf7caeca40f9bfd721897b7fd7d32261d651858d09d9",
+      "regulatory-evidence-index.json": "704da261e9aa687a418bcf6afbc72612196d1cea19274cd7d49009795c9ff0ea"
+    },
+    "claim_boundary": [
+      "This attestation is generated by the Docker public proof path.",
+      "It is not a substitute for an independent production security audit.",
+      "It verifies artifact consistency and readiness packaging only."
+    ],
+    "signer": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAinVoe9mhkZs8I4KoL6CrZTo14RNVElSjUKpY8cpzcFQ=\n-----END PUBLIC KEY-----\n"
+    },
+    "attestation_hash": "e01cb1223c42f7343816b4563c71720c2570d08499bc130680945cd1bb0a6376",
+    "signature": "gmTn4xXQl+9tqmwESIqjkaF53bGilQCfd63LR9+fNJYWnv6WoS+7k2DtSEEKkpv3SfQTURCHtk4IGaNumRewAQ=="
+  },
+  "public_verifier_manifest": {
+    "schema_version": "aethelred-public-verifier-manifest-v0.2",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "policy_id": "finance-high-risk-ai-decision-v0.2",
+    "assurance_tier": 4,
+    "verifier_endpoints": [
+      "/v1/proof-path/latest",
+      "/v1/seals/latest",
+      "/v1/seals/latest/verify",
+      "/v1/external-compute/latest",
+      "/v1/institutional/context",
+      "/v1/assurance/latest",
+      "/v1/quorum/latest",
+      "/v1/jurisdiction/latest",
+      "/v1/liability/latest",
+      "/v1/key-custody/latest",
+      "/v1/anchor/latest",
+      "/v1/auditor/latest",
+      "/v1/readiness/latest",
+      "/v1/redaction/latest",
+      "/v1/verifier-onboarding/latest",
+      "/v1/procurement/latest",
+      "/v1/sovereign-differentiation/latest",
+      "/v1/evidence-index/latest",
+      "/v1/regulator-pack/latest",
+      "/v1/ledger/verify"
+    ],
+    "public_claims": [
+      "Aethelred can produce a portable AI decision seal.",
+      "The seal binds policy, identity, jurisdiction, verifier quorum, liability, and evidence commitments.",
+      "External compute proofs can be wrapped by Aethelred policy, jurisdiction, liability, audit, quorum, and anchor controls.",
+      "The Docker path is publicly verifiable and regulator-pack exportable."
+    ],
+    "claim_boundaries": [
+      "No production hardware TEE claim is made by this Docker path.",
+      "No production zkML claim is made by this Docker path.",
+      "No customer funds or private production data should be used in this public proof path."
+    ]
+  },
+  "verifier_report": {
+    "schema_version": "aethelred-verifier-report-v0.2",
+    "checked_at": "2026-06-19T21:39:00.226Z",
+    "valid": true,
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "checks": [
+      {
+        "id": "input-hash",
+        "label": "Input hash recomputes from public proof request",
+        "status": "pass",
+        "evidence": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9"
+      },
+      {
+        "id": "output-hash",
+        "label": "Output hash recomputes from model output",
+        "status": "pass",
+        "evidence": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+      },
+      {
+        "id": "institutional-context-hash",
+        "label": "Institutional context hash matches seal commitment",
+        "status": "pass",
+        "evidence": "7c9ad96f8d177b8d93aaa4952b6f1a753234d9d848f5a1b2aa6b11152b4c69e0"
+      },
+      {
+        "id": "policy-receipt-hash",
+        "label": "Policy receipt content hash is stable",
+        "status": "pass",
+        "evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+      },
+      {
+        "id": "policy-receipt-signature",
+        "label": "Policy receipt signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:policy-engine-demo-89621a7bfd152869"
+      },
+      {
+        "id": "policy-required-controls",
+        "label": "All required policy controls passed",
+        "status": "pass",
+        "evidence": "12 controls"
+      },
+      {
+        "id": "policy-decision",
+        "label": "Policy decision allowed the sealed action",
+        "status": "pass",
+        "evidence": "allow"
+      },
+      {
+        "id": "model-registry",
+        "label": "Model version is present in the model registry",
+        "status": "pass",
+        "evidence": "model:aethelred-risk-reviewer 2026.05-demo"
+      },
+      {
+        "id": "agent-registry",
+        "label": "Agent and sponsor identities are registered",
+        "status": "pass",
+        "evidence": "did:aethelred:agent:finance-risk-seal"
+      },
+      {
+        "id": "jurisdiction-report-hash",
+        "label": "Jurisdiction report hash matches seal commitment",
+        "status": "pass",
+        "evidence": "9eb6969718b7995298155172a15b2047c5656421319fe1f3cf5671a85609bbed"
+      },
+      {
+        "id": "jurisdiction-allowed",
+        "label": "Jurisdiction and data residency controls are allowed",
+        "status": "pass",
+        "evidence": "AE-ADGM"
+      },
+      {
+        "id": "liability-route-hash",
+        "label": "Liability route hash matches seal commitment",
+        "status": "pass",
+        "evidence": "31305ad1f07bdd654f9a048f27533bb496f5e240b32eb0c4aa1c2e51cb7b0535"
+      },
+      {
+        "id": "liability-route-bound",
+        "label": "Liability route binds sponsor, human controller, operator, and auditor path",
+        "status": "pass",
+        "evidence": "route_08b6da180d18ba0bd525"
+      },
+      {
+        "id": "attestation-hash",
+        "label": "Docker attestation hash is stable",
+        "status": "pass",
+        "evidence": "74b64de4a2dfe385c204414960620f7b522814b1dc80bd7af8e77183e187b445"
+      },
+      {
+        "id": "attestation-signature",
+        "label": "Docker attestation signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:docker-attestation-demo-d235e4f0f9b8e133"
+      },
+      {
+        "id": "external-compute-report-hash",
+        "label": "External compute report hash is stable",
+        "status": "pass",
+        "evidence": "342adadae4d00530a2de94517a4ab6c8f111c66c3e7c8218c6d60fd5083fa0ce"
+      },
+      {
+        "id": "external-compute-report-signature",
+        "label": "External compute report signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:external-compute-adapter-demo-3de05541774abb6b"
+      },
+      {
+        "id": "external-compute-provider-accepted",
+        "label": "External compute provider proof is accepted by adapter policy",
+        "status": "pass",
+        "evidence": "aethelred-docker-public-proof"
+      },
+      {
+        "id": "external-compute-seal-binding",
+        "label": "External compute report hash matches seal commitment",
+        "status": "pass",
+        "evidence": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d"
+      },
+      {
+        "id": "evidence-bundle-hash",
+        "label": "Evidence bundle hash matches seal commitment",
+        "status": "pass",
+        "evidence": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5"
+      },
+      {
+        "id": "validator-quorum-hash",
+        "label": "Validator quorum hash matches seal commitment",
+        "status": "pass",
+        "evidence": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+      },
+      {
+        "id": "validator-quorum-threshold",
+        "label": "Regulated verifier quorum threshold is reached",
+        "status": "pass",
+        "evidence": "4/3 accepts"
+      },
+      {
+        "id": "validator-vote-signatures",
+        "label": "All verifier vote hashes and signatures verify",
+        "status": "pass",
+        "evidence": "4/4 votes verified"
+      },
+      {
+        "id": "assurance-plan-hash",
+        "label": "Assurance plan hash matches seal commitment",
+        "status": "pass",
+        "evidence": "8d697d65fcd364f510187cacff0260749f3741214642cea2ac68525e48b5108f"
+      },
+      {
+        "id": "assurance-tier-target",
+        "label": "Requested assurance tier is at least the policy minimum",
+        "status": "pass",
+        "evidence": "Tier 4"
+      },
+      {
+        "id": "seal-hash",
+        "label": "Aethelred Seal hash is stable",
+        "status": "pass",
+        "evidence": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11"
+      },
+      {
+        "id": "seal-signature",
+        "label": "Aethelred Seal signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:seal-authority-demo-8b9e9453a0c3e5a0"
+      },
+      {
+        "id": "key-custody-manifest-hash",
+        "label": "Key custody manifest hash is stable",
+        "status": "pass",
+        "evidence": "e629915bbb8f1be69f683f45df451cee792d65145319e3ec460446a838f8aec1"
+      },
+      {
+        "id": "key-custody-manifest-signature",
+        "label": "Key custody manifest signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "anchor-manifest-hash",
+        "label": "Anchor manifest hash is stable",
+        "status": "pass",
+        "evidence": "d2681efe2f63497baf14857a799274236e8c4adcccf18f56a7f0d267e2212bd2"
+      },
+      {
+        "id": "anchor-manifest-signature",
+        "label": "Anchor manifest signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "anchor-payload-seal-binding",
+        "label": "Anchor payload binds the verified seal hash",
+        "status": "pass",
+        "evidence": "anchor_c0129d0c8d2fc67a797772b4"
+      },
+      {
+        "id": "pilot-readiness-gate-hash",
+        "label": "Pilot readiness gate hash is stable",
+        "status": "pass",
+        "evidence": "2e847b9ad60a159856495658e98c1e19c19a60f8cd6c1649eb79e88fb7dd9bb6"
+      },
+      {
+        "id": "pilot-readiness-gate-signature",
+        "label": "Pilot readiness gate signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "pilot-readiness-gate",
+        "label": "Pilot readiness gate is not blocked",
+        "status": "pass",
+        "evidence": "conditional-pass"
+      },
+      {
+        "id": "redaction-manifest-hash",
+        "label": "Redaction manifest hash is stable",
+        "status": "pass",
+        "evidence": "a323067855002a977e7436ef1027601299aec2704e488d23abadbda80ae23203"
+      },
+      {
+        "id": "redaction-manifest-signature",
+        "label": "Redaction manifest signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "redaction-manifest-public-export",
+        "label": "Redaction manifest blocks raw regulated data export",
+        "status": "pass",
+        "evidence": "hash-commitments-and-synthetic-fields-only"
+      },
+      {
+        "id": "verifier-onboarding-pack-hash",
+        "label": "Verifier onboarding pack hash is stable",
+        "status": "pass",
+        "evidence": "628b78986ea6225cf23d6823aabe02160aceba21d4c17e7cbcabfb21f557cc77"
+      },
+      {
+        "id": "verifier-onboarding-pack-signature",
+        "label": "Verifier onboarding pack signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "procurement-readiness-pack-hash",
+        "label": "Procurement readiness pack hash is stable",
+        "status": "pass",
+        "evidence": "16a4febaaa57b8176b457d604e783ea6cba415629d3220631442ef3e61ac48f2"
+      },
+      {
+        "id": "procurement-readiness-pack-signature",
+        "label": "Procurement readiness pack signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "procurement-readiness-pack-status",
+        "label": "Procurement readiness pack is not blocked",
+        "status": "pass",
+        "evidence": "pilot-procurement-ready-with-conditions"
+      },
+      {
+        "id": "sovereign-differentiation-scorecard-hash",
+        "label": "Sovereign differentiation scorecard hash is stable",
+        "status": "pass",
+        "evidence": "b091ae5cf4533d72a3e854bdaffcef021d53406b2893e39b8707eea760448729"
+      },
+      {
+        "id": "sovereign-differentiation-scorecard-signature",
+        "label": "Sovereign differentiation scorecard signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "regulatory-index-hash",
+        "label": "Regulatory evidence index hash is stable",
+        "status": "pass",
+        "evidence": "730ff83e34fa943679e3188943820c37b43d2bd96391835f3fdc097d2abbff95"
+      },
+      {
+        "id": "regulatory-index-signature",
+        "label": "Regulatory evidence index signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "regulatory-index-artifacts",
+        "label": "Regulatory evidence index artifact hashes match current artifacts",
+        "status": "pass",
+        "evidence": "18 indexed artifacts"
+      },
+      {
+        "id": "auditor-attestation-hash",
+        "label": "Auditor attestation hash is stable",
+        "status": "pass",
+        "evidence": "e01cb1223c42f7343816b4563c71720c2570d08499bc130680945cd1bb0a6376"
+      },
+      {
+        "id": "auditor-attestation-signature",
+        "label": "Auditor attestation signature verifies",
+        "status": "pass",
+        "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+      },
+      {
+        "id": "auditor-attestation-artifacts",
+        "label": "Auditor attestation artifact hashes match current artifacts",
+        "status": "pass",
+        "evidence": "19 attested artifacts"
+      },
+      {
+        "id": "hardware-tee-production",
+        "label": "Production hardware TEE attestation present",
+        "status": "warning",
+        "evidence": "Docker demo attestation only"
+      },
+      {
+        "id": "zkml-production",
+        "label": "Production zkML proof present where required",
+        "status": "warning",
+        "evidence": "Demo proof transcript only"
+      },
+      {
+        "id": "governed-key-custody",
+        "label": "Signer keys are governed by KMS/HSM custody",
+        "status": "warning",
+        "evidence": "Ephemeral demo keys only"
+      }
+    ],
+    "readiness": {
+      "public_proof_path": "complete",
+      "regulated_pilot": "conditional-after-production-blockers",
+      "production_grade": false,
+      "warning_count": 3
+    },
+    "next_production_steps": [
+      "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation.",
+      "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence.",
+      "Bind seal signer to governed KMS/HSM custody and publish verifier public-key policy.",
+      "Add external validator or auditor countersignature before regulated pilot use.",
+      "Anchor seal commitments to Aethelred testnet or a permissioned institutional zone."
+    ]
+  },
+  "audit_pack": {
+    "schema_version": "aethelred-audit-pack-v0.2",
+    "run_id": "proof_1781905140201_cb5e0b8f",
+    "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+    "generated_at": "2026-06-19T21:39:00.189Z",
+    "verifier_report": {
+      "schema_version": "aethelred-verifier-report-v0.2",
+      "checked_at": "2026-06-19T21:39:00.226Z",
+      "valid": true,
+      "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+      "run_id": "proof_1781905140201_cb5e0b8f",
+      "checks": [
+        {
+          "id": "input-hash",
+          "label": "Input hash recomputes from public proof request",
+          "status": "pass",
+          "evidence": "213fcb02439cb9ce6ce4e402fdb745fcf701044e032377615b2f7b81b17dcde9"
+        },
+        {
+          "id": "output-hash",
+          "label": "Output hash recomputes from model output",
+          "status": "pass",
+          "evidence": "ce109073369a3ee07aad7fcde295648438d24d6a08c9c04d88b67fee9469acb6"
+        },
+        {
+          "id": "institutional-context-hash",
+          "label": "Institutional context hash matches seal commitment",
+          "status": "pass",
+          "evidence": "7c9ad96f8d177b8d93aaa4952b6f1a753234d9d848f5a1b2aa6b11152b4c69e0"
+        },
+        {
+          "id": "policy-receipt-hash",
+          "label": "Policy receipt content hash is stable",
+          "status": "pass",
+          "evidence": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92"
+        },
+        {
+          "id": "policy-receipt-signature",
+          "label": "Policy receipt signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:policy-engine-demo-89621a7bfd152869"
+        },
+        {
+          "id": "policy-required-controls",
+          "label": "All required policy controls passed",
+          "status": "pass",
+          "evidence": "12 controls"
+        },
+        {
+          "id": "policy-decision",
+          "label": "Policy decision allowed the sealed action",
+          "status": "pass",
+          "evidence": "allow"
+        },
+        {
+          "id": "model-registry",
+          "label": "Model version is present in the model registry",
+          "status": "pass",
+          "evidence": "model:aethelred-risk-reviewer 2026.05-demo"
+        },
+        {
+          "id": "agent-registry",
+          "label": "Agent and sponsor identities are registered",
+          "status": "pass",
+          "evidence": "did:aethelred:agent:finance-risk-seal"
+        },
+        {
+          "id": "jurisdiction-report-hash",
+          "label": "Jurisdiction report hash matches seal commitment",
+          "status": "pass",
+          "evidence": "9eb6969718b7995298155172a15b2047c5656421319fe1f3cf5671a85609bbed"
+        },
+        {
+          "id": "jurisdiction-allowed",
+          "label": "Jurisdiction and data residency controls are allowed",
+          "status": "pass",
+          "evidence": "AE-ADGM"
+        },
+        {
+          "id": "liability-route-hash",
+          "label": "Liability route hash matches seal commitment",
+          "status": "pass",
+          "evidence": "31305ad1f07bdd654f9a048f27533bb496f5e240b32eb0c4aa1c2e51cb7b0535"
+        },
+        {
+          "id": "liability-route-bound",
+          "label": "Liability route binds sponsor, human controller, operator, and auditor path",
+          "status": "pass",
+          "evidence": "route_08b6da180d18ba0bd525"
+        },
+        {
+          "id": "attestation-hash",
+          "label": "Docker attestation hash is stable",
+          "status": "pass",
+          "evidence": "74b64de4a2dfe385c204414960620f7b522814b1dc80bd7af8e77183e187b445"
+        },
+        {
+          "id": "attestation-signature",
+          "label": "Docker attestation signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:docker-attestation-demo-d235e4f0f9b8e133"
+        },
+        {
+          "id": "external-compute-report-hash",
+          "label": "External compute report hash is stable",
+          "status": "pass",
+          "evidence": "342adadae4d00530a2de94517a4ab6c8f111c66c3e7c8218c6d60fd5083fa0ce"
+        },
+        {
+          "id": "external-compute-report-signature",
+          "label": "External compute report signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:external-compute-adapter-demo-3de05541774abb6b"
+        },
+        {
+          "id": "external-compute-provider-accepted",
+          "label": "External compute provider proof is accepted by adapter policy",
+          "status": "pass",
+          "evidence": "aethelred-docker-public-proof"
+        },
+        {
+          "id": "external-compute-seal-binding",
+          "label": "External compute report hash matches seal commitment",
+          "status": "pass",
+          "evidence": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d"
+        },
+        {
+          "id": "evidence-bundle-hash",
+          "label": "Evidence bundle hash matches seal commitment",
+          "status": "pass",
+          "evidence": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5"
+        },
+        {
+          "id": "validator-quorum-hash",
+          "label": "Validator quorum hash matches seal commitment",
+          "status": "pass",
+          "evidence": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2"
+        },
+        {
+          "id": "validator-quorum-threshold",
+          "label": "Regulated verifier quorum threshold is reached",
+          "status": "pass",
+          "evidence": "4/3 accepts"
+        },
+        {
+          "id": "validator-vote-signatures",
+          "label": "All verifier vote hashes and signatures verify",
+          "status": "pass",
+          "evidence": "4/4 votes verified"
+        },
+        {
+          "id": "assurance-plan-hash",
+          "label": "Assurance plan hash matches seal commitment",
+          "status": "pass",
+          "evidence": "8d697d65fcd364f510187cacff0260749f3741214642cea2ac68525e48b5108f"
+        },
+        {
+          "id": "assurance-tier-target",
+          "label": "Requested assurance tier is at least the policy minimum",
+          "status": "pass",
+          "evidence": "Tier 4"
+        },
+        {
+          "id": "seal-hash",
+          "label": "Aethelred Seal hash is stable",
+          "status": "pass",
+          "evidence": "f2256dd9597d44cbe3047dab2c8c6043a5bb8aba429c89472405993118e4db11"
+        },
+        {
+          "id": "seal-signature",
+          "label": "Aethelred Seal signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:seal-authority-demo-8b9e9453a0c3e5a0"
+        },
+        {
+          "id": "key-custody-manifest-hash",
+          "label": "Key custody manifest hash is stable",
+          "status": "pass",
+          "evidence": "e629915bbb8f1be69f683f45df451cee792d65145319e3ec460446a838f8aec1"
+        },
+        {
+          "id": "key-custody-manifest-signature",
+          "label": "Key custody manifest signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "anchor-manifest-hash",
+          "label": "Anchor manifest hash is stable",
+          "status": "pass",
+          "evidence": "d2681efe2f63497baf14857a799274236e8c4adcccf18f56a7f0d267e2212bd2"
+        },
+        {
+          "id": "anchor-manifest-signature",
+          "label": "Anchor manifest signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "anchor-payload-seal-binding",
+          "label": "Anchor payload binds the verified seal hash",
+          "status": "pass",
+          "evidence": "anchor_c0129d0c8d2fc67a797772b4"
+        },
+        {
+          "id": "pilot-readiness-gate-hash",
+          "label": "Pilot readiness gate hash is stable",
+          "status": "pass",
+          "evidence": "2e847b9ad60a159856495658e98c1e19c19a60f8cd6c1649eb79e88fb7dd9bb6"
+        },
+        {
+          "id": "pilot-readiness-gate-signature",
+          "label": "Pilot readiness gate signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "pilot-readiness-gate",
+          "label": "Pilot readiness gate is not blocked",
+          "status": "pass",
+          "evidence": "conditional-pass"
+        },
+        {
+          "id": "redaction-manifest-hash",
+          "label": "Redaction manifest hash is stable",
+          "status": "pass",
+          "evidence": "a323067855002a977e7436ef1027601299aec2704e488d23abadbda80ae23203"
+        },
+        {
+          "id": "redaction-manifest-signature",
+          "label": "Redaction manifest signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "redaction-manifest-public-export",
+          "label": "Redaction manifest blocks raw regulated data export",
+          "status": "pass",
+          "evidence": "hash-commitments-and-synthetic-fields-only"
+        },
+        {
+          "id": "verifier-onboarding-pack-hash",
+          "label": "Verifier onboarding pack hash is stable",
+          "status": "pass",
+          "evidence": "628b78986ea6225cf23d6823aabe02160aceba21d4c17e7cbcabfb21f557cc77"
+        },
+        {
+          "id": "verifier-onboarding-pack-signature",
+          "label": "Verifier onboarding pack signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "procurement-readiness-pack-hash",
+          "label": "Procurement readiness pack hash is stable",
+          "status": "pass",
+          "evidence": "16a4febaaa57b8176b457d604e783ea6cba415629d3220631442ef3e61ac48f2"
+        },
+        {
+          "id": "procurement-readiness-pack-signature",
+          "label": "Procurement readiness pack signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "procurement-readiness-pack-status",
+          "label": "Procurement readiness pack is not blocked",
+          "status": "pass",
+          "evidence": "pilot-procurement-ready-with-conditions"
+        },
+        {
+          "id": "sovereign-differentiation-scorecard-hash",
+          "label": "Sovereign differentiation scorecard hash is stable",
+          "status": "pass",
+          "evidence": "b091ae5cf4533d72a3e854bdaffcef021d53406b2893e39b8707eea760448729"
+        },
+        {
+          "id": "sovereign-differentiation-scorecard-signature",
+          "label": "Sovereign differentiation scorecard signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "regulatory-index-hash",
+          "label": "Regulatory evidence index hash is stable",
+          "status": "pass",
+          "evidence": "730ff83e34fa943679e3188943820c37b43d2bd96391835f3fdc097d2abbff95"
+        },
+        {
+          "id": "regulatory-index-signature",
+          "label": "Regulatory evidence index signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "regulatory-index-artifacts",
+          "label": "Regulatory evidence index artifact hashes match current artifacts",
+          "status": "pass",
+          "evidence": "18 indexed artifacts"
+        },
+        {
+          "id": "auditor-attestation-hash",
+          "label": "Auditor attestation hash is stable",
+          "status": "pass",
+          "evidence": "e01cb1223c42f7343816b4563c71720c2570d08499bc130680945cd1bb0a6376"
+        },
+        {
+          "id": "auditor-attestation-signature",
+          "label": "Auditor attestation signature verifies",
+          "status": "pass",
+          "evidence": "did:aethelred:signer:audit-vault-demo-2195877a412c09cf"
+        },
+        {
+          "id": "auditor-attestation-artifacts",
+          "label": "Auditor attestation artifact hashes match current artifacts",
+          "status": "pass",
+          "evidence": "19 attested artifacts"
+        },
+        {
+          "id": "hardware-tee-production",
+          "label": "Production hardware TEE attestation present",
+          "status": "warning",
+          "evidence": "Docker demo attestation only"
+        },
+        {
+          "id": "zkml-production",
+          "label": "Production zkML proof present where required",
+          "status": "warning",
+          "evidence": "Demo proof transcript only"
+        },
+        {
+          "id": "governed-key-custody",
+          "label": "Signer keys are governed by KMS/HSM custody",
+          "status": "warning",
+          "evidence": "Ephemeral demo keys only"
+        }
+      ],
+      "readiness": {
+        "public_proof_path": "complete",
+        "regulated_pilot": "conditional-after-production-blockers",
+        "production_grade": false,
+        "warning_count": 3
+      },
+      "next_production_steps": [
+        "Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation.",
+        "Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence.",
+        "Bind seal signer to governed KMS/HSM custody and publish verifier public-key policy.",
+        "Add external validator or auditor countersignature before regulated pilot use.",
+        "Anchor seal commitments to Aethelred testnet or a permissioned institutional zone."
+      ]
+    },
+    "evidence_bundle_hash": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+    "regulatory_evidence_index_hash": "730ff83e34fa943679e3188943820c37b43d2bd96391835f3fdc097d2abbff95",
+    "auditor_attestation_hash": "e01cb1223c42f7343816b4563c71720c2570d08499bc130680945cd1bb0a6376",
+    "anchor_hash": "d2681efe2f63497baf14857a799274236e8c4adcccf18f56a7f0d267e2212bd2",
+    "key_custody_manifest_hash": "e629915bbb8f1be69f683f45df451cee792d65145319e3ec460446a838f8aec1",
+    "pilot_readiness_gate_hash": "2e847b9ad60a159856495658e98c1e19c19a60f8cd6c1649eb79e88fb7dd9bb6",
+    "redaction_manifest_hash": "a323067855002a977e7436ef1027601299aec2704e488d23abadbda80ae23203",
+    "verifier_onboarding_pack_hash": "628b78986ea6225cf23d6823aabe02160aceba21d4c17e7cbcabfb21f557cc77",
+    "procurement_readiness_pack_hash": "16a4febaaa57b8176b457d604e783ea6cba415629d3220631442ef3e61ac48f2",
+    "sovereign_differentiation_scorecard_hash": "b091ae5cf4533d72a3e854bdaffcef021d53406b2893e39b8707eea760448729",
+    "assurance_tier": {
+      "tier": 4,
+      "name": "Tier 4 Sovereign Regulated AI Decision",
+      "summary": "Tier 3 plus jurisdiction controls, liability routing, and zkML-ready output commitment.",
+      "required_controls": [
+        "hash-commitments",
+        "audit-log",
+        "attestation",
+        "identity",
+        "policy",
+        "quorum",
+        "human-approval",
+        "jurisdiction",
+        "liability",
+        "zkml-ready"
+      ]
+    },
+    "jurisdiction": {
+      "schema_version": "aethelred-jurisdiction-report-v0.2",
+      "generated_at": "2026-06-19T21:39:00.189Z",
+      "jurisdiction": "AE-ADGM",
+      "regulator": "ADGM FSRA",
+      "data_residency_zone": "AE",
+      "execution_region": "AE-ADGM",
+      "permitted_regions": [
+        "AE-ADGM",
+        "AE-CBUAE",
+        "AE-SOVEREIGN-DC"
+      ],
+      "data_boundary": "Synthetic",
+      "public_demo_safe": true,
+      "jurisdiction_allowed": true,
+      "data_residency_allowed": true,
+      "policy_receipt_hash": "f6f3469c68751f761a40f17a82f975fbcc440d972c5f7a04b936c0dc70a0ea92",
+      "export_controls": {
+        "raw_data_exported": false,
+        "public_artifacts_use_hash_commitments": true,
+        "regulator_pack_contains_synthetic_input_only": true
+      }
+    },
+    "liability_route": {
+      "schema_version": "aethelred-liability-route-v0.2",
+      "route_id": "route_08b6da180d18ba0bd525",
+      "generated_at": "2026-06-19T21:39:00.189Z",
+      "status": "bound",
+      "liability_model": "enterprise-sponsored-human-accountable",
+      "decision_boundary": "supporting-control-only-human-controller-required",
+      "parties": [
+        {
+          "role": "sponsor-of-record",
+          "did": "did:aethelred:institution:demo-bank",
+          "obligation": "Owns institutional accountability for agent deployment and controls.",
+          "status": "bound"
+        },
+        {
+          "role": "human-controller",
+          "did": "did:aethelred:human:fcc-approver-1",
+          "obligation": "Approves high-risk action and remains final accountable decision controller.",
+          "status": "approved"
+        },
+        {
+          "role": "model-risk-owner",
+          "did": "did:aethelred:council:model-risk",
+          "obligation": "Maintains model approval, version control, risk rating, and sunset policy.",
+          "status": "registered"
+        },
+        {
+          "role": "protocol-operator",
+          "did": "did:aethelred:institution:aethelred-labs",
+          "obligation": "Maintains seal protocol, verifier policy, and evidence schema.",
+          "status": "bound-for-demo"
+        },
+        {
+          "role": "external-auditor",
+          "did": "did:aethelred:verifier:policy-auditor",
+          "obligation": "Countersigns verifier report for regulated pilot and production use.",
+          "status": "simulated-public-proof-path"
+        }
+      ],
+      "escalation_matrix": [
+        {
+          "trigger": "policy-denied",
+          "owner": "sponsor-of-record",
+          "action": "block seal and create exception review"
+        },
+        {
+          "trigger": "verifier-quorum-failed",
+          "owner": "protocol-operator",
+          "action": "quarantine evidence and require independent auditor review"
+        },
+        {
+          "trigger": "post-decision-harm",
+          "owner": "human-controller",
+          "action": "activate liability review and regulator evidence export"
+        }
+      ]
+    },
+    "artifacts": [
+      "aethelred-seal.json",
+      "policy-receipt.json",
+      "docker-attestation.json",
+      "evidence-bundle.json",
+      "external-compute-report.json",
+      "institutional-context.json",
+      "assurance-plan.json",
+      "validator-quorum.json",
+      "jurisdiction-report.json",
+      "liability-route.json",
+      "key-custody-manifest.json",
+      "anchor-manifest.json",
+      "pilot-readiness-gate.json",
+      "redaction-manifest.json",
+      "verifier-onboarding-pack.json",
+      "procurement-readiness-pack.json",
+      "sovereign-differentiation-scorecard.json",
+      "public-verifier-manifest.json",
+      "regulatory-evidence-index.json",
+      "auditor-attestation.json",
+      "verifier-report.json",
+      "audit-pack.json",
+      "audit-report.md"
+    ]
+  },
+  "audit_markdown": "# Aethelred Sovereign Public Proof Path Audit Pack\n\nRun ID: `proof_1781905140201_cb5e0b8f`\n\nSeal ID: `seal_7bf07f8c87124d090ecd9ad5`\n\nUse case: `finance.high_risk_transaction_review`\n\nTenant: `Aethelred Demo Bank`\n\nAssurance target: Tier 4 - Tier 4 Sovereign Regulated AI Decision\n\n## Verification Summary\n\n| Result | Count |\n|---|---:|\n| Pass | 51 |\n| Warning | 3 |\n| Fail | 0 |\n\nOverall status: **verified public proof path**\n\n## Institutional Evidence Chain\n\n1. Institutional context registered tenant, policy, model, agent, sponsor, and deployment mode.\n2. Policy receipt `pol_cca1eb46927589234258` authorized `finance.high_risk_transaction_review.seal`.\n3. Jurisdiction report confirmed `AE-ADGM` for `AE-ADGM`.\n4. External compute report `342adadae4d00530a2de94517a4ab6c8f111c66c3e7c8218c6d60fd5083fa0ce` normalized `aethelred-docker-public-proof` as an upstream proof source.\n5. Evidence bundle `bdaf4c0d-2f7f-49ba-9e5f-f0df4d810893` linked TEE-shaped evidence and zkML-shaped proof transcript.\n6. Validator quorum `quorum_a159013530c1254cc698` reached 4/3 accepts.\n7. Liability route `route_08b6da180d18ba0bd525` bound sponsor, human controller, model-risk owner, operator, and auditor path.\n8. Aethelred Seal `seal_7bf07f8c87124d090ecd9ad5` bound the full decision evidence into one verifier-friendly record.\n9. Anchor manifest `anchor_c0129d0c8d2fc67a797772b4` produced a local ledger anchor and chain-ready payload.\n10. Pilot readiness gate returned `conditional-pass` with explicit production blockers.\n11. Redaction manifest `a323067855002a977e7436ef1027601299aec2704e488d23abadbda80ae23203` documented public export controls and data minimization.\n12. Verifier onboarding pack `628b78986ea6225cf23d6823aabe02160aceba21d4c17e7cbcabfb21f557cc77` mapped verifier categories to production onboarding evidence.\n13. Procurement readiness pack `16a4febaaa57b8176b457d604e783ea6cba415629d3220631442ef3e61ac48f2` converted proof artifacts into buyer due-diligence controls.\n14. Sovereign differentiation scorecard `b091ae5cf4533d72a3e854bdaffcef021d53406b2893e39b8707eea760448729` documented the Aethelred layer above compute.\n15. Auditor attestation `audit_6c0d36cb9a2bdf35032e74b4` signed the public proof artifact consistency boundary.\n\n## Production Promotion Blockers\n\n| Blocker | Owner | Requirement |\n|---|---|---|\n| production-hardware-tee | compute-provider | Replace Docker demo attestation with Nitro, SGX, SEV-SNP, Intel TDX, or sovereign-cloud attestation. |\n| production-zkml-proof | model-verification | Replace demo proof transcript with workflow-appropriate zkML or deterministic verifier evidence. |\n| external-compute-quote-verifier | compute-adapter | Replace synthetic external proof transcripts with provider-native sovereign-cloud, confidential-VM, or on-prem quote verification. |\n| governed-key-custody | protocol-governance | Move demo Ed25519 keys to governed KMS/HSM custody and publish key rotation policy. |\n| external-audit-countersignature | assurance-council | Add independent security and regulatory auditor countersignature before regulated pilot claims. |\n\n## Public Claim Boundary\n\n- This Docker proof path is public-demo infrastructure. It does not claim hardware TEE execution.\n- The attestation and zkML artifacts are structured demo transcripts, not production Nitro/SGX/SEV/TDX quotes or production proofs.\n- Production use must replace the local demo signers with governed KMS/HSM custody and real verifier policy.\n"
+}

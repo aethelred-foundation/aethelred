@@ -1,0 +1,124 @@
+{
+  "schema_version": "aethelred-institutional-context-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "tenant": {
+    "name": "Aethelred Demo Bank",
+    "institution_did": "did:aethelred:institution:demo-bank",
+    "institution_type": "regulated-financial-institution",
+    "sector": "banking",
+    "jurisdiction": "AE-ADGM",
+    "regulator": "ADGM FSRA"
+  },
+  "policy": {
+    "policy_id": "finance-high-risk-ai-decision-v0.2",
+    "title": "High-risk AI decision policy for regulated finance",
+    "sector": "banking",
+    "regulator": "ADGM FSRA",
+    "jurisdiction": "AE-ADGM",
+    "min_assurance_tier": 4,
+    "human_approval_threshold_usd": 500000,
+    "use_cases": [
+      "finance.high_risk_transaction_review"
+    ],
+    "required_controls": [
+      "data-boundary",
+      "jurisdiction",
+      "data-residency",
+      "model-approval",
+      "agent-accountability",
+      "human-approval",
+      "pii-guard",
+      "liability-route"
+    ]
+  },
+  "jurisdiction": {
+    "jurisdiction": "AE-ADGM",
+    "country": "United Arab Emirates",
+    "regulator": "ADGM FSRA",
+    "data_residency_zone": "AE",
+    "allowed_processing_regions": [
+      "AE-ADGM",
+      "AE-CBUAE",
+      "AE-SOVEREIGN-DC"
+    ],
+    "public_demo_allowed_boundaries": [
+      "Synthetic",
+      "Anonymized"
+    ],
+    "sovereign_posture": "regulated-financial-free-zone"
+  },
+  "model_registration": {
+    "model_id": "model:aethelred-risk-reviewer",
+    "profile": {
+      "owner": "did:aethelred:institution:aethelred-labs",
+      "purpose": "financial-crime risk review support",
+      "version": "2026.05-demo",
+      "version_status": {
+        "approval_status": "approved-for-shadow-demo",
+        "risk_rating": "high-impact-supporting-control",
+        "assurance_floor": 4,
+        "approved_by": "did:aethelred:council:model-risk"
+      }
+    }
+  },
+  "identity_registration": {
+    "agent": {
+      "name": "Finance Risk Review Agent",
+      "owner": "did:aethelred:institution:demo-bank",
+      "allowed_actions": [
+        "risk.score",
+        "policy.evaluate",
+        "seal.request"
+      ],
+      "max_autonomous_authority_usd": 0
+    },
+    "sponsor": {
+      "legal_name": "Aethelred Demo Bank",
+      "institution_type": "regulated-financial-institution",
+      "jurisdiction": "AE-ADGM",
+      "accountability_role": "sponsor-of-record"
+    },
+    "human_controller": {
+      "role": "Financial Crime Compliance Officer",
+      "institution": "did:aethelred:institution:demo-bank",
+      "approval_scope": [
+        "finance.high_risk_transaction_review"
+      ]
+    }
+  },
+  "deployment_profile": {
+    "mode": "hybrid-public-seal",
+    "description": "Private or controlled execution with public seal anchoring.",
+    "suitable_for": [
+      "banking",
+      "healthcare",
+      "carbon-markets",
+      "public-sector"
+    ],
+    "public_data_allowed": false,
+    "public_commitments_allowed": true
+  },
+  "assurance_target": {
+    "tier": 4,
+    "name": "Tier 4 Sovereign Regulated AI Decision",
+    "summary": "Tier 3 plus jurisdiction controls, liability routing, and zkML-ready output commitment.",
+    "required_controls": [
+      "hash-commitments",
+      "audit-log",
+      "attestation",
+      "identity",
+      "policy",
+      "quorum",
+      "human-approval",
+      "jurisdiction",
+      "liability",
+      "zkml-ready"
+    ]
+  },
+  "governance_posture": {
+    "foundation": "ADGM DLT Foundation target",
+    "assurance_council": "Technical, legal, security, and regulatory review body target",
+    "regulated_validator_council": "Banks, sovereign cloud, auditors, research labs, and sector verifiers target",
+    "public_claim_boundary": "Public Docker path proves evidence architecture, not production TEE or zkML finality."
+  }
+}

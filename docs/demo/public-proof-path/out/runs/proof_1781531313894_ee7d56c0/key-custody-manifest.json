@@ -1,0 +1,104 @@
+{
+  "schema_version": "aethelred-key-custody-manifest-v0.2",
+  "generated_at": "2026-06-15T13:48:33.864Z",
+  "custody_mode": "ephemeral-demo-keys",
+  "production_status": "not-production-custody",
+  "signers": {
+    "policy_engine": {
+      "id": "did:aethelred:signer:policy-engine-demo",
+      "key_id": "did:aethelred:signer:policy-engine-demo-e076a197f2074fd1",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAWLBjIVZFpEuiG1M8fERWHwptkOEzbPec8ep3RvNR5Sw=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "attestation_authority": {
+      "id": "did:aethelred:signer:docker-attestation-demo",
+      "key_id": "did:aethelred:signer:docker-attestation-demo-579c550dd08ac8f0",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAeQhW6yKweuyEqIPouAMRRxm4FI2+URY1jp7wXa3y/IU=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "external_compute_adapter": {
+      "id": "did:aethelred:signer:external-compute-adapter-demo",
+      "key_id": "did:aethelred:signer:external-compute-adapter-demo-60a16394dc5d3f27",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAU1kaNuOoux3WaJOluXuwDm5BwnOSXnzKtImuBJ30Z9k=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "seal_authority": {
+      "id": "did:aethelred:signer:seal-authority-demo",
+      "key_id": "did:aethelred:signer:seal-authority-demo-728ad15860e6a04c",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAzM8jjNtdpy/JI00eB7p4HTS42iZ7LjVVW7/juPUw0kg=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "audit_vault": {
+      "id": "did:aethelred:signer:audit-vault-demo",
+      "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "did:aethelred:verifier:regulated-cloud-ae": {
+      "id": "did:aethelred:verifier:regulated-cloud-ae",
+      "key_id": "did:aethelred:verifier:regulated-cloud-ae-042020aed0f9dcbc",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA/M190qEUF6wZy0wlHTCYRFMEaxENszWlpMktPmynMvU=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "did:aethelred:verifier:cyber-auditor": {
+      "id": "did:aethelred:verifier:cyber-auditor",
+      "key_id": "did:aethelred:verifier:cyber-auditor-c8a979bdee172292",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAYy0gKXsL1xOsIg5BKxePgDBnKGPdT+ryz1MRUpEO6oY=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "did:aethelred:verifier:policy-auditor": {
+      "id": "did:aethelred:verifier:policy-auditor",
+      "key_id": "did:aethelred:verifier:policy-auditor-0c86165b9283116a",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAOY7eiTf5F0YcWz7jT52JAZnQmxNS/sZ3dV1aOzRZ6AA=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    },
+    "did:aethelred:verifier:sovereign-observer": {
+      "id": "did:aethelred:verifier:sovereign-observer",
+      "key_id": "did:aethelred:verifier:sovereign-observer-78fb1dd0de695498",
+      "algorithm": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA41ZvX3c1q2VoPhtEzoFwDsEz2LFBODvUM35Q9eQFOqI=\n-----END PUBLIC KEY-----\n",
+      "custody_class": "ephemeral-in-memory-demo-key",
+      "rotation_policy": "per proof run",
+      "production_requirement": "replace with governed KMS/HSM-backed key and published key policy"
+    }
+  },
+  "required_production_controls": [
+    "HSM or cloud KMS custody for seal authority keys",
+    "dual-control rotation procedure",
+    "auditor-visible key registry",
+    "signer revocation list",
+    "break-glass and incident rotation runbook"
+  ],
+  "signer": {
+    "id": "did:aethelred:signer:audit-vault-demo",
+    "key_id": "did:aethelred:signer:audit-vault-demo-2e209599418fcfe5",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAq2y9EImSCWEbEXJQ0kPTwc3ZA50mjj/5p2IbkmeAN8=\n-----END PUBLIC KEY-----\n"
+  },
+  "manifest_hash": "f2b9e5f583515fd5903e5c1b8ba380b507add6827529248603242b8590b5de46",
+  "signature": "I9/VVXCZLynw3s86PIyx3apkk0CdSfD/86O0qxtF6vTMjzIBLWeN579TLXQeQjumyTBtGl5CVU83Hwh5wLFVCA=="
+}

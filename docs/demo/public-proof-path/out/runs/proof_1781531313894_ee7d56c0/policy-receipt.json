@@ -1,0 +1,118 @@
+{
+  "schema_version": "aethelred-policy-receipt-v0.2",
+  "id": "pol_5cb8a2386a89f52b64b9",
+  "request_id": "req_83364f5976d5d78252",
+  "actor": "did:aethelred:agent:finance-risk-seal",
+  "action": "finance.high_risk_transaction_review.seal",
+  "resource": "transaction:txn-demo-ae-00042",
+  "decision": "allow",
+  "policy_id": "finance-high-risk-ai-decision-v0.2",
+  "evaluated_at": "2026-06-15T13:48:33.864Z",
+  "checks": [
+    {
+      "id": "policy-supported-use-case",
+      "label": "Use case is governed by the selected policy",
+      "required": true,
+      "passed": true,
+      "evidence": "finance.high_risk_transaction_review",
+      "control_owner": "policy-registry"
+    },
+    {
+      "id": "data-boundary",
+      "label": "Approved public-demo data boundary",
+      "required": true,
+      "passed": true,
+      "evidence": "Synthetic",
+      "control_owner": "data-governance"
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction is registered and policy allowed",
+      "required": true,
+      "passed": true,
+      "evidence": "AE-ADGM",
+      "control_owner": "jurisdiction-registry"
+    },
+    {
+      "id": "data-residency",
+      "label": "Execution region is allowed for the data residency zone",
+      "required": true,
+      "passed": true,
+      "evidence": "AE-ADGM within AE",
+      "control_owner": "jurisdiction-registry"
+    },
+    {
+      "id": "model-approval",
+      "label": "Model version is approved for the workflow",
+      "required": true,
+      "passed": true,
+      "evidence": "model:aethelred-risk-reviewer 2026.05-demo",
+      "control_owner": "model-registry"
+    },
+    {
+      "id": "assurance-floor",
+      "label": "Requested assurance tier meets model and policy floor",
+      "required": true,
+      "passed": true,
+      "evidence": "requested Tier 4",
+      "control_owner": "assurance-registry"
+    },
+    {
+      "id": "agent-accountability",
+      "label": "Agent identity, sponsor, and liability profile are registered",
+      "required": true,
+      "passed": true,
+      "evidence": "did:aethelred:institution:demo-bank",
+      "control_owner": "identity-registry"
+    },
+    {
+      "id": "agent-permissions",
+      "label": "Agent capabilities authorize scoring, policy evaluation, and seal request",
+      "required": true,
+      "passed": true,
+      "evidence": "risk.score, policy.evaluate, seal.request",
+      "control_owner": "identity-registry"
+    },
+    {
+      "id": "human-approval",
+      "label": "Human approval is bound for high-risk action",
+      "required": true,
+      "passed": true,
+      "evidence": "Financial Crime Compliance Officer",
+      "control_owner": "human-in-the-loop"
+    },
+    {
+      "id": "autonomy-limit",
+      "label": "Agent cannot autonomously execute the high-value transaction",
+      "required": true,
+      "passed": true,
+      "evidence": "amount=920000; autonomous_limit=0",
+      "control_owner": "human-in-the-loop"
+    },
+    {
+      "id": "pii-guard",
+      "label": "No raw PII markers are present in the public proof input",
+      "required": true,
+      "passed": true,
+      "evidence": "synthetic/public-safe input",
+      "control_owner": "privacy-control"
+    },
+    {
+      "id": "liability-route",
+      "label": "Sponsor, human owner, and operator liability route can be formed",
+      "required": true,
+      "passed": true,
+      "evidence": "enterprise-sponsored-human-accountable",
+      "control_owner": "liability-engine"
+    }
+  ],
+  "failed_required_checks": [],
+  "signer": {
+    "id": "did:aethelred:signer:policy-engine-demo",
+    "key_id": "did:aethelred:signer:policy-engine-demo-e076a197f2074fd1",
+    "algorithm": "Ed25519",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAWLBjIVZFpEuiG1M8fERWHwptkOEzbPec8ep3RvNR5Sw=\n-----END PUBLIC KEY-----\n"
+  },
+  "content_hash": "0abf01b2167b384dbf62d2c417ff6b5375741028401156138727645b293f05f6",
+  "signature": "7/DBn+qPkaH6g1TfQYhhMtdj/dWLhhPmfiLWCxKNQePh/h/s45sTjHxhkYK/b2RpP2whwdElwLI/dtzOUZZ6Cw=="
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "aethelred-public-proof-ledger-v0.2",
+  "created_at": "2026-06-15T13:48:34.033Z",
+  "head_hash": "88f6a58343c164c6667237447174cf887689deaca1f14bec6fc6b63500907881",
+  "entries": [
+    {
+      "index": 0,
+      "run_id": "proof_1781531313894_ee7d56c0",
+      "seal_id": "seal_0c1e4fee119699938e9f648c",
+      "created_at": "2026-06-15T13:48:33.864Z",
+      "previous_hash": "GENESIS",
+      "artifact_hashes": {
+        "proof_record": "6e684249f7611eda56c84fccdb7e21ca7f356ae3ad3e08a5647e9edcc905c2cb",
+        "seal": "eb6205a5c6d395f9a5ee8dce44b3690cf6689a014a18a93ad850d751b9701609",
+        "evidence_bundle": "f5dc68808aad6b1ce8d3e500b9fae0cfcbf1be37503c85c0eb391f4665dc21c5",
+        "external_compute_report": "6dfc96369c2dfc8521500f70acf8d7d1dcf78873d8bbd1a6ea9e93b76ffa5459",
+        "redaction_manifest": "7eab6c66f8c703493c8129cb8477645cca1dcdd5d94902cf061879f2ef802207",
+        "verifier_onboarding_pack": "33b714d1f10cf9a70b0c9c2372600ba98c2d06ad0397a0939304d202f4ff5542",
+        "procurement_readiness_pack": "b9a757af780faf7a79e9a887044d49d750d2ab530055926e9a20bbbffe76b8a0",
+        "sovereign_differentiation_scorecard": "6660327e1613c281c3af0e576fe9c7191333f964774808e37e24837667eea921",
+        "validator_quorum": "8ddf58e0e2efa5292370bc4448579295c3919fe802104faa5cdcff10eb95fb0d",
+        "regulatory_evidence_index": "3b665bb11edfa4ae5a29777f346a04fdff49ebf673661d1ac1998a92d4af4a00",
+        "auditor_attestation": "eb3c75673a95508f65230342b9768c98ad2132b211c0413f0c95bcba62268813",
+        "anchor_manifest": "e10dab92acb784f16c5079e0d2ccefb3479fe9fede495edc552d233f2d75a436",
+        "key_custody_manifest": "cdb38f5f54214708a58b49be9ab9cc26f80cf1e244b0499da529a63d77013a64",
+        "pilot_readiness_gate": "94a02643e97c88084b70d5759c87ef9078b26b9ddf1ce790d35892e96b52842a",
+        "verifier_report": "966aeda18c4b10c4a95274715743ae1e08211b328534d9352c60c0137d08122a",
+        "audit_pack": "68a6c1a9d1191d723b5dc6903c84f4f1257f889d331de7e8393c8b791b29a98b"
+      },
+      "entry_hash": "92aaa5f0dc4838a22c0a9fc337711be923b2818a4a47f4540430b8f84842b1cd"
+    },
+    {
+      "index": 1,
+      "run_id": "proof_1781905140201_cb5e0b8f",
+      "seal_id": "seal_7bf07f8c87124d090ecd9ad5",
+      "created_at": "2026-06-19T21:39:00.189Z",
+      "previous_hash": "92aaa5f0dc4838a22c0a9fc337711be923b2818a4a47f4540430b8f84842b1cd",
+      "artifact_hashes": {
+        "proof_record": "f6f36718b7820da52b93b7ae8e42577d94257dcd46971a9498ed58d5b14aa603",
+        "seal": "c46d748ffdde9f8eaa2c80bd292d7159b959d7727a35687999a61c27d71e040d",
+        "evidence_bundle": "b90c942eda88038e248e494049006713e3f74a8fc78dbafc34fcb3259f0501e5",
+        "external_compute_report": "201d708ee81967c4cf66d772c900178c077ae4a2912eb64d5bee243bf95a031d",
+        "redaction_manifest": "1b3d1d43b076a40d023ad3dc120df9bea4ae0f576258853689b392ab86e00c9d",
+        "verifier_onboarding_pack": "4d713a01df09d5857d56533816c7e99873971929eb461e1d4df4d97118901d95",
+        "procurement_readiness_pack": "3d2f8ad1bbd6fd88a674b27fe95f07408a1bbf33c7a1b7af9f7a66c9150029f3",
+        "sovereign_differentiation_scorecard": "fc4bdbac725951888fe1f8ddc19e09a001881c68ade988f4ca606df726e079eb",
+        "validator_quorum": "bbd6880a0f821d23e831784eb0093f1aa112f11ce6d8132fa7650780c25769a2",
+        "regulatory_evidence_index": "704da261e9aa687a418bcf6afbc72612196d1cea19274cd7d49009795c9ff0ea",
+        "auditor_attestation": "deb38219c9a2bf659e87db0ef804fc0465ce945fd3a643be75282742e99d67fd",
+        "anchor_manifest": "63e6ebc239ad591932f1fc556289f3911623627cfb56606ea1fcb8a63e27169c",
+        "key_custody_manifest": "81f51b3499cb213c31deacfb37f1fc82429963a3182142e7edd90043dc735e76",
+        "pilot_readiness_gate": "867f6e9cc118d08ced333e769f793a85583be4b0d47a56736321db0b37b70284",
+        "verifier_report": "a3eea0ed5dbfaf109a2358c33cce7ad668e809594bd2cb7ef214040a20af0b06",
+        "audit_pack": "2829e2264db670c5a95bda4c965e86d0b6b0e913a40f9ad3a5b57f628324e107"
+      },
+      "entry_hash": "88f6a58343c164c6667237447174cf887689deaca1f14bec6fc6b63500907881"
+    }
+  ],
+  "updated_at": "2026-06-19T21:39:00.293Z"
+}
