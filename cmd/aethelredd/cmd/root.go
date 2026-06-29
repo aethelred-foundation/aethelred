@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 
@@ -75,7 +76,8 @@ Learn more at https://aethelred.io`,
 				return err
 			}
 			customAppTemplate, customAppConfig := initAppConfig()
-			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, nil); err != nil {
+			customCMTConfig := initCometBFTConfig()
+			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
 				return err
 			}
 			return validateAppConfig(cmd)
@@ -99,8 +101,12 @@ func initConfig() {
 
 // AppConfig defines custom app configuration for Aethelred.
 type AppConfig struct {
-	serverconfig.Config
-	TEE TEEConfig `mapstructure:"tee"`
+	// ",squash" flattens the embedded server config so its keys (e.g.
+	// minimum-gas-prices) unmarshal from app.toml. Without it, viper/mapstructure
+	// leaves Config zero-valued and ValidateBasic falsely reports an unset min gas
+	// price.
+	serverconfig.Config `mapstructure:",squash"`
+	TEE                 TEEConfig `mapstructure:"tee"`
 }
 
 // TEEConfig defines configuration for the TEE worker integration.
@@ -130,6 +136,15 @@ endpoint = "{{ .TEE.Endpoint }}"
 	customAppConfig.MinGasPrices = "0.001uaethel"
 
 	return customAppTemplate, customAppConfig
+}
+
+// initCometBFTConfig returns the CometBFT (consensus) config used to seed
+// config.toml on first run. It MUST be non-nil: cosmos-sdk's
+// InterceptConfigsPreRunHandler calls ValidateBasic() on this value when
+// config.toml does not yet exist (e.g. during `init`), so passing nil panics
+// with a nil-pointer dereference in cometbft/config.(*Config).ValidateBasic.
+func initCometBFTConfig() *cmtcfg.Config {
+	return cmtcfg.DefaultConfig()
 }
 
 // initRootCmd adds subcommands to the root command
