@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/aethelred/aethelred/x/pouw/types"
 	sealkeeper "github.com/aethelred/aethelred/x/seal/keeper"
@@ -407,6 +408,12 @@ func (k Keeper) UpdateJob(ctx context.Context, job *types.ComputeJob) error {
 func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte, verificationResults []types.VerificationResult) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	// DETERMINISM: CompleteJob runs inside seal-transaction processing (consensus),
+	// so every timestamp it writes to state MUST come from the block time, not the
+	// wall clock. Otherwise validators store different bytes (and a different seal
+	// ID, which hashes the timestamp) and halt on an app-hash mismatch.
+	blockTime := sdkCtx.BlockTime()
+
 	// Get the job
 	job, err := k.GetJob(ctx, jobID)
 	if err != nil {
@@ -446,12 +453,14 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		}
 	}
 
-	// Add verification results
+	// Add verification results (block-time variant for deterministic UpdatedAt).
 	for i := range verificationResults {
-		job.AddVerificationResult(&verificationResults[i])
+		job.AddVerificationResultAt(&verificationResults[i], blockTime)
 	}
 
-	// Create Digital Seal
+	// Create Digital Seal. NewDigitalSeal stamps Timestamp from the wall clock and
+	// folds it into the seal ID hash; override with block time and regenerate the
+	// ID so the seal (and its ID) is identical on every validator.
 	seal := sealtypes.NewDigitalSeal(
 		job.ModelHash,
 		job.InputHash,
@@ -460,6 +469,8 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		job.RequestedBy,
 		job.Purpose,
 	)
+	seal.Timestamp = timestamppb.New(blockTime)
+	seal.Id = seal.GenerateID()
 
 	// Add TEE attestations from verification results
 	for _, result := range verificationResults {
@@ -482,10 +493,13 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		return fmt.Errorf("failed to create seal: %w", err)
 	}
 
-	// Mark job as completed (state machine enforces valid transition)
+	// Mark job as completed (state machine enforces valid transition). MarkCompleted
+	// sets CompletedAt/UpdatedAt from the wall clock; override with block time.
 	if err := job.MarkCompleted(outputHash, seal.Id); err != nil {
 		return fmt.Errorf("invalid job state transition: %w", err)
 	}
+	job.CompletedAt = timestamppb.New(blockTime)
+	job.UpdatedAt = timestamppb.New(blockTime)
 
 	// Update job
 	if err := k.UpdateJob(ctx, job); err != nil {
@@ -517,6 +531,7 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		}
 		if result.Success {
 			stats.RecordSuccess(result.ExecutionTimeMs)
+			stats.LastActiveAt = timestamppb.New(blockTime) // deterministic, not wall-clock
 			successfulValidators++
 
 			// Distribute verification reward from the pouw module account
@@ -550,6 +565,7 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 			}
 		} else {
 			stats.RecordFailure()
+			stats.LastActiveAt = timestamppb.New(blockTime) // deterministic, not wall-clock
 
 			// Apply slashing penalty for incorrect verification.
 			// First attempt to slash locked bonded stake via staking keeper.

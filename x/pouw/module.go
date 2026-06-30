@@ -154,6 +154,13 @@ func (am *AppModule) BeginBlock(ctx context.Context) error {
 func (am *AppModule) EndBlock(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	// Deterministically assign pending jobs to eligible validators. This writes
+	// scheduler.assigned_to onto each job's on-chain metadata so ExtendVote knows
+	// which jobs each validator must verify — the wire from job submission to the
+	// verification → Digital Seal pipeline. Runs in EndBlock so every validator
+	// computes the same assignment from the same state.
+	am.keeper.AssignPendingJobs(ctx)
+
 	// Expire old jobs using deterministic block-height-based expiry.
 	// DETERMINISM: Use block height (not wall-clock time) to ensure all
 	// validators agree on which jobs are expired.

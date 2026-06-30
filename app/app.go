@@ -396,6 +396,7 @@ func New(
 
 	// Initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -703,6 +704,33 @@ func (app *AethelredApp) setupModuleManager() {
 func (app *AethelredApp) Name() string { return Name }
 
 // BeginBlocker application updates at every begin block
+// PreBlocker runs at the start of FinalizeBlock, before BeginBlock. It applies
+// the injected "create_seal_from_consensus" transactions that PrepareProposal
+// produced from the aggregated vote-extension verification results: each is
+// handed to the consensus handler, which creates the Digital Seal and marks the
+// job completed. Doing this here (deterministically, from the block's own txs)
+// is what turns a verified PoUW job into an on-chain Digital Seal. Module
+// PreBlock migrations then run as usual.
+func (app *AethelredApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (resp *sdk.ResponsePreBlock, err error) {
+	defer app.recoverABCI("PreBlocker", &err)
+
+	if app.consensusHandler != nil && req != nil {
+		for _, txBytes := range req.Txs {
+			if !pouwkeeper.IsSealTransaction(txBytes) {
+				continue
+			}
+			if procErr := app.consensusHandler.ProcessSealTransaction(ctx, txBytes); procErr != nil {
+				// Log but don't fail the block: a seal that can't be applied (e.g.
+				// the job already completed in an earlier block) must not halt
+				// consensus. The result is deterministic across validators.
+				app.Logger().Error("Failed to process injected seal transaction", "error", procErr)
+			}
+		}
+	}
+
+	return app.ModuleManager.PreBlock(ctx)
+}
+
 func (app *AethelredApp) BeginBlocker(ctx sdk.Context) (resp sdk.BeginBlock, err error) {
 	defer app.recoverABCI("BeginBlocker", &err)
 
