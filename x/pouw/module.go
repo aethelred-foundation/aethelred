@@ -205,8 +205,8 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	// Add tx commands here
-	// cmd.AddCommand(CmdSubmitJob())
-	// cmd.AddCommand(CmdRegisterModel())
+	cmd.AddCommand(cli.CmdRegisterModel())
+	cmd.AddCommand(cli.CmdSubmitJob())
 	cmd.AddCommand(cli.CmdStakeForPoUW())
 	cmd.AddCommand(cli.CmdRegisterValidatorCapability())
 	cmd.AddCommand(cli.CmdRegisterValidatorPCR0())

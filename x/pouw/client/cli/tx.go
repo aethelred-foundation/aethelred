@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -24,6 +25,15 @@ const (
 	flagIsOnline          = "is-online"
 	flagStakeAmount       = "amount"
 	flagValidator         = "validator"
+	flagModel             = "model"
+	flagInput             = "input"
+	flagProofType         = "proof-type"
+	flagPurpose           = "purpose"
+	flagModelID           = "model-id"
+	flagModelName         = "name"
+	flagModelDescription  = "description"
+	flagModelVersion      = "version"
+	flagModelArch         = "architecture"
 
 	stakeDisplayDenom = "aethel"
 	stakeBaseDenom    = "uaethel"
@@ -227,6 +237,193 @@ func CmdRegisterValidatorHybridKey() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
+}
+
+// CmdSubmitJob creates a CLI command for submitting a Proof-of-Useful-Work job.
+// The job declares a model, an input, and the proof system (TEE / zkML / hybrid)
+// the network must use to verify the computation. Validators pick it up, run the
+// work, and the result flows into a Digital Seal once verification succeeds.
+func CmdSubmitJob() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "submit-job",
+		Short: "Submit a Proof-of-Useful-Work job for TEE/zkML verification",
+		Long: "Submit an AI compute job to the PoUW queue.\n\n" +
+			"--model and --input each accept either a 32-byte hash as 64 hex chars\n" +
+			"(optionally 0x-prefixed) or any other string, which is SHA-256 hashed to\n" +
+			"32 bytes. --proof-type selects the verification path: tee | zkml | hybrid.\n\n" +
+			"Example:\n" +
+			"  aethelredd tx pouw submit-job \\\n" +
+			"    --model resnet50-v1 --input sample-batch-0 \\\n" +
+			"    --proof-type zkml --purpose \"demo inference\" \\\n" +
+			"    --from validator --chain-id aethelred-testnet-1 --yes",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			rawModel, err := cmd.Flags().GetString(flagModel)
+			if err != nil {
+				return err
+			}
+			modelHash, err := parseHash32(rawModel)
+			if err != nil {
+				return fmt.Errorf("invalid --model: %w", err)
+			}
+
+			rawInput, err := cmd.Flags().GetString(flagInput)
+			if err != nil {
+				return err
+			}
+			inputHash, err := parseHash32(rawInput)
+			if err != nil {
+				return fmt.Errorf("invalid --input: %w", err)
+			}
+
+			rawProofType, err := cmd.Flags().GetString(flagProofType)
+			if err != nil {
+				return err
+			}
+			proofType, err := parseProofType(rawProofType)
+			if err != nil {
+				return err
+			}
+
+			purpose, err := cmd.Flags().GetString(flagPurpose)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSubmitJob(
+				clientCtx.GetFromAddress().String(),
+				modelHash,
+				inputHash,
+				proofType,
+				purpose,
+			)
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	cmd.Flags().String(flagModel, "", "Model: 32-byte hash (64 hex chars) or any string to SHA-256 hash")
+	cmd.Flags().String(flagInput, "", "Input: 32-byte hash (64 hex chars) or any string to SHA-256 hash")
+	cmd.Flags().String(flagProofType, "tee", "Verification proof type: tee | zkml | hybrid")
+	cmd.Flags().String(flagPurpose, "", "Human-readable purpose for this job (required)")
+	_ = cmd.MarkFlagRequired(flagModel)
+	_ = cmd.MarkFlagRequired(flagInput)
+	_ = cmd.MarkFlagRequired(flagPurpose)
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// CmdRegisterModel creates a CLI command for registering a model. A job can only
+// be submitted against a model that has been registered (its model hash must be
+// known to the chain), so this is the first step of the job lifecycle.
+func CmdRegisterModel() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-model",
+		Short: "Register a model so jobs can be submitted against it",
+		Long: "Register a model by hash. --model accepts either a 32-byte hash as 64 hex\n" +
+			"chars (optionally 0x-prefixed) or any string, which is SHA-256 hashed. Use the\n" +
+			"same --model value here and in 'submit-job' so the hashes match.\n\n" +
+			"Example:\n" +
+			"  aethelredd tx pouw register-model \\\n" +
+			"    --model resnet50-v1 --model-id resnet50 --name \"ResNet-50\" \\\n" +
+			"    --from validator --chain-id aethelred-testnet-1 --yes",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			rawModel, err := cmd.Flags().GetString(flagModel)
+			if err != nil {
+				return err
+			}
+			modelHash, err := parseHash32(rawModel)
+			if err != nil {
+				return fmt.Errorf("invalid --model: %w", err)
+			}
+
+			modelID, _ := cmd.Flags().GetString(flagModelID)
+			name, _ := cmd.Flags().GetString(flagModelName)
+			description, _ := cmd.Flags().GetString(flagModelDescription)
+			version, _ := cmd.Flags().GetString(flagModelVersion)
+			architecture, _ := cmd.Flags().GetString(flagModelArch)
+
+			msg := types.NewMsgRegisterModel(
+				clientCtx.GetFromAddress().String(),
+				modelHash,
+				modelID,
+				name,
+				description,
+				version,
+				architecture,
+			)
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	cmd.Flags().String(flagModel, "", "Model: 32-byte hash (64 hex chars) or any string to SHA-256 hash")
+	cmd.Flags().String(flagModelID, "", "Short model identifier (required)")
+	cmd.Flags().String(flagModelName, "", "Human-readable model name (required)")
+	cmd.Flags().String(flagModelDescription, "", "Model description")
+	cmd.Flags().String(flagModelVersion, "v1", "Model version")
+	cmd.Flags().String(flagModelArch, "", "Model architecture (e.g. transformer, cnn)")
+	_ = cmd.MarkFlagRequired(flagModel)
+	_ = cmd.MarkFlagRequired(flagModelID)
+	_ = cmd.MarkFlagRequired(flagModelName)
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// parseHash32 returns a 32-byte hash from raw input. If raw is 64 hex chars
+// (optionally 0x-prefixed) it is decoded directly; otherwise raw is SHA-256
+// hashed. This lets callers pass a precomputed model/input digest or a plain
+// identifier interchangeably.
+func parseHash32(raw string) ([]byte, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil, fmt.Errorf("value is empty")
+	}
+	candidate := strings.TrimPrefix(trimmed, "0x")
+	if len(candidate) == 64 {
+		if decoded, err := hex.DecodeString(candidate); err == nil {
+			return decoded, nil
+		}
+	}
+	sum := sha256.Sum256([]byte(trimmed))
+	return sum[:], nil
+}
+
+// parseProofType maps a user-friendly proof-type string to the enum value.
+func parseProofType(raw string) (types.ProofType, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "tee":
+		return types.ProofTypeTEE, nil
+	case "zkml":
+		return types.ProofTypeZKML, nil
+	case "hybrid":
+		return types.ProofTypeHybrid, nil
+	default:
+		return types.ProofType_PROOF_TYPE_UNSPECIFIED, fmt.Errorf(
+			"invalid proof type %q (supported: tee, zkml, hybrid)", raw,
+		)
+	}
 }
 
 func minimumStakeUAETHEL() sdkmath.Int {
