@@ -1,11 +1,15 @@
 package app
 
 import (
+	"cosmossdk.io/x/tx/signing"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/address"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	"github.com/cosmos/gogoproto/proto"
 
 	// Aethelred custom modules
 	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
@@ -24,7 +28,20 @@ type EncodingConfig struct {
 // MakeEncodingConfig creates an EncodingConfig for the Aethelred app
 func MakeEncodingConfig() EncodingConfig {
 	amino := codec.NewLegacyAmino()
-	interfaceRegistry := types.NewInterfaceRegistry()
+	// The interface registry MUST be built with address codecs. Without them,
+	// any command that signs (notably `genesis gentx`) fails with
+	// "InterfaceRegistry requires a proper address codec implementation to do
+	// address conversion".
+	interfaceRegistry, err := types.NewInterfaceRegistryWithOptions(types.InterfaceRegistryOptions{
+		ProtoFiles: proto.HybridResolver,
+		SigningOptions: signing.Options{
+			AddressCodec:          address.NewBech32Codec(AccountAddressPrefix),
+			ValidatorAddressCodec: address.NewBech32Codec(AccountAddressPrefix + "valoper"),
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	// Register standard Cosmos SDK types
 	std.RegisterLegacyAminoCodec(amino)

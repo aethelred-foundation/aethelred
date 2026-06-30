@@ -235,7 +235,7 @@ start: build
 	@echo "Starting $(BINARY_NAME)..."
 	$(BUILD_DIR)/$(BINARY_NAME) start
 
-## testnet-start: Start local testnet (3 validators)
+## testnet-start: Bootstrap + run a local single-node testnet (see scripts/testnet.sh)
 testnet-start: build
 	@echo "Starting local testnet..."
 	@./scripts/testnet.sh start

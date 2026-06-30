@@ -11,6 +11,7 @@ require (
 	cosmossdk.io/store v1.1.1
 	cosmossdk.io/x/evidence v0.1.1
 	cosmossdk.io/x/feegrant v0.1.1
+	cosmossdk.io/x/tx v0.13.7
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/cloudflare/circl v1.6.3
@@ -47,7 +48,6 @@ require (
 	cloud.google.com/go/storage v1.61.3 // indirect
 	cosmossdk.io/api v0.7.6 // indirect
 	cosmossdk.io/depinject v1.1.0 // indirect
-	cosmossdk.io/x/tx v0.13.7 // indirect
 	filippo.io/bigmod v0.1.1-0.20260103110540-f8a47775ebe5 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/keygen v0.0.0-20260114151900-8e2790ea4c5b // indirect
