@@ -1241,10 +1241,13 @@ func TestVoteExtension_ZKML_ValidInStrict(t *testing.T) {
 // Policy tests
 // ────────────────────────────────────────────────────────────────────────────
 
-// Policy: VoteExtensionVersion must be exactly 1 for the MVP.
+// Policy: VoteExtensionVersion is 2 — version 2 adds the per-verification
+// hybrid SealClaimSignature. Bumping this is a consensus-affecting wire-format
+// change and requires a coordinated validator upgrade, so the constant is pinned
+// by this test to make any change deliberate.
 func TestPolicy_VoteExtensionVersion(t *testing.T) {
-	if app.VoteExtensionVersion != 1 {
-		t.Fatalf("POLICY: VoteExtensionVersion must be 1 for MVP, got %d", app.VoteExtensionVersion)
+	if app.VoteExtensionVersion != 2 {
+		t.Fatalf("POLICY: VoteExtensionVersion must be 2, got %d", app.VoteExtensionVersion)
 	}
 }
 

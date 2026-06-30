@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -172,6 +173,47 @@ func CmdRegisterValidatorPCR0() *cobra.Command {
 				Creator:          validator,
 				ValidatorAddress: validator,
 				Pcr0Hex:          args[0],
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// CmdRegisterValidatorHybridKey registers the signing validator's hybrid
+// (secp256k1 + ML-DSA) public key, used to verify its Digital Seal quorum
+// signatures. The key is derived deterministically from the validator's
+// consensus key and printed by the node at startup.
+func CmdRegisterValidatorHybridKey() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "register-hybrid-key [hybrid-public-key-hex]",
+		Aliases: []string{"register-validator-hybrid-key"},
+		Short:   "Register this validator's hybrid (secp256k1 + ML-DSA) public key for Digital Seal quorum signing",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			pubKey, err := hex.DecodeString(strings.TrimPrefix(strings.TrimSpace(args[0]), "0x"))
+			if err != nil {
+				return fmt.Errorf("invalid hybrid public key hex: %w", err)
+			}
+
+			validator := clientCtx.GetFromAddress().String()
+			msg := &types.MsgRegisterValidatorHybridKey{
+				Creator:          validator,
+				ValidatorAddress: validator,
+				HybridPublicKey:  pubKey,
 			}
 
 			if err := msg.ValidateBasic(); err != nil {

@@ -210,6 +210,7 @@ func GetTxCmd() *cobra.Command {
 	cmd.AddCommand(cli.CmdStakeForPoUW())
 	cmd.AddCommand(cli.CmdRegisterValidatorCapability())
 	cmd.AddCommand(cli.CmdRegisterValidatorPCR0())
+	cmd.AddCommand(cli.CmdRegisterValidatorHybridKey())
 
 	return cmd
 }
@@ -230,6 +231,7 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(cli.CmdQueryPoUWStatus())
 	cmd.AddCommand(cli.CmdQueryValidatorPCR0())
 	cmd.AddCommand(cli.CmdQueryIsPCR0Registered())
+	cmd.AddCommand(cli.CmdQuerySealQuorum())
 
 	return cmd
 }

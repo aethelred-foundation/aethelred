@@ -14,10 +14,19 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	pqc "github.com/aethelred/aethelred/crypto/pqc"
+	sealtypes "github.com/aethelred/aethelred/x/seal/types"
 )
 
-// VoteExtensionVersion is the current version of the vote extension format
-const VoteExtensionVersion = 1
+// VoteExtensionVersion is the current version of the vote extension format.
+//
+// Version 2 adds per-verification SealClaimSignature (a validator's hybrid
+// secp256k1 + ML-DSA signature over the Digital Seal claim). This is a
+// consensus-affecting wire-format change: all validators must run the same
+// version at a given height. The version is bound into ComputeHash, so a
+// coordinated upgrade is required — there is no mixed-version interop.
+const VoteExtensionVersion = 2
 
 const (
 	voteExtensionDefaultMaxPastSkew   = 10 * time.Minute
@@ -99,6 +108,13 @@ type ComputeVerification struct {
 
 	// Nonce to prevent replay attacks
 	Nonce []byte `json:"nonce"`
+
+	// SealClaimSignature is the validator's hybrid (secp256k1 + ML-DSA) signature
+	// over the canonical Digital Seal claim for this verification
+	// (chainID, jobID, model, input, output, height). A 2/3+ power quorum of
+	// these is aggregated onto the resulting seal. Empty for failed verifications
+	// or validators without a configured hybrid key. (Vote extension version 2+.)
+	SealClaimSignature []byte `json:"seal_claim_signature,omitempty"`
 }
 
 // AttestationType represents the type of attestation used
@@ -285,6 +301,9 @@ func (ve *VoteExtension) ComputeHash() []byte {
 		writeString(string(v.ErrorCode))
 		writeString(v.ErrorMessage)
 		writeLenBytes(v.Nonce)
+		// Seal claim hybrid signature (vote extension v2+). Length-prefixed so an
+		// absent signature (empty) is distinct from a present one.
+		writeLenBytes(v.SealClaimSignature)
 
 		if v.TEEAttestation == nil {
 			writeBool(false)
@@ -749,6 +768,11 @@ type ValidatorAttestation struct {
 	ZKProof          *ZKProofData
 	ExecutionTimeMs  int64
 	Timestamp        time.Time
+
+	// SealClaimSignature is this validator's hybrid signature over the Digital
+	// Seal claim. Carried through aggregation so a 2/3+ power quorum of these can
+	// be written onto the resulting seal.
+	SealClaimSignature []byte
 }
 
 // VoteExtensionWithPower bundles a vote extension with its validator's voting power.
@@ -816,13 +840,14 @@ func AggregateVoteExtensions(
 
 			// Create validator attestation
 			attestation := ValidatorAttestation{
-				ValidatorAddress: ext.ValidatorAddress,
-				OutputHash:       v.OutputHash,
-				AttestationType:  v.AttestationType,
-				TEEAttestation:   v.TEEAttestation,
-				ZKProof:          v.ZKProof,
-				ExecutionTimeMs:  v.ExecutionTimeMs,
-				Timestamp:        ext.Timestamp,
+				ValidatorAddress:   ext.ValidatorAddress,
+				OutputHash:         v.OutputHash,
+				AttestationType:    v.AttestationType,
+				TEEAttestation:     v.TEEAttestation,
+				ZKProof:            v.ZKProof,
+				ExecutionTimeMs:    v.ExecutionTimeMs,
+				Timestamp:          ext.Timestamp,
+				SealClaimSignature: v.SealClaimSignature,
 			}
 
 			outputVotes[v.JobID][outputHashHex] = append(
@@ -983,6 +1008,50 @@ func SignVoteExtension(ve *VoteExtension, privKey ed25519.PrivateKey) error {
 	// Sign with ed25519
 	ve.Signature = ed25519.Sign(privKey, signingBytes)
 	return nil
+}
+
+// sealClaimFor builds the canonical Digital Seal claim for a verification on a
+// given chain.
+func sealClaimFor(v *ComputeVerification, chainID string) sealtypes.SealClaim {
+	return sealtypes.SealClaim{
+		ChainID:          chainID,
+		JobID:            v.JobID,
+		ModelCommitment:  v.ModelHash,
+		InputCommitment:  v.InputHash,
+		OutputCommitment: v.OutputHash,
+	}
+}
+
+// SignSealClaims fills in SealClaimSignature for each successful verification by
+// signing the canonical seal claim with the validator's hybrid key. Failed
+// verifications are skipped (they never become seals). MUST be called before the
+// ed25519 extension signature so the claim signatures are covered by it.
+func SignSealClaims(ve *VoteExtension, wallet *pqc.DualKeyWallet, chainID string) error {
+	if wallet == nil {
+		return nil
+	}
+	for i := range ve.Verifications {
+		v := &ve.Verifications[i]
+		if !v.Success {
+			v.SealClaimSignature = nil
+			continue
+		}
+		sig, err := wallet.SignHybrid(sealClaimFor(v, chainID).SigningBytes())
+		if err != nil {
+			return fmt.Errorf("failed to sign seal claim for job %s: %w", v.JobID, err)
+		}
+		v.SealClaimSignature = sig
+	}
+	return nil
+}
+
+// VerifySealClaimSignature verifies a verification's hybrid seal-claim signature
+// against a validator's registered hybrid public key.
+func VerifySealClaimSignature(v *ComputeVerification, chainID string, hybridPubKey []byte) (bool, error) {
+	if len(v.SealClaimSignature) == 0 {
+		return false, nil
+	}
+	return pqc.VerifyHybrid(hybridPubKey, sealClaimFor(v, chainID).SigningBytes(), v.SealClaimSignature)
 }
 
 // VerifyVoteExtensionSignature verifies the ed25519 signature on a vote extension

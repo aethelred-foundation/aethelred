@@ -34,6 +34,7 @@ func (k msgServer) CreateSeal(goCtx context.Context, msg *types.MsgCreateSeal) (
 		msg.Creator,
 		msg.Purpose,
 	)
+	seal.JobId = msg.JobId
 
 	// Add TEE attestations if provided
 	for _, attestation := range msg.TeeAttestations {

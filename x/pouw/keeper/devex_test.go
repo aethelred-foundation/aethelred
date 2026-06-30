@@ -104,6 +104,10 @@ func (committeeTestStakingKeeper) GetValidator(context.Context, sdk.ValAddress) 
 	return stakingtypes.Validator{}, nil
 }
 
+func (committeeTestStakingKeeper) GetValidatorByConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.Validator, error) {
+	return stakingtypes.Validator{}, nil
+}
+
 func makeCommitteeTestValidator(seed string, tokens int64) stakingtypes.Validator {
 	raw := make([]byte, 20)
 	copy(raw, []byte(seed))
@@ -229,6 +233,20 @@ func newTestKeeperFromStore(cdc codec.Codec, storeService store.KVStoreService) 
 			"trusted_measurement_revocations",
 			collections.StringKey,
 			collections.StringValue,
+		),
+		ValidatorHybridKeys: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.ValidatorHybridKeyKeyPrefix),
+			"validator_hybrid_keys",
+			collections.StringKey,
+			collections.BytesValue,
+		),
+		SealQuorumSignatures: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.SealQuorumSignatureKeyPrefix),
+			"seal_quorum_signatures",
+			collections.StringKey,
+			collections.BytesValue,
 		),
 		JobCount: collections.NewItem(
 			sb,

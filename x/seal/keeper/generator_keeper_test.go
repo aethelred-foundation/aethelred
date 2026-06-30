@@ -173,19 +173,49 @@ func TestSealGeneratorBatchAndFromJob(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, seals, 1)
 
-	// GenerateSealFromJob currently constructs a minimal result and should fail validation.
-	_, err = sg.GenerateSealFromJob(ctx, "job-1", bytes.Repeat([]byte{0x03}, 32), []VerificationResult{
-		{
-			ValidatorAddress: "validator-1",
-			OutputHash:       bytes.Repeat([]byte{0x03}, 32),
+	// GenerateSealFromJob mints a valid seal when given complete job context and
+	// enough successful verifications to satisfy consensus.
+	outputHash := bytes.Repeat([]byte{0x03}, 32)
+	mkVerification := func(addr string) VerificationResult {
+		return VerificationResult{
+			ValidatorAddress: addr,
+			OutputHash:       outputHash,
 			AttestationType:  "tee",
 			TEEPlatform:      "aws-nitro",
 			AttestationData:  []byte("attestation"),
 			ExecutionTimeMs:  5,
-			Timestamp:        time.Now().UTC(),
+			Timestamp:        ctx.BlockTime(),
 			Success:          true,
-		},
+		}
+	}
+	jobCtx := JobContext{
+		JobID:                   "job-1",
+		ModelHash:               bytes.Repeat([]byte{0x11}, 32),
+		InputHash:               bytes.Repeat([]byte{0x22}, 32),
+		OutputHash:              outputHash,
+		RequestedBy:             requester,
+		Purpose:                 "fraud_detection",
+		Height:                  120,
+		Round:                   1,
+		TotalValidators:         3,
+		ParticipatingValidators: 3,
+		BlockHash:               []byte("block-hash"),
+		Timestamp:               ctx.BlockTime(),
+	}
+	jobSeal, err := sg.GenerateSealFromJob(ctx, jobCtx, []VerificationResult{
+		mkVerification("validator-1"),
+		mkVerification("validator-2"),
+		mkVerification("validator-3"),
 	})
+	require.NoError(t, err)
+	require.NotNil(t, jobSeal)
+	require.Equal(t, "job-1", jobSeal.JobId)
+
+	// A single successful verification is below the consensus threshold and must
+	// be rejected rather than producing a seal.
+	failCtx := jobCtx
+	failCtx.JobID = "job-2"
+	_, err = sg.GenerateSealFromJob(ctx, failCtx, []VerificationResult{mkVerification("validator-1")})
 	require.Error(t, err)
 }
 

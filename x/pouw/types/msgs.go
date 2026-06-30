@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/aethelred/aethelred/crypto/pqc"
 )
 
 const (
@@ -15,6 +17,7 @@ const (
 	TypeMsgSubmitResult                = "submit_result"
 	TypeMsgRegisterValidatorCapability = "register_validator_capability"
 	TypeMsgRegisterValidatorPCR0       = "register_validator_pcr0"
+	TypeMsgRegisterValidatorHybridKey  = "register_validator_hybrid_key"
 )
 
 var (
@@ -23,6 +26,7 @@ var (
 	_ sdk.Msg = &MsgCancelJob{}
 	_ sdk.Msg = &MsgRegisterValidatorCapability{}
 	_ sdk.Msg = &MsgRegisterValidatorPCR0{}
+	_ sdk.Msg = &MsgRegisterValidatorHybridKey{}
 )
 
 // NewMsgSubmitJob creates a new MsgSubmitJob
@@ -259,6 +263,48 @@ func (msg *MsgRegisterValidatorPCR0) ValidateBasic() error {
 	}
 	if _, err := hex.DecodeString(normalized); err != nil {
 		return fmt.Errorf("invalid pcr0 hex: %w", err)
+	}
+	return nil
+}
+
+// Route implements sdk.Msg
+func (msg *MsgRegisterValidatorHybridKey) Route() string { return RouterKey }
+
+// Type implements sdk.Msg
+func (msg *MsgRegisterValidatorHybridKey) Type() string {
+	return TypeMsgRegisterValidatorHybridKey
+}
+
+// GetSigners implements sdk.Msg
+func (msg *MsgRegisterValidatorHybridKey) GetSigners() []sdk.AccAddress {
+	creator, err := sdk.AccAddressFromBech32(msg.Creator)
+	if err != nil {
+		return []sdk.AccAddress{}
+	}
+	return []sdk.AccAddress{creator}
+}
+
+// GetSignBytes implements sdk.Msg
+func (msg *MsgRegisterValidatorHybridKey) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic implements sdk.Msg. A validator may only register its own key
+// (creator must equal validator_address), and the key must be a well-formed
+// hybrid (secp256k1 + ML-DSA) public key.
+func (msg *MsgRegisterValidatorHybridKey) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Creator); err != nil {
+		return fmt.Errorf("invalid creator address: %w", err)
+	}
+	if _, err := sdk.AccAddressFromBech32(msg.ValidatorAddress); err != nil {
+		return fmt.Errorf("invalid validator address: %w", err)
+	}
+	if msg.Creator != msg.ValidatorAddress {
+		return fmt.Errorf("creator must match validator_address")
+	}
+	if err := pqc.ValidateHybridPublicKey(msg.HybridPublicKey); err != nil {
+		return fmt.Errorf("invalid hybrid public key: %w", err)
 	}
 	return nil
 }

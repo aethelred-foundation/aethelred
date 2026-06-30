@@ -276,6 +276,288 @@
         ],
         "type": "object"
       },
+      "EnterpriseEvidenceBundle": {
+        "additionalProperties": true,
+        "description": "Canonical enterprise hybrid evidence bundle matching docs/api/evidence-bundle-v1.schema.json.",
+        "properties": {
+          "archive_pointer": {
+            "additionalProperties": true,
+            "properties": {
+              "archive_type": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "document_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "index": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "retention_days": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "uri": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "write_status": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "archive_type",
+              "index",
+              "document_id",
+              "uri",
+              "retention_days",
+              "write_status"
+            ],
+            "type": "object"
+          },
+          "bundle_id": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            "type": "string"
+          },
+          "chain_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "circuit_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "confidence_score": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "job_id": {
+            "pattern": "^[0-9A-Fa-f]{64}$",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "model_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "operator": {
+            "pattern": "^aethel1[a-z0-9]{38,58}$",
+            "type": "string"
+          },
+          "policy_decision": {
+            "additionalProperties": true,
+            "properties": {
+              "fallback_allowed": {
+                "enum": [
+                  false
+                ],
+                "type": "boolean"
+              },
+              "mode": {
+                "enum": [
+                  "hybrid"
+                ],
+                "type": "string"
+              },
+              "policy_version": {
+                "type": "string"
+              },
+              "require_both": {
+                "enum": [
+                  true
+                ],
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "mode",
+              "require_both",
+              "fallback_allowed"
+            ],
+            "type": "object"
+          },
+          "region": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "schema_version": {
+            "enum": [
+              "1.0.0"
+            ],
+            "type": "string"
+          },
+          "seal_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "tee_evidence": {
+            "additionalProperties": false,
+            "properties": {
+              "enclave_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "measurement": {
+                "pattern": "^[0-9a-f]+$",
+                "type": "string"
+              },
+              "nonce": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "platform": {
+                "enum": [
+                  "sgx",
+                  "nitro",
+                  "sev-snp"
+                ],
+                "type": "string"
+              },
+              "quote": {
+                "minLength": 4,
+                "pattern": "^[A-Za-z0-9+/]+=*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "platform",
+              "enclave_id",
+              "measurement",
+              "quote",
+              "nonce"
+            ],
+            "type": "object"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validator_signature": {
+            "minLength": 4,
+            "pattern": "^[A-Za-z0-9+/]+=*$",
+            "type": "string"
+          },
+          "verification": {
+            "additionalProperties": true,
+            "properties": {
+              "artifact_mode": {
+                "type": "string"
+              },
+              "digital_seal_verified": {
+                "type": "boolean"
+              },
+              "live_verification_required": {
+                "type": "boolean"
+              },
+              "policy_verified": {
+                "type": "boolean"
+              },
+              "schema_verified": {
+                "type": "boolean"
+              },
+              "tee_attestation_verified": {
+                "type": "boolean"
+              },
+              "verifier_version": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "zkml_proof_verified": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "schema_verified",
+              "policy_verified",
+              "tee_attestation_verified",
+              "zkml_proof_verified",
+              "digital_seal_verified",
+              "live_verification_required",
+              "verifier_version"
+            ],
+            "type": "object"
+          },
+          "verifying_key_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "zkml_evidence": {
+            "additionalProperties": false,
+            "properties": {
+              "output_commitment": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "proof_bytes": {
+                "minLength": 4,
+                "pattern": "^[A-Za-z0-9+/]+=*$",
+                "type": "string"
+              },
+              "proof_system": {
+                "enum": [
+                  "groth16",
+                  "plonk",
+                  "ezkl",
+                  "halo2",
+                  "stark"
+                ],
+                "type": "string"
+              },
+              "public_inputs": {
+                "minLength": 4,
+                "pattern": "^[A-Za-z0-9+/]+=*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "proof_system",
+              "proof_bytes",
+              "public_inputs",
+              "output_commitment"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "schema_version",
+          "bundle_id",
+          "job_id",
+          "chain_id",
+          "seal_id",
+          "timestamp",
+          "model_hash",
+          "circuit_hash",
+          "verifying_key_hash",
+          "validator_signature",
+          "confidence_score",
+          "tee_evidence",
+          "zkml_evidence",
+          "region",
+          "operator",
+          "policy_decision",
+          "archive_pointer",
+          "verification"
+        ],
+        "type": "object"
+      },
+      "EnterpriseEvidenceBundleResponse": {
+        "properties": {
+          "evidence_bundle": {
+            "$ref": "#/components/schemas/EnterpriseEvidenceBundle"
+          }
+        },
+        "required": [
+          "evidence_bundle"
+        ],
+        "type": "object"
+      },
       "EpochStats": {
         "properties": {
           "end_block": {
@@ -319,6 +601,69 @@
           },
           "message": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ExportSealResponse": {
+        "properties": {
+          "export": {
+            "$ref": "#/components/schemas/ExportedSeal"
+          }
+        },
+        "type": "object"
+      },
+      "ExportedSeal": {
+        "properties": {
+          "format": {
+            "enum": [
+              "json",
+              "compact",
+              "portable",
+              "audit"
+            ],
+            "type": "string"
+          },
+          "metadata": {
+            "properties": {
+              "block_height": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "chain_id": {
+                "type": "string"
+              },
+              "content_hash": {
+                "type": "string"
+              },
+              "exported_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "exported_by": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "seal": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "verification": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GetSealResponse": {
+        "properties": {
+          "seal": {
+            "$ref": "#/components/schemas/DigitalSeal"
           }
         },
         "type": "object"
@@ -389,16 +734,39 @@
         },
         "type": "object"
       },
-      "ListSealsResponse": {
+      "ListSealsByModelResponse": {
         "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/PageResponse"
-          },
           "seals": {
             "items": {
               "$ref": "#/components/schemas/DigitalSeal"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ListSealsByRequesterResponse": {
+        "properties": {
+          "seals": {
+            "items": {
+              "$ref": "#/components/schemas/DigitalSeal"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ListSealsResponse": {
+        "properties": {
+          "seals": {
+            "items": {
+              "$ref": "#/components/schemas/DigitalSeal"
+            },
+            "type": "array"
+          },
+          "total": {
+            "format": "uint64",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -851,37 +1219,20 @@
       },
       "VerifySealResponse": {
         "properties": {
-          "errors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "seal": {
-            "$ref": "#/components/schemas/DigitalSeal"
+          "status": {
+            "type": "string"
           },
           "valid": {
             "type": "boolean"
           },
-          "verification_details": {
-            "properties": {
-              "not_expired": {
-                "type": "boolean"
-              },
-              "not_revoked": {
-                "type": "boolean"
-              },
-              "signature_valid": {
-                "type": "boolean"
-              },
-              "tee_attestation_valid": {
-                "type": "boolean"
-              },
-              "zkml_proof_valid": {
-                "type": "boolean"
-              }
-            },
-            "type": "object"
+          "verification_type": {
+            "enum": [
+              "none",
+              "tee",
+              "zkml",
+              "hybrid"
+            ],
+            "type": "string"
           }
         },
         "type": "object"
@@ -1371,6 +1722,52 @@
         ]
       }
     },
+    "/aethelred/pouw/v1/seals/{seal_id}/quorum": {
+      "get": {
+        "operationId": "getSealQuorum",
+        "tags": ["Seals"],
+        "summary": "Get a Digital Seal's validator-quorum hybrid signatures",
+        "description": "Returns the validator-quorum hybrid (secp256k1 + ML-DSA) signatures attached to a Digital Seal, for offline verification that a 2/3+ power quorum of validators signed the seal claim.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seal_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The seal's quorum signatures",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "seal_id": { "type": "string" },
+                    "signature_count": { "type": "integer" },
+                    "signatures": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "signer_address": { "type": "string" },
+                          "algorithm": { "type": "string" },
+                          "public_key": { "type": "string", "format": "byte" },
+                          "signature": { "type": "string", "format": "byte" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/aethelred/pouw/v1/validators/{address}/capability": {
       "post": {
         "operationId": "registerValidatorCapability",
@@ -1439,6 +1836,43 @@
         "summary": "Get validator stats",
         "tags": [
           "Validators"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/evidence-bundles/{job_id}": {
+      "get": {
+        "operationId": "exportEnterpriseEvidenceBundle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnterpriseEvidenceBundleResponse"
+                }
+              }
+            },
+            "description": "Canonical enterprise hybrid evidence bundle"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Export an enterprise evidence bundle by job ID",
+        "tags": [
+          "Seals"
         ]
       }
     },
@@ -1514,6 +1948,76 @@
         ]
       }
     },
+    "/aethelred/seal/v1/seals/by_model": {
+      "get": {
+        "operationId": "listSealsByModel",
+        "parameters": [
+          {
+            "description": "Base64-encoded SHA-256 model hash, matching proto bytes JSON mapping.",
+            "in": "query",
+            "name": "model_hash",
+            "required": true,
+            "schema": {
+              "format": "byte",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSealsByModelResponse"
+                }
+              }
+            },
+            "description": "List of seals for the model"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "List seals by model hash",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/seals/by_requester": {
+      "get": {
+        "operationId": "listSealsByRequester",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requester",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSealsByRequesterResponse"
+                }
+              }
+            },
+            "description": "List of seals requested by the address"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "List seals by requester",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
     "/aethelred/seal/v1/seals/{seal_id}": {
       "get": {
         "operationId": "getSeal",
@@ -1532,7 +2036,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DigitalSeal"
+                  "$ref": "#/components/schemas/GetSealResponse"
                 }
               }
             },
@@ -1548,9 +2052,9 @@
         ]
       }
     },
-    "/aethelred/seal/v1/seals/{seal_id}/revoke": {
-      "post": {
-        "operationId": "revokeSeal",
+    "/aethelred/seal/v1/seals/{seal_id}/export": {
+      "get": {
+        "operationId": "exportSeal",
         "parameters": [
           {
             "in": "path",
@@ -1559,21 +2063,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "compact",
+                "portable",
+                "audit"
+              ],
+              "type": "string"
+            }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RevokeSealRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
-            "description": "Seal revoked"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportSealResponse"
+                }
+              }
+            },
+            "description": "Exported seal evidence object"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -1582,7 +2098,7 @@
             "$ref": "#/components/responses/NotFound"
           }
         },
-        "summary": "Revoke a seal",
+        "summary": "Export a seal evidence object",
         "tags": [
           "Seals"
         ]
@@ -1617,6 +2133,46 @@
           }
         },
         "summary": "Verify a seal",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/seals/{seal_id}:revoke": {
+      "post": {
+        "operationId": "revokeSeal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seal_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeSealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Seal revoked"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Revoke a seal",
         "tags": [
           "Seals"
         ]
