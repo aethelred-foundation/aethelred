@@ -3,10 +3,13 @@ package cmd
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/privval"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
 	"cosmossdk.io/log"
@@ -192,7 +195,7 @@ func newApp(
 	// Without these the baseapp chain-id stays empty and InitChain fails with
 	// "invalid chain-id on InitChain; expected: , got: <chain>".
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
-	return app.New(
+	aethelredApp := app.New(
 		logger,
 		db,
 		traceStore,
@@ -200,6 +203,25 @@ func newApp(
 		appOpts,
 		baseappOptions...,
 	)
+
+	// Configure the validator's signing key from priv_validator_key.json so the
+	// node can sign vote extensions and Digital Seal claims, and so it logs its
+	// derived hybrid (secp256k1 + ML-DSA) public key for on-chain registration
+	// (`aethelredd tx pouw register-hybrid-key <hex>`). Validator nodes have this
+	// key file; non-validator nodes do not, so this is best-effort and silently
+	// skipped when the file is absent.
+	if home := cast.ToString(appOpts.Get(flags.FlagHome)); home != "" {
+		keyFile := filepath.Join(home, "config", "priv_validator_key.json")
+		if _, statErr := os.Stat(keyFile); statErr == nil {
+			stateFile := filepath.Join(home, "data", "priv_validator_state.json")
+			filePV := privval.LoadFilePVEmptyState(keyFile, stateFile)
+			if keyErr := aethelredApp.SetValidatorPrivateKey(filePV.Key.PrivKey.Bytes()); keyErr != nil {
+				logger.Error("failed to configure validator signing key from priv_validator_key.json", "error", keyErr)
+			}
+		}
+	}
+
+	return aethelredApp
 }
 
 // appExport exports app state
