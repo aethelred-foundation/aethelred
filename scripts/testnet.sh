@@ -59,6 +59,10 @@ cmd_bootstrap() {
 	# are not configured. pouw.params and verify.params both carry the flag.
 	log "enable simulated verification in genesis (dev/testnet only)"
 	sed -i.bak 's/"allow_simulated": false/"allow_simulated": true/g' "$HOME_DIR/config/genesis.json"
+	# Enable ABCI++ vote extensions — the PoUW verification → Digital Seal pipeline
+	# runs in ExtendVote/VerifyVoteExtension, which CometBFT only calls when
+	# vote_extensions_enable_height > 0.
+	sed -i.bak 's/"vote_extensions_enable_height": "0"/"vote_extensions_enable_height": "1"/' "$HOME_DIR/config/genesis.json"
 	rm -f "$HOME_DIR/config/genesis.json.bak"
 
 	# Enable REAL post-quantum crypto (Cloudflare circl ML-DSA-65 / ML-KEM-768

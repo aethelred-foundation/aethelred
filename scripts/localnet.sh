@@ -74,6 +74,11 @@ cmd_init() {
 	# 3) enable simulated verification (dev) in node0 genesis, then share it so
 	#    every node's gentx validates against the funded genesis.
 	sed -i.bak 's/"allow_simulated": false/"allow_simulated": true/g' "$g0/config/genesis.json"
+	# Enable ABCI++ vote extensions. The PoUW verification → Digital Seal pipeline
+	# runs entirely in ExtendVote/VerifyVoteExtension, which CometBFT only invokes
+	# when vote_extensions_enable_height > 0. Left at 0, jobs are assigned but never
+	# verified or sealed.
+	sed -i.bak 's/"vote_extensions_enable_height": "0"/"vote_extensions_enable_height": "1"/' "$g0/config/genesis.json"
 	rm -f "$g0/config/genesis.json.bak"
 	for i in $(seq 1 $((N-1))); do cp "$g0/config/genesis.json" "$(home_i "$i")/config/genesis.json"; done
 
@@ -120,7 +125,7 @@ cmd_init() {
 			-e "s|^persistent_peers = \".*\"|persistent_peers = \"${peers}\"|" \
 			-e "s|^addr_book_strict = true|addr_book_strict = false|" \
 			-e "s|^allow_duplicate_ip = false|allow_duplicate_ip = true|" \
-			-e "s|^create_empty_blocks = true|create_empty_blocks = false|" \
+			-e "s|^create_empty_blocks = false|create_empty_blocks = true|" \
 			-e "s|^prometheus = true|prometheus = false|" \
 			"$cfg"
 		rm -f "$cfg.bak"
