@@ -1,7 +1,6 @@
 package groth16
 
 import (
-	"errors"
 	"math/big"
 	"testing"
 )
@@ -42,24 +41,29 @@ func testInputs() *PublicInputs {
 	}
 }
 
-func TestVerifierVerifyFailsClosedWithoutPairingBackend(t *testing.T) {
+// testProof()'s points are placeholders that are not valid BN254 group
+// elements, so the real pairing backend must reject them (the verifier no
+// longer fails closed — it actually verifies, and invalid points fail the
+// on-curve / subgroup checks). A genuine valid-proof acceptance test lives in
+// bn254_gnark_test.go.
+func TestVerifierRejectsInvalidProofPoints(t *testing.T) {
 	verifier := NewVerifier()
 
 	verified, err := verifier.Verify(testProof(), testVerifyingKey(), testInputs())
 	if verified {
-		t.Fatalf("expected verification to fail closed without pairing backend")
+		t.Fatal("verifier accepted a proof with invalid (off-curve) points")
 	}
-	if !errors.Is(err, ErrPairingBackendUnavailable) {
-		t.Fatalf("expected ErrPairingBackendUnavailable, got %v", err)
+	if err == nil {
+		t.Fatal("expected an error rejecting the invalid proof, got nil")
 	}
 }
 
-func TestVerifyGroth16WithPairingFailsClosedWithoutBackend(t *testing.T) {
+func TestVerifyGroth16WithPairingRejectsInvalidProofPoints(t *testing.T) {
 	verified, err := VerifyGroth16WithPairing(testProof(), testVerifyingKey(), testInputs())
 	if verified {
-		t.Fatalf("expected verification to fail closed without pairing backend")
+		t.Fatal("VerifyGroth16WithPairing accepted a proof with invalid (off-curve) points")
 	}
-	if !errors.Is(err, ErrPairingBackendUnavailable) {
-		t.Fatalf("expected ErrPairingBackendUnavailable, got %v", err)
+	if err == nil {
+		t.Fatal("expected an error rejecting the invalid proof, got nil")
 	}
 }
