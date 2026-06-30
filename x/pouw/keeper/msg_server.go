@@ -105,6 +105,13 @@ func (k msgServer) RegisterModel(goCtx context.Context, msg *types.MsgRegisterMo
 	model.TeeMeasurement = msg.TeeMeasurement
 	model.AllowedPurposes = msg.AllowedPurposes
 
+	// DETERMINISM: RegisteredAt MUST come from the block time, not wall-clock.
+	// NewRegisteredModel uses timestamppb.Now() (fine for tooling/tests), but this
+	// value is written to consensus state — if every validator stamped its own
+	// wall-clock time, the stored model bytes would differ across validators,
+	// producing divergent app hashes and halting consensus on an AppHash mismatch.
+	model.RegisteredAt = timestamppb.New(ctx.BlockTime())
+
 	if err := k.Keeper.RegisterModel(ctx, model); err != nil {
 		return nil, err
 	}
