@@ -61,6 +61,12 @@ cmd_bootstrap() {
 	sed -i.bak 's/"allow_simulated": false/"allow_simulated": true/g' "$HOME_DIR/config/genesis.json"
 	rm -f "$HOME_DIR/config/genesis.json.bak"
 
+	# Enable REAL post-quantum crypto (Cloudflare circl ML-DSA-65 / ML-KEM-768
+	# hybrid). The TEE/zkML verification stays simulated above (no hardware), but
+	# validator signing and Digital Seals use genuine PQC.
+	log "enable real PQC (hybrid) in app.toml"
+	printf '\n[aethelred.pqc]\nenabled = true\nmode = "hybrid"\n' >>"$HOME_DIR/config/app.toml"
+
 	log "create validator key '$KEY_NAME' ($KEYRING keyring)"
 	"$BIN" keys add "$KEY_NAME" --keyring-backend "$KEYRING" --home "$HOME_DIR"
 	local addr
