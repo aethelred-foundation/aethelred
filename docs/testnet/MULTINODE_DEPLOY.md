@@ -155,36 +155,39 @@ participants — it cannot complete on a single node).
 This is what a single node cannot do. With ≥4 ready validators:
 
 ```bash
-# Register a model once (any validator)
-aethelredd tx pouw register-model --model resnet50-v1 --model-id resnet50 --name "ResNet-50" $C
+# Register a model once (any validator). A zkML job REQUIRES a 32-byte
+# verifying-key hash on the model, so pass --verifying-key-hash:
+aethelredd tx pouw register-model --model resnet50-v1 --model-id resnet50 \
+  --name "ResNet-50" --verifying-key-hash vk-resnet50-v1 $C
 
 # Submit a verification job
 aethelredd tx pouw submit-job --model resnet50-v1 --input sample-batch-0 \
   --proof-type zkml --purpose "multinode seal validation" $C
 ```
 
-Then verify the pipeline across the quorum:
-1. The job is stored `Pending` (the submit-job tx returns code 0).
-2. It is **assigned** via DKG-backed selection (validators with capability).
-3. Validators run the (simulated) verification and gossip results in vote
-   extensions.
-4. When `ceil(N·0.67)` validators agree, a **Digital Seal** is created with the
-   validator-quorum hybrid signature.
+The pipeline then runs deterministically across the quorum:
+1. `submit-job` stores the job (returns code 0).
+2. EndBlock **assigns** it to the eligible validators (writes
+   `scheduler.assigned_to`) and moves it PENDING → PROCESSING.
+3. Each assigned validator runs the (simulated) verification in `ExtendVote` and
+   carries the result in its signed vote extension.
+4. When `ceil(N·0.67)` validators agree, `PrepareProposal` emits a
+   `create_seal_from_consensus` tx; the `PreBlocker` applies it, creating the
+   **Digital Seal** and marking the job COMPLETED.
 
 Watch for it:
 ```bash
-# seal/verification activity in the logs
-grep -iE "assign|verif|seal|quorum" <node>/node.log
-
-# query a seal's quorum once you have its id
-aethelredd query pouw seal-quorum <seal-id>
+grep -iE "Consensus reached for job|Seal transaction created|JOB_STATUS_COMPLETED" <node>/node.log
 ```
+Expected (verified on a 4-validator localnet): `validators_agreed=4 total_votes=4`,
+`Seal transaction created`, and `JOB_STATUS_COMPLETED` on every node with zero
+app-hash mismatches.
 
-> **Single-node note.** On one node the job persists as `Pending` but never
-> assigns/seals (`dkg_state: eligible`, `ValidatorCount` < required). That is by
-> design — the seal quorum is a multi-node property. To exercise the seal
-> signing/verification logic off-chain on one machine, use the `public-proof-path`
-> SDK demo.
+> **Single-node note.** On one node the job is assigned and verified but never
+> reaches the `ceil(N·0.67)` quorum, so no seal is created — by design, the seal
+> quorum is a multi-node property. Use `scripts/localnet.sh` (≥4 validators) for
+> this test, or the `public-proof-path` SDK demo to exercise seal signing
+> off-chain on one machine.
 
 ---
 

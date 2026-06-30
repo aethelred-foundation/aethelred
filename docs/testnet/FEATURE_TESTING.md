@@ -146,14 +146,15 @@ match. `--proof-type` is `tee | zkml | hybrid`.
 ## 6. Known limitations (honest status)
 
 - **Job → Digital Seal completion requires a multi-node validator quorum.**
-  `submit-job` now signs, broadcasts, and **persists the job on chain** (the
-  earlier proto/`Coin` marshaling defect is fixed — the fee is recorded under the
-  reserved `scheduler.fee` metadata key instead of the unmarshalable proto Coin
-  field). The submitted job is stored as `Pending` and awaits assignment. The
-  assignment → verification → seal steps require a DKG-backed validator quorum
-  (a single validator's signature is not a quorum), so the **final Digital Seal
-  is produced only on a multi-node testnet**, not on a single node. To exercise
-  the seal quorum itself off-chain, use the `public-proof-path` SDK demo.
+  `submit-job` signs, broadcasts, and persists the job on chain. The full
+  pipeline — assignment → per-validator verification → ≥67% quorum → Digital
+  Seal — now runs end-to-end and is **verified on a 4-validator localnet**
+  (`scripts/localnet.sh`; see [MULTINODE_DEPLOY.md](MULTINODE_DEPLOY.md) §4).
+  On a **single node** the job is assigned and verified but never reaches the
+  `ceil(N·0.67)` quorum, so no seal is created — by design, the seal quorum is a
+  multi-node property. Note: a zkML job requires the model to be registered with
+  `--verifying-key-hash`. To exercise seal signing off-chain on one machine, use
+  the `public-proof-path` SDK demo.
 
 - **Simulated vs production.** This profile sets `allow_simulated=true` and
   `AETHELRED_TEE_MODE=simulated`, so PoUW *execution* is simulated. The
