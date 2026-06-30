@@ -154,7 +154,13 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig app.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
-		genutilcli.MigrateGenesisCmd(genesisMigrationMap()),
+		// Register the full `genesis` command group: add-genesis-account,
+		// add-bulk-genesis-account, gentx, collect-gentxs, validate-genesis, and
+		// migrate (with the app's custom migration map). Previously only a
+		// standalone migrate command was registered, so the genesis-bootstrap
+		// subcommands were missing entirely and a chain could not be initialized
+		// without hand-editing genesis.json.
+		genutilcli.CommandsWithCustomMigrationMap(encodingConfig.TxConfig, app.ModuleBasics, app.DefaultNodeHome, genesisMigrationMap()),
 		debug.Cmd(),
 	)
 
@@ -176,12 +182,18 @@ func newApp(
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
+	// DefaultBaseappOptions wires chain-id (baseapp.SetChainID), pruning,
+	// min-gas-prices, snapshot, halt-height, and mempool settings from appOpts.
+	// Without these the baseapp chain-id stays empty and InitChain fails with
+	// "invalid chain-id on InitChain; expected: , got: <chain>".
+	baseappOptions := server.DefaultBaseappOptions(appOpts)
 	return app.New(
 		logger,
 		db,
 		traceStore,
 		true,
 		appOpts,
+		baseappOptions...,
 	)
 }
 
