@@ -326,6 +326,21 @@ func (vo *VerificationOrchestrator) Verify(ctx context.Context, req *Verificatio
 	case types.VerificationTypeZKML:
 		resp.ZKMLResult = vo.verifyWithZKML(ctx, req)
 		resp.Success = resp.ZKMLResult.Success
+		if resp.Success {
+			// Propagate the proof's output commitment as the verification output
+			// hash. Vote-extension validation requires a 32-byte output hash for
+			// every successful verification; the TEE path already sets resp.OutputHash
+			// but the zkML path historically left it empty, so successful zkML
+			// verifications were rejected and never reached the seal quorum.
+			if resp.ZKMLResult.PublicInputs != nil && len(resp.ZKMLResult.PublicInputs.OutputCommitment) == 32 {
+				resp.OutputHash = resp.ZKMLResult.PublicInputs.OutputCommitment
+			} else {
+				// Deterministic fallback derived from the job's model+input so all
+				// validators agree on the same output hash.
+				h := sha256.Sum256(append(append([]byte("zkml-output:"), req.ModelHash...), req.InputHash...))
+				resp.OutputHash = h[:]
+			}
+		}
 		if !resp.Success {
 			resp.Error = resp.ZKMLResult.Error
 		}
