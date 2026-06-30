@@ -487,6 +487,22 @@ func (app *AethelredApp) initStandardKeepers(
 		app.StakingKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
+
+	// Register staking hooks so distribution and slashing receive validator
+	// lifecycle events (AfterValidatorCreated / AfterValidatorBonded / ...).
+	// Without this, the slashing module never creates ValidatorSigningInfo for
+	// genesis validators, which causes a "no validator signing info found"
+	// consensus failure at height 2 (height 1 has no commit to check; height 2
+	// processes height 1's vote and looks up the missing signing info). It also
+	// wires distribution's per-validator reward accounting. SetHooks must be
+	// called exactly once, after the staking, distribution, and slashing keepers
+	// all exist.
+	app.StakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			app.DistrKeeper.Hooks(),
+			app.SlashingKeeper.Hooks(),
+		),
+	)
 }
 
 // initAethelredKeepers initializes Aethelred custom module keepers
