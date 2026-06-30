@@ -298,13 +298,15 @@ func New(
 		minttypes.StoreKey,
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
-		govtypes.StoreKey,
 		paramstypes.StoreKey,
 		upgradetypes.StoreKey,
-		feegrant.StoreKey,
-		evidencetypes.StoreKey,
-		authzkeeper.StoreKey,
-		crisistypes.StoreKey,
+		// NOTE: gov, feegrant, evidence, authz, and crisis store keys are deliberately
+		// NOT mounted. Those modules have no keeper and are not in the module manager,
+		// so their stores would never receive any data. An empty mounted IAVL store
+		// cannot be loaded by version under iavl v1.x ("version does not exist"), which
+		// breaks every versioned state query (account/sequence lookups, hence all tx
+		// broadcasts) and prevents the node from reloading state on restart. Mount a
+		// store key only for a module that actually writes to it.
 		// Aethelred custom module store keys
 		sealtypes.StoreKey,
 		pouwtypes.StoreKey,
@@ -752,6 +754,32 @@ func (app *AethelredApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain
 	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		return nil, err
 	}
+
+	// Persist the initial module version map to the upgrade store. Without this
+	// the upgrade store is never written at genesis and stays empty; an empty
+	// mounted IAVL store cannot be loaded by version (iavl v1.x), which would
+	// break versioned state queries and node restarts. This is also the standard
+	// cosmos-sdk InitChainer pattern for enabling in-place store migrations.
+	if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
+		return nil, err
+	}
+
+	// Seed the keeper-only custom modules (insurance escrow, sovereign crisis)
+	// at genesis. These keepers are not registered in the module manager, so they
+	// have no InitGenesis and their stores would otherwise stay empty until the
+	// first escrow/halt write — and an empty mounted IAVL store cannot be loaded
+	// by version (iavl v1.x), breaking all versioned queries and restart. Writing
+	// their initial state here keeps every mounted store non-empty from height 1.
+	if err := app.InsuranceKeeper.EscrowCount.Set(ctx, 0); err != nil {
+		return nil, err
+	}
+	if err := app.InsuranceKeeper.AppealCount.Set(ctx, 0); err != nil {
+		return nil, err
+	}
+	if err := app.SovereignCrisisKeeper.ClearHaltByAuthority(ctx, app.SovereignCrisisKeeper.GetAuthority()); err != nil {
+		return nil, err
+	}
+
 	return app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
