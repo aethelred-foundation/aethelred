@@ -115,7 +115,10 @@ COMMON="--from validator --keyring-backend test --chain-id aethelred-testnet-1 \
 # Register an AWS Nitro PCR0 measurement (64 hex chars / 32 bytes)
 aethelredd tx pouw register-pcr0 $(printf 'ab%.0s' {1..32}) $COMMON
 
-# Register a validator's hybrid public key for Digital Seal quorum signing
+# Register a validator's hybrid public key for Digital Seal quorum signing.
+# The node derives this key from priv_validator_key.json and logs it at startup:
+#   INF Validator private key configured for vote extension signing hybrid_public_key=<hex>
+# Copy that hex (≈1987 bytes / 3974 hex chars: secp256k1 + ML-DSA-65) here.
 aethelredd tx pouw register-hybrid-key <hybrid-pubkey-hex> $COMMON
 
 # Advertise compute capabilities (joins the assignment pool)
@@ -142,19 +145,15 @@ match. `--proof-type` is `tee | zkml | hybrid`.
 
 ## 6. Known limitations (honest status)
 
-- **On-chain job persistence (`submit-job`) is currently blocked by a pouw proto
-  inconsistency.** The transaction signs, broadcasts, passes the
-  "model registered" check, and reaches the handler — then fails when the
-  `ComputeJob` is written to state with
-  `invalid Go type math.Int for field cosmos.base.v1beta1.Coin.amount`. Root
-  cause: `x/pouw/types` `ComputeJob` is generated as a **protobuf v2** message
-  but its `fee` field is the **gogoproto** `cosmos.base.v1beta1.Coin` (whose
-  `amount` is `math.Int`); the v2 reflection marshaler cannot serialize the gogo
-  custom type. The fix is to regenerate the pouw protos so the message and its
-  `Coin` fields use one consistent proto runtime. Until then, the full
-  job → verification → Digital Seal pipeline cannot be driven end-to-end on
-  chain. `register-pcr0` / `register-model` / `register-validator-capability` and
-  all queries work normally.
+- **Job → Digital Seal completion requires a multi-node validator quorum.**
+  `submit-job` now signs, broadcasts, and **persists the job on chain** (the
+  earlier proto/`Coin` marshaling defect is fixed — the fee is recorded under the
+  reserved `scheduler.fee` metadata key instead of the unmarshalable proto Coin
+  field). The submitted job is stored as `Pending` and awaits assignment. The
+  assignment → verification → seal steps require a DKG-backed validator quorum
+  (a single validator's signature is not a quorum), so the **final Digital Seal
+  is produced only on a multi-node testnet**, not on a single node. To exercise
+  the seal quorum itself off-chain, use the `public-proof-path` SDK demo.
 
 - **Simulated vs production.** This profile sets `allow_simulated=true` and
   `AETHELRED_TEE_MODE=simulated`, so PoUW *execution* is simulated. The

@@ -116,9 +116,9 @@ tx "tx pouw register-model --model $MODEL --model-id resnet50 --name ResNet-50" 
 	tx pouw register-model --model "$MODEL" --model-id resnet50 --name "ResNet-50" --architecture cnn
 
 note "Submit a $PROOF_TYPE verification job against the registered model."
-note "(The CLI builds + signs + broadcasts a real MsgSubmitJob. On-chain job"
-note " persistence currently hits a known pouw proto issue — see"
-note " docs/testnet/FEATURE_TESTING.md, 'Known limitations'.)"
+note "(Builds + signs + broadcasts a real MsgSubmitJob and persists it on chain"
+note " as a Pending job. Assignment -> verification -> Digital Seal then requires"
+note " a multi-node validator quorum — see docs/testnet/FEATURE_TESTING.md.)"
 tx "tx pouw submit-job --model $MODEL --input $INPUT --proof-type $PROOF_TYPE" \
 	tx pouw submit-job --model "$MODEL" --input "$INPUT" \
 	--proof-type "$PROOF_TYPE" --purpose "feature-demo inference"
