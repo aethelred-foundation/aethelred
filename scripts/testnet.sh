@@ -67,17 +67,17 @@ cmd_bootstrap() {
 	addr="$("$BIN" keys show "$KEY_NAME" -a --keyring-backend "$KEYRING" --home "$HOME_DIR")"
 
 	log "fund genesis account $addr ($GENESIS_BALANCE)"
-	"$BIN" genesis add-genesis-account "$addr" "$GENESIS_BALANCE" --home "$HOME_DIR"
+	"$BIN" add-genesis-account "$addr" "$GENESIS_BALANCE" --home "$HOME_DIR"
 
 	log "create genesis validator tx (self-bond $SELF_DELEGATION)"
-	"$BIN" genesis gentx "$KEY_NAME" "$SELF_DELEGATION" \
+	"$BIN" gentx "$KEY_NAME" "$SELF_DELEGATION" \
 		--chain-id "$CHAIN_ID" --keyring-backend "$KEYRING" --home "$HOME_DIR"
 
 	log "collect gentxs"
-	"$BIN" genesis collect-gentxs --home "$HOME_DIR"
+	"$BIN" collect-gentxs --home "$HOME_DIR"
 
 	log "validate genesis"
-	"$BIN" genesis validate --home "$HOME_DIR"
+	"$BIN" validate-genesis --home "$HOME_DIR"
 
 	log "bootstrap complete: $HOME_DIR"
 }

@@ -23,7 +23,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
 	"github.com/aethelred/aethelred/app"
 	"github.com/aethelred/aethelred/x/pouw"
@@ -154,13 +156,16 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig app.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
-		// Register the full `genesis` command group: add-genesis-account,
-		// add-bulk-genesis-account, gentx, collect-gentxs, validate-genesis, and
-		// migrate (with the app's custom migration map). Previously only a
-		// standalone migrate command was registered, so the genesis-bootstrap
-		// subcommands were missing entirely and a chain could not be initialized
-		// without hand-editing genesis.json.
-		genutilcli.CommandsWithCustomMigrationMap(encodingConfig.TxConfig, app.ModuleBasics, app.DefaultNodeHome, genesisMigrationMap()),
+		// Genesis-bootstrap commands registered at the top level (Osmosis-style):
+		// `aethelredd add-genesis-account | gentx | collect-gentxs |
+		// validate-genesis | migrate`. Previously only init + migrate were
+		// registered, so these were missing entirely and a chain could not be set
+		// up via CLI. Address codecs come from the tx config's signing context.
+		genutilcli.AddGenesisAccountCmd(app.DefaultNodeHome, encodingConfig.TxConfig.SigningContext().AddressCodec()),
+		genutilcli.GenTxCmd(app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
+		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, genutiltypes.DefaultMessageValidator, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
+		genutilcli.ValidateGenesisCmd(app.ModuleBasics),
+		genutilcli.MigrateGenesisCmd(genesisMigrationMap()),
 		debug.Cmd(),
 	)
 
