@@ -10,7 +10,6 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-
 	"github.com/aethelred/aethelred/x/seal/types"
 )
 
@@ -36,6 +35,7 @@ func newHybridSealForTest() *types.DigitalSeal {
 		testAccAddress(1),
 		"enterprise_inference",
 	)
+	seal.JobId = string(bytes.Repeat([]byte{'a'}, 64))
 	seal.Status = types.SealStatusActive
 
 	// TEE attestation with realistic data.
@@ -45,7 +45,8 @@ func newHybridSealForTest() *types.DigitalSeal {
 			Platform:         "nitro",
 			EnclaveId:        "i-0abc123def456789a:enc-0def456789abc1230",
 			Measurement:      bytes.Repeat([]byte{0xDD}, 48), // 48 bytes for Nitro PCR
-			Quote:            bytes.Repeat([]byte{0xEE}, 64),  // sample attestation quote
+			Quote:            bytes.Repeat([]byte{0xEE}, 64), // sample attestation quote
+			Signature:        bytes.Repeat([]byte{0xAB}, 64),
 		},
 	}
 	seal.ValidatorSet = []string{testAccAddress(2)}
@@ -73,9 +74,7 @@ func TestEnterprise_ExportHybridBundle(t *testing.T) {
 		t.Fatalf("SetSeal failed: %v", err)
 	}
 
-	// ExportEnterpriseEvidenceBundle uses GetSealByJob which matches seal.Id == jobID
-	// in the in-memory store, so we pass the seal ID as the job ID.
-	bundle, err := ExportEnterpriseEvidenceBundle(ctx, &k, seal.Id)
+	bundle, err := ExportEnterpriseEvidenceBundle(ctx, &k, seal.JobId)
 	if err != nil {
 		t.Fatalf("ExportEnterpriseEvidenceBundle failed: %v", err)
 	}
@@ -87,8 +86,14 @@ func TestEnterprise_ExportHybridBundle(t *testing.T) {
 	if bundle.BundleID == "" {
 		t.Error("bundle_id must not be empty")
 	}
-	if bundle.JobID != seal.Id {
-		t.Errorf("job_id = %q, want %q", bundle.JobID, seal.Id)
+	if bundle.JobID != seal.JobId {
+		t.Errorf("job_id = %q, want %q", bundle.JobID, seal.JobId)
+	}
+	if bundle.ChainID == "" {
+		t.Error("chain_id must not be empty")
+	}
+	if bundle.SealID != seal.Id {
+		t.Errorf("seal_id = %q, want %q", bundle.SealID, seal.Id)
 	}
 	if bundle.Timestamp == "" {
 		t.Error("timestamp must not be empty")
@@ -101,6 +106,12 @@ func TestEnterprise_ExportHybridBundle(t *testing.T) {
 	}
 	if bundle.VerifyingKeyHash == "" {
 		t.Error("verifying_key_hash must not be empty")
+	}
+	if bundle.ValidatorSignature == "" {
+		t.Error("validator_signature must not be empty")
+	}
+	if bundle.ConfidenceScore == nil || *bundle.ConfidenceScore <= 0 || *bundle.ConfidenceScore > 1 {
+		t.Errorf("confidence_score = %v, want within (0, 1]", bundle.ConfidenceScore)
 	}
 	if bundle.Region == "" {
 		t.Error("region must not be empty")
@@ -147,13 +158,120 @@ func TestEnterprise_ExportHybridBundle(t *testing.T) {
 	if !bundle.PolicyDecision.RequireBoth {
 		t.Error("policy_decision.require_both must be true")
 	}
-	if bundle.PolicyDecision.FallbackAllowed {
+	if bundle.PolicyDecision.FallbackAllowed == nil || *bundle.PolicyDecision.FallbackAllowed {
 		t.Error("policy_decision.fallback_allowed must be false")
+	}
+	if bundle.ArchivePointer.DocumentID != seal.JobId {
+		t.Errorf("archive_pointer.document_id = %q, want %q", bundle.ArchivePointer.DocumentID, seal.JobId)
+	}
+	if !bundle.Verification.SchemaVerified || !bundle.Verification.PolicyVerified {
+		t.Error("verification must mark schema and policy as verified")
 	}
 
 	// --- Bundle must pass its own validation ---
 	if err := bundle.Validate(); err != nil {
 		t.Errorf("bundle.Validate() failed: %v", err)
+	}
+}
+
+func TestEnterprise_ExportM42Region(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	header := tmproto.Header{
+		ChainID: "aethelred-m42-pilot-1",
+		Height:  200,
+	}
+	ctx := sdk.NewContext(nil, header, false, log.NewNopLogger())
+
+	seal := newHybridSealForTest()
+	if err := k.SetSeal(context.Background(), seal); err != nil {
+		t.Fatalf("SetSeal failed: %v", err)
+	}
+
+	bundle, err := ExportEnterpriseEvidenceBundle(ctx, &k, seal.JobId)
+	if err != nil {
+		t.Fatalf("ExportEnterpriseEvidenceBundle failed: %v", err)
+	}
+	if bundle.Region != "me-central-1" {
+		t.Fatalf("region = %q, want me-central-1", bundle.Region)
+	}
+}
+
+func TestEnterprise_ExportRejectsMissingChainID(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	header := tmproto.Header{Height: 200}
+	ctx := sdk.NewContext(nil, header, false, log.NewNopLogger())
+
+	seal := newHybridSealForTest()
+	if err := k.SetSeal(context.Background(), seal); err != nil {
+		t.Fatalf("SetSeal failed: %v", err)
+	}
+
+	if _, err := ExportEnterpriseEvidenceBundle(ctx, &k, seal.JobId); err == nil || !contains(err.Error(), "chain ID") {
+		t.Fatalf("expected missing chain ID error, got %v", err)
+	}
+}
+
+func TestEnterprise_ExportRejectsMissingValidatorSignature(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	ctx := enterpriseSDKContext()
+
+	seal := newHybridSealForTest()
+	seal.TeeAttestations[0].Signature = nil
+	if err := k.SetSeal(context.Background(), seal); err != nil {
+		t.Fatalf("SetSeal failed: %v", err)
+	}
+
+	if _, err := ExportEnterpriseEvidenceBundle(ctx, &k, seal.JobId); err == nil || !contains(err.Error(), "validator signature") {
+		t.Fatalf("expected missing validator signature error, got %v", err)
+	}
+}
+
+func TestQueryEnterpriseEvidenceBundle(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	ctx := enterpriseSDKContext()
+
+	seal := newHybridSealForTest()
+	if err := k.SetSeal(context.Background(), seal); err != nil {
+		t.Fatalf("SetSeal failed: %v", err)
+	}
+
+	queryServer := NewQueryServerImpl(k)
+	if _, err := queryServer.EnterpriseEvidenceBundle(ctx, &types.QueryEnterpriseEvidenceBundleRequest{}); err == nil {
+		t.Fatal("expected missing job_id error")
+	}
+
+	resp, err := queryServer.EnterpriseEvidenceBundle(ctx, &types.QueryEnterpriseEvidenceBundleRequest{
+		JobId: seal.JobId,
+	})
+	if err != nil {
+		t.Fatalf("EnterpriseEvidenceBundle query failed: %v", err)
+	}
+	if resp.EvidenceBundle == nil {
+		t.Fatal("expected evidence bundle")
+	}
+	if got := resp.EvidenceBundle.Fields["schema_version"].GetStringValue(); got != types.SchemaVersionV1 {
+		t.Fatalf("schema_version = %q, want %q", got, types.SchemaVersionV1)
+	}
+	if got := resp.EvidenceBundle.Fields["job_id"].GetStringValue(); got != seal.JobId {
+		t.Fatalf("job_id = %q, want %q", got, seal.JobId)
+	}
+	for _, field := range []string{
+		"chain_id",
+		"seal_id",
+		"validator_signature",
+		"confidence_score",
+		"archive_pointer",
+		"verification",
+	} {
+		if _, ok := resp.EvidenceBundle.Fields[field]; !ok {
+			t.Fatalf("expected %s field", field)
+		}
+	}
+	if resp.EvidenceBundle.Fields["tee_evidence"].GetStructValue() == nil {
+		t.Fatal("expected tee_evidence object")
+	}
+	if resp.EvidenceBundle.Fields["zkml_evidence"].GetStructValue() == nil {
+		t.Fatal("expected zkml_evidence object")
 	}
 }
 
@@ -181,6 +299,16 @@ func TestEnterprise_BundleValidation(t *testing.T) {
 			wantErr: "job_id",
 		},
 		{
+			name:    "empty chain_id",
+			mutate:  func(b *types.EvidenceBundle) { b.ChainID = "" },
+			wantErr: "chain_id",
+		},
+		{
+			name:    "empty seal_id",
+			mutate:  func(b *types.EvidenceBundle) { b.SealID = "" },
+			wantErr: "seal_id",
+		},
+		{
 			name:    "invalid timestamp",
 			mutate:  func(b *types.EvidenceBundle) { b.Timestamp = "2026-03-28" },
 			wantErr: "timestamp",
@@ -194,6 +322,21 @@ func TestEnterprise_BundleValidation(t *testing.T) {
 			name:    "empty circuit_hash",
 			mutate:  func(b *types.EvidenceBundle) { b.CircuitHash = "" },
 			wantErr: "circuit_hash",
+		},
+		{
+			name:    "empty validator_signature",
+			mutate:  func(b *types.EvidenceBundle) { b.ValidatorSignature = "" },
+			wantErr: "validator_signature",
+		},
+		{
+			name:    "missing confidence_score",
+			mutate:  func(b *types.EvidenceBundle) { b.ConfidenceScore = nil },
+			wantErr: "confidence_score",
+		},
+		{
+			name:    "invalid confidence_score",
+			mutate:  func(b *types.EvidenceBundle) { b.ConfidenceScore = types.Float64Ptr(1.5) },
+			wantErr: "confidence_score",
 		},
 		{
 			name:    "empty region",
@@ -227,8 +370,43 @@ func TestEnterprise_BundleValidation(t *testing.T) {
 		},
 		{
 			name:    "fallback_allowed true",
-			mutate:  func(b *types.EvidenceBundle) { b.PolicyDecision.FallbackAllowed = true },
+			mutate:  func(b *types.EvidenceBundle) { b.PolicyDecision.FallbackAllowed = types.BoolPtr(true) },
 			wantErr: "fallback_allowed",
+		},
+		{
+			name:    "fallback_allowed missing",
+			mutate:  func(b *types.EvidenceBundle) { b.PolicyDecision.FallbackAllowed = nil },
+			wantErr: "fallback_allowed",
+		},
+		{
+			name:    "empty archive pointer",
+			mutate:  func(b *types.EvidenceBundle) { b.ArchivePointer = types.ArchivePointer{} },
+			wantErr: "archive_pointer",
+		},
+		{
+			name:    "empty verification",
+			mutate:  func(b *types.EvidenceBundle) { b.Verification = types.Verification{} },
+			wantErr: "verification",
+		},
+		{
+			name:    "missing tee verification flag",
+			mutate:  func(b *types.EvidenceBundle) { b.Verification.TEEAttestationVerified = nil },
+			wantErr: "tee_attestation_verified",
+		},
+		{
+			name:    "missing zkml verification flag",
+			mutate:  func(b *types.EvidenceBundle) { b.Verification.ZKMLProofVerified = nil },
+			wantErr: "zkml_proof_verified",
+		},
+		{
+			name:    "missing digital seal verification flag",
+			mutate:  func(b *types.EvidenceBundle) { b.Verification.DigitalSealVerified = nil },
+			wantErr: "digital_seal_verified",
+		},
+		{
+			name:    "missing live verification flag",
+			mutate:  func(b *types.EvidenceBundle) { b.Verification.LiveVerificationRequired = nil },
+			wantErr: "live_verification_required",
 		},
 	}
 
@@ -267,15 +445,21 @@ func TestEnterprise_BundleMatchesSchemaV1(t *testing.T) {
 		"schema_version",
 		"bundle_id",
 		"job_id",
+		"chain_id",
+		"seal_id",
 		"timestamp",
 		"model_hash",
 		"circuit_hash",
 		"verifying_key_hash",
+		"validator_signature",
+		"confidence_score",
 		"tee_evidence",
 		"zkml_evidence",
 		"region",
 		"operator",
 		"policy_decision",
+		"archive_pointer",
+		"verification",
 	}
 	for _, field := range requiredTopLevel {
 		if _, ok := raw[field]; !ok {
@@ -334,13 +518,17 @@ func TestEnterprise_BundleMatchesSchemaV1(t *testing.T) {
 // testing. Mutate individual fields to create invalid bundles.
 func validTestBundle() *types.EvidenceBundle {
 	return &types.EvidenceBundle{
-		SchemaVersion:    types.SchemaVersionV1,
-		BundleID:         "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-		JobID:            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-		Timestamp:        "2026-03-28T14:30:00Z",
-		ModelHash:        "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
-		CircuitHash:      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		VerifyingKeyHash: "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+		SchemaVersion:      types.SchemaVersionV1,
+		BundleID:           "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+		JobID:              "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+		ChainID:            "aethelred-test-1",
+		SealID:             "seal-test-1",
+		Timestamp:          "2026-03-28T14:30:00Z",
+		ModelHash:          "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+		CircuitHash:        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		VerifyingKeyHash:   "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+		ValidatorSignature: "dmFsaWRhdG9yLXNpZ25hdHVyZQ==",
+		ConfidenceScore:    types.Float64Ptr(1.0),
 		TEEEvidence: types.TEEEvidenceV1{
 			Platform:    "nitro",
 			EnclaveID:   "i-0abc123def456789a:enc-0def456789abc1230",
@@ -359,8 +547,25 @@ func validTestBundle() *types.EvidenceBundle {
 		PolicyDecision: types.PolicyDecision{
 			Mode:            "hybrid",
 			RequireBoth:     true,
-			FallbackAllowed: false,
+			FallbackAllowed: types.BoolPtr(false),
 			PolicyVersion:   "1.0.0",
+		},
+		ArchivePointer: types.ArchivePointer{
+			ArchiveType:   "opensearch",
+			Index:         "aethelred-enterprise-evidence",
+			DocumentID:    "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+			URI:           "opensearch://aethelred-enterprise-evidence/_doc/a1b2",
+			RetentionDays: 30,
+			WriteStatus:   "pending_archive_write",
+		},
+		Verification: types.Verification{
+			SchemaVerified:           true,
+			PolicyVerified:           true,
+			TEEAttestationVerified:   types.BoolPtr(true),
+			ZKMLProofVerified:        types.BoolPtr(true),
+			DigitalSealVerified:      types.BoolPtr(true),
+			LiveVerificationRequired: types.BoolPtr(false),
+			VerifierVersion:          "test",
 		},
 	}
 }

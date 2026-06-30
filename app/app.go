@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -78,6 +79,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	// Aethelred custom modules
+	pqc "github.com/aethelred/aethelred/crypto/pqc"
 	sovereigncrisiskeeper "github.com/aethelred/aethelred/x/crisis/keeper"
 	sovereigncrisistypes "github.com/aethelred/aethelred/x/crisis/types"
 	ibcmodule "github.com/aethelred/aethelred/x/ibc"
@@ -220,6 +222,12 @@ type AethelredApp struct {
 	// validatorConsAddr is the consensus address derived from validatorPrivKey.
 	// This is used to stamp vote extensions with the validator's own address.
 	validatorConsAddr []byte
+
+	// validatorHybridWallet is the validator's hybrid (secp256k1 + ML-DSA) key,
+	// derived deterministically from the ed25519 validator key seed. It signs
+	// Digital Seal claims in vote extensions so a 2/3+ quorum of these signatures
+	// can be aggregated onto each seal. Derived in SetValidatorPrivateKey.
+	validatorHybridWallet *pqc.DualKeyWallet
 
 	// voteExtensionCache stores verified vote extensions by height so
 	// ProcessProposal can enforce computation finality.
@@ -875,8 +883,31 @@ func (app *AethelredApp) SetValidatorPrivateKey(privKey []byte) error {
 	app.validatorConsAddr = make([]byte, len(consAddr))
 	copy(app.validatorConsAddr, consAddr)
 
-	app.Logger().Info("Validator private key configured for vote extension signing")
+	// Derive the validator's hybrid (secp256k1 + ML-DSA) key deterministically
+	// from the ed25519 key seed. This ties the seal-signing key to the consensus
+	// key with no extra key files, and is reproducible for on-chain registration.
+	hybridWallet, err := pqc.NewDualKeyWalletFromMasterSeed(ed25519.PrivateKey(app.validatorPrivKey).Seed(), pqc.DilithiumLevel3)
+	if err != nil {
+		return fmt.Errorf("failed to derive validator hybrid key: %w", err)
+	}
+	app.validatorHybridWallet = hybridWallet
+
+	// Log the derived hybrid public key so the operator can register it on-chain
+	// (`aethelredd tx pouw register-hybrid-key <hex>`) unless it was seeded at genesis.
+	app.Logger().Info("Validator private key configured for vote extension signing",
+		"hybrid_public_key", hex.EncodeToString(hybridWallet.HybridPublicKey()),
+	)
 	return nil
+}
+
+// ValidatorHybridPublicKey returns the serialized hybrid public key the validator
+// uses to sign Digital Seal claims, or nil if no validator key is configured.
+// This is the value a validator registers on-chain via the pouw module.
+func (app *AethelredApp) ValidatorHybridPublicKey() []byte {
+	if app.validatorHybridWallet == nil {
+		return nil
+	}
+	return app.validatorHybridWallet.HybridPublicKey()
 }
 
 // validatorConsensusAddress derives the consensus address from the configured

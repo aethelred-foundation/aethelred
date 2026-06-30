@@ -213,13 +213,23 @@ func (k *Keeper) GetSeal(ctx context.Context, id string) (*types.DigitalSeal, er
 
 // GetSealByJob retrieves a seal by job ID
 func (k Keeper) GetSealByJob(ctx context.Context, jobID string) (*types.DigitalSeal, error) {
-	// Iterate through seals to find one with matching job ID
-	// In production, this would use an index
+	if k.useMemStore {
+		k.memMutex.RLock()
+		defer k.memMutex.RUnlock()
+		for id, seal := range k.memSeals {
+			if seal.JobId == jobID || id == jobID {
+				sealCopy := *seal
+				return &sealCopy, nil
+			}
+		}
+		return nil, fmt.Errorf("seal not found for job: %s", jobID)
+	}
+
+	// Iterate through seals to find one with matching job ID. The ID fallback
+	// preserves compatibility for older seals created before job_id was stored.
 	var foundSeal *types.DigitalSeal
 	err := k.Seals.Walk(ctx, nil, func(id string, seal types.DigitalSeal) (bool, error) {
-		// Check if this seal corresponds to the job
-		// This is a simplified check - in production, seals would have a JobID field
-		if id == jobID {
+		if seal.JobId == jobID || id == jobID {
 			sealCopy := seal
 			foundSeal = &sealCopy
 			return true, nil // Stop iteration

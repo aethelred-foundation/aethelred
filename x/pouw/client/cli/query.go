@@ -50,6 +50,36 @@ func CmdQueryValidatorPCR0() *cobra.Command {
 	return cmd
 }
 
+// CmdQuerySealQuorum shows the validator-quorum hybrid signatures attached to a
+// Digital Seal, which an external party can verify offline against the seal claim.
+func CmdQuerySealQuorum() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "seal-quorum [seal-id]",
+		Short: "Show the validator-quorum hybrid signatures attached to a Digital Seal",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.SealQuorum(cmd.Context(), &types.QuerySealQuorumRequest{
+				SealId: args[0],
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
 type validatorPoUWStatusReport struct {
 	InputAddress         string   `json:"input_address"`
 	ValidatorAddress     string   `json:"validator_address"`

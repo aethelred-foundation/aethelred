@@ -259,8 +259,47 @@ The README references additional layers (e.g., compliance module, expanded VM/pr
 - Seal module: `x/seal/`
 - Validator module: `x/validator/`
 - Demo pipeline: `x/demo/`
-- Rust services: `crates/`
+- Rust workspace: `crates/` (see §13.1 for what is canonical vs reference)
 - SDKs: `sdk/`
+
+## 13.1 Canonical Implementation: Go Chain vs the Rust Workspace
+
+The repository is polyglot, and an external reviewer should understand exactly
+which code is the shipped product and which is library/reference/tooling. There
+is **no FFI or linkage** between the two: the running node is pure Go and does
+**not** call into the Rust crates at runtime.
+
+**Canonical, deployed product — Go (Cosmos SDK / CometBFT):**
+
+| Binary | Role |
+|--------|------|
+| `cmd/aethelredd` | The Layer 1 validator node — the canonical chain |
+| `cmd/aethelred-tee-worker` | TEE worker sidecar |
+| `cmd/aethelred-zkml-prover` | zkML prover sidecar |
+| `cmd/aethelred-vault-tee` | Vault TEE sidecar |
+
+These are what `deploy/` (Helm), `infrastructure/` (Terraform, Docker), and the
+chain modules under `x/` build and run. **All consensus, state, and settlement
+that the network actually executes live here.**
+
+**The Rust workspace (`crates/`) — library, reference, and tooling, not the node:**
+
+| Crate | Role | Status |
+|-------|------|--------|
+| `crates/core` | Crypto primitives & types library (ML-DSA, ML-KEM, hybrid) | Used by the Rust SDK and tooling |
+| `crates/bridge` | Bridge relayer (produces a binary) + library | Service / tooling |
+| `crates/vault`, `crates/sandbox` | Vault and regulatory-sandbox libraries | Library |
+| `crates/consensus`, `crates/vm`, `crates/mempool` | Reference implementations of L1 components | **Reference only — referenced by zero deployed binaries; not wired into the Go node** (each carries `#![allow(dead_code)]`) |
+| `crates/benchmarks`, `crates/testing` | Benchmarks and test harnesses | Dev only |
+| `tools/cli`, `tools/testnet` | Rust developer/ops tooling | Dev / ops |
+| `services/tee-worker/nitro-sdk` | Rust Nitro attestation SDK | Library for the attestation path |
+
+> **Why two stacks?** The Go Cosmos chain is the production L1. The Rust
+> `consensus`/`vm`/`mempool` crates are an independent reference implementation
+> of those components and are **not** part of the deployed node today; they are
+> not linked by any shipped binary. They should be read as research/reference,
+> not as a second running chain. If they are ever promoted into the product, the
+> linkage and this table must be updated.
 
 ## 14. References
 

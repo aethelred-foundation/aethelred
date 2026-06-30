@@ -99,6 +99,7 @@ func TestMsgAndQueryServers(t *testing.T) {
 	sealResp, err := queryServer.Seal(wrappedCtx, &types.QuerySealRequest{SealId: createResp.SealId})
 	require.NoError(t, err)
 	require.Equal(t, createResp.SealId, sealResp.Seal.Id)
+	require.Equal(t, msg.JobId, sealResp.Seal.JobId)
 
 	sealsResp, err := queryServer.Seals(wrappedCtx, &types.QuerySealsRequest{Limit: 0, Offset: -1})
 	require.NoError(t, err)
@@ -113,6 +114,14 @@ func TestMsgAndQueryServers(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, byModel.Seals)
 
+	_, err = queryServer.SealsByRequester(wrappedCtx, &types.QuerySealsByRequesterRequest{})
+	require.ErrorContains(t, err, "requester is required")
+	byRequester, err := queryServer.SealsByRequester(wrappedCtx, &types.QuerySealsByRequesterRequest{
+		Requester: msg.Creator,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, byRequester.Seals)
+
 	_, err = queryServer.VerifySeal(wrappedCtx, &types.QueryVerifySealRequest{})
 	require.ErrorContains(t, err, "seal_id is required")
 
@@ -125,6 +134,22 @@ func TestMsgAndQueryServers(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, verifyMissing.Valid)
 	require.Equal(t, "not_found", verifyMissing.Status)
+
+	_, err = queryServer.ExportSeal(wrappedCtx, &types.QueryExportSealRequest{})
+	require.ErrorContains(t, err, "seal_id is required")
+	_, err = queryServer.ExportSeal(wrappedCtx, &types.QueryExportSealRequest{
+		SealId: createResp.SealId,
+		Format: "cbor",
+	})
+	require.ErrorContains(t, err, "unsupported export format")
+	exportResp, err := queryServer.ExportSeal(wrappedCtx, &types.QueryExportSealRequest{
+		SealId: createResp.SealId,
+		Format: "portable",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, exportResp.Export)
+	require.Equal(t, "portable", exportResp.Export.Fields["format"].GetStringValue())
+	require.NotNil(t, exportResp.Export.Fields["seal"].GetStructValue())
 
 	paramsResp, err := queryServer.Params(wrappedCtx, &types.QueryParamsRequest{})
 	require.NoError(t, err)

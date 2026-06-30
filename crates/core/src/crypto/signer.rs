@@ -1,4 +1,3 @@
-#![cfg(feature = "hsm")]
 //! Hardware Security Module (HSM) Integration for Aethelred
 //!
 //! This module provides PKCS#11 HSM support for validator block signing.
@@ -155,7 +154,7 @@ pub enum SigningAlgorithm {
 
 impl SigningAlgorithm {
     /// Get the PKCS#11 mechanism for this algorithm
-    fn mechanism(&self) -> Mechanism {
+    fn mechanism(&self) -> Mechanism<'_> {
         match self {
             SigningAlgorithm::EcdsaP256 => Mechanism::Ecdsa,
             SigningAlgorithm::EcdsaP384 => Mechanism::Ecdsa,

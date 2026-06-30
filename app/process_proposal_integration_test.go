@@ -37,6 +37,10 @@ func (mockStakingKeeper) GetValidator(_ context.Context, _ sdk.ValAddress) (stak
 	return stakingtypes.Validator{}, nil
 }
 
+func (mockStakingKeeper) GetValidatorByConsAddr(_ context.Context, _ sdk.ConsAddress) (stakingtypes.Validator, error) {
+	return stakingtypes.Validator{}, nil
+}
+
 type mockBankKeeper struct{}
 
 func (mockBankKeeper) SendCoinsFromModuleToAccount(_ context.Context, _ string, _ sdk.AccAddress, _ sdk.Coins) error {

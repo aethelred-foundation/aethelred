@@ -1,38 +1,36 @@
 // Package pqc provides post-quantum cryptography integration for Aethelred.
 //
-// This file implements real NIST FIPS 204 (ML-DSA/Dilithium) and FIPS 203 (ML-KEM/Kyber)
-// using the Cloudflare circl library when build tag 'pqc_circl' is set.
+// This file exposes the public ML-DSA (FIPS 204) and ML-KEM (FIPS 203) surface
+// used by the rest of the codebase. All operations are backed by the real
+// Cloudflare circl primitives in circl_backend.go — circl is pure Go and a
+// direct dependency, so the implementation is always available. There is no
+// build tag and no simulated-crypto fallback.
 //
-// Build with: go build -tags=pqc_circl
-//
-// Without the build tag, this file provides stub implementations that delegate
-// to the simulated implementation while warning about production use.
+// PQCMode (see production.go) controls signature *policy* — e.g. whether
+// composite (classical + PQC) signatures are mandatory — not whether the
+// cryptography is real.
 package pqc
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"sync"
 )
 
-// CirclIntegration provides the interface for real PQC operations using circl.
-// This is the bridge between Aethelred's PQC types and circl's implementations.
+// CirclIntegration tracks one-time initialization state for the PQC backend.
 type CirclIntegration struct {
-	mu sync.RWMutex
-
-	// initialized tracks whether circl has been initialized
+	mu          sync.RWMutex
 	initialized bool
-
-	// mode tracks the current PQC mode
-	mode PQCMode
+	mode        PQCMode
 }
 
 // Global circl integration instance
 var circlInstance = &CirclIntegration{}
 
-// InitCircl initializes the circl library integration.
-// This must be called before using production PQC operations.
+// InitCircl initializes the PQC backend. It is idempotent and records the
+// active mode for diagnostics.
 func InitCircl() error {
 	circlInstance.mu.Lock()
 	defer circlInstance.mu.Unlock()
@@ -41,245 +39,108 @@ func InitCircl() error {
 		return nil
 	}
 
-	// In production build with pqc_circl tag, this would:
-	// 1. Verify circl library availability
-	// 2. Run self-tests per NIST requirements
-	// 3. Initialize any required state
-
 	circlInstance.initialized = true
 	circlInstance.mode = GetPQCMode()
 
 	return nil
 }
 
-// IsCirclAvailable returns true if circl library is properly integrated.
-// This is determined at build time based on the pqc_circl tag.
+// IsCirclAvailable reports whether real PQC primitives are compiled in. circl is
+// an unconditional dependency, so this is always true; the function is retained
+// for callers and readiness checks that historically gated on it.
 func IsCirclAvailable() bool {
-	// This will be overridden by circl_production.go when built with pqc_circl tag
-	return circlAvailableImpl()
+	return true
 }
 
-// circlAvailableImpl is the default implementation (no circl)
-func circlAvailableImpl() bool {
-	return false
-}
-
+// pqcRequiresCircl reports whether the mode mandates composite/PQC signatures.
+// Real PQC is always available regardless of mode; this only affects policy.
 func pqcRequiresCircl(mode PQCMode) bool {
 	return mode == PQCModeProduction || mode == PQCModeHybrid
-}
-
-func circlRequiredError() error {
-	return errors.New("PQC production/hybrid mode requires circl; build with -tags=pqc_circl")
 }
 
 // =============================================================================
 // Dilithium (ML-DSA) Integration
 // =============================================================================
 
-// CirclDilithiumKeyPair wraps a Dilithium key pair with circl integration
+// CirclDilithiumKeyPair wraps a packed ML-DSA key pair.
 type CirclDilithiumKeyPair struct {
-	// Level is the NIST security level (2, 3, or 5)
+	// Level is the NIST security level (2, 3, or 5).
 	Level int
-
-	// PublicKey is the serialized public key
+	// PublicKey is the packed ML-DSA public key.
 	PublicKey []byte
-
-	// PrivateKey is the serialized private key
+	// PrivateKey is the packed ML-DSA private key.
 	PrivateKey []byte
-
-	// useCircl indicates whether to use real circl or simulation
-	useCircl bool
 }
 
-// GenerateCirclDilithiumKeyPair generates a new Dilithium key pair.
-// If circl is available and mode is Production, uses real lattice cryptography.
-// Otherwise, falls back to the simulated implementation with a warning.
+// GenerateCirclDilithiumKeyPair generates a new ML-DSA key pair.
 func GenerateCirclDilithiumKeyPair(level int) (*CirclDilithiumKeyPair, error) {
-	mode := GetPQCMode()
-
-	if pqcRequiresCircl(mode) {
-		if !IsCirclAvailable() {
-			return nil, circlRequiredError()
-		}
-		return generateCirclDilithiumReal(level)
-	}
-
-	// Use existing simulated implementation
-	kp, err := GenerateDilithiumKeyPair(level)
+	pub, priv, err := mldsaGenerateKey(level)
 	if err != nil {
 		return nil, err
 	}
-
-	return &CirclDilithiumKeyPair{
-		Level:      level,
-		PublicKey:  kp.PublicKey,
-		PrivateKey: kp.PrivateKey,
-		useCircl:   false,
-	}, nil
+	return &CirclDilithiumKeyPair{Level: level, PublicKey: pub, PrivateKey: priv}, nil
 }
 
-// generateCirclDilithiumReal generates a real Dilithium key pair using circl.
-// This is overridden by circl_production.go when built with pqc_circl tag.
-func generateCirclDilithiumReal(level int) (*CirclDilithiumKeyPair, error) {
-	// Default stub - will be replaced by actual circl implementation
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
-}
-
-// Sign creates a Dilithium signature over the message.
+// Sign creates an ML-DSA signature over the message.
 func (kp *CirclDilithiumKeyPair) Sign(message []byte) (*DilithiumSignature, error) {
-	if kp.useCircl {
-		return signCirclDilithiumReal(kp, message)
+	sig, err := mldsaSign(kp.Level, kp.PrivateKey, message)
+	if err != nil {
+		return nil, err
 	}
-
-	if pqcRequiresCircl(GetPQCMode()) {
-		return nil, circlRequiredError()
-	}
-
-	// Fall back to simulated implementation
-	simKP := &DilithiumKeyPair{
-		Level:      kp.Level,
-		PublicKey:  kp.PublicKey,
-		PrivateKey: kp.PrivateKey,
-	}
-	return simKP.Sign(message)
+	return &DilithiumSignature{Level: kp.Level, Signature: sig}, nil
 }
 
-// signCirclDilithiumReal signs using real circl Dilithium.
-// This is overridden by circl_production.go when built with pqc_circl tag.
-func signCirclDilithiumReal(kp *CirclDilithiumKeyPair, message []byte) (*DilithiumSignature, error) {
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
-}
-
-// VerifyCirclDilithium verifies a Dilithium signature.
+// VerifyCirclDilithium verifies an ML-DSA signature.
 func VerifyCirclDilithium(publicKey []byte, message []byte, sig *DilithiumSignature) (bool, error) {
-	mode := GetPQCMode()
-
-	if pqcRequiresCircl(mode) {
-		if !IsCirclAvailable() {
-			return false, circlRequiredError()
-		}
-		return verifyCirclDilithiumReal(publicKey, message, sig)
-	}
-
-	// Fall back to simulated verification
-	return VerifyDilithium(publicKey, message, sig)
-}
-
-// verifyCirclDilithiumReal verifies using real circl Dilithium.
-// This is overridden by circl_production.go when built with pqc_circl tag.
-func verifyCirclDilithiumReal(publicKey []byte, message []byte, sig *DilithiumSignature) (bool, error) {
-	return false, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
+	return mldsaVerify(sig.Level, publicKey, message, sig.Signature)
 }
 
 // =============================================================================
 // Kyber (ML-KEM) Integration
 // =============================================================================
 
-// CirclKyberKeyPair wraps a Kyber key pair with circl integration
+// CirclKyberKeyPair wraps a packed ML-KEM key pair.
 type CirclKyberKeyPair struct {
-	// Level is the NIST security level (512, 768, or 1024)
+	// Level is the NIST security level (512, 768, or 1024).
 	Level int
-
-	// PublicKey is the serialized encapsulation key
+	// PublicKey is the packed ML-KEM encapsulation key.
 	PublicKey []byte
-
-	// PrivateKey is the serialized decapsulation key
+	// PrivateKey is the packed ML-KEM decapsulation key.
 	PrivateKey []byte
-
-	// useCircl indicates whether to use real circl or simulation
-	useCircl bool
 }
 
-// GenerateCirclKyberKeyPair generates a new Kyber key pair.
-// If circl is available and mode is Production, uses real lattice cryptography.
+// GenerateCirclKyberKeyPair generates a new ML-KEM key pair.
 func GenerateCirclKyberKeyPair(level int) (*CirclKyberKeyPair, error) {
-	mode := GetPQCMode()
-
-	if pqcRequiresCircl(mode) {
-		if !IsCirclAvailable() {
-			return nil, circlRequiredError()
-		}
-		return generateCirclKyberReal(level)
-	}
-
-	kp, err := GenerateKyberKeyPair(level)
+	pub, priv, err := mlkemGenerateKey(level)
 	if err != nil {
 		return nil, err
 	}
-
-	return &CirclKyberKeyPair{
-		Level:      level,
-		PublicKey:  kp.PublicKey,
-		PrivateKey: kp.PrivateKey,
-		useCircl:   false,
-	}, nil
+	return &CirclKyberKeyPair{Level: level, PublicKey: pub, PrivateKey: priv}, nil
 }
 
-// generateCirclKyberReal generates a real Kyber key pair using circl.
-func generateCirclKyberReal(level int) (*CirclKyberKeyPair, error) {
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
-}
-
-// Encapsulate performs key encapsulation using the recipient's public key.
-// Returns the shared secret and ciphertext.
+// Encapsulate performs key encapsulation against the recipient's public key.
 func (kp *CirclKyberKeyPair) Encapsulate(recipientPublicKey []byte) (sharedSecret []byte, ciphertext *KyberCiphertext, err error) {
-	if kp.useCircl {
-		return encapsulateCirclKyberReal(kp.Level, recipientPublicKey)
+	ss, ct, err := mlkemEncapsulate(kp.Level, recipientPublicKey)
+	if err != nil {
+		return nil, nil, err
 	}
-
-	if pqcRequiresCircl(GetPQCMode()) {
-		return nil, nil, circlRequiredError()
-	}
-
-	// Fall back to simulated implementation
-	return Encapsulate(kp.Level, recipientPublicKey)
-}
-
-// encapsulateCirclKyberReal performs real encapsulation using circl.
-func encapsulateCirclKyberReal(level int, publicKey []byte) ([]byte, *KyberCiphertext, error) {
-	return nil, nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
+	return ss, &KyberCiphertext{Level: kp.Level, Ciphertext: ct}, nil
 }
 
 // Decapsulate recovers the shared secret from a ciphertext.
 func (kp *CirclKyberKeyPair) Decapsulate(ciphertext *KyberCiphertext) ([]byte, error) {
-	if kp.useCircl {
-		return decapsulateCirclKyberReal(kp, ciphertext)
-	}
-
-	if pqcRequiresCircl(GetPQCMode()) {
-		return nil, circlRequiredError()
-	}
-
-	// Fall back to simulated implementation
-	simKP := &KyberKeyPair{
-		Level:      kp.Level,
-		PublicKey:  kp.PublicKey,
-		PrivateKey: kp.PrivateKey,
-	}
-	return simKP.Decapsulate(ciphertext)
-}
-
-// decapsulateCirclKyberReal performs real decapsulation using circl.
-func decapsulateCirclKyberReal(kp *CirclKyberKeyPair, ciphertext *KyberCiphertext) ([]byte, error) {
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
+	return mlkemDecapsulate(kp.Level, kp.PrivateKey, ciphertext.Ciphertext)
 }
 
 // =============================================================================
 // Production Mode Enforcement
 // =============================================================================
 
-// EnforceProductionMode sets the PQC mode to Production and validates
-// that real cryptographic implementations are available.
-// This should be called during mainnet initialization.
+// EnforceProductionMode sets the PQC mode to Production and runs the NIST
+// self-tests. This should be called during mainnet/testnet initialization.
 func EnforceProductionMode() error {
-	if !IsCirclAvailable() {
-		return errors.New("CRITICAL: Production mode requires circl library. " +
-			"Build with -tags=pqc_circl or use PQCModeSimulated for testing")
-	}
-
 	SetPQCMode(PQCModeProduction)
 
-	// Run self-tests to validate cryptographic operations
 	if err := RunPQCSelfTests(); err != nil {
 		return fmt.Errorf("PQC self-tests failed: %w", err)
 	}
@@ -287,13 +148,14 @@ func EnforceProductionMode() error {
 	return nil
 }
 
-// RunPQCSelfTests runs NIST-required self-tests for PQC algorithms.
-// These tests verify correct operation of the cryptographic primitives.
+// RunPQCSelfTests runs power-on self-tests for the PQC algorithms: an ML-DSA
+// sign/verify round-trip and an ML-KEM encapsulate/decapsulate round-trip with
+// shared-secret agreement. It returns an error if any primitive misbehaves.
 func RunPQCSelfTests() error {
-	// Test Dilithium key generation, signing, and verification
+	// ML-DSA: sign/verify round-trip.
 	kp, err := GenerateCirclDilithiumKeyPair(DilithiumLevel3)
 	if err != nil {
-		return fmt.Errorf("Dilithium key generation failed: %w", err)
+		return fmt.Errorf("ML-DSA key generation failed: %w", err)
 	}
 
 	testMessage := make([]byte, 64)
@@ -303,50 +165,53 @@ func RunPQCSelfTests() error {
 
 	sig, err := kp.Sign(testMessage)
 	if err != nil {
-		return fmt.Errorf("Dilithium signing failed: %w", err)
+		return fmt.Errorf("ML-DSA signing failed: %w", err)
 	}
 
 	valid, err := VerifyCirclDilithium(kp.PublicKey, testMessage, sig)
 	if err != nil {
-		return fmt.Errorf("Dilithium verification failed: %w", err)
+		return fmt.Errorf("ML-DSA verification failed: %w", err)
 	}
 	if !valid {
-		return errors.New("Dilithium self-test: signature verification returned false")
+		return errors.New("ML-DSA self-test: signature verification returned false")
 	}
 
-	// Test Kyber key encapsulation
+	// Negative control: a tampered message must fail.
+	tampered := append([]byte(nil), testMessage...)
+	tampered[0] ^= 0xFF
+	if bad, _ := VerifyCirclDilithium(kp.PublicKey, tampered, sig); bad {
+		return errors.New("ML-DSA self-test: tampered message verified as valid")
+	}
+
+	// ML-KEM: encapsulate/decapsulate round-trip.
 	kyberKP, err := GenerateCirclKyberKeyPair(KyberLevel768)
 	if err != nil {
-		return fmt.Errorf("Kyber key generation failed: %w", err)
+		return fmt.Errorf("ML-KEM key generation failed: %w", err)
 	}
 
 	sharedSecret1, ct, err := kyberKP.Encapsulate(kyberKP.PublicKey)
 	if err != nil {
-		return fmt.Errorf("Kyber encapsulation failed: %w", err)
+		return fmt.Errorf("ML-KEM encapsulation failed: %w", err)
 	}
 
 	sharedSecret2, err := kyberKP.Decapsulate(ct)
 	if err != nil {
-		return fmt.Errorf("Kyber decapsulation failed: %w", err)
+		return fmt.Errorf("ML-KEM decapsulation failed: %w", err)
 	}
 
-	if len(sharedSecret1) != len(sharedSecret2) {
-		return errors.New("Kyber self-test: shared secret length mismatch")
-	}
-	for i := range sharedSecret1 {
-		if sharedSecret1[i] != sharedSecret2[i] {
-			return errors.New("Kyber self-test: shared secret mismatch")
-		}
+	if len(sharedSecret1) != len(sharedSecret2) || subtle.ConstantTimeCompare(sharedSecret1, sharedSecret2) != 1 {
+		return errors.New("ML-KEM self-test: shared secret mismatch")
 	}
 
 	return nil
 }
 
-// GetPQCImplementationInfo returns information about the current PQC implementation.
+// GetPQCImplementationInfo returns information about the active PQC backend.
 func GetPQCImplementationInfo() map[string]interface{} {
 	return map[string]interface{}{
 		"mode":            GetPQCMode().String(),
-		"circl_available": IsCirclAvailable(),
+		"backend":         "cloudflare/circl",
+		"circl_available": true,
 		"dilithium_levels": []int{
 			DilithiumLevel2,
 			DilithiumLevel3,
@@ -357,8 +222,8 @@ func GetPQCImplementationInfo() map[string]interface{} {
 			KyberLevel768,
 			KyberLevel1024,
 		},
-		"fips_204_compliant": IsCirclAvailable(),
-		"fips_203_compliant": IsCirclAvailable(),
+		"fips_204_compliant": true,
+		"fips_203_compliant": true,
 	}
 }
 
@@ -366,7 +231,7 @@ func GetPQCImplementationInfo() map[string]interface{} {
 func (m PQCMode) String() string {
 	switch m {
 	case PQCModeSimulated:
-		return "Simulated"
+		return "Permissive"
 	case PQCModeProduction:
 		return "Production"
 	case PQCModeHybrid:
