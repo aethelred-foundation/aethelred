@@ -34,6 +34,8 @@ const (
 	flagModelDescription  = "description"
 	flagModelVersion      = "version"
 	flagModelArch         = "architecture"
+	flagVerifyingKeyHash  = "verifying-key-hash"
+	flagCircuitHash       = "circuit-hash"
 
 	stakeDisplayDenom = "aethel"
 	stakeBaseDenom    = "uaethel"
@@ -368,6 +370,24 @@ func CmdRegisterModel() *cobra.Command {
 				architecture,
 			)
 
+			// zkML jobs require the model to carry a 32-byte verifying-key hash
+			// (and optionally a circuit hash); each accepts a 64-hex value or any
+			// string (SHA-256 hashed). Left unset, the model is TEE-only.
+			if raw, _ := cmd.Flags().GetString(flagVerifyingKeyHash); strings.TrimSpace(raw) != "" {
+				vkh, err := parseHash32(raw)
+				if err != nil {
+					return fmt.Errorf("invalid --verifying-key-hash: %w", err)
+				}
+				msg.VerifyingKeyHash = vkh
+			}
+			if raw, _ := cmd.Flags().GetString(flagCircuitHash); strings.TrimSpace(raw) != "" {
+				ch, err := parseHash32(raw)
+				if err != nil {
+					return fmt.Errorf("invalid --circuit-hash: %w", err)
+				}
+				msg.CircuitHash = ch
+			}
+
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -382,6 +402,8 @@ func CmdRegisterModel() *cobra.Command {
 	cmd.Flags().String(flagModelDescription, "", "Model description")
 	cmd.Flags().String(flagModelVersion, "v1", "Model version")
 	cmd.Flags().String(flagModelArch, "", "Model architecture (e.g. transformer, cnn)")
+	cmd.Flags().String(flagVerifyingKeyHash, "", "zkML verifying-key hash: 32-byte hash (64 hex) or string to SHA-256 (required for zkML jobs)")
+	cmd.Flags().String(flagCircuitHash, "", "zkML circuit hash: 32-byte hash (64 hex) or string to SHA-256")
 	_ = cmd.MarkFlagRequired(flagModel)
 	_ = cmd.MarkFlagRequired(flagModelID)
 	_ = cmd.MarkFlagRequired(flagModelName)
