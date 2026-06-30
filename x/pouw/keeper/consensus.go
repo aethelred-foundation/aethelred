@@ -892,9 +892,24 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 				outputPower[v.JobID] = make(map[string]int64)
 			}
 
+			// Resolve the validator's ACCOUNT address from its consensus address.
+			// CompleteJob keys validator stats, verification rewards, and slashing
+			// by ValidatorAddress and expects a bech32 account address — but the
+			// vote extension only carries the consensus address. Without this
+			// mapping, stats are stored under the (unqueryable) consensus address
+			// and rewards are silently withheld ("below minimum bonded stake").
+			// Resolution is a pure function of on-chain staking state, so every
+			// validator derives the same account address.
+			resolvedAddr := validatorAddr
+			if ch.keeper != nil {
+				if accAddr := ch.keeper.accountAddressFromConsensus(ctx, vote.Validator.Address); accAddr != "" {
+					resolvedAddr = accAddr
+				}
+			}
+
 			// Create validator result, including BLS signature if present
 			valResult := ValidatorResult{
-				ValidatorAddress:   validatorAddr,
+				ValidatorAddress:   resolvedAddr,
 				OutputHash:         v.OutputHash,
 				AttestationType:    v.AttestationType,
 				ExecutionTimeMs:    v.ExecutionTimeMs,

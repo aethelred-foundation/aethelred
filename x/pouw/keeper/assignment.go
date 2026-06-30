@@ -103,6 +103,26 @@ func (k Keeper) AssignedJobsForValidator(ctx context.Context, validatorAddr stri
 	return jobs
 }
 
+// accountAddressFromConsensus maps a validator's consensus address (as provided
+// by CometBFT in vote info) to its bech32 account address, via the staking
+// validator's operator address. Returns "" if the validator can't be resolved.
+// Used to key PoUW stats/rewards/slashing by account address even though vote
+// extensions only carry the consensus address.
+func (k Keeper) accountAddressFromConsensus(ctx context.Context, consAddr []byte) string {
+	if k.stakingKeeper == nil || len(consAddr) == 0 {
+		return ""
+	}
+	validator, err := k.stakingKeeper.GetValidatorByConsAddr(ctx, sdk.ConsAddress(consAddr))
+	if err != nil {
+		return ""
+	}
+	valAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return ""
+	}
+	return sdk.AccAddress(valAddr).String()
+}
+
 // eligibleValidators returns the sorted set of validator account addresses that
 // are eligible for PoUW assignment: they have registered a compute capability and
 // meet the minimum bonded stake. The result is sorted so every validator builds
