@@ -108,6 +108,7 @@ import (
 	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
+	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	sealtypes "github.com/aethelred/aethelred/x/seal/types"
 	"github.com/aethelred/aethelred/x/verify"
@@ -217,6 +218,10 @@ type AethelredApp struct {
 	EVMKeeper         *evmkeeper.Keeper
 	Erc20Keeper       erc20keeper.Keeper
 	PreciseBankKeeper precisebankkeeper.Keeper
+
+	// pendingTxListeners back the JSON-RPC newPendingTransactions stream
+	// (AppWithPendingTxStream); see jsonrpc.go.
+	pendingTxListeners []func(gethcommon.Hash)
 
 	// TEE client for compute verification
 	teeClient TEEClient

@@ -205,7 +205,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig app.EncodingConfig) {
 		debug.Cmd(),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
+	// Use AddCommandsWithStartCmdOptions so a PostSetup hook can start the EVM
+	// JSON-RPC HTTP server alongside the node (ADR-0001 Phase 1) without
+	// replacing the custom ABCI++/PoUW start logic. JSON-RPC flags are appended
+	// to the existing module init flags.
+	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
+		AddFlags:  addJSONRPCStartFlags(addModuleInitFlags),
+		PostSetup: startJSONRPCPostSetup,
+	})
 
 	// Add query and tx commands
 	rootCmd.AddCommand(
@@ -253,6 +260,10 @@ func newApp(
 			}
 		}
 	}
+
+	// Capture the concrete app so the start command's PostSetup hook can start
+	// the EVM JSON-RPC server against it (see jsonrpc.go).
+	runningApp = aethelredApp
 
 	return aethelredApp
 }

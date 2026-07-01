@@ -159,13 +159,28 @@ cryptographic audit trail. No other L1 offers this from Solidity.
     StateDB, reads a Digital Seal from chain state, and returns correct
     `verifySeal` / `requireConfidentiality` verdicts (including a consensus-parity
     policy rejection). The whole verifiable-AI moat is reachable from the EVM.
-  - **JSON-RPC HTTP transport (remaining):** exposing `eth_*` over HTTP requires
-    adopting cosmos/evm's `server.StartCmd` + `ExperimentalEVMMempool` (the app
-    must satisfy the RPC `Application` interface and use the EVM mempool). That
-    replaces the node's server/start command tree, so it is a focused
-    server-infrastructure increment to be integrated carefully with the custom
-    ABCI++/PQC start logic — the query path it exposes (`EthCall`, and the EVM
-    chain id 7332) is already wired and proven.
+  - **JSON-RPC HTTP transport LANDED (side service, no consensus change):**
+    the EVM JSON-RPC HTTP server runs from the node start command's `PostSetup`
+    hook (`server.AddCommandsWithStartCmdOptions`), sharing the node's client
+    context — it does NOT replace the custom ABCI++/PoUW start logic or the
+    consensus mempool. Enabled with `--json-rpc.enable`
+    (`--json-rpc.address`, default `127.0.0.1:8545`; namespaces `eth,net,web3`).
+    Key design point: cosmos/evm's `eth_sendRawTransaction` broadcasts through
+    the standard CometBFT path (`BroadcastTx` → CheckTx → the dual-route ante →
+    the PoUW `PrepareProposal`), so EVM-tx block inclusion needs NO experimental
+    EVM mempool; `StartJSONRPC` is called with nil mempool + nil indexer (the RPC
+    backend guards both — `txpool_*`/tx-by-hash degrade gracefully while the
+    read/call/broadcast path is fully live). The app satisfies
+    `AppWithPendingTxStream` via `RegisterPendingTxListener` (the
+    `newPendingTransactions` websocket push is inert without the experimental
+    pool — an honest degradation of one optional feature).
+    **Boot-proven over HTTP:** the node produces blocks with JSON-RPC live;
+    `eth_chainId` → `0x1ca4` (7332), `net_version` → `7332` (aligned via the
+    `evm.evm-chain-id` viper key), `eth_blockNumber` advances, and `eth_call`
+    against ISeal at `0x0900` returns a valid ABI bool — the whole verifiable-AI
+    moat is reachable over standard Ethereum JSON-RPC. The dApp stack (Wallet,
+    Cruzible, ZeroID, TerraQura at chain-id 7332) can now repoint from anvil to
+    aethelredd's EVM.
 - **Phase 2 — the moat (weeks):** ship the `IVerify` / `ISeal` / `IPoUW`
   precompiles; add Solidity interfaces + a reference "AI-gated vault" example;
   wire Cruzible/NoblePay to gate on Digital Seals.
