@@ -119,6 +119,35 @@ cryptographic audit trail. No other L1 offers this from Solidity.
        genesis — a dedicated integration engagement, now UNBLOCKED and
        de-risked (the precompile surface it must expose is finished and
        proven against the real interpreter).
+  - **Dependency adopted (commit 63479a145a):** `github.com/cosmos/evm@v0.6.0`
+    + the `go-ethereum => cosmos/go-ethereum v1.16.2-cosmos-1` replace are now
+    in go.mod. Predicted impact confirmed exactly: the full suite stays green
+    (47 packages) against the fork; only `internal/evmhost` needed porting.
+    `precompiles/evm` is the mount seam (Adapter →
+    `x/vm` `WithStaticPrecompiles`).
+  - **EVM config foundation (`app/evmconfig`, tested):** encodes the two
+    audit-sensitive decisions in one reviewable place:
+    - **Decimal bridge:** `uaethel` is the 6-decimal bank denom; the EVM
+      operates in an 18-decimal extended denom `aaethel`, reconciled by
+      `x/precisebank` at a fixed 1e12 factor (no wei truncation on the Cosmos
+      side). This is cosmos/evm's supported non-18-decimal pattern
+      (`SixDecimals` + distinct `ExtendedDenom`).
+    - **Precompile permissioning:** `ActiveStaticPrecompiles` = ISeal 0x0900,
+      IVerify 0x0901, IPoUW 0x0902 (sorted/unique; accepted by x/vm's own
+      `ValidatePrecompiles` and genesis `Validate`).
+  - **Remaining app.go integration steps (specced, for the next boot-iterated
+    increment):** add store keys `evm`, `feemarket`, `erc20`, `precisebank`
+    (+ the `evm` transient key); construct `FeeMarketKeeper`,
+    `PreciseBankKeeper(bank, account)`, `EVMKeeper(…, preciseBank, feeMarket,
+    &consensus, &erc20, evmChainID).WithStaticPrecompiles(evm.NewStaticPrecompiles(
+    seal, verify, pouw))`, `Erc20Keeper(…, &evmKeeper, &transfer)`; register the
+    four modules in the module manager with begin/end-block + init-genesis
+    ordering; seed genesis from `app/evmconfig` and register `uaethel`/`aethel`
+    DenomMetadata in x/bank; add the eth_secp256k1 pubkey to the interface
+    registry so EVM accounts sign. **Note:** our chain mounts our three
+    verifiable-AI precompiles via `WithStaticPrecompiles` directly — it does
+    NOT require the full `DefaultStaticPrecompiles` bundle (staking/distr/gov/
+    ICS20), which keeps the added surface (and audit scope) minimal.
 - **Phase 2 — the moat (weeks):** ship the `IVerify` / `ISeal` / `IPoUW`
   precompiles; add Solidity interfaces + a reference "AI-gated vault" example;
   wire Cruzible/NoblePay to gate on Digital Seals.
