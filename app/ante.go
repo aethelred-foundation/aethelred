@@ -9,6 +9,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	evmcosmosante "github.com/cosmos/evm/ante/cosmos"
+	evmante "github.com/cosmos/evm/ante/evm"
+
 	pouwkeeper "github.com/aethelred/aethelred/x/pouw/keeper"
 	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 )
@@ -18,12 +21,40 @@ type HandlerOptions struct {
 	ante.HandlerOptions
 }
 
-// NewAnteHandler returns an AnteHandler that checks and increments sequence
-// numbers, checks signatures & account numbers, and deducts fees from the first
-// signer.
+// ethereumTxExtensionURL is the extension option that marks a transaction as an
+// EVM transaction (a wrapped MsgEthereumTx carrying an Ethereum signature).
+const ethereumTxExtensionURL = "/cosmos.evm.vm.v1.ExtensionOptionsEthereumTx"
+
+// NewAnteHandler returns the dual-route AnteHandler: transactions carrying the
+// EVM extension option take the cosmos/evm mono EVM ante chain (Ethereum
+// signature verification, EVM fee market); everything else takes the existing
+// Aethelred cosmos chain (rate limiting, compute-job fees). The dispatch
+// mirrors cosmos/evm's own ante router; unknown extension options fail closed.
 func NewAnteHandler(app *AethelredApp) sdk.AnteHandler {
+	cosmosHandler := newCosmosAnteHandler(app)
+	return func(ctx sdk.Context, tx sdk.Tx, sim bool) (sdk.Context, error) {
+		if txWithExtensions, ok := tx.(ante.HasExtensionOptionsTx); ok {
+			if opts := txWithExtensions.GetExtensionOptions(); len(opts) > 0 {
+				if opts[0].GetTypeUrl() == ethereumTxExtensionURL {
+					return newEVMAnteHandler(app, ctx)(ctx, tx, sim)
+				}
+				return ctx, errors.Wrapf(sdkerrors.ErrUnknownExtensionOptions,
+					"rejecting tx with unsupported extension option: %s", opts[0].GetTypeUrl())
+			}
+		}
+		return cosmosHandler(ctx, tx, sim)
+	}
+}
+
+// newCosmosAnteHandler is the pre-existing Aethelred cosmos ante chain plus the
+// EVM-message rejection guard.
+func newCosmosAnteHandler(app *AethelredApp) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		ante.NewSetUpContextDecorator(),
+		// Defense in depth: MsgEthereumTx MUST arrive via the EVM route above;
+		// reject it on the cosmos route so EVM messages can never bypass
+		// Ethereum signature verification by omitting the extension option.
+		evmcosmosante.NewRejectMessagesDecorator(),
 		NewRateLimitDecorator(app.rateLimiter),
 		ante.NewExtensionOptionsDecorator(nil),
 		ante.NewValidateBasicDecorator(),
@@ -38,6 +69,23 @@ func NewAnteHandler(app *AethelredApp) sdk.AnteHandler {
 		ante.NewIncrementSequenceDecorator(app.AccountKeeper),
 		// Custom Aethelred decorator: enforce compute job fees
 		NewComputeJobFeeDecorator(app.PouwKeeper, app.BankKeeper),
+	)
+}
+
+// newEVMAnteHandler builds the cosmos/evm mono EVM ante chain with the current
+// block's module parameters (fetched per transaction, matching upstream).
+func newEVMAnteHandler(app *AethelredApp, ctx sdk.Context) sdk.AnteHandler {
+	evmParams := app.EVMKeeper.GetParams(ctx)
+	feemarketParams := app.FeeMarketKeeper.GetParams(ctx)
+	return sdk.ChainAnteDecorators(
+		evmante.NewEVMMonoDecorator(
+			app.AccountKeeper,
+			app.FeeMarketKeeper,
+			app.EVMKeeper,
+			0, // MaxTxGasWanted: 0 = no per-tx gas-wanted cap
+			&evmParams,
+			&feemarketParams,
+		),
 	)
 }
 

@@ -16,6 +16,8 @@ import (
 	protov2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	evmcryptocodec "github.com/cosmos/evm/crypto/codec"
+
 	// Aethelred custom modules
 	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 	sealtypes "github.com/aethelred/aethelred/x/seal/types"
@@ -68,17 +70,17 @@ func MakeEncodingConfig() EncodingConfig {
 			// Custom-module protos lack the (cosmos.msg.v1.signer) option, so their
 			// signers must be resolved explicitly (see signerFromField).
 			CustomGetSigners: map[protoreflect.FullName]signing.GetSignersFunc{
-				"aethelred.pouw.v1.MsgSubmitJob":                  signerFromField(accCodec, "creator"),
-				"aethelred.pouw.v1.MsgRegisterModel":              signerFromField(accCodec, "owner"),
-				"aethelred.pouw.v1.MsgCancelJob":                  signerFromField(accCodec, "creator"),
+				"aethelred.pouw.v1.MsgSubmitJob":                   signerFromField(accCodec, "creator"),
+				"aethelred.pouw.v1.MsgRegisterModel":               signerFromField(accCodec, "owner"),
+				"aethelred.pouw.v1.MsgCancelJob":                   signerFromField(accCodec, "creator"),
 				"aethelred.pouw.v1.MsgRegisterValidatorCapability": signerFromField(accCodec, "creator"),
-				"aethelred.pouw.v1.MsgRegisterValidatorPCR0":      signerFromField(accCodec, "creator"),
-				"aethelred.pouw.v1.MsgRegisterValidatorHybridKey": signerFromField(accCodec, "creator"),
-				"aethelred.seal.v1.MsgCreateSeal":                 signerFromField(accCodec, "creator"),
-				"aethelred.seal.v1.MsgRevokeSeal":                 signerFromField(accCodec, "authority"),
-				"aethelred.verify.v1.MsgRegisterVerifyingKey":     signerFromField(accCodec, "creator"),
-				"aethelred.verify.v1.MsgRegisterCircuit":          signerFromField(accCodec, "creator"),
-				"aethelred.verify.v1.MsgVerifyZKProof":            signerFromField(accCodec, "verifier"),
+				"aethelred.pouw.v1.MsgRegisterValidatorPCR0":       signerFromField(accCodec, "creator"),
+				"aethelred.pouw.v1.MsgRegisterValidatorHybridKey":  signerFromField(accCodec, "creator"),
+				"aethelred.seal.v1.MsgCreateSeal":                  signerFromField(accCodec, "creator"),
+				"aethelred.seal.v1.MsgRevokeSeal":                  signerFromField(accCodec, "authority"),
+				"aethelred.verify.v1.MsgRegisterVerifyingKey":      signerFromField(accCodec, "creator"),
+				"aethelred.verify.v1.MsgRegisterCircuit":           signerFromField(accCodec, "creator"),
+				"aethelred.verify.v1.MsgVerifyZKProof":             signerFromField(accCodec, "verifier"),
 			},
 		},
 	})
@@ -99,7 +101,15 @@ func MakeEncodingConfig() EncodingConfig {
 	pouwtypes.RegisterInterfaces(interfaceRegistry)
 	verifytypes.RegisterInterfaces(interfaceRegistry)
 
-	// Register legacy amino codecs for custom modules
+	// Register the cosmos/evm crypto types (eth_secp256k1 pub/priv keys) so EVM
+	// accounts unmarshal and sign; EVM module msg/tx types come via ModuleBasics.
+	evmcryptocodec.RegisterInterfaces(interfaceRegistry)
+
+	// Register legacy amino codecs for custom modules.
+	// NOTE: evmcryptocodec.RegisterCrypto is NOT called — it re-registers the
+	// std crypto amino types (already registered above) and panics with
+	// "TypeInfo already exists". Amino registration of eth keys is only needed
+	// for legacy amino signing (Ledger/EIP-712), which this chain does not use.
 	sealtypes.RegisterLegacyAminoCodec(amino)
 	pouwtypes.RegisterLegacyAminoCodec(amino)
 	verifytypes.RegisterLegacyAminoCodec(amino)

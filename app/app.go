@@ -16,9 +16,9 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/crypto/tmhash"
 
-	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/client/v2/autocli"
 	"cosmossdk.io/core/appmodule"
+	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/evidence"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
@@ -97,6 +97,18 @@ import (
 	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 	"github.com/aethelred/aethelred/x/seal"
 	sealkeeper "github.com/aethelred/aethelred/x/seal/keeper"
+	erc20 "github.com/cosmos/evm/x/erc20"
+	erc20keeper "github.com/cosmos/evm/x/erc20/keeper"
+	erc20types "github.com/cosmos/evm/x/erc20/types"
+	feemarket "github.com/cosmos/evm/x/feemarket"
+	feemarketkeeper "github.com/cosmos/evm/x/feemarket/keeper"
+	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
+	precisebank "github.com/cosmos/evm/x/precisebank"
+	precisebankkeeper "github.com/cosmos/evm/x/precisebank/keeper"
+	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
+	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
+
 	sealtypes "github.com/aethelred/aethelred/x/seal/types"
 	"github.com/aethelred/aethelred/x/verify"
 	verifykeeper "github.com/aethelred/aethelred/x/verify/keeper"
@@ -121,7 +133,9 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-		bank.AppModuleBasic{},
+		// bank with Aethelred's denom metadata in the default genesis (the EVM
+		// stack resolves its coin info from bank metadata — see evm.go).
+		aethelredBankModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
@@ -142,6 +156,11 @@ var (
 		pouw.AppModuleBasic{},
 		verify.AppModuleBasic{},
 		ibcmodule.AppModuleBasic{},
+		// cosmos/evm stack (vm genesis overridden with Aethelred's EVM config)
+		aethelredVMModuleBasic{},
+		feemarket.AppModuleBasic{},
+		erc20.AppModuleBasic{},
+		precisebank.NewAppModuleBasic(),
 	)
 )
 
@@ -192,6 +211,12 @@ type AethelredApp struct {
 	InsuranceKeeper       insurancekeeper.Keeper
 	SovereignCrisisKeeper sovereigncrisiskeeper.Keeper
 	IBCKeeper             ibckeeper.Keeper
+
+	// keepers - cosmos/evm stack (ADR-0001 Phase 1; wiring in evm.go)
+	FeeMarketKeeper   feemarketkeeper.Keeper
+	EVMKeeper         *evmkeeper.Keeper
+	Erc20Keeper       erc20keeper.Keeper
+	PreciseBankKeeper precisebankkeeper.Keeper
 
 	// TEE client for compute verification
 	teeClient TEEClient
@@ -324,7 +349,13 @@ func New(
 		sovereigncrisistypes.StoreKey,
 		ibctypes.StoreKey,
 	)
+	for _, k := range evmStoreKeys() {
+		keys[k] = storetypes.NewKVStoreKey(k)
+	}
 	tkeys := storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)
+	for _, k := range evmTransientKeys() {
+		tkeys[k] = storetypes.NewTransientStoreKey(k)
+	}
 	memKeys := storetypes.NewMemoryStoreKeys()
 
 	// Create the application
@@ -366,6 +397,10 @@ func New(
 
 	// Initialize Aethelred custom module keepers
 	app.initAethelredKeepers(keys, appCodec)
+
+	// Initialize the cosmos/evm stack (feemarket → precisebank → evm+precompiles
+	// → erc20); needs the account/bank/staking and seal/verify/pouw keepers.
+	app.initEVMKeepers(keys, tkeys, appCodec)
 
 	// Create module manager with all modules
 	app.setupModuleManager()
@@ -707,7 +742,7 @@ func firstNonEmpty(values ...string) string {
 
 // setupModuleManager creates and configures the module manager
 func (app *AethelredApp) setupModuleManager() {
-	app.ModuleManager = module.NewManager(
+	modules := []module.AppModule{
 		genutil.NewAppModule(app.AccountKeeper, app.StakingKeeper, app, app.txConfig),
 		auth.NewAppModule(app.appCodec, app.AccountKeeper, nil, app.GetSubspace(authtypes.ModuleName)),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
@@ -728,10 +763,13 @@ func (app *AethelredApp) setupModuleManager() {
 		pouw.NewAppModule(app.appCodec, &app.PouwKeeper),
 		verify.NewAppModule(app.appCodec, app.VerifyKeeper),
 		ibcmodule.NewAppModule(app.appCodec, app.IBCKeeper),
-	)
+	}
+	// cosmos/evm stack (constructed in evm.go)
+	modules = append(modules, app.evmAppModules()...)
+	app.ModuleManager = module.NewManager(modules...)
 
 	// Set order of module operations
-	app.ModuleManager.SetOrderBeginBlockers(
+	app.ModuleManager.SetOrderBeginBlockers(append([]string{
 		upgradetypes.ModuleName,
 		minttypes.ModuleName,
 		distrtypes.ModuleName,
@@ -752,9 +790,9 @@ func (app *AethelredApp) setupModuleManager() {
 		sealtypes.ModuleName,
 		verifytypes.ModuleName,
 		ibctypes.ModuleName,
-	)
+	}, evmBeginBlockers...)...)
 
-	app.ModuleManager.SetOrderEndBlockers(
+	app.ModuleManager.SetOrderEndBlockers(append([]string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -764,9 +802,9 @@ func (app *AethelredApp) setupModuleManager() {
 		sealtypes.ModuleName,
 		verifytypes.ModuleName,
 		ibctypes.ModuleName,
-	)
+	}, evmEndBlockers...)...)
 
-	app.ModuleManager.SetOrderInitGenesis(
+	app.ModuleManager.SetOrderInitGenesis(append([]string{
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -787,7 +825,7 @@ func (app *AethelredApp) setupModuleManager() {
 		verifytypes.ModuleName,
 		pouwtypes.ModuleName,
 		ibctypes.ModuleName,
-	)
+	}, evmInitGenesis...)...)
 }
 
 // Name returns the name of the App
@@ -907,7 +945,10 @@ func (app *AethelredApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain
 	// keepers and to ExportGenesis, and it is written identically on every
 	// validator (deterministic). gov is not seeded — its InitGenesis writes params.
 	storeInitMarker := append([]byte{0xFF}, []byte("aethelred_store_init")...)
-	for _, storeKey := range []string{authzkeeper.StoreKey, feegrant.StoreKey, evidencetypes.StoreKey} {
+	// precisebank is seeded too: its default genesis (zero remainder, no
+	// fractional balances) writes nothing until the first EVM sub-unit
+	// operation, which would leave an empty mounted IAVL store.
+	for _, storeKey := range []string{authzkeeper.StoreKey, feegrant.StoreKey, evidencetypes.StoreKey, precisebanktypes.StoreKey} {
 		if key, ok := app.keys[storeKey]; ok {
 			ctx.KVStore(key).Set(storeInitMarker, []byte{1})
 		}
@@ -1043,6 +1084,13 @@ var maccPerms = map[string][]string{
 	pouwtypes.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	pouwtypes.TreasuryModuleName:  nil,
 	pouwtypes.InsuranceModuleName: nil,
+	// cosmos/evm stack: the vm module escrows gas fees and mints/burns during
+	// EVM state transitions; erc20 mints/burns for token-pair conversions;
+	// precisebank mints/burns the sub-unit reserve for the 6→18 decimal bridge.
+	evmtypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+	feemarkettypes.ModuleName:   nil,
+	erc20types.ModuleName:       {authtypes.Minter, authtypes.Burner},
+	precisebanktypes.ModuleName: {authtypes.Minter, authtypes.Burner},
 }
 
 // Version is the application version
