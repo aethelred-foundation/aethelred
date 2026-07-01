@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 )
 
@@ -26,19 +27,22 @@ func testCtx() sdk.Context {
 	}, false, log.NewNopLogger())
 }
 
-// TestBoundPrecompileAdapter covers the geth-interface adapter directly:
-// RequiredGas and Run delegate; Name satisfies geth's tracing surface.
+// TestBoundPrecompileAdapter covers the fork vm.PrecompiledContract adapter
+// directly: Address/RequiredGas delegate, and Run bridges contract.Input +
+// the bound ctx to the inner precompile.
 func TestBoundPrecompileAdapter(t *testing.T) {
-	b := boundPrecompile{p: echoPrecompile{}, ctx: testCtx()}
+	addr := common.HexToAddress("0x0900")
+	b := boundPrecompile{addr: addr, p: echoPrecompile{}, ctx: testCtx()}
+	if b.Address() != addr {
+		t.Error("Address must return the bound address")
+	}
 	if b.RequiredGas([]byte{1}) != 10 {
 		t.Error("RequiredGas must delegate")
 	}
-	out, err := b.Run([]byte{1, 2, 3})
+	contract := &vm.Contract{Input: []byte{1, 2, 3}}
+	out, err := b.Run(nil, contract, false)
 	if err != nil || len(out) != 3 {
-		t.Errorf("Run must delegate: %v %v", out, err)
-	}
-	if b.Name() == "" {
-		t.Error("Name must be non-empty for geth tracing")
+		t.Errorf("Run must bridge contract.Input to the inner precompile: %v %v", out, err)
 	}
 }
 
@@ -62,7 +66,7 @@ func TestBlockContextTransferPlumbing(t *testing.T) {
 	if !evm.Context.CanTransfer(h.statedb, from, amount) {
 		t.Error("funded account must be able to transfer")
 	}
-	evm.Context.Transfer(h.statedb, from, to, amount, nil)
+	evm.Context.Transfer(h.statedb, from, to, amount)
 	if h.statedb.GetBalance(to).Uint64() != 500 || h.statedb.GetBalance(from).Uint64() != 500 {
 		t.Errorf("transfer did not move balance: from=%s to=%s",
 			h.statedb.GetBalance(from), h.statedb.GetBalance(to))

@@ -42,18 +42,22 @@ type ContextPrecompile interface {
 	Run(ctx sdk.Context, input []byte) ([]byte, error)
 }
 
-// boundPrecompile adapts a ContextPrecompile to geth's PrecompiledContract by
-// binding the sdk.Context for the duration of one EVM execution.
+// boundPrecompile adapts a ContextPrecompile to the cosmos/evm-fork
+// vm.PrecompiledContract interface by binding an injected sdk.Context for the
+// duration of one EVM execution. Unlike the app-path adapter (precompiles/evm,
+// which sources ctx from the cosmos StateDB), this standalone test host injects
+// the ctx directly — the harness is not driven by a cosmos StateDB.
 type boundPrecompile struct {
-	p   ContextPrecompile
-	ctx sdk.Context
+	addr common.Address
+	p    ContextPrecompile
+	ctx  sdk.Context
 }
 
+func (b boundPrecompile) Address() common.Address         { return b.addr }
 func (b boundPrecompile) RequiredGas(input []byte) uint64 { return b.p.RequiredGas(input) }
-func (b boundPrecompile) Run(input []byte) ([]byte, error) {
-	return b.p.Run(b.ctx, input)
+func (b boundPrecompile) Run(_ *vm.EVM, contract *vm.Contract, _ bool) ([]byte, error) {
+	return b.p.Run(b.ctx, contract.Input)
 }
-func (b boundPrecompile) Name() string { return "aethelred-precompile" }
 
 // Host is an embedded EVM with Aethelred precompiles mounted. EVM accounts,
 // code, and storage live in the host's StateDB; verifiable-AI state (seals)
@@ -114,7 +118,7 @@ func (h *Host) newEVM(ctx sdk.Context) *vm.EVM {
 		CanTransfer: func(db vm.StateDB, addr common.Address, amount *uint256.Int) bool {
 			return db.GetBalance(addr).Cmp(amount) >= 0
 		},
-		Transfer: func(db vm.StateDB, from, to common.Address, amount *uint256.Int, _ *params.Rules) {
+		Transfer: func(db vm.StateDB, from, to common.Address, amount *uint256.Int) {
 			db.SubBalance(from, amount, tracing.BalanceChangeUnspecified)
 			db.AddBalance(to, amount, tracing.BalanceChangeUnspecified)
 		},
@@ -133,7 +137,7 @@ func (h *Host) newEVM(ctx sdk.Context) *vm.EVM {
 	rules := h.chainConfig.Rules(blockCtx.BlockNumber, true, blockCtx.Time)
 	precompiles := vm.ActivePrecompiledContracts(rules)
 	for addr, p := range h.mounts {
-		precompiles[addr] = boundPrecompile{p: p, ctx: ctx}
+		precompiles[addr] = boundPrecompile{addr: addr, p: p, ctx: ctx}
 	}
 	evm.SetPrecompiles(precompiles)
 	return evm
@@ -146,7 +150,7 @@ func (h *Host) Deploy(ctx sdk.Context, creator common.Address, initcode []byte, 
 		return common.Address{}, fmt.Errorf("evmhost: empty initcode")
 	}
 	evm := h.newEVM(ctx)
-	_, addr, _, err := evm.Create(creator, initcode, vm.NewGasBudget(gas, gas), uint256.NewInt(0))
+	_, addr, _, err := evm.Create(creator, initcode, gas, uint256.NewInt(0))
 	if err != nil {
 		return common.Address{}, fmt.Errorf("evmhost: deploy: %w", err)
 	}
@@ -162,7 +166,7 @@ func (h *Host) Call(ctx sdk.Context, from, to common.Address, calldata []byte, g
 // receive()). The sender must hold the balance (see FundAccount).
 func (h *Host) CallValue(ctx sdk.Context, from, to common.Address, calldata []byte, gas uint64, value *uint256.Int) ([]byte, error) {
 	evm := h.newEVM(ctx)
-	ret, _, err := evm.Call(from, to, calldata, vm.NewGasBudget(gas, gas), value)
+	ret, _, err := evm.Call(from, to, calldata, gas, value)
 	if err != nil {
 		return ret, fmt.Errorf("evmhost: call %s: %w", to.Hex(), err)
 	}
@@ -178,7 +182,7 @@ func (h *Host) Balance(addr common.Address) *uint256.Int {
 // interpreter) — the natural entry point for query-layer contract reads.
 func (h *Host) StaticCall(ctx sdk.Context, from, to common.Address, calldata []byte, gas uint64) ([]byte, error) {
 	evm := h.newEVM(ctx)
-	ret, _, err := evm.StaticCall(from, to, calldata, vm.NewGasBudget(gas, gas))
+	ret, _, err := evm.StaticCall(from, to, calldata, gas)
 	if err != nil {
 		return ret, fmt.Errorf("evmhost: staticcall %s: %w", to.Hex(), err)
 	}
