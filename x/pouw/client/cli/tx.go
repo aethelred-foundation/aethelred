@@ -37,6 +37,13 @@ const (
 	flagVerifyingKeyHash  = "verifying-key-hash"
 	flagCircuitHash       = "circuit-hash"
 
+	// CEAP confidentiality-policy flags for submit-job.
+	flagConfBackends        = "conf-backends"
+	flagConfMinVerification = "conf-min-verification"
+	flagConfPlatforms       = "conf-platforms"
+	flagConfRequireVendor   = "conf-require-vendor-root"
+	flagConfResidency       = "conf-residency"
+
 	stakeDisplayDenom = "aethel"
 	stakeBaseDenom    = "uaethel"
 
@@ -304,6 +311,13 @@ func CmdSubmitJob() *cobra.Command {
 				purpose,
 			)
 
+			// CEAP: attach a confidentiality policy if any --conf-* flag is set.
+			policy, err := confidentialityPolicyFromFlags(cmd)
+			if err != nil {
+				return err
+			}
+			msg.ConfidentialityPolicy = policy
+
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -316,6 +330,11 @@ func CmdSubmitJob() *cobra.Command {
 	cmd.Flags().String(flagInput, "", "Input: 32-byte hash (64 hex chars) or any string to SHA-256 hash")
 	cmd.Flags().String(flagProofType, "tee", "Verification proof type: tee | zkml | hybrid")
 	cmd.Flags().String(flagPurpose, "", "Human-readable purpose for this job (required)")
+	cmd.Flags().StringSlice(flagConfBackends, nil, "CEAP: allowed confidentiality backends (e.g. tee,fhe); empty = any")
+	cmd.Flags().String(flagConfMinVerification, "", "CEAP: minimum verification method (tee-attested|freivalds|optimistic|reexec|zkml)")
+	cmd.Flags().StringSlice(flagConfPlatforms, nil, "CEAP: allowed attesting platforms (e.g. amd-sev-snp,intel-tdx); empty = any")
+	cmd.Flags().Bool(flagConfRequireVendor, false, "CEAP: require a production vendor root (reject test roots)")
+	cmd.Flags().StringSlice(flagConfResidency, nil, "CEAP: allowed data-residency jurisdictions (e.g. EU,UK); empty = any")
 	_ = cmd.MarkFlagRequired(flagModel)
 	_ = cmd.MarkFlagRequired(flagInput)
 	_ = cmd.MarkFlagRequired(flagPurpose)
@@ -323,6 +342,44 @@ func CmdSubmitJob() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
+}
+
+// confidentialityPolicyFromFlags builds a CEAP ConfidentialityPolicy from the
+// --conf-* flags on submit-job. It returns nil when no confidentiality flag is
+// set, so a job with no confidentiality requirement carries a nil policy (which
+// is always satisfied). See docs/architecture/ADR-0003.
+func confidentialityPolicyFromFlags(cmd *cobra.Command) (*types.ConfidentialityPolicy, error) {
+	backends, err := cmd.Flags().GetStringSlice(flagConfBackends)
+	if err != nil {
+		return nil, err
+	}
+	minVer, err := cmd.Flags().GetString(flagConfMinVerification)
+	if err != nil {
+		return nil, err
+	}
+	platforms, err := cmd.Flags().GetStringSlice(flagConfPlatforms)
+	if err != nil {
+		return nil, err
+	}
+	requireVendor, err := cmd.Flags().GetBool(flagConfRequireVendor)
+	if err != nil {
+		return nil, err
+	}
+	residency, err := cmd.Flags().GetStringSlice(flagConfResidency)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(backends) == 0 && minVer == "" && len(platforms) == 0 && !requireVendor && len(residency) == 0 {
+		return nil, nil
+	}
+	return &types.ConfidentialityPolicy{
+		AllowedBackends:   backends,
+		MinVerification:   minVer,
+		AllowedPlatforms:  platforms,
+		RequireVendorRoot: requireVendor,
+		DataResidency:     residency,
+	}, nil
 }
 
 // CmdRegisterModel creates a CLI command for registering a model. A job can only

@@ -422,6 +422,19 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		return err
 	}
 
+	params, _ := k.GetParams(ctx)
+
+	// CEAP: derive the confidentiality attestation this job achieved and enforce
+	// its ConfidentialityPolicy BEFORE writing any state (see confidential.go). A
+	// computation that does not meet the submitter's confidentiality requirement
+	// is rejected here, so no partial or non-compliant seal is ever minted. The
+	// check is a deterministic function of consensus-agreed inputs, so it cannot
+	// diverge consensus.
+	confidentialityAtt, err := deriveConfidentiality(job, verificationResults, params)
+	if err != nil {
+		return err
+	}
+
 	model, _ := k.GetRegisteredModel(ctx, job.ModelHash)
 	totalUWU, vto, modelParamSize := calculateUsefulWorkUnitsVTO(job, model, outputHash)
 	if totalUWU > 0 {
@@ -472,6 +485,15 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		job.Purpose,
 	)
 	seal.Timestamp = timestamppb.New(blockTime)
+
+	// Record the job this seal certifies so the seal is queryable by job id
+	// (GetSealByJob) — a regulator asks "show me the seal for job X".
+	seal.JobId = jobID
+
+	// Bind the CEAP confidentiality attestation into the seal BEFORE generating
+	// the ID, so the achieved backend / verification / policy is folded into the
+	// tamper-evident seal identifier (GenerateID) and read back by any verifier.
+	seal.Confidentiality = confidentialityAtt
 	seal.Id = seal.GenerateID()
 
 	// Add TEE attestations from verification results
@@ -508,8 +530,8 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 		return err
 	}
 
-	// Update validator stats and enforce economics (rewards + slashing)
-	params, _ := k.GetParams(ctx)
+	// Update validator stats and enforce economics (rewards + slashing).
+	// params was fetched above for the confidentiality derivation.
 	verificationReward, rewardErr := sdk.ParseCoinNormalized(params.VerificationReward)
 	slashingPenalty, slashErr := sdk.ParseCoinNormalized(params.SlashingPenalty)
 

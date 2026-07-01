@@ -113,9 +113,12 @@ type DigitalSeal struct {
 	// Current status
 	Status SealStatus `protobuf:"varint,13,opt,name=status,proto3,enum=aethelred.seal.v1.SealStatus" json:"status,omitempty"`
 	// Compute job that produced this seal, when available
-	JobId         string `protobuf:"bytes,14,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	JobId string `protobuf:"bytes,14,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	// CEAP confidentiality attestation: how the data was protected (backend) and
+	// how correctness was proven (verification), bound into the seal.
+	Confidentiality *ConfidentialityAttestation `protobuf:"bytes,15,opt,name=confidentiality,proto3" json:"confidentiality,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DigitalSeal) Reset() {
@@ -244,6 +247,13 @@ func (x *DigitalSeal) GetJobId() string {
 		return x.JobId
 	}
 	return ""
+}
+
+func (x *DigitalSeal) GetConfidentiality() *ConfidentialityAttestation {
+	if x != nil {
+		return x.Confidentiality
+	}
+	return nil
 }
 
 // TEEAttestation represents a hardware attestation from a Trusted Execution Environment
@@ -1611,11 +1621,130 @@ func (x *GenesisState) GetParams() *Params {
 	return nil
 }
 
+// ConfidentialityAttestation records the CEAP confidentiality + verification
+// dimensions achieved for a computation (see docs/architecture/ADR-0003).
+type ConfidentialityAttestation struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Backend that protected the data: none|tee|gpu-cc|mpc|fhe|hybrid.
+	Backend string `protobuf:"bytes,1,opt,name=backend,proto3" json:"backend,omitempty"`
+	// Verification method: none|tee-attested|freivalds|optimistic|reexec|zkml.
+	Verification string `protobuf:"bytes,2,opt,name=verification,proto3" json:"verification,omitempty"`
+	// Attesting platform (e.g. amd-sev-snp, intel-tdx).
+	Platform string `protobuf:"bytes,3,opt,name=platform,proto3" json:"platform,omitempty"`
+	// Launch/firmware measurement or FHE circuit/param hash.
+	Measurement []byte `protobuf:"bytes,4,opt,name=measurement,proto3" json:"measurement,omitempty"`
+	// Trust basis: vendor_root | test_root.
+	TrustBasis string `protobuf:"bytes,5,opt,name=trust_basis,json=trustBasis,proto3" json:"trust_basis,omitempty"`
+	// Jurisdiction the computation ran in.
+	Jurisdiction string `protobuf:"bytes,6,opt,name=jurisdiction,proto3" json:"jurisdiction,omitempty"`
+	// Whether the input was sealed to the backend (operator held no plaintext).
+	DataSealed bool `protobuf:"varint,7,opt,name=data_sealed,json=dataSealed,proto3" json:"data_sealed,omitempty"`
+	// Canonical hash of the ConfidentialityPolicy this attestation satisfied.
+	PolicyHash []byte `protobuf:"bytes,8,opt,name=policy_hash,json=policyHash,proto3" json:"policy_hash,omitempty"`
+	// Executing worker.
+	Worker        string `protobuf:"bytes,9,opt,name=worker,proto3" json:"worker,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfidentialityAttestation) Reset() {
+	*x = ConfidentialityAttestation{}
+	mi := &file_aethelred_seal_v1_seal_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfidentialityAttestation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfidentialityAttestation) ProtoMessage() {}
+
+func (x *ConfidentialityAttestation) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_seal_v1_seal_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfidentialityAttestation.ProtoReflect.Descriptor instead.
+func (*ConfidentialityAttestation) Descriptor() ([]byte, []int) {
+	return file_aethelred_seal_v1_seal_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ConfidentialityAttestation) GetBackend() string {
+	if x != nil {
+		return x.Backend
+	}
+	return ""
+}
+
+func (x *ConfidentialityAttestation) GetVerification() string {
+	if x != nil {
+		return x.Verification
+	}
+	return ""
+}
+
+func (x *ConfidentialityAttestation) GetPlatform() string {
+	if x != nil {
+		return x.Platform
+	}
+	return ""
+}
+
+func (x *ConfidentialityAttestation) GetMeasurement() []byte {
+	if x != nil {
+		return x.Measurement
+	}
+	return nil
+}
+
+func (x *ConfidentialityAttestation) GetTrustBasis() string {
+	if x != nil {
+		return x.TrustBasis
+	}
+	return ""
+}
+
+func (x *ConfidentialityAttestation) GetJurisdiction() string {
+	if x != nil {
+		return x.Jurisdiction
+	}
+	return ""
+}
+
+func (x *ConfidentialityAttestation) GetDataSealed() bool {
+	if x != nil {
+		return x.DataSealed
+	}
+	return false
+}
+
+func (x *ConfidentialityAttestation) GetPolicyHash() []byte {
+	if x != nil {
+		return x.PolicyHash
+	}
+	return nil
+}
+
+func (x *ConfidentialityAttestation) GetWorker() string {
+	if x != nil {
+		return x.Worker
+	}
+	return ""
+}
+
 var File_aethelred_seal_v1_seal_proto protoreflect.FileDescriptor
 
 const file_aethelred_seal_v1_seal_proto_rawDesc = "" +
 	"\n" +
-	"\x1caethelred/seal/v1/seal.proto\x12\x11aethelred.seal.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1ecosmos/base/v1beta1/coin.proto\"\x80\x05\n" +
+	"\x1caethelred/seal/v1/seal.proto\x12\x11aethelred.seal.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1ecosmos/base/v1beta1/coin.proto\"\xd9\x05\n" +
 	"\vDigitalSeal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12)\n" +
 	"\x10model_commitment\x18\x02 \x01(\fR\x0fmodelCommitment\x12)\n" +
@@ -1631,7 +1760,8 @@ const file_aethelred_seal_v1_seal_proto_rawDesc = "" +
 	"\apurpose\x18\v \x01(\tR\apurpose\x12J\n" +
 	"\x0fregulatory_info\x18\f \x01(\v2!.aethelred.seal.v1.RegulatoryInfoR\x0eregulatoryInfo\x125\n" +
 	"\x06status\x18\r \x01(\x0e2\x1d.aethelred.seal.v1.SealStatusR\x06status\x12\x15\n" +
-	"\x06job_id\x18\x0e \x01(\tR\x05jobId\"\x88\x02\n" +
+	"\x06job_id\x18\x0e \x01(\tR\x05jobId\x12W\n" +
+	"\x0fconfidentiality\x18\x0f \x01(\v2-.aethelred.seal.v1.ConfidentialityAttestationR\x0fconfidentiality\"\x88\x02\n" +
 	"\x0eTEEAttestation\x12+\n" +
 	"\x11validator_address\x18\x01 \x01(\tR\x10validatorAddress\x12\x1a\n" +
 	"\bplatform\x18\x02 \x01(\tR\bplatform\x12\x1d\n" +
@@ -1714,7 +1844,20 @@ const file_aethelred_seal_v1_seal_proto_rawDesc = "" +
 	"\x10allowed_purposes\x18\x04 \x03(\tR\x0fallowedPurposes\"w\n" +
 	"\fGenesisState\x124\n" +
 	"\x05seals\x18\x01 \x03(\v2\x1e.aethelred.seal.v1.DigitalSealR\x05seals\x121\n" +
-	"\x06params\x18\x02 \x01(\v2\x19.aethelred.seal.v1.ParamsR\x06params*\x8c\x01\n" +
+	"\x06params\x18\x02 \x01(\v2\x19.aethelred.seal.v1.ParamsR\x06params\"\xb7\x02\n" +
+	"\x1aConfidentialityAttestation\x12\x18\n" +
+	"\abackend\x18\x01 \x01(\tR\abackend\x12\"\n" +
+	"\fverification\x18\x02 \x01(\tR\fverification\x12\x1a\n" +
+	"\bplatform\x18\x03 \x01(\tR\bplatform\x12 \n" +
+	"\vmeasurement\x18\x04 \x01(\fR\vmeasurement\x12\x1f\n" +
+	"\vtrust_basis\x18\x05 \x01(\tR\n" +
+	"trustBasis\x12\"\n" +
+	"\fjurisdiction\x18\x06 \x01(\tR\fjurisdiction\x12\x1f\n" +
+	"\vdata_sealed\x18\a \x01(\bR\n" +
+	"dataSealed\x12\x1f\n" +
+	"\vpolicy_hash\x18\b \x01(\fR\n" +
+	"policyHash\x12\x16\n" +
+	"\x06worker\x18\t \x01(\tR\x06worker*\x8c\x01\n" +
 	"\n" +
 	"SealStatus\x12\x1b\n" +
 	"\x17SEAL_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
@@ -1752,7 +1895,7 @@ func file_aethelred_seal_v1_seal_proto_rawDescGZIP() []byte {
 }
 
 var file_aethelred_seal_v1_seal_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aethelred_seal_v1_seal_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_aethelred_seal_v1_seal_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_aethelred_seal_v1_seal_proto_goTypes = []any{
 	(SealStatus)(0),                               // 0: aethelred.seal.v1.SealStatus
 	(*DigitalSeal)(nil),                           // 1: aethelred.seal.v1.DigitalSeal
@@ -1781,54 +1924,56 @@ var file_aethelred_seal_v1_seal_proto_goTypes = []any{
 	(*QueryParamsResponse)(nil),                   // 24: aethelred.seal.v1.QueryParamsResponse
 	(*Params)(nil),                                // 25: aethelred.seal.v1.Params
 	(*GenesisState)(nil),                          // 26: aethelred.seal.v1.GenesisState
-	(*timestamppb.Timestamp)(nil),                 // 27: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),                   // 28: google.protobuf.Duration
-	(*structpb.Struct)(nil),                       // 29: google.protobuf.Struct
+	(*ConfidentialityAttestation)(nil),            // 27: aethelred.seal.v1.ConfidentialityAttestation
+	(*timestamppb.Timestamp)(nil),                 // 28: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),                   // 29: google.protobuf.Duration
+	(*structpb.Struct)(nil),                       // 30: google.protobuf.Struct
 }
 var file_aethelred_seal_v1_seal_proto_depIdxs = []int32{
 	2,  // 0: aethelred.seal.v1.DigitalSeal.tee_attestations:type_name -> aethelred.seal.v1.TEEAttestation
 	3,  // 1: aethelred.seal.v1.DigitalSeal.zk_proof:type_name -> aethelred.seal.v1.ZKMLProof
-	27, // 2: aethelred.seal.v1.DigitalSeal.timestamp:type_name -> google.protobuf.Timestamp
+	28, // 2: aethelred.seal.v1.DigitalSeal.timestamp:type_name -> google.protobuf.Timestamp
 	4,  // 3: aethelred.seal.v1.DigitalSeal.regulatory_info:type_name -> aethelred.seal.v1.RegulatoryInfo
 	0,  // 4: aethelred.seal.v1.DigitalSeal.status:type_name -> aethelred.seal.v1.SealStatus
-	27, // 5: aethelred.seal.v1.TEEAttestation.timestamp:type_name -> google.protobuf.Timestamp
-	28, // 6: aethelred.seal.v1.RegulatoryInfo.retention_period:type_name -> google.protobuf.Duration
-	2,  // 7: aethelred.seal.v1.MsgCreateSeal.tee_attestations:type_name -> aethelred.seal.v1.TEEAttestation
-	3,  // 8: aethelred.seal.v1.MsgCreateSeal.zk_proof:type_name -> aethelred.seal.v1.ZKMLProof
-	1,  // 9: aethelred.seal.v1.QuerySealResponse.seal:type_name -> aethelred.seal.v1.DigitalSeal
-	1,  // 10: aethelred.seal.v1.QuerySealsResponse.seals:type_name -> aethelred.seal.v1.DigitalSeal
-	1,  // 11: aethelred.seal.v1.QuerySealsByModelResponse.seals:type_name -> aethelred.seal.v1.DigitalSeal
-	1,  // 12: aethelred.seal.v1.QuerySealsByRequesterResponse.seals:type_name -> aethelred.seal.v1.DigitalSeal
-	29, // 13: aethelred.seal.v1.QueryExportSealResponse.export:type_name -> google.protobuf.Struct
-	29, // 14: aethelred.seal.v1.QueryEnterpriseEvidenceBundleResponse.evidence_bundle:type_name -> google.protobuf.Struct
-	25, // 15: aethelred.seal.v1.QueryParamsResponse.params:type_name -> aethelred.seal.v1.Params
-	1,  // 16: aethelred.seal.v1.GenesisState.seals:type_name -> aethelred.seal.v1.DigitalSeal
-	25, // 17: aethelred.seal.v1.GenesisState.params:type_name -> aethelred.seal.v1.Params
-	5,  // 18: aethelred.seal.v1.Msg.CreateSeal:input_type -> aethelred.seal.v1.MsgCreateSeal
-	7,  // 19: aethelred.seal.v1.Msg.RevokeSeal:input_type -> aethelred.seal.v1.MsgRevokeSeal
-	9,  // 20: aethelred.seal.v1.Query.Seal:input_type -> aethelred.seal.v1.QuerySealRequest
-	11, // 21: aethelred.seal.v1.Query.Seals:input_type -> aethelred.seal.v1.QuerySealsRequest
-	13, // 22: aethelred.seal.v1.Query.SealsByModel:input_type -> aethelred.seal.v1.QuerySealsByModelRequest
-	15, // 23: aethelred.seal.v1.Query.SealsByRequester:input_type -> aethelred.seal.v1.QuerySealsByRequesterRequest
-	17, // 24: aethelred.seal.v1.Query.VerifySeal:input_type -> aethelred.seal.v1.QueryVerifySealRequest
-	19, // 25: aethelred.seal.v1.Query.ExportSeal:input_type -> aethelred.seal.v1.QueryExportSealRequest
-	21, // 26: aethelred.seal.v1.Query.EnterpriseEvidenceBundle:input_type -> aethelred.seal.v1.QueryEnterpriseEvidenceBundleRequest
-	23, // 27: aethelred.seal.v1.Query.Params:input_type -> aethelred.seal.v1.QueryParamsRequest
-	6,  // 28: aethelred.seal.v1.Msg.CreateSeal:output_type -> aethelred.seal.v1.MsgCreateSealResponse
-	8,  // 29: aethelred.seal.v1.Msg.RevokeSeal:output_type -> aethelred.seal.v1.MsgRevokeSealResponse
-	10, // 30: aethelred.seal.v1.Query.Seal:output_type -> aethelred.seal.v1.QuerySealResponse
-	12, // 31: aethelred.seal.v1.Query.Seals:output_type -> aethelred.seal.v1.QuerySealsResponse
-	14, // 32: aethelred.seal.v1.Query.SealsByModel:output_type -> aethelred.seal.v1.QuerySealsByModelResponse
-	16, // 33: aethelred.seal.v1.Query.SealsByRequester:output_type -> aethelred.seal.v1.QuerySealsByRequesterResponse
-	18, // 34: aethelred.seal.v1.Query.VerifySeal:output_type -> aethelred.seal.v1.QueryVerifySealResponse
-	20, // 35: aethelred.seal.v1.Query.ExportSeal:output_type -> aethelred.seal.v1.QueryExportSealResponse
-	22, // 36: aethelred.seal.v1.Query.EnterpriseEvidenceBundle:output_type -> aethelred.seal.v1.QueryEnterpriseEvidenceBundleResponse
-	24, // 37: aethelred.seal.v1.Query.Params:output_type -> aethelred.seal.v1.QueryParamsResponse
-	28, // [28:38] is the sub-list for method output_type
-	18, // [18:28] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	27, // 5: aethelred.seal.v1.DigitalSeal.confidentiality:type_name -> aethelred.seal.v1.ConfidentialityAttestation
+	28, // 6: aethelred.seal.v1.TEEAttestation.timestamp:type_name -> google.protobuf.Timestamp
+	29, // 7: aethelred.seal.v1.RegulatoryInfo.retention_period:type_name -> google.protobuf.Duration
+	2,  // 8: aethelred.seal.v1.MsgCreateSeal.tee_attestations:type_name -> aethelred.seal.v1.TEEAttestation
+	3,  // 9: aethelred.seal.v1.MsgCreateSeal.zk_proof:type_name -> aethelred.seal.v1.ZKMLProof
+	1,  // 10: aethelred.seal.v1.QuerySealResponse.seal:type_name -> aethelred.seal.v1.DigitalSeal
+	1,  // 11: aethelred.seal.v1.QuerySealsResponse.seals:type_name -> aethelred.seal.v1.DigitalSeal
+	1,  // 12: aethelred.seal.v1.QuerySealsByModelResponse.seals:type_name -> aethelred.seal.v1.DigitalSeal
+	1,  // 13: aethelred.seal.v1.QuerySealsByRequesterResponse.seals:type_name -> aethelred.seal.v1.DigitalSeal
+	30, // 14: aethelred.seal.v1.QueryExportSealResponse.export:type_name -> google.protobuf.Struct
+	30, // 15: aethelred.seal.v1.QueryEnterpriseEvidenceBundleResponse.evidence_bundle:type_name -> google.protobuf.Struct
+	25, // 16: aethelred.seal.v1.QueryParamsResponse.params:type_name -> aethelred.seal.v1.Params
+	1,  // 17: aethelred.seal.v1.GenesisState.seals:type_name -> aethelred.seal.v1.DigitalSeal
+	25, // 18: aethelred.seal.v1.GenesisState.params:type_name -> aethelred.seal.v1.Params
+	5,  // 19: aethelred.seal.v1.Msg.CreateSeal:input_type -> aethelred.seal.v1.MsgCreateSeal
+	7,  // 20: aethelred.seal.v1.Msg.RevokeSeal:input_type -> aethelred.seal.v1.MsgRevokeSeal
+	9,  // 21: aethelred.seal.v1.Query.Seal:input_type -> aethelred.seal.v1.QuerySealRequest
+	11, // 22: aethelred.seal.v1.Query.Seals:input_type -> aethelred.seal.v1.QuerySealsRequest
+	13, // 23: aethelred.seal.v1.Query.SealsByModel:input_type -> aethelred.seal.v1.QuerySealsByModelRequest
+	15, // 24: aethelred.seal.v1.Query.SealsByRequester:input_type -> aethelred.seal.v1.QuerySealsByRequesterRequest
+	17, // 25: aethelred.seal.v1.Query.VerifySeal:input_type -> aethelred.seal.v1.QueryVerifySealRequest
+	19, // 26: aethelred.seal.v1.Query.ExportSeal:input_type -> aethelred.seal.v1.QueryExportSealRequest
+	21, // 27: aethelred.seal.v1.Query.EnterpriseEvidenceBundle:input_type -> aethelred.seal.v1.QueryEnterpriseEvidenceBundleRequest
+	23, // 28: aethelred.seal.v1.Query.Params:input_type -> aethelred.seal.v1.QueryParamsRequest
+	6,  // 29: aethelred.seal.v1.Msg.CreateSeal:output_type -> aethelred.seal.v1.MsgCreateSealResponse
+	8,  // 30: aethelred.seal.v1.Msg.RevokeSeal:output_type -> aethelred.seal.v1.MsgRevokeSealResponse
+	10, // 31: aethelred.seal.v1.Query.Seal:output_type -> aethelred.seal.v1.QuerySealResponse
+	12, // 32: aethelred.seal.v1.Query.Seals:output_type -> aethelred.seal.v1.QuerySealsResponse
+	14, // 33: aethelred.seal.v1.Query.SealsByModel:output_type -> aethelred.seal.v1.QuerySealsByModelResponse
+	16, // 34: aethelred.seal.v1.Query.SealsByRequester:output_type -> aethelred.seal.v1.QuerySealsByRequesterResponse
+	18, // 35: aethelred.seal.v1.Query.VerifySeal:output_type -> aethelred.seal.v1.QueryVerifySealResponse
+	20, // 36: aethelred.seal.v1.Query.ExportSeal:output_type -> aethelred.seal.v1.QueryExportSealResponse
+	22, // 37: aethelred.seal.v1.Query.EnterpriseEvidenceBundle:output_type -> aethelred.seal.v1.QueryEnterpriseEvidenceBundleResponse
+	24, // 38: aethelred.seal.v1.Query.Params:output_type -> aethelred.seal.v1.QueryParamsResponse
+	29, // [29:39] is the sub-list for method output_type
+	19, // [19:29] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_aethelred_seal_v1_seal_proto_init() }
@@ -1842,7 +1987,7 @@ func file_aethelred_seal_v1_seal_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aethelred_seal_v1_seal_proto_rawDesc), len(file_aethelred_seal_v1_seal_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

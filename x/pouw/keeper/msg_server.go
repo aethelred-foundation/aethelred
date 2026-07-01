@@ -60,6 +60,11 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 	job.InputDataUri = msg.InputDataUri
 	job.Priority = msg.Priority
 
+	// CEAP: carry the submitter's confidentiality requirement onto the job, so it
+	// is enforced when the seal is minted (see confidential.go / CompleteJob). A
+	// nil policy means "no confidentiality required".
+	job.ConfidentialityPolicy = msg.ConfidentialityPolicy
+
 	// SECURITY FIX (P2): Validate and copy metadata, rejecting reserved prefixes
 	if len(msg.Metadata) > 0 {
 		if job.Metadata == nil {

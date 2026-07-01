@@ -53,6 +53,10 @@ message DigitalSeal {
 
   // Compute job that produced this seal, when available
   string job_id = 14;
+
+  // CEAP confidentiality attestation: how the data was protected (backend) and
+  // how correctness was proven (verification), bound into the seal.
+  ConfidentialityAttestation confidentiality = 15;
 }
 
 // TEEAttestation represents a hardware attestation from a Trusted Execution Environment
@@ -289,4 +293,27 @@ message Params {
 message GenesisState {
   repeated DigitalSeal seals = 1;
   Params params = 2;
+}
+
+// ConfidentialityAttestation records the CEAP confidentiality + verification
+// dimensions achieved for a computation (see docs/architecture/ADR-0003).
+message ConfidentialityAttestation {
+  // Backend that protected the data: none|tee|gpu-cc|mpc|fhe|hybrid.
+  string backend = 1;
+  // Verification method: none|tee-attested|freivalds|optimistic|reexec|zkml.
+  string verification = 2;
+  // Attesting platform (e.g. amd-sev-snp, intel-tdx).
+  string platform = 3;
+  // Launch/firmware measurement or FHE circuit/param hash.
+  bytes measurement = 4;
+  // Trust basis: vendor_root | test_root.
+  string trust_basis = 5;
+  // Jurisdiction the computation ran in.
+  string jurisdiction = 6;
+  // Whether the input was sealed to the backend (operator held no plaintext).
+  bool data_sealed = 7;
+  // Canonical hash of the ConfidentialityPolicy this attestation satisfied.
+  bytes policy_hash = 8;
+  // Executing worker.
+  string worker = 9;
 }

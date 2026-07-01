@@ -331,8 +331,10 @@ type ComputeJob struct {
 	UtilityCategory UtilityCategory `protobuf:"varint,21,opt,name=utility_category,json=utilityCategory,proto3,enum=aethelred.pouw.v1.UtilityCategory" json:"utility_category,omitempty"`
 	// Useful Work Units (UWU) earned for this job
 	UsefulWorkUnits uint64 `protobuf:"varint,22,opt,name=useful_work_units,json=usefulWorkUnits,proto3" json:"useful_work_units,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// CEAP confidentiality requirement the network must satisfy for this job.
+	ConfidentialityPolicy *ConfidentialityPolicy `protobuf:"bytes,23,opt,name=confidentiality_policy,json=confidentialityPolicy,proto3" json:"confidentiality_policy,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ComputeJob) Reset() {
@@ -517,6 +519,13 @@ func (x *ComputeJob) GetUsefulWorkUnits() uint64 {
 		return x.UsefulWorkUnits
 	}
 	return 0
+}
+
+func (x *ComputeJob) GetConfidentialityPolicy() *ConfidentialityPolicy {
+	if x != nil {
+		return x.ConfidentialityPolicy
+	}
+	return nil
 }
 
 // VerificationResult represents a single validator's verification
@@ -1144,8 +1153,10 @@ type MsgSubmitJob struct {
 	Priority        int64                  `protobuf:"varint,8,opt,name=priority,proto3" json:"priority,omitempty"`
 	Metadata        map[string]string      `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	UtilityCategory UtilityCategory        `protobuf:"varint,10,opt,name=utility_category,json=utilityCategory,proto3,enum=aethelred.pouw.v1.UtilityCategory" json:"utility_category,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// CEAP confidentiality requirement declared by the submitter.
+	ConfidentialityPolicy *ConfidentialityPolicy `protobuf:"bytes,11,opt,name=confidentiality_policy,json=confidentialityPolicy,proto3" json:"confidentiality_policy,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *MsgSubmitJob) Reset() {
@@ -1246,6 +1257,13 @@ func (x *MsgSubmitJob) GetUtilityCategory() UtilityCategory {
 		return x.UtilityCategory
 	}
 	return UtilityCategory_UTILITY_CATEGORY_UNSPECIFIED
+}
+
+func (x *MsgSubmitJob) GetConfidentialityPolicy() *ConfidentialityPolicy {
+	if x != nil {
+		return x.ConfidentialityPolicy
+	}
+	return nil
 }
 
 type MsgSubmitJobResponse struct {
@@ -3487,11 +3505,95 @@ func (x *ValidatorHybridKey) GetHybridPublicKey() []byte {
 	return nil
 }
 
+// ConfidentialityPolicy is the client-declared confidentiality requirement the
+// network must satisfy for a job (see docs/architecture/ADR-0003). Empty means
+// no confidentiality required.
+type ConfidentialityPolicy struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Permitted confidentiality backends (empty = any).
+	AllowedBackends []string `protobuf:"bytes,1,rep,name=allowed_backends,json=allowedBackends,proto3" json:"allowed_backends,omitempty"`
+	// Weakest acceptable verification method.
+	MinVerification string `protobuf:"bytes,2,opt,name=min_verification,json=minVerification,proto3" json:"min_verification,omitempty"`
+	// Permitted attesting platforms (empty = any).
+	AllowedPlatforms []string `protobuf:"bytes,3,rep,name=allowed_platforms,json=allowedPlatforms,proto3" json:"allowed_platforms,omitempty"`
+	// Forbid test roots — production silicon attestation only.
+	RequireVendorRoot bool `protobuf:"varint,4,opt,name=require_vendor_root,json=requireVendorRoot,proto3" json:"require_vendor_root,omitempty"`
+	// Permitted data-residency jurisdictions (empty = any).
+	DataResidency []string `protobuf:"bytes,5,rep,name=data_residency,json=dataResidency,proto3" json:"data_residency,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfidentialityPolicy) Reset() {
+	*x = ConfidentialityPolicy{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfidentialityPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfidentialityPolicy) ProtoMessage() {}
+
+func (x *ConfidentialityPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfidentialityPolicy.ProtoReflect.Descriptor instead.
+func (*ConfidentialityPolicy) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ConfidentialityPolicy) GetAllowedBackends() []string {
+	if x != nil {
+		return x.AllowedBackends
+	}
+	return nil
+}
+
+func (x *ConfidentialityPolicy) GetMinVerification() string {
+	if x != nil {
+		return x.MinVerification
+	}
+	return ""
+}
+
+func (x *ConfidentialityPolicy) GetAllowedPlatforms() []string {
+	if x != nil {
+		return x.AllowedPlatforms
+	}
+	return nil
+}
+
+func (x *ConfidentialityPolicy) GetRequireVendorRoot() bool {
+	if x != nil {
+		return x.RequireVendorRoot
+	}
+	return false
+}
+
+func (x *ConfidentialityPolicy) GetDataResidency() []string {
+	if x != nil {
+		return x.DataResidency
+	}
+	return nil
+}
+
 var File_aethelred_pouw_v1_pouw_proto protoreflect.FileDescriptor
 
 const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\n" +
-	"\x1caethelred/pouw/v1/pouw.proto\x12\x11aethelred.pouw.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1ecosmos/base/v1beta1/coin.proto\"\xbc\b\n" +
+	"\x1caethelred/pouw/v1/pouw.proto\x12\x11aethelred.pouw.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1ecosmos/base/v1beta1/coin.proto\"\x9d\t\n" +
 	"\n" +
 	"ComputeJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -3523,7 +3625,8 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\bpriority\x18\x13 \x01(\x03R\bpriority\x12!\n" +
 	"\fblock_height\x18\x14 \x01(\x03R\vblockHeight\x12M\n" +
 	"\x10utility_category\x18\x15 \x01(\x0e2\".aethelred.pouw.v1.UtilityCategoryR\x0futilityCategory\x12*\n" +
-	"\x11useful_work_units\x18\x16 \x01(\x04R\x0fusefulWorkUnits\x1a;\n" +
+	"\x11useful_work_units\x18\x16 \x01(\x04R\x0fusefulWorkUnits\x12_\n" +
+	"\x16confidentiality_policy\x18\x17 \x01(\v2(.aethelred.pouw.v1.ConfidentialityPolicyR\x15confidentialityPolicy\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa1\x04\n" +
@@ -3594,7 +3697,7 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\rgpu_memory_gb\x18\n" +
 	" \x01(\x03R\vgpuMemoryGb\x12\x1b\n" +
 	"\tcpu_cores\x18\v \x01(\x03R\bcpuCores\x12\x1b\n" +
-	"\tmemory_gb\x18\f \x01(\x03R\bmemoryGb\"\xf1\x03\n" +
+	"\tmemory_gb\x18\f \x01(\x03R\bmemoryGb\"\xd2\x04\n" +
 	"\fMsgSubmitJob\x12\x18\n" +
 	"\acreator\x18\x01 \x01(\tR\acreator\x12\x1d\n" +
 	"\n" +
@@ -3609,7 +3712,8 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\bpriority\x18\b \x01(\x03R\bpriority\x12I\n" +
 	"\bmetadata\x18\t \x03(\v2-.aethelred.pouw.v1.MsgSubmitJob.MetadataEntryR\bmetadata\x12M\n" +
 	"\x10utility_category\x18\n" +
-	" \x01(\x0e2\".aethelred.pouw.v1.UtilityCategoryR\x0futilityCategory\x1a;\n" +
+	" \x01(\x0e2\".aethelred.pouw.v1.UtilityCategoryR\x0futilityCategory\x12_\n" +
+	"\x16confidentiality_policy\x18\v \x01(\v2(.aethelred.pouw.v1.ConfidentialityPolicyR\x15confidentialityPolicy\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"R\n" +
@@ -3775,7 +3879,13 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\x15validator_hybrid_keys\x18\b \x03(\v2%.aethelred.pouw.v1.ValidatorHybridKeyR\x13validatorHybridKeys\"m\n" +
 	"\x12ValidatorHybridKey\x12+\n" +
 	"\x11validator_address\x18\x01 \x01(\tR\x10validatorAddress\x12*\n" +
-	"\x11hybrid_public_key\x18\x02 \x01(\fR\x0fhybridPublicKey*\xf9\x01\n" +
+	"\x11hybrid_public_key\x18\x02 \x01(\fR\x0fhybridPublicKey\"\xf1\x01\n" +
+	"\x15ConfidentialityPolicy\x12)\n" +
+	"\x10allowed_backends\x18\x01 \x03(\tR\x0fallowedBackends\x12)\n" +
+	"\x10min_verification\x18\x02 \x01(\tR\x0fminVerification\x12+\n" +
+	"\x11allowed_platforms\x18\x03 \x03(\tR\x10allowedPlatforms\x12.\n" +
+	"\x13require_vendor_root\x18\x04 \x01(\bR\x11requireVendorRoot\x12%\n" +
+	"\x0edata_residency\x18\x05 \x03(\tR\rdataResidency*\xf9\x01\n" +
 	"\x0fUtilityCategory\x12 \n" +
 	"\x1cUTILITY_CATEGORY_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18UTILITY_CATEGORY_MEDICAL\x10\x01\x12\x1f\n" +
@@ -3840,7 +3950,7 @@ func file_aethelred_pouw_v1_pouw_proto_rawDescGZIP() []byte {
 }
 
 var file_aethelred_pouw_v1_pouw_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_aethelred_pouw_v1_pouw_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
+var file_aethelred_pouw_v1_pouw_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_aethelred_pouw_v1_pouw_proto_goTypes = []any{
 	(UtilityCategory)(0),                           // 0: aethelred.pouw.v1.UtilityCategory
 	(JobStatus)(0),                                 // 1: aethelred.pouw.v1.JobStatus
@@ -3890,94 +4000,97 @@ var file_aethelred_pouw_v1_pouw_proto_goTypes = []any{
 	(*Params)(nil),                                 // 45: aethelred.pouw.v1.Params
 	(*GenesisState)(nil),                           // 46: aethelred.pouw.v1.GenesisState
 	(*ValidatorHybridKey)(nil),                     // 47: aethelred.pouw.v1.ValidatorHybridKey
-	nil,                                            // 48: aethelred.pouw.v1.ComputeJob.MetadataEntry
-	nil,                                            // 49: aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
-	nil,                                            // 50: aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
-	nil,                                            // 51: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
-	nil,                                            // 52: aethelred.pouw.v1.Params.UtilityMultipliersEntry
-	(*timestamppb.Timestamp)(nil),                  // 53: google.protobuf.Timestamp
-	(*types.Coin)(nil),                             // 54: cosmos.base.v1beta1.Coin
+	(*ConfidentialityPolicy)(nil),                  // 48: aethelred.pouw.v1.ConfidentialityPolicy
+	nil,                                            // 49: aethelred.pouw.v1.ComputeJob.MetadataEntry
+	nil,                                            // 50: aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
+	nil,                                            // 51: aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
+	nil,                                            // 52: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
+	nil,                                            // 53: aethelred.pouw.v1.Params.UtilityMultipliersEntry
+	(*timestamppb.Timestamp)(nil),                  // 54: google.protobuf.Timestamp
+	(*types.Coin)(nil),                             // 55: cosmos.base.v1beta1.Coin
 }
 var file_aethelred_pouw_v1_pouw_proto_depIdxs = []int32{
 	2,  // 0: aethelred.pouw.v1.ComputeJob.proof_type:type_name -> aethelred.pouw.v1.ProofType
 	1,  // 1: aethelred.pouw.v1.ComputeJob.status:type_name -> aethelred.pouw.v1.JobStatus
-	53, // 2: aethelred.pouw.v1.ComputeJob.created_at:type_name -> google.protobuf.Timestamp
-	53, // 3: aethelred.pouw.v1.ComputeJob.updated_at:type_name -> google.protobuf.Timestamp
-	53, // 4: aethelred.pouw.v1.ComputeJob.completed_at:type_name -> google.protobuf.Timestamp
-	53, // 5: aethelred.pouw.v1.ComputeJob.expires_at:type_name -> google.protobuf.Timestamp
+	54, // 2: aethelred.pouw.v1.ComputeJob.created_at:type_name -> google.protobuf.Timestamp
+	54, // 3: aethelred.pouw.v1.ComputeJob.updated_at:type_name -> google.protobuf.Timestamp
+	54, // 4: aethelred.pouw.v1.ComputeJob.completed_at:type_name -> google.protobuf.Timestamp
+	54, // 5: aethelred.pouw.v1.ComputeJob.expires_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: aethelred.pouw.v1.ComputeJob.verification_results:type_name -> aethelred.pouw.v1.VerificationResult
-	48, // 7: aethelred.pouw.v1.ComputeJob.metadata:type_name -> aethelred.pouw.v1.ComputeJob.MetadataEntry
-	54, // 8: aethelred.pouw.v1.ComputeJob.fee:type_name -> cosmos.base.v1beta1.Coin
+	49, // 7: aethelred.pouw.v1.ComputeJob.metadata:type_name -> aethelred.pouw.v1.ComputeJob.MetadataEntry
+	55, // 8: aethelred.pouw.v1.ComputeJob.fee:type_name -> cosmos.base.v1beta1.Coin
 	0,  // 9: aethelred.pouw.v1.ComputeJob.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	53, // 10: aethelred.pouw.v1.VerificationResult.timestamp:type_name -> google.protobuf.Timestamp
-	3,  // 11: aethelred.pouw.v1.VerificationResult.verification_method:type_name -> aethelred.pouw.v1.VerificationMethod
-	53, // 12: aethelred.pouw.v1.RegisteredModel.registered_at:type_name -> google.protobuf.Timestamp
-	0,  // 13: aethelred.pouw.v1.RegisteredModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	53, // 14: aethelred.pouw.v1.ValidatorStats.last_active_at:type_name -> google.protobuf.Timestamp
-	49, // 15: aethelred.pouw.v1.ValidatorStats.uwu_by_category:type_name -> aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
-	53, // 16: aethelred.pouw.v1.ValidatorCapability.last_seen:type_name -> google.protobuf.Timestamp
-	0,  // 17: aethelred.pouw.v1.ValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
-	2,  // 18: aethelred.pouw.v1.MsgSubmitJob.proof_type:type_name -> aethelred.pouw.v1.ProofType
-	50, // 19: aethelred.pouw.v1.MsgSubmitJob.metadata:type_name -> aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
-	0,  // 20: aethelred.pouw.v1.MsgSubmitJob.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	0,  // 21: aethelred.pouw.v1.MsgRegisterModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	0,  // 22: aethelred.pouw.v1.MsgRegisterValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
-	21, // 23: aethelred.pouw.v1.QuerySealQuorumResponse.signatures:type_name -> aethelred.pouw.v1.SealQuorumSignature
-	4,  // 24: aethelred.pouw.v1.QueryJobResponse.job:type_name -> aethelred.pouw.v1.ComputeJob
-	0,  // 25: aethelred.pouw.v1.QueryJobsRequest.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	4,  // 26: aethelred.pouw.v1.QueryJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
-	4,  // 27: aethelred.pouw.v1.QueryPendingJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
-	6,  // 28: aethelred.pouw.v1.QueryModelResponse.model:type_name -> aethelred.pouw.v1.RegisteredModel
-	7,  // 29: aethelred.pouw.v1.QueryValidatorStatsResponse.stats:type_name -> aethelred.pouw.v1.ValidatorStats
-	45, // 30: aethelred.pouw.v1.QueryParamsResponse.params:type_name -> aethelred.pouw.v1.Params
-	51, // 31: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.uwu_by_category:type_name -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
-	44, // 32: aethelred.pouw.v1.QueryEpochStatsResponse.validator_stats:type_name -> aethelred.pouw.v1.ValidatorEpochStats
-	52, // 33: aethelred.pouw.v1.Params.utility_multipliers:type_name -> aethelred.pouw.v1.Params.UtilityMultipliersEntry
-	4,  // 34: aethelred.pouw.v1.GenesisState.jobs:type_name -> aethelred.pouw.v1.ComputeJob
-	6,  // 35: aethelred.pouw.v1.GenesisState.registered_models:type_name -> aethelred.pouw.v1.RegisteredModel
-	7,  // 36: aethelred.pouw.v1.GenesisState.validator_stats:type_name -> aethelred.pouw.v1.ValidatorStats
-	8,  // 37: aethelred.pouw.v1.GenesisState.validator_capabilities:type_name -> aethelred.pouw.v1.ValidatorCapability
-	45, // 38: aethelred.pouw.v1.GenesisState.params:type_name -> aethelred.pouw.v1.Params
-	47, // 39: aethelred.pouw.v1.GenesisState.validator_hybrid_keys:type_name -> aethelred.pouw.v1.ValidatorHybridKey
-	9,  // 40: aethelred.pouw.v1.Msg.SubmitJob:input_type -> aethelred.pouw.v1.MsgSubmitJob
-	11, // 41: aethelred.pouw.v1.Msg.RegisterModel:input_type -> aethelred.pouw.v1.MsgRegisterModel
-	13, // 42: aethelred.pouw.v1.Msg.CancelJob:input_type -> aethelred.pouw.v1.MsgCancelJob
-	15, // 43: aethelred.pouw.v1.Msg.RegisterValidatorCapability:input_type -> aethelred.pouw.v1.MsgRegisterValidatorCapability
-	17, // 44: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:input_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0
-	19, // 45: aethelred.pouw.v1.Msg.RegisterValidatorHybridKey:input_type -> aethelred.pouw.v1.MsgRegisterValidatorHybridKey
-	24, // 46: aethelred.pouw.v1.Query.Job:input_type -> aethelred.pouw.v1.QueryJobRequest
-	26, // 47: aethelred.pouw.v1.Query.Jobs:input_type -> aethelred.pouw.v1.QueryJobsRequest
-	28, // 48: aethelred.pouw.v1.Query.PendingJobs:input_type -> aethelred.pouw.v1.QueryPendingJobsRequest
-	30, // 49: aethelred.pouw.v1.Query.Model:input_type -> aethelred.pouw.v1.QueryModelRequest
-	32, // 50: aethelred.pouw.v1.Query.ValidatorStats:input_type -> aethelred.pouw.v1.QueryValidatorStatsRequest
-	34, // 51: aethelred.pouw.v1.Query.Params:input_type -> aethelred.pouw.v1.QueryParamsRequest
-	36, // 52: aethelred.pouw.v1.Query.ValidatorPCR0:input_type -> aethelred.pouw.v1.QueryValidatorPCR0Request
-	38, // 53: aethelred.pouw.v1.Query.IsPCR0Registered:input_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredRequest
-	40, // 54: aethelred.pouw.v1.Query.UsefulWorkStats:input_type -> aethelred.pouw.v1.QueryUsefulWorkStatsRequest
-	42, // 55: aethelred.pouw.v1.Query.EpochStats:input_type -> aethelred.pouw.v1.QueryEpochStatsRequest
-	22, // 56: aethelred.pouw.v1.Query.SealQuorum:input_type -> aethelred.pouw.v1.QuerySealQuorumRequest
-	10, // 57: aethelred.pouw.v1.Msg.SubmitJob:output_type -> aethelred.pouw.v1.MsgSubmitJobResponse
-	12, // 58: aethelred.pouw.v1.Msg.RegisterModel:output_type -> aethelred.pouw.v1.MsgRegisterModelResponse
-	14, // 59: aethelred.pouw.v1.Msg.CancelJob:output_type -> aethelred.pouw.v1.MsgCancelJobResponse
-	16, // 60: aethelred.pouw.v1.Msg.RegisterValidatorCapability:output_type -> aethelred.pouw.v1.MsgRegisterValidatorCapabilityResponse
-	18, // 61: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:output_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0Response
-	20, // 62: aethelred.pouw.v1.Msg.RegisterValidatorHybridKey:output_type -> aethelred.pouw.v1.MsgRegisterValidatorHybridKeyResponse
-	25, // 63: aethelred.pouw.v1.Query.Job:output_type -> aethelred.pouw.v1.QueryJobResponse
-	27, // 64: aethelred.pouw.v1.Query.Jobs:output_type -> aethelred.pouw.v1.QueryJobsResponse
-	29, // 65: aethelred.pouw.v1.Query.PendingJobs:output_type -> aethelred.pouw.v1.QueryPendingJobsResponse
-	31, // 66: aethelred.pouw.v1.Query.Model:output_type -> aethelred.pouw.v1.QueryModelResponse
-	33, // 67: aethelred.pouw.v1.Query.ValidatorStats:output_type -> aethelred.pouw.v1.QueryValidatorStatsResponse
-	35, // 68: aethelred.pouw.v1.Query.Params:output_type -> aethelred.pouw.v1.QueryParamsResponse
-	37, // 69: aethelred.pouw.v1.Query.ValidatorPCR0:output_type -> aethelred.pouw.v1.QueryValidatorPCR0Response
-	39, // 70: aethelred.pouw.v1.Query.IsPCR0Registered:output_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredResponse
-	41, // 71: aethelred.pouw.v1.Query.UsefulWorkStats:output_type -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse
-	43, // 72: aethelred.pouw.v1.Query.EpochStats:output_type -> aethelred.pouw.v1.QueryEpochStatsResponse
-	23, // 73: aethelred.pouw.v1.Query.SealQuorum:output_type -> aethelred.pouw.v1.QuerySealQuorumResponse
-	57, // [57:74] is the sub-list for method output_type
-	40, // [40:57] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	48, // 10: aethelred.pouw.v1.ComputeJob.confidentiality_policy:type_name -> aethelred.pouw.v1.ConfidentialityPolicy
+	54, // 11: aethelred.pouw.v1.VerificationResult.timestamp:type_name -> google.protobuf.Timestamp
+	3,  // 12: aethelred.pouw.v1.VerificationResult.verification_method:type_name -> aethelred.pouw.v1.VerificationMethod
+	54, // 13: aethelred.pouw.v1.RegisteredModel.registered_at:type_name -> google.protobuf.Timestamp
+	0,  // 14: aethelred.pouw.v1.RegisteredModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	54, // 15: aethelred.pouw.v1.ValidatorStats.last_active_at:type_name -> google.protobuf.Timestamp
+	50, // 16: aethelred.pouw.v1.ValidatorStats.uwu_by_category:type_name -> aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
+	54, // 17: aethelred.pouw.v1.ValidatorCapability.last_seen:type_name -> google.protobuf.Timestamp
+	0,  // 18: aethelred.pouw.v1.ValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
+	2,  // 19: aethelred.pouw.v1.MsgSubmitJob.proof_type:type_name -> aethelred.pouw.v1.ProofType
+	51, // 20: aethelred.pouw.v1.MsgSubmitJob.metadata:type_name -> aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
+	0,  // 21: aethelred.pouw.v1.MsgSubmitJob.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	48, // 22: aethelred.pouw.v1.MsgSubmitJob.confidentiality_policy:type_name -> aethelred.pouw.v1.ConfidentialityPolicy
+	0,  // 23: aethelred.pouw.v1.MsgRegisterModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	0,  // 24: aethelred.pouw.v1.MsgRegisterValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
+	21, // 25: aethelred.pouw.v1.QuerySealQuorumResponse.signatures:type_name -> aethelred.pouw.v1.SealQuorumSignature
+	4,  // 26: aethelred.pouw.v1.QueryJobResponse.job:type_name -> aethelred.pouw.v1.ComputeJob
+	0,  // 27: aethelred.pouw.v1.QueryJobsRequest.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	4,  // 28: aethelred.pouw.v1.QueryJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
+	4,  // 29: aethelred.pouw.v1.QueryPendingJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
+	6,  // 30: aethelred.pouw.v1.QueryModelResponse.model:type_name -> aethelred.pouw.v1.RegisteredModel
+	7,  // 31: aethelred.pouw.v1.QueryValidatorStatsResponse.stats:type_name -> aethelred.pouw.v1.ValidatorStats
+	45, // 32: aethelred.pouw.v1.QueryParamsResponse.params:type_name -> aethelred.pouw.v1.Params
+	52, // 33: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.uwu_by_category:type_name -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
+	44, // 34: aethelred.pouw.v1.QueryEpochStatsResponse.validator_stats:type_name -> aethelred.pouw.v1.ValidatorEpochStats
+	53, // 35: aethelred.pouw.v1.Params.utility_multipliers:type_name -> aethelred.pouw.v1.Params.UtilityMultipliersEntry
+	4,  // 36: aethelred.pouw.v1.GenesisState.jobs:type_name -> aethelred.pouw.v1.ComputeJob
+	6,  // 37: aethelred.pouw.v1.GenesisState.registered_models:type_name -> aethelred.pouw.v1.RegisteredModel
+	7,  // 38: aethelred.pouw.v1.GenesisState.validator_stats:type_name -> aethelred.pouw.v1.ValidatorStats
+	8,  // 39: aethelred.pouw.v1.GenesisState.validator_capabilities:type_name -> aethelred.pouw.v1.ValidatorCapability
+	45, // 40: aethelred.pouw.v1.GenesisState.params:type_name -> aethelred.pouw.v1.Params
+	47, // 41: aethelred.pouw.v1.GenesisState.validator_hybrid_keys:type_name -> aethelred.pouw.v1.ValidatorHybridKey
+	9,  // 42: aethelred.pouw.v1.Msg.SubmitJob:input_type -> aethelred.pouw.v1.MsgSubmitJob
+	11, // 43: aethelred.pouw.v1.Msg.RegisterModel:input_type -> aethelred.pouw.v1.MsgRegisterModel
+	13, // 44: aethelred.pouw.v1.Msg.CancelJob:input_type -> aethelred.pouw.v1.MsgCancelJob
+	15, // 45: aethelred.pouw.v1.Msg.RegisterValidatorCapability:input_type -> aethelred.pouw.v1.MsgRegisterValidatorCapability
+	17, // 46: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:input_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0
+	19, // 47: aethelred.pouw.v1.Msg.RegisterValidatorHybridKey:input_type -> aethelred.pouw.v1.MsgRegisterValidatorHybridKey
+	24, // 48: aethelred.pouw.v1.Query.Job:input_type -> aethelred.pouw.v1.QueryJobRequest
+	26, // 49: aethelred.pouw.v1.Query.Jobs:input_type -> aethelred.pouw.v1.QueryJobsRequest
+	28, // 50: aethelred.pouw.v1.Query.PendingJobs:input_type -> aethelred.pouw.v1.QueryPendingJobsRequest
+	30, // 51: aethelred.pouw.v1.Query.Model:input_type -> aethelred.pouw.v1.QueryModelRequest
+	32, // 52: aethelred.pouw.v1.Query.ValidatorStats:input_type -> aethelred.pouw.v1.QueryValidatorStatsRequest
+	34, // 53: aethelred.pouw.v1.Query.Params:input_type -> aethelred.pouw.v1.QueryParamsRequest
+	36, // 54: aethelred.pouw.v1.Query.ValidatorPCR0:input_type -> aethelred.pouw.v1.QueryValidatorPCR0Request
+	38, // 55: aethelred.pouw.v1.Query.IsPCR0Registered:input_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredRequest
+	40, // 56: aethelred.pouw.v1.Query.UsefulWorkStats:input_type -> aethelred.pouw.v1.QueryUsefulWorkStatsRequest
+	42, // 57: aethelred.pouw.v1.Query.EpochStats:input_type -> aethelred.pouw.v1.QueryEpochStatsRequest
+	22, // 58: aethelred.pouw.v1.Query.SealQuorum:input_type -> aethelred.pouw.v1.QuerySealQuorumRequest
+	10, // 59: aethelred.pouw.v1.Msg.SubmitJob:output_type -> aethelred.pouw.v1.MsgSubmitJobResponse
+	12, // 60: aethelred.pouw.v1.Msg.RegisterModel:output_type -> aethelred.pouw.v1.MsgRegisterModelResponse
+	14, // 61: aethelred.pouw.v1.Msg.CancelJob:output_type -> aethelred.pouw.v1.MsgCancelJobResponse
+	16, // 62: aethelred.pouw.v1.Msg.RegisterValidatorCapability:output_type -> aethelred.pouw.v1.MsgRegisterValidatorCapabilityResponse
+	18, // 63: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:output_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0Response
+	20, // 64: aethelred.pouw.v1.Msg.RegisterValidatorHybridKey:output_type -> aethelred.pouw.v1.MsgRegisterValidatorHybridKeyResponse
+	25, // 65: aethelred.pouw.v1.Query.Job:output_type -> aethelred.pouw.v1.QueryJobResponse
+	27, // 66: aethelred.pouw.v1.Query.Jobs:output_type -> aethelred.pouw.v1.QueryJobsResponse
+	29, // 67: aethelred.pouw.v1.Query.PendingJobs:output_type -> aethelred.pouw.v1.QueryPendingJobsResponse
+	31, // 68: aethelred.pouw.v1.Query.Model:output_type -> aethelred.pouw.v1.QueryModelResponse
+	33, // 69: aethelred.pouw.v1.Query.ValidatorStats:output_type -> aethelred.pouw.v1.QueryValidatorStatsResponse
+	35, // 70: aethelred.pouw.v1.Query.Params:output_type -> aethelred.pouw.v1.QueryParamsResponse
+	37, // 71: aethelred.pouw.v1.Query.ValidatorPCR0:output_type -> aethelred.pouw.v1.QueryValidatorPCR0Response
+	39, // 72: aethelred.pouw.v1.Query.IsPCR0Registered:output_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredResponse
+	41, // 73: aethelred.pouw.v1.Query.UsefulWorkStats:output_type -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse
+	43, // 74: aethelred.pouw.v1.Query.EpochStats:output_type -> aethelred.pouw.v1.QueryEpochStatsResponse
+	23, // 75: aethelred.pouw.v1.Query.SealQuorum:output_type -> aethelred.pouw.v1.QuerySealQuorumResponse
+	59, // [59:76] is the sub-list for method output_type
+	42, // [42:59] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_aethelred_pouw_v1_pouw_proto_init() }
@@ -3991,7 +4104,7 @@ func file_aethelred_pouw_v1_pouw_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aethelred_pouw_v1_pouw_proto_rawDesc), len(file_aethelred_pouw_v1_pouw_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   49,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

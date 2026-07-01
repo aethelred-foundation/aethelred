@@ -107,13 +107,21 @@ decision carries a post-quantum, policy-bound, court-admissible seal.
 
 ## What ships in what order
 
-1. **Foundation (now):** the Go `internal/confidential` package — `Backend`,
+1. **Foundation (done):** the Go `internal/confidential` package — `Backend`,
    `Verification`, `Platform`, `ConfidentialityPolicy` (+ `Satisfies`),
    `ConfidentialityAttestation`, the `ConfidentialBackend` interface, the policy
    engine, a TEE backend adapter over `internal/attestation`, and honest
-   FHE/MPC/GPU-CC placeholders (`Available()` = not-yet-operational).
-2. **Seal binding:** extend the DigitalSeal + verify protos with
-   `ConfidentialityAttestation`; enforce policy in the PoUW job → seal path.
+   FHE/MPC/GPU-CC placeholders (`Available()` = not-yet-operational). 100% covered.
+2. **Seal binding (done):** `DigitalSeal.confidentiality` (seal proto) and
+   `ComputeJob.confidentiality_policy` / `MsgSubmitJob.confidentiality_policy`
+   (pouw proto). The submitter's policy rides `submit-job` (`--conf-*` flags) onto
+   the job; at completion `x/pouw/keeper/confidential.go` derives the achieved
+   `ConfidentialityAttestation` from the consensus-agreed verification results and
+   the chain's trust basis (`AllowSimulated` ⇒ test_root, else vendor_root),
+   enforces `Satisfies` **before any state write** (a non-compliant job is never
+   sealed), binds the attestation into the seal, and folds it into the
+   tamper-evident seal ID (`GenerateID`). Deterministic — validators verify, never
+   re-select. Covered by pure-unit + `CompleteJob` integration tests.
 3. **Precompiles:** `ISeal` exposes the confidentiality attestation to Solidity,
    so a contract gates on "ran under FHE, in-jurisdiction, vendor-root."
 4. **FHE/MPC/GPU-CC backends** as they mature — labelled honestly.

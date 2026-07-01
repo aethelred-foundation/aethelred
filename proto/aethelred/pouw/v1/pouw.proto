@@ -106,6 +106,9 @@ message ComputeJob {
 
   // Useful Work Units (UWU) earned for this job
   uint64 useful_work_units = 22;
+
+  // CEAP confidentiality requirement the network must satisfy for this job.
+  ConfidentialityPolicy confidentiality_policy = 23;
 }
 
 // JobStatus represents the status of a compute job
@@ -282,6 +285,9 @@ message MsgSubmitJob {
   int64 priority = 8;
   map<string, string> metadata = 9;
   UtilityCategory utility_category = 10;
+
+  // CEAP confidentiality requirement declared by the submitter.
+  ConfidentialityPolicy confidentiality_policy = 11;
 }
 
 message MsgSubmitJobResponse {
@@ -614,4 +620,20 @@ message GenesisState {
 message ValidatorHybridKey {
   string validator_address = 1;
   bytes hybrid_public_key = 2;
+}
+
+// ConfidentialityPolicy is the client-declared confidentiality requirement the
+// network must satisfy for a job (see docs/architecture/ADR-0003). Empty means
+// no confidentiality required.
+message ConfidentialityPolicy {
+  // Permitted confidentiality backends (empty = any).
+  repeated string allowed_backends = 1;
+  // Weakest acceptable verification method.
+  string min_verification = 2;
+  // Permitted attesting platforms (empty = any).
+  repeated string allowed_platforms = 3;
+  // Forbid test roots — production silicon attestation only.
+  bool require_vendor_root = 4;
+  // Permitted data-residency jurisdictions (empty = any).
+  repeated string data_residency = 5;
 }
