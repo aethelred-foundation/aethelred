@@ -91,8 +91,41 @@ Learn more at https://aethelred.io`,
 
 	initRootCmd(rootCmd, encodingConfig)
 
+	// Generate CLI tx/query commands for the standard cosmos-sdk modules (bank,
+	// staking, distribution, gov, slashing, mint, feegrant, authz, …) from their
+	// protobuf service definitions via autocli. A throwaway in-memory app instance
+	// supplies the module reflection and is discarded immediately. Custom modules
+	// (seal/pouw/verify) are registered manually in initRootCmd; autocli skips any
+	// command already present, so there are no duplicates.
+	//
+	// This CLI process is not a running node, so allow the throwaway app's
+	// verification-pipeline init to degrade to a warning (instead of panicking when
+	// no TEE endpoint is configured) by scoping AETHELRED_ALLOW_SIMULATED to just
+	// this construction — the real node app built later stays strict.
+	prevAllow, hadAllow := os.LookupEnv("AETHELRED_ALLOW_SIMULATED")
+	os.Setenv("AETHELRED_ALLOW_SIMULATED", "true")
+	tempApp := app.New(log.NewNopLogger(), dbm.NewMemDB(), nil, false, emptyAppOptions{})
+	if hadAllow {
+		os.Setenv("AETHELRED_ALLOW_SIMULATED", prevAllow)
+	} else {
+		os.Unsetenv("AETHELRED_ALLOW_SIMULATED")
+	}
+	// autocli's flag builder needs a proto file resolver; it reads it from
+	// AppOptions.ClientCtx.InterfaceRegistry, so wire the client context in.
+	autoCliOpts := tempApp.AutoCliOpts()
+	autoCliOpts.ClientCtx = initClientCtx
+	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
+		panic(err)
+	}
+
 	return rootCmd
 }
+
+// emptyAppOptions is a no-op AppOptions used only to construct the throwaway app
+// instance that provides autocli module reflection in NewRootCmd.
+type emptyAppOptions struct{}
+
+func (emptyAppOptions) Get(string) interface{} { return nil }
 
 // initConfig sets the SDK configuration
 func initConfig() {
@@ -271,7 +304,10 @@ func queryCommand() *cobra.Command {
 		authcmd.QueryTxCmd(),
 	)
 
-	// Add custom module query commands
+	// Custom module query commands. The standard cosmos-sdk modules (bank,
+	// staking, distribution, gov, slashing, mint, …) are added separately via
+	// autocli in NewRootCmd (EnhanceRootCommand), which generates their commands
+	// from proto; autocli skips any module already registered here.
 	cmd.AddCommand(seal.GetQueryCmd())
 	cmd.AddCommand(pouw.GetQueryCmd())
 	cmd.AddCommand(verify.GetQueryCmd())
@@ -302,7 +338,11 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 	)
 
-	// Add custom module tx commands
+	// Custom module tx commands. The standard cosmos-sdk modules (bank send,
+	// staking delegate, distribution withdraw-rewards, gov vote, slashing unjail,
+	// …) are added separately via autocli in NewRootCmd (EnhanceRootCommand),
+	// which generates their commands from proto; autocli skips any module already
+	// registered here.
 	cmd.AddCommand(seal.GetTxCmd())
 	cmd.AddCommand(pouw.GetTxCmd())
 	cmd.AddCommand(verify.GetTxCmd())

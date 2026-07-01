@@ -3,6 +3,7 @@ module github.com/aethelred/aethelred
 go 1.25.8
 
 require (
+	cosmossdk.io/client/v2 v2.0.0-beta.5
 	cosmossdk.io/collections v0.4.0
 	cosmossdk.io/core v0.11.1
 	cosmossdk.io/errors v1.0.1

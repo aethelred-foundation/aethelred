@@ -17,6 +17,8 @@ import (
 	"github.com/cometbft/cometbft/crypto/tmhash"
 
 	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/client/v2/autocli"
+	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/x/evidence"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
@@ -33,6 +35,7 @@ import (
 	authcodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -814,6 +817,30 @@ func (app *AethelredApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain
 // LoadHeight loads a particular height
 func (app *AethelredApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height)
+}
+
+// AutoCliOpts returns the autocli options used to generate CLI tx and query
+// commands for every module directly from its protobuf service definitions.
+// This is how the standard cosmos-sdk modules (bank, staking, distribution, gov,
+// slashing, mint, feegrant, authz, …) get their CLI in v0.50 — their commands
+// live in autocli, not a legacy client/cli package.
+func (app *AethelredApp) AutoCliOpts() autocli.AppOptions {
+	modules := make(map[string]appmodule.AppModule)
+	for _, m := range app.ModuleManager.Modules {
+		if moduleWithName, ok := m.(module.HasName); ok {
+			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
+				modules[moduleWithName.Name()] = appModule
+			}
+		}
+	}
+
+	return autocli.AppOptions{
+		Modules:               modules,
+		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules),
+		AddressCodec:          authcodec.NewBech32Codec(AccountAddressPrefix),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(AccountAddressPrefix + "valoper"),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(AccountAddressPrefix + "valcons"),
+	}
 }
 
 // LegacyAmino returns the legacy amino codec
