@@ -1,0 +1,67 @@
+[
+  {
+    "type": "function",
+    "name": "getSeal",
+    "stateMutability": "view",
+    "inputs": [{ "name": "sealId", "type": "string" }],
+    "outputs": [
+      { "name": "modelCommitment", "type": "bytes32" },
+      { "name": "inputCommitment", "type": "bytes32" },
+      { "name": "outputCommitment", "type": "bytes32" },
+      { "name": "blockHeight", "type": "int64" },
+      { "name": "timestamp", "type": "uint64" },
+      { "name": "requestedBy", "type": "string" },
+      { "name": "purpose", "type": "string" },
+      { "name": "status", "type": "uint8" },
+      { "name": "jobId", "type": "string" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getConfidentiality",
+    "stateMutability": "view",
+    "inputs": [{ "name": "sealId", "type": "string" }],
+    "outputs": [
+      { "name": "backend", "type": "string" },
+      { "name": "verification", "type": "string" },
+      { "name": "platform", "type": "string" },
+      { "name": "measurement", "type": "bytes" },
+      { "name": "trustBasis", "type": "string" },
+      { "name": "jurisdiction", "type": "string" },
+      { "name": "dataSealed", "type": "bool" },
+      { "name": "policyHash", "type": "bytes" },
+      { "name": "worker", "type": "string" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getSealIdByJob",
+    "stateMutability": "view",
+    "inputs": [{ "name": "jobId", "type": "string" }],
+    "outputs": [{ "name": "sealId", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "verifySeal",
+    "stateMutability": "view",
+    "inputs": [{ "name": "sealId", "type": "string" }],
+    "outputs": [{ "name": "active", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "requireConfidentiality",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "sealId", "type": "string" },
+      { "name": "allowedBackends", "type": "string[]" },
+      { "name": "minVerification", "type": "string" },
+      { "name": "allowedPlatforms", "type": "string[]" },
+      { "name": "requireVendorRoot", "type": "bool" },
+      { "name": "dataResidency", "type": "string[]" }
+    ],
+    "outputs": [
+      { "name": "satisfied", "type": "bool" },
+      { "name": "reason", "type": "string" }
+    ]
+  }
+]
