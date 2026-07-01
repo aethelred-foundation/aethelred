@@ -303,13 +303,15 @@ func New(
 		slashingtypes.StoreKey,
 		paramstypes.StoreKey,
 		upgradetypes.StoreKey,
-		// NOTE: gov, feegrant, evidence, authz, and crisis store keys are deliberately
-		// NOT mounted. Those modules have no keeper and are not in the module manager,
-		// so their stores would never receive any data. An empty mounted IAVL store
-		// cannot be loaded by version under iavl v1.x ("version does not exist"), which
-		// breaks every versioned state query (account/sequence lookups, hence all tx
-		// broadcasts) and prevents the node from reloading state on restart. Mount a
-		// store key only for a module that actually writes to it.
+		govtypes.StoreKey,
+		authzkeeper.StoreKey,
+		feegrant.StoreKey,
+		evidencetypes.StoreKey,
+		// NOTE: crisis is still not mounted — it has no keeper/module wired here.
+		// Every other mounted store belongs to a module registered in the module
+		// manager, so InitGenesis + the per-block commit keep it versioned (an empty
+		// mounted IAVL store that never commits cannot be loaded by version under
+		// iavl v1.x). Mount a store key only for a module that is actually wired.
 		// Aethelred custom module store keys
 		sealtypes.StoreKey,
 		pouwtypes.StoreKey,
@@ -509,6 +511,51 @@ func (app *AethelredApp) initStandardKeepers(
 			app.SlashingKeeper.Hooks(),
 		),
 	)
+
+	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	// FeeGrant keeper — lets accounts grant fee allowances to others.
+	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[feegrant.StoreKey]),
+		app.AccountKeeper,
+	)
+
+	// Authz keeper — generic message authorization/delegation.
+	app.AuthzKeeper = authzkeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[authzkeeper.StoreKey]),
+		appCodec,
+		app.MsgServiceRouter(),
+		app.AccountKeeper,
+	)
+
+	// Evidence keeper — handles equivocation/downtime evidence and routes it to
+	// the slashing keeper. Uses the consensus-aware CometInfo service.
+	evidenceKeeper := evidencekeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[evidencetypes.StoreKey]),
+		app.StakingKeeper,
+		app.SlashingKeeper,
+		app.AccountKeeper.AddressCodec(),
+		runtime.ProvideCometInfoService(),
+	)
+	app.EvidenceKeeper = *evidenceKeeper
+
+	// Gov keeper — on-chain governance (proposals, deposits, voting, tallying).
+	// The gov module account (maccPerms) is the authority for privileged module
+	// params. Proposals are routed through the msg service router.
+	govKeeper := govkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[govtypes.StoreKey]),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
+		app.DistrKeeper,
+		app.MsgServiceRouter(),
+		govtypes.DefaultConfig(),
+		govAuthority,
+	)
+	app.GovKeeper = *govKeeper
 }
 
 // initAethelredKeepers initializes Aethelred custom module keepers
@@ -635,6 +682,10 @@ func (app *AethelredApp) setupModuleManager() {
 		mint.NewAppModule(app.appCodec, app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
 		distr.NewAppModule(app.appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
 		slashing.NewAppModule(app.appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
+		gov.NewAppModule(app.appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
+		authzmodule.NewAppModule(app.appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		feegrantmodule.NewAppModule(app.appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
+		evidence.NewAppModule(app.EvidenceKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		consensus.NewAppModule(app.appCodec, app.ConsensusParamsKeeper),
 		// Aethelred custom modules
@@ -672,6 +723,7 @@ func (app *AethelredApp) setupModuleManager() {
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
+		feegrant.ModuleName,
 		// Aethelred modules - process compute jobs at end of block
 		pouwtypes.ModuleName,
 		sealtypes.ModuleName,
@@ -809,6 +861,21 @@ func (app *AethelredApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain
 	}
 	if err := app.SovereignCrisisKeeper.ClearHaltByAuthority(ctx, app.SovereignCrisisKeeper.GetAuthority()); err != nil {
 		return nil, err
+	}
+
+	// Seed the authz, feegrant, and evidence stores. Their genesis state is empty
+	// (no grants/evidence at launch), so their IAVL stores would never be written
+	// and — under iavl v1.x — a mounted store that never commits data cannot be
+	// loaded by version on restart ("version does not exist"). Write one reserved
+	// marker key per store so each is non-empty from height 1. The 0xFF-prefixed
+	// key sits outside every module's key prefixes, so it is invisible to the
+	// keepers and to ExportGenesis, and it is written identically on every
+	// validator (deterministic). gov is not seeded — its InitGenesis writes params.
+	storeInitMarker := append([]byte{0xFF}, []byte("aethelred_store_init")...)
+	for _, storeKey := range []string{authzkeeper.StoreKey, feegrant.StoreKey, evidencetypes.StoreKey} {
+		if key, ok := app.keys[storeKey]; ok {
+			ctx.KVStore(key).Set(storeInitMarker, []byte{1})
+		}
 	}
 
 	return app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
