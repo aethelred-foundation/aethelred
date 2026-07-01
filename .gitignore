@@ -127,8 +127,12 @@ tmp/
 temp/
 
 # ── Build Binaries ───────────────────────────────────────────────────
-aethelred-loadtest
-aethelredd
+# Anchored to the repo root so these match the compiled binaries, NOT the
+# cmd/aethelredd source directory (an unanchored `aethelredd` silently ignores
+# every new file under cmd/aethelredd/**).
+/aethelred-loadtest
+/aethelredd
+/cmd/aethelredd/aethelredd
 
 # ── Coverage Output ──────────────────────────────────────────────────
 coverage*.out
