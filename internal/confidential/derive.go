@@ -23,14 +23,25 @@ type ResultSignal struct {
 
 // backendForType maps a verifier's attestation type to the confidentiality
 // backend it implies. Only methods that actually protect the data in a boundary
-// (a TEE / GPU-CC enclave) yield a confidentiality backend; a bare zk proof
-// proves correctness without hiding the input, so it implies no backend.
+// (a TEE / GPU-CC enclave, an FHE ciphertext, MPC shares) yield a
+// confidentiality backend; a bare zk proof proves correctness without hiding
+// the input, so it implies no backend.
+//
+// Trust model note (MPC): an honest worker only reports "mpc" for a
+// non-colocated cluster — the orchestrator pre-flights Satisfies before
+// submitting (see x/verify ExecuteConfidential), so a colocated cluster never
+// yields an "mpc" signal. Remote verification of cluster topology (per-party
+// attestations) is future work and is not claimed.
 func backendForType(attestationType string) Backend {
 	switch strings.ToLower(strings.TrimSpace(attestationType)) {
 	case "tee", "hybrid":
 		return BackendTEE
 	case "gpu-cc", "gpucc":
 		return BackendGPUCC
+	case "fhe":
+		return BackendFHE
+	case "mpc":
+		return BackendMPC
 	default:
 		return BackendNone
 	}
@@ -50,6 +61,10 @@ func verificationForType(attestationType string) Verification {
 		return VerificationOptimistic
 	case "tee", "gpu-cc", "gpucc":
 		return VerificationTEEAttested
+	case "fhe", "mpc":
+		// FHE and additive MPC protect the data but prove nothing about
+		// correctness — no verification method is implied (honest).
+		return VerificationNone
 	default:
 		return VerificationNone
 	}

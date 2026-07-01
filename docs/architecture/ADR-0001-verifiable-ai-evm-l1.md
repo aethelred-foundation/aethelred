@@ -92,9 +92,24 @@ cryptographic audit trail. No other L1 offers this from Solidity.
 - **Phase 1 — EVM on aethelredd (weeks):** integrate `cosmos/evm`; expose
   JSON-RPC; address unification; fee market. dApps repoint from anvil to
   aethelredd's EVM. One sovereign L1.
+  - **Execution layer landed (`internal/evmhost`):** the real go-ethereum
+    interpreter (core/vm) runs with Aethelred precompiles mounted via
+    SetPrecompiles, chain-id 7332, post-merge rules; real contract bytecode is
+    deployed and executed against real chain state in tests. **Version
+    finding:** every `cosmos/evm` release pins cosmos-sdk ≥ v0.53 (v0.5.0 →
+    v0.53.4; v1.0.0-rc2 → v0.53.0) plus a forked go-ethereum, while this chain
+    runs SDK v0.50.14 with a live testnet — so hosting EVM *transactions*
+    (JSON-RPC, ante, feemarket) lands together with the SDK v0.53 upgrade, as
+    a planned migration rather than a rushed one. The precompiles, ABI
+    surface, and execution layer carry over unchanged.
 - **Phase 2 — the moat (weeks):** ship the `IVerify` / `ISeal` / `IPoUW`
   precompiles; add Solidity interfaces + a reference "AI-gated vault" example;
   wire Cruzible/NoblePay to gate on Digital Seals.
+  - **ISeal shipped** (`precompiles/seal`, ADR-0003 step 3): full ABI +
+    Solidity interface + keeper-backed reads + `requireConfidentiality`
+    consensus-parity gating, proven end-to-end through the embedded
+    interpreter (contract → STATICCALL 0x0900 → seal keeper). IVerify (0x0901)
+    and IPoUW (0x0902) reserved.
 - **Phase 3 — harden + audit:** precompile gas/DoS review, compliance hooks,
   Tier-1 audit of the combined surface.
 

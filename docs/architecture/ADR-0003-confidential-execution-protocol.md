@@ -154,6 +154,20 @@ decision carries a post-quantum, policy-bound, court-admissible seal.
    Config-less constructors (NewFHEBackend()/NewMPCBackend()/NewGPUCCBackend())
    remain honestly not-operational; the engine-backed constructors are the
    operational path.
+5. **Worker wiring (done):** the verification orchestrator (x/verify) carries a
+   confidential.Registry (SetConfidentialRegistry, assembled at the composition
+   root from genuinely operational backends). ExecuteConfidential selects per
+   policy (never downgrades), executes, binds the policy hash, and PRE-FLIGHTS
+   the attestation with the same Satisfies check consensus runs — an honest
+   worker never submits a result the chain must reject (e.g. a colocated MPC
+   cluster against a data-sealing policy fails at the worker, not on-chain).
+   WireSignalForBackend ↔ DeriveAttestation are inverse mappings, so the seal
+   reports exactly the backend that ran ("fhe"/"mpc" wire signals now lift to
+   BackendFHE/BackendMPC on-chain).
+6. **EVM execution layer (done, internal/evmhost):** the real go-ethereum
+   interpreter with ISeal mounted at 0x0900 — real contract bytecode gates on
+   seal confidentiality end-to-end in tests. Full EVM *transaction* hosting
+   (cosmos/evm) requires the SDK v0.53 upgrade (see ADR-0001 Phase 1 note).
 
 ## Honesty ledger
 - Real now: the TEE backend, the policy model, the attestation seal binding,

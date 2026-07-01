@@ -166,3 +166,42 @@ func TestDeriveConfidentiality_BackendAndVerificationEnforced(t *testing.T) {
 		t.Errorf("bound attestation wrong: %+v", att)
 	}
 }
+
+func TestDeriveConfidentiality_FHEAndMPCWireSignals(t *testing.T) {
+	// An "fhe" verification result (produced by the orchestrator's FHE engine)
+	// seals with backend=fhe and satisfies an FHE-only policy.
+	fheJob := &types.ComputeJob{ConfidentialityPolicy: &types.ConfidentialityPolicy{
+		AllowedBackends: []string{"fhe"},
+	}}
+	fheResults := []types.VerificationResult{
+		{ValidatorAddress: "val1", AttestationType: "fhe", Success: true},
+	}
+	att, err := deriveConfidentiality(fheJob, fheResults, &types.Params{})
+	if err != nil {
+		t.Fatalf("fhe result must satisfy fhe policy: %v", err)
+	}
+	if att.Backend != "fhe" || att.Verification != "none" || !att.DataSealed {
+		t.Errorf("fhe attestation wrong: %+v", att)
+	}
+
+	// An "mpc" wire signal seals with backend=mpc (the worker pre-flight
+	// guarantees only non-colocated clusters emit it).
+	mpcJob := &types.ComputeJob{ConfidentialityPolicy: &types.ConfidentialityPolicy{
+		AllowedBackends: []string{"mpc"},
+	}}
+	mpcResults := []types.VerificationResult{
+		{ValidatorAddress: "val1", AttestationType: "mpc", Success: true},
+	}
+	att, err = deriveConfidentiality(mpcJob, mpcResults, &types.Params{})
+	if err != nil {
+		t.Fatalf("mpc result must satisfy mpc policy: %v", err)
+	}
+	if att.Backend != "mpc" {
+		t.Errorf("mpc attestation wrong: %+v", att)
+	}
+
+	// An FHE-only policy still rejects a plain TEE result (never downgraded).
+	if _, err := deriveConfidentiality(fheJob, teeResults(), &types.Params{}); err == nil {
+		t.Fatal("tee result must not satisfy fhe-only policy")
+	}
+}

@@ -13,6 +13,7 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/aethelred/aethelred/internal/circuitbreaker"
+	"github.com/aethelred/aethelred/internal/confidential"
 	"github.com/aethelred/aethelred/x/verify/ezkl"
 	"github.com/aethelred/aethelred/x/verify/tee"
 	"github.com/aethelred/aethelred/x/verify/types"
@@ -33,6 +34,11 @@ type VerificationOrchestrator struct {
 
 	// Metrics
 	metrics *OrchestratorMetrics
+
+	// confidentialRegistry holds the CEAP confidential-execution backends
+	// (ADR-0003) — nil until the composition root installs the deployment's
+	// genuinely operational backends via SetConfidentialRegistry.
+	confidentialRegistry *confidential.Registry
 }
 
 // OrchestratorConfig contains orchestrator configuration
@@ -129,6 +135,7 @@ type OrchestratorMetrics struct {
 	TEEVerifications        int64
 	ZKMLVerifications       int64
 	HybridVerifications     int64
+	ConfidentialExecutions  int64
 	CacheHits               int64
 	AverageTimeMs           int64
 	mutex                   *sync.Mutex

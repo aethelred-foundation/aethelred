@@ -15,6 +15,9 @@ func TestBackendForType(t *testing.T) {
 		"hybrid":   BackendTEE,
 		"gpu-cc":   BackendGPUCC,
 		"gpucc":    BackendGPUCC,
+		"fhe":      BackendFHE,
+		"FHE":      BackendFHE,
+		"mpc":      BackendMPC,
 		"zkml":     BackendNone,
 		"reexec":   BackendNone,
 		"":         BackendNone,
@@ -39,6 +42,8 @@ func TestVerificationForType(t *testing.T) {
 		"tee":         VerificationTEEAttested,
 		"gpu-cc":      VerificationTEEAttested,
 		"gpucc":       VerificationTEEAttested,
+		"fhe":         VerificationNone,
+		"mpc":         VerificationNone,
 		"":            VerificationNone,
 		"nonsense":    VerificationNone,
 	}
