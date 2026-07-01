@@ -1285,6 +1285,17 @@ func (ch *ConsensusHandler) ProcessSealTransaction(ctx context.Context, txBytes 
 	}
 
 	// Convert validator results to verification results
+	// Idempotency guard: the ABCI++ vote-extension pipeline lags by a block, so a
+	// proposer can inject a seal tx built from an earlier round for a job that has
+	// already been sealed. Skip it cleanly instead of letting CompleteJob fail with
+	// a COMPLETED → COMPLETED transition error — harmless (the tx is rejected) but
+	// it logs a misleading error every block until the stale extension clears.
+	if existing, err := ch.keeper.GetJob(ctx, sealTx.JobID); err == nil && existing != nil {
+		if existing.Status == types.JobStatusCompleted || existing.SealId != "" {
+			return nil
+		}
+	}
+
 	var verificationResults []types.VerificationResult
 	for _, vr := range sealTx.ValidatorResults {
 		verificationResults = append(verificationResults, types.VerificationResult{

@@ -73,6 +73,12 @@ func (k Keeper) AssignPendingJobs(ctx context.Context) {
 			continue
 		}
 
+		sdkCtx.Logger().Info("Assigned PoUW job",
+			"job_id", job.Id,
+			"validators", len(assigned),
+			"height", sdkCtx.BlockHeight(),
+		)
+
 		sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
 			"job_assigned",
 			sdk.NewAttribute("job_id", job.Id),
