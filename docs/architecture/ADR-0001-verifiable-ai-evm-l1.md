@@ -95,13 +95,30 @@ cryptographic audit trail. No other L1 offers this from Solidity.
   - **Execution layer landed (`internal/evmhost`):** the real go-ethereum
     interpreter (core/vm) runs with Aethelred precompiles mounted via
     SetPrecompiles, chain-id 7332, post-merge rules; real contract bytecode is
-    deployed and executed against real chain state in tests. **Version
-    finding:** every `cosmos/evm` release pins cosmos-sdk ≥ v0.53 (v0.5.0 →
-    v0.53.4; v1.0.0-rc2 → v0.53.0) plus a forked go-ethereum, while this chain
-    runs SDK v0.50.14 with a live testnet — so hosting EVM *transactions*
-    (JSON-RPC, ante, feemarket) lands together with the SDK v0.53 upgrade, as
-    a planned migration rather than a rushed one. The precompiles, ABI
-    surface, and execution layer carry over unchanged.
+    deployed and executed against real chain state in tests.
+  - **SDK prerequisite satisfied:** the chain upgraded cosmos-sdk
+    v0.50.14 → v0.53.7 (zero source changes; 43 packages green; single-node
+    boot smoke produced blocks with clean app hashes). CometBFT stays v0.38.
+  - **cosmos/evm integration assessment (evidence-based, on v0.53):**
+    1. `cosmos/evm` resolves as a dependency against our graph (verified with
+       v0.5.1); its go.mod carries
+       `replace github.com/ethereum/go-ethereum => github.com/cosmos/go-ethereum
+       v1.16.2-cosmos-1`. Replace directives do not propagate — the consumer
+       must adopt the fork, which pins the whole module to the fork's
+       geth v1.16 API.
+    2. Impact when adopted: `internal/evmhost` (written on vanilla geth
+       v1.17.4 — GasBudget-era APIs) must be ported to the fork API or retired
+       in favor of cosmos/evm's own x/vm keeper (which wraps the same
+       core/vm); `precompiles/*` use only `accounts/abi` + `common` — stable
+       across fork/vanilla, no changes. The AI-gated vault artifacts are
+       compiler output — host-independent.
+    3. cosmos/evm ≥ v0.7.0 additionally requires go ≥ 1.25.9 (trivial
+       toolchain bump from 1.25.8).
+    4. Remaining scope is the evmd-style app wiring: x/vm + x/feemarket +
+       x/erc20 + precisebank keepers, EVM ante handlers, JSON-RPC server,
+       genesis — a dedicated integration engagement, now UNBLOCKED and
+       de-risked (the precompile surface it must expose is finished and
+       proven against the real interpreter).
 - **Phase 2 — the moat (weeks):** ship the `IVerify` / `ISeal` / `IPoUW`
   precompiles; add Solidity interfaces + a reference "AI-gated vault" example;
   wire Cruzible/NoblePay to gate on Digital Seals.

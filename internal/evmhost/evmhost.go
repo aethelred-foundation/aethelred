@@ -155,12 +155,23 @@ func (h *Host) Deploy(ctx sdk.Context, creator common.Address, initcode []byte, 
 
 // Call executes a message call (value 0) against a contract or precompile.
 func (h *Host) Call(ctx sdk.Context, from, to common.Address, calldata []byte, gas uint64) ([]byte, error) {
+	return h.CallValue(ctx, from, to, calldata, gas, uint256.NewInt(0))
+}
+
+// CallValue executes a value-bearing message call (payable functions,
+// receive()). The sender must hold the balance (see FundAccount).
+func (h *Host) CallValue(ctx sdk.Context, from, to common.Address, calldata []byte, gas uint64, value *uint256.Int) ([]byte, error) {
 	evm := h.newEVM(ctx)
-	ret, _, err := evm.Call(from, to, calldata, vm.NewGasBudget(gas, gas), uint256.NewInt(0))
+	ret, _, err := evm.Call(from, to, calldata, vm.NewGasBudget(gas, gas), value)
 	if err != nil {
 		return ret, fmt.Errorf("evmhost: call %s: %w", to.Hex(), err)
 	}
 	return ret, nil
+}
+
+// Balance reports an EVM account's balance from the host state.
+func (h *Host) Balance(addr common.Address) *uint256.Int {
+	return h.statedb.GetBalance(addr)
 }
 
 // StaticCall executes a read-only call (state mutation forbidden by the
