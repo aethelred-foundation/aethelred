@@ -66,6 +66,7 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -73,6 +74,7 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -307,11 +309,13 @@ func New(
 		authzkeeper.StoreKey,
 		feegrant.StoreKey,
 		evidencetypes.StoreKey,
-		// NOTE: crisis is still not mounted — it has no keeper/module wired here.
-		// Every other mounted store belongs to a module registered in the module
-		// manager, so InitGenesis + the per-block commit keep it versioned (an empty
-		// mounted IAVL store that never commits cannot be loaded by version under
-		// iavl v1.x). Mount a store key only for a module that is actually wired.
+		crisistypes.StoreKey,
+		// Every mounted store belongs to a module registered in the module manager,
+		// so InitGenesis + the per-block commit keep it versioned. Modules whose
+		// genesis leaves the store empty (authz/feegrant/evidence) are seeded with a
+		// marker in InitChainer — an empty mounted IAVL store that never commits data
+		// cannot be loaded by version under iavl v1.x. Mount a store key only for a
+		// module that is actually wired.
 		// Aethelred custom module store keys
 		sealtypes.StoreKey,
 		pouwtypes.StoreKey,
@@ -365,6 +369,12 @@ func New(
 
 	// Create module manager with all modules
 	app.setupModuleManager()
+
+	// Register every module's invariants with the crisis keeper so they can be
+	// checked (on demand via the crisis tx; automatic checks are disabled with
+	// invCheckPeriod=0). Must run after the module manager is populated.
+	app.ModuleManager.RegisterInvariants(app.CrisisKeeper)
+
 	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 	if err := app.ModuleManager.RegisterServices(app.configurator); err != nil {
 		panic(fmt.Errorf("failed to register module services: %w", err))
@@ -555,7 +565,31 @@ func (app *AethelredApp) initStandardKeepers(
 		govtypes.DefaultConfig(),
 		govAuthority,
 	)
+
+	// Legacy proposal-content router (gov v1beta1). Lets legacy proposals — text
+	// and parameter-change — be submitted (tx gov submit-legacy-proposal) and
+	// executed, alongside the modern msg-based gov v1 path (MsgUpdateParams etc.)
+	// which routes through the msg service router. Must be set before the keeper
+	// seals its router on first use.
+	govRouter := govv1beta1.NewRouter()
+	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler)
+	govRouter.AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper))
+	govKeeper.SetLegacyRouter(govRouter)
+
 	app.GovKeeper = *govKeeper
+
+	// Crisis keeper — runs the registered module invariants. invCheckPeriod=0
+	// disables automatic per-block checks (invariants stay runnable on demand via
+	// the crisis "invariant-broken" tx); the constant fee is charged to the caller.
+	app.CrisisKeeper = crisiskeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[crisistypes.StoreKey]),
+		0,
+		app.BankKeeper,
+		authtypes.FeeCollectorName,
+		govAuthority,
+		app.AccountKeeper.AddressCodec(),
+	)
 }
 
 // initAethelredKeepers initializes Aethelred custom module keepers
@@ -686,6 +720,7 @@ func (app *AethelredApp) setupModuleManager() {
 		authzmodule.NewAppModule(app.appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		feegrantmodule.NewAppModule(app.appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
 		evidence.NewAppModule(app.EvidenceKeeper),
+		crisis.NewAppModule(app.CrisisKeeper, true, app.GetSubspace(crisistypes.ModuleName)),
 		params.NewAppModule(app.ParamsKeeper),
 		consensus.NewAppModule(app.appCodec, app.ConsensusParamsKeeper),
 		// Aethelred custom modules
