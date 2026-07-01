@@ -1,0 +1,107 @@
+# ADR-0001 — Aethelred as a Verifiable-AI EVM L1
+
+**Status:** Proposed · **Date:** 2026-07-01 · **Decision owner:** Ramesh
+
+## Context
+
+Aethelred's differentiator is a Cosmos SDK L1 with **Proof-of-Useful-Work**
+consensus that performs *real* verifiable AI: BN254 Groth16 zkML for small
+models, hardware-agnostic TEE attestation (6 platforms) for large ones, and
+**post-quantum (ML-DSA/ML-KEM), validator-quorum-signed Digital Seals** as the
+settlement primitive. Target customers are regulated industries (finance,
+healthcare, identity), where cryptographic auditability and post-quantum
+durability matter.
+
+The flagship dApps — **Cruzible, ZeroID, TerraQura, NoblePay** — and the
+**Aethelred Wallet** are all **EVM-first** (wagmi / viem / RainbowKit / Solidity;
+the wallet is an injected EIP-1193/EIP-6963 provider). But `aethelredd` today is
+**Cosmos-only** — no EVM, no JSON-RPC. As built, none of these can connect to the
+chain. We need an execution-layer decision that (a) unblocks the EVM dApp
+ecosystem and (b) *strengthens*, not dilutes, the moat.
+
+## Decision
+
+Make `aethelredd` a **dual-VM sovereign L1**: keep the Cosmos SDK verifiable-AI
+core and add an **EVM execution layer** via `cosmos/evm` (the maintained Cosmos
+EVM module, successor to Ethermint), exposing a standard Web3 JSON-RPC. Then —
+this is the point — add **custom EVM precompiles that let Solidity contracts call
+the verifiable-AI primitives natively**:
+
+| Precompile | Backing module | What a contract can do |
+|-----------|----------------|------------------------|
+| `IVerify` | `x/verify` | Verify a zkML proof / TEE attestation inline in a tx |
+| `ISeal` | `x/seal` | Read and verify a Digital Seal (model+input+output commitment, quorum) |
+| `IPoUW` | `x/pouw` | Submit a compute job and read its status/result |
+
+**The EVM is table stakes; the precompiles are the moat.** A Cruzible vault, a
+NoblePay settlement, or a ZeroID identity contract can, in a *single EVM
+transaction*, invoke an AI computation, verify it, and gate the on-chain action
+on a post-quantum, hardware-attested, quorum-signed Digital Seal — then leave a
+cryptographic audit trail. No other L1 offers this from Solidity.
+
+## Why this is the moat (and hard to copy)
+
+- **Forking an EVM chain is trivial; forking *this* is not.** The defensible
+  asset is the integrated stack — PoUW consensus doing real zkML+TEE
+  verification, PQC quorum Digital Seals, and EVM precompiles bridging them into
+  Solidity. A competitor must reproduce the verifiable-AI consensus *and* the
+  precompile bridge *and* the PQC/TEE integration — years of specialized
+  crypto+consensus+VM work, not a `git fork`.
+- **Positioning:** *the verifiable-AI settlement layer for regulated
+  industries.* Not "another EVM chain" — the EVM chain where smart contracts
+  natively consume verifiable AI with auditable, post-quantum attestations.
+- **Regulated-industry fit:** post-quantum signatures (long-lived compliance
+  data survives a quantum adversary), hardware-agnostic TEE (no cloud-vendor
+  lock-in), on-chain cryptographic auditability (Digital Seals), and native
+  identity (ZeroID).
+- **Ecosystem leverage:** the entire Solidity / wagmi / MetaMask developer world
+  can build here with zero new tooling, yet gain a capability no other EVM chain
+  has.
+
+## Alternatives considered
+
+1. **Standalone / separate EVM chain for the dApps.** Rejected: the dApps could
+   not natively access verifiable AI (the moat), it fragments liquidity and
+   identity, and it weakens the "sovereign L1" story.
+2. **No EVM (Cosmos-only); rewrite dApps as CosmWasm/CosmJS.** Rejected: discards
+   the existing EVM dApp + wallet investment and the Solidity developer market;
+   slower adoption; the moat still needs a contract layer.
+3. **EVM without verifiable-AI precompiles.** Rejected: that *is* "just another
+   EVM chain" — no moat.
+
+## Consequences
+
+- **Positive:** one sovereign chain; existing EVM dApps + wallet work with a
+  repoint; verifiable AI reachable from Solidity; strong, defensible positioning.
+- **Cost / risk:** `cosmos/evm` integration is substantial (JSON-RPC, EVM
+  chain-id, `0x`↔bech32 address unification, fee market, gas). Precompile gas
+  metering must be conservative (verification is expensive — meter to the real
+  cost; keep heavy zkML/TEE work asynchronous via the PoUW job flow rather than
+  synchronous in a precompile where possible). Larger audit surface (two VMs).
+- **PQC scope:** user EVM transactions stay standard secp256k1 ECDSA (Ethereum
+  compatibility); the post-quantum layer remains where it matters — consensus
+  vote-extension signing and the Digital Seal quorum. The moat is the *attested
+  result*, not the user's tx signature.
+
+## Roadmap
+
+- **Phase 0 — unblock (days):** local EVM devnet (anvil, `:8545`) + deploy the
+  dApp contracts + wire the Wallet (injected provider) + Cruzible/ZeroID/
+  TerraQura. Same local substrate needed under any option; de-risks the dApp and
+  wallet code independently of the L1 work. Frontend teams work immediately.
+- **Phase 1 — EVM on aethelredd (weeks):** integrate `cosmos/evm`; expose
+  JSON-RPC; address unification; fee market. dApps repoint from anvil to
+  aethelredd's EVM. One sovereign L1.
+- **Phase 2 — the moat (weeks):** ship the `IVerify` / `ISeal` / `IPoUW`
+  precompiles; add Solidity interfaces + a reference "AI-gated vault" example;
+  wire Cruzible/NoblePay to gate on Digital Seals.
+- **Phase 3 — harden + audit:** precompile gas/DoS review, compliance hooks,
+  Tier-1 audit of the combined surface.
+
+## First execution step
+
+Substrate → Wallet → Cruzible. Stand up the local EVM devnet, get the Aethelred
+Wallet running as the injected provider against it, then bring up Cruzible as the
+first dApp connecting through the wallet (the "prove the EVM adapter path" goal
+from the Wallet integration matrix). ZeroID and TerraQura follow the same
+pattern.
