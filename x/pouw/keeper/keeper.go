@@ -12,6 +12,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -71,6 +72,7 @@ type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 }
@@ -805,6 +807,16 @@ func (k Keeper) SetParams(ctx context.Context, params *types.Params) error {
 }
 
 // InitGenesis initializes the module's state from genesis
+// rewardPoolDenom is the base denom of the PoUW verification reward pool.
+const rewardPoolDenom = "uaethel"
+
+// DefaultRewardPoolInitial is the reward pool seeded to the pouw module account
+// at genesis: 1,000,000 AETHEL (1e12 uaethel). At the default 100 uaethel per
+// verification this funds on the order of 1e10 verifications — a testnet pool.
+// Mainnet tokenomics would set this from the genesis allocation rather than a
+// mint; adjust here (or make it a genesis param) for production.
+var DefaultRewardPoolInitial = sdkmath.NewInt(1_000_000_000_000)
+
 func (k Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 	// Set params
 	params := gs.Params
@@ -813,6 +825,23 @@ func (k Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 	}
 	if err := k.SetParams(ctx, params); err != nil {
 		return err
+	}
+
+	// Seed the PoUW verification reward pool. The pouw module account has the
+	// Minter permission and holds the pool from which per-verification rewards are
+	// paid (SendCoinsFromModuleToAccount in CompleteJob). Without a funded pool the
+	// distribution silently fails. The mint is guarded on the current balance so
+	// re-importing an exported genesis — where the pool balance is already carried
+	// in the bank state (bank InitGenesis runs before pouw) — does not double-mint.
+	if k.bankKeeper != nil {
+		poolAddr := authtypes.NewModuleAddress(types.ModuleName)
+		current := k.bankKeeper.SpendableCoins(ctx, poolAddr).AmountOf(rewardPoolDenom)
+		if current.LT(DefaultRewardPoolInitial) {
+			deficit := sdk.NewCoin(rewardPoolDenom, DefaultRewardPoolInitial.Sub(current))
+			if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(deficit)); err != nil {
+				return fmt.Errorf("fund pouw reward pool: %w", err)
+			}
+		}
 	}
 
 	// Set jobs

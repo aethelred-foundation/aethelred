@@ -88,6 +88,8 @@ func (committeeTestBankKeeper) SendCoinsFromModuleToModule(context.Context, stri
 
 func (committeeTestBankKeeper) BurnCoins(context.Context, string, sdk.Coins) error { return nil }
 
+func (committeeTestBankKeeper) MintCoins(context.Context, string, sdk.Coins) error { return nil }
+
 func (committeeTestBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins {
 	return sdk.NewCoins()
 }

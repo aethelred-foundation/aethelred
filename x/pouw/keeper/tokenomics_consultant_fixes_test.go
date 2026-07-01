@@ -67,6 +67,10 @@ func (m feeDistMockBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coin
 	return nil
 }
 
+func (m feeDistMockBankKeeper) MintCoins(_ context.Context, _ string, _ sdk.Coins) error {
+	return nil
+}
+
 func (m feeDistMockBankKeeper) SpendableCoins(_ context.Context, _ sdk.AccAddress) sdk.Coins {
 	return sdk.NewCoins()
 }
@@ -99,6 +103,10 @@ func (m *trackingFeeDistBankKeeper) SendCoinsFromModuleToModule(_ context.Contex
 }
 
 func (m *trackingFeeDistBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error {
+	return nil
+}
+
+func (m *trackingFeeDistBankKeeper) MintCoins(_ context.Context, _ string, _ sdk.Coins) error {
 	return nil
 }
 

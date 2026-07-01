@@ -41,6 +41,7 @@ func (registryBankKeeper) SendCoinsFromModuleToModule(context.Context, string, s
 	return nil
 }
 func (registryBankKeeper) BurnCoins(context.Context, string, sdk.Coins) error { return nil }
+func (registryBankKeeper) MintCoins(context.Context, string, sdk.Coins) error { return nil }
 func (registryBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins {
 	return sdk.NewCoins()
 }
