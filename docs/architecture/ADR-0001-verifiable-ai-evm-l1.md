@@ -135,19 +135,37 @@ cryptographic audit trail. No other L1 offers this from Solidity.
     - **Precompile permissioning:** `ActiveStaticPrecompiles` = ISeal 0x0900,
       IVerify 0x0901, IPoUW 0x0902 (sorted/unique; accepted by x/vm's own
       `ValidatePrecompiles` and genesis `Validate`).
-  - **Remaining app.go integration steps (specced, for the next boot-iterated
-    increment):** add store keys `evm`, `feemarket`, `erc20`, `precisebank`
-    (+ the `evm` transient key); construct `FeeMarketKeeper`,
-    `PreciseBankKeeper(bank, account)`, `EVMKeeper(…, preciseBank, feeMarket,
-    &consensus, &erc20, evmChainID).WithStaticPrecompiles(evm.NewStaticPrecompiles(
-    seal, verify, pouw))`, `Erc20Keeper(…, &evmKeeper, &transfer)`; register the
-    four modules in the module manager with begin/end-block + init-genesis
-    ordering; seed genesis from `app/evmconfig` and register `uaethel`/`aethel`
-    DenomMetadata in x/bank; add the eth_secp256k1 pubkey to the interface
-    registry so EVM accounts sign. **Note:** our chain mounts our three
-    verifiable-AI precompiles via `WithStaticPrecompiles` directly — it does
-    NOT require the full `DefaultStaticPrecompiles` bundle (staking/distr/gov/
-    ICS20), which keeps the added surface (and audit scope) minimal.
+  - **App wiring LANDED (commit a65b1dc54d):** the four EVM keepers
+    (feemarket → precisebank → evm+precompiles → erc20) are constructed in
+    `app/evm.go`, registered in the module manager with begin/end-block +
+    init-genesis ordering, and seeded from `app/evmconfig`; `uaethel`/`aaethel`/
+    `aethel` DenomMetadata is in the bank default genesis; eth_secp256k1
+    interface types registered. Our three verifiable-AI precompiles are mounted
+    via `WithStaticPrecompiles` directly — NOT the full `DefaultStaticPrecompiles`
+    bundle (staking/distr/gov/ICS20) — keeping the EVM surface minimal.
+    **Proven:** a fresh single-node genesis (EVM denom `aaethel`, all three
+    precompiles active, feemarket/erc20/precisebank present) boots and produces
+    blocks with clean app hashes; a chain-config process-global collision from
+    the CLI's double app-construction is handled by aligning
+    `evmtypes.DefaultEVMChainID` with 7332.
+  - **Dual-route ante LANDED (commit a65b1dc54d):** EVM-extension txs take the
+    cosmos/evm mono EVM ante chain (Ethereum-sig verification + fee market);
+    all else takes the existing Aethelred cosmos chain, now fronted by
+    `RejectMessagesDecorator` so a `MsgEthereumTx` cannot bypass Ethereum-sig
+    verification via the cosmos route.
+  - **eth_call → precompile PROVEN (in-process integration test):** a real
+    `eth_call` — the exact query the JSON-RPC `eth_call` endpoint dispatches to
+    (`EVMKeeper.EthCall`) — reaches ISeal at 0x0900 through the live cosmos/evm
+    StateDB, reads a Digital Seal from chain state, and returns correct
+    `verifySeal` / `requireConfidentiality` verdicts (including a consensus-parity
+    policy rejection). The whole verifiable-AI moat is reachable from the EVM.
+  - **JSON-RPC HTTP transport (remaining):** exposing `eth_*` over HTTP requires
+    adopting cosmos/evm's `server.StartCmd` + `ExperimentalEVMMempool` (the app
+    must satisfy the RPC `Application` interface and use the EVM mempool). That
+    replaces the node's server/start command tree, so it is a focused
+    server-infrastructure increment to be integrated carefully with the custom
+    ABCI++/PQC start logic — the query path it exposes (`EthCall`, and the EVM
+    chain id 7332) is already wired and proven.
 - **Phase 2 — the moat (weeks):** ship the `IVerify` / `ISeal` / `IPoUW`
   precompiles; add Solidity interfaces + a reference "AI-gated vault" example;
   wire Cruzible/NoblePay to gate on Digital Seals.
