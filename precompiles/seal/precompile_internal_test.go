@@ -34,21 +34,8 @@ func newStubPrecompile(t *testing.T, r SealReader) *Precompile {
 	return p
 }
 
-func TestInternal_ArgGuards(t *testing.T) {
-	if _, err := stringArg(nil, 0, "x"); err == nil {
-		t.Error("missing string arg must error")
-	}
-	if _, err := stringArg([]interface{}{42}, 0, "x"); err == nil {
-		t.Error("non-string arg must error")
-	}
-	if _, err := stringSliceArg(nil, 0, "x"); err == nil {
-		t.Error("missing slice arg must error")
-	}
-	if _, err := stringSliceArg([]interface{}{42}, 0, "x"); err == nil {
-		t.Error("non-slice arg must error")
-	}
-}
-
+// Argument-guard primitives are covered in precompiles/internal/prec; here we
+// verify each METHOD rejects mistyped arguments through those guards.
 func TestInternal_MethodTypeGuards(t *testing.T) {
 	p := newStubPrecompile(t, stubReader{err: fmt.Errorf("nope")})
 	ctx := sdk.Context{}

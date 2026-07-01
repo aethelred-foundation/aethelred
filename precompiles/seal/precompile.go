@@ -24,6 +24,7 @@ import (
 
 	"github.com/aethelred/aethelred/internal/attestation"
 	"github.com/aethelred/aethelred/internal/confidential"
+	"github.com/aethelred/aethelred/precompiles/internal/prec"
 	sealtypes "github.com/aethelred/aethelred/x/seal/types"
 )
 
@@ -142,7 +143,7 @@ func (p *Precompile) Run(ctx sdk.Context, input []byte) ([]byte, error) {
 // ── methods ───────────────────────────────────────────────────────────────────
 
 func (p *Precompile) getSeal(ctx sdk.Context, method *abi.Method, args []interface{}) ([]byte, error) {
-	sealID, err := stringArg(args, 0, "sealId")
+	sealID, err := prec.StringArg(args, 0, "sealId")
 	if err != nil {
 		return nil, err
 	}
@@ -155,9 +156,9 @@ func (p *Precompile) getSeal(ctx sdk.Context, method *abi.Method, args []interfa
 		ts = uint64(seal.Timestamp.AsTime().Unix())
 	}
 	return method.Outputs.Pack(
-		toBytes32(seal.ModelCommitment),
-		toBytes32(seal.InputCommitment),
-		toBytes32(seal.OutputCommitment),
+		prec.ToBytes32(seal.ModelCommitment),
+		prec.ToBytes32(seal.InputCommitment),
+		prec.ToBytes32(seal.OutputCommitment),
 		int64(seal.BlockHeight),
 		ts,
 		seal.RequestedBy,
@@ -168,7 +169,7 @@ func (p *Precompile) getSeal(ctx sdk.Context, method *abi.Method, args []interfa
 }
 
 func (p *Precompile) getConfidentiality(ctx sdk.Context, method *abi.Method, args []interface{}) ([]byte, error) {
-	sealID, err := stringArg(args, 0, "sealId")
+	sealID, err := prec.StringArg(args, 0, "sealId")
 	if err != nil {
 		return nil, err
 	}
@@ -186,13 +187,13 @@ func (p *Precompile) getConfidentiality(ctx sdk.Context, method *abi.Method, arg
 	}
 	return method.Outputs.Pack(
 		c.Backend, c.Verification, c.Platform,
-		nonNilBytes(c.Measurement), c.TrustBasis, c.Jurisdiction,
-		c.DataSealed, nonNilBytes(c.PolicyHash), c.Worker,
+		prec.NonNilBytes(c.Measurement), c.TrustBasis, c.Jurisdiction,
+		c.DataSealed, prec.NonNilBytes(c.PolicyHash), c.Worker,
 	)
 }
 
 func (p *Precompile) getSealIDByJob(ctx sdk.Context, method *abi.Method, args []interface{}) ([]byte, error) {
-	jobID, err := stringArg(args, 0, "jobId")
+	jobID, err := prec.StringArg(args, 0, "jobId")
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +205,7 @@ func (p *Precompile) getSealIDByJob(ctx sdk.Context, method *abi.Method, args []
 }
 
 func (p *Precompile) verifySeal(ctx sdk.Context, method *abi.Method, args []interface{}) ([]byte, error) {
-	sealID, err := stringArg(args, 0, "sealId")
+	sealID, err := prec.StringArg(args, 0, "sealId")
 	if err != nil {
 		return nil, err
 	}
@@ -220,27 +221,27 @@ func (p *Precompile) requireConfidentiality(ctx sdk.Context, method *abi.Method,
 	if len(args) != 6 {
 		return nil, fmt.Errorf("iseal: requireConfidentiality expects 6 arguments, got %d", len(args))
 	}
-	sealID, err := stringArg(args, 0, "sealId")
+	sealID, err := prec.StringArg(args, 0, "sealId")
 	if err != nil {
 		return nil, err
 	}
-	allowedBackends, err := stringSliceArg(args, 1, "allowedBackends")
+	allowedBackends, err := prec.StringSliceArg(args, 1, "allowedBackends")
 	if err != nil {
 		return nil, err
 	}
-	minVerification, err := stringArg(args, 2, "minVerification")
+	minVerification, err := prec.StringArg(args, 2, "minVerification")
 	if err != nil {
 		return nil, err
 	}
-	allowedPlatforms, err := stringSliceArg(args, 3, "allowedPlatforms")
+	allowedPlatforms, err := prec.StringSliceArg(args, 3, "allowedPlatforms")
 	if err != nil {
 		return nil, err
 	}
-	requireVendorRoot, ok := args[4].(bool)
-	if !ok {
-		return nil, fmt.Errorf("iseal: argument requireVendorRoot is not a bool")
+	requireVendorRoot, err := prec.BoolArg(args, 4, "requireVendorRoot")
+	if err != nil {
+		return nil, fmt.Errorf("iseal: %w", err)
 	}
-	dataResidency, err := stringSliceArg(args, 5, "dataResidency")
+	dataResidency, err := prec.StringSliceArg(args, 5, "dataResidency")
 	if err != nil {
 		return nil, err
 	}
@@ -285,44 +286,4 @@ func (p *Precompile) requireConfidentiality(ctx sdk.Context, method *abi.Method,
 		return method.Outputs.Pack(false, satErr.Error())
 	}
 	return method.Outputs.Pack(true, "")
-}
-
-// ── argument / encoding helpers ───────────────────────────────────────────────
-
-func stringArg(args []interface{}, i int, name string) (string, error) {
-	if i >= len(args) {
-		return "", fmt.Errorf("iseal: missing argument %s", name)
-	}
-	s, ok := args[i].(string)
-	if !ok {
-		return "", fmt.Errorf("iseal: argument %s is not a string", name)
-	}
-	return s, nil
-}
-
-func stringSliceArg(args []interface{}, i int, name string) ([]string, error) {
-	if i >= len(args) {
-		return nil, fmt.Errorf("iseal: missing argument %s", name)
-	}
-	s, ok := args[i].([]string)
-	if !ok {
-		return nil, fmt.Errorf("iseal: argument %s is not a string[]", name)
-	}
-	return s, nil
-}
-
-// toBytes32 copies a commitment into a fixed 32-byte word (zero-padded /
-// truncated — commitments on this chain are sha256, exactly 32 bytes).
-func toBytes32(b []byte) [32]byte {
-	var out [32]byte
-	copy(out[:], b)
-	return out
-}
-
-// nonNilBytes maps nil to an empty slice so ABI packing never sees nil.
-func nonNilBytes(b []byte) []byte {
-	if b == nil {
-		return []byte{}
-	}
-	return b
 }

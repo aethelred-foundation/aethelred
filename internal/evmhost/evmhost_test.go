@@ -21,10 +21,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"context"
+
 	"github.com/aethelred/aethelred/internal/evmhost"
+	pouwprecompile "github.com/aethelred/aethelred/precompiles/pouw"
 	precompile "github.com/aethelred/aethelred/precompiles/seal"
+	verifyprecompile "github.com/aethelred/aethelred/precompiles/verify"
+	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 	sealkeeper "github.com/aethelred/aethelred/x/seal/keeper"
 	sealtypes "github.com/aethelred/aethelred/x/seal/types"
+	verifytypes "github.com/aethelred/aethelred/x/verify/types"
 )
 
 var (
@@ -224,3 +230,86 @@ func TestHost_FundAccountAndBlockContext(t *testing.T) {
 }
 
 func uint256FromUint64(v uint64) *uint256.Int { return uint256.NewInt(v) }
+
+// TestHost_AllThreePrecompilesMounted mounts the full verifiable-AI surface
+// (ISeal 0x0900, IVerify 0x0901, IPoUW 0x0902) behind one interpreter and
+// walks job → seal → confidentiality from the EVM side.
+func TestHost_AllThreePrecompilesMounted(t *testing.T) {
+	host, sealP, ctx, seal := newStack(t)
+
+	// IVerify with a stub registry (its keeper-satisfaction is proven by a
+	// compile-time assertion in its own package).
+	verifyP, err := verifyprecompile.NewPrecompile(stubRegistry{})
+	require.NoError(t, err)
+	host.Mount(verifyprecompile.Address, verifyP)
+
+	// IPoUW with a stub job pointing at the harness seal.
+	pouwP, err := pouwprecompile.NewPrecompile(stubJobs{seal: seal})
+	require.NoError(t, err)
+	host.Mount(pouwprecompile.Address, pouwP)
+
+	require.Len(t, host.Mounted(), 3)
+
+	// IPoUW: job completed?
+	calldata, err := pouwP.ABI().Pack(pouwprecompile.MethodIsJobCompleted, "job-evm-1")
+	require.NoError(t, err)
+	ret, err := host.Call(ctx, eoa, pouwprecompile.Address, calldata, 200_000)
+	require.NoError(t, err)
+	vals, err := pouwP.ABI().Methods[pouwprecompile.MethodIsJobCompleted].Outputs.Unpack(ret)
+	require.NoError(t, err)
+	require.True(t, vals[0].(bool))
+
+	// IPoUW: getJob returns the seal id …
+	calldata, err = pouwP.ABI().Pack(pouwprecompile.MethodGetJob, "job-evm-1")
+	require.NoError(t, err)
+	ret, err = host.Call(ctx, eoa, pouwprecompile.Address, calldata, 200_000)
+	require.NoError(t, err)
+	vals, err = pouwP.ABI().Methods[pouwprecompile.MethodGetJob].Outputs.Unpack(ret)
+	require.NoError(t, err)
+	sealID := vals[5].(string)
+	require.Equal(t, seal.Id, sealID)
+
+	// … which ISeal resolves to the confidentiality attestation: the full
+	// job → seal → attestation walk, entirely through EVM calls.
+	calldata, err = sealP.ABI().Pack("getConfidentiality", sealID)
+	require.NoError(t, err)
+	ret, err = host.Call(ctx, eoa, precompile.Address, calldata, 200_000)
+	require.NoError(t, err)
+	vals, err = sealP.ABI().Methods["getConfidentiality"].Outputs.Unpack(ret)
+	require.NoError(t, err)
+	require.Equal(t, "fhe", vals[0].(string))
+
+	// IVerify: circuit gating form works through the interpreter.
+	calldata, err = verifyP.ABI().Pack(verifyprecompile.MethodIsCircuitActive, [32]byte{1})
+	require.NoError(t, err)
+	ret, err = host.Call(ctx, eoa, verifyprecompile.Address, calldata, 200_000)
+	require.NoError(t, err)
+	vvals, err := verifyP.ABI().Methods[verifyprecompile.MethodIsCircuitActive].Outputs.Unpack(ret)
+	require.NoError(t, err)
+	require.True(t, vvals[0].(bool))
+}
+
+// stubRegistry backs IVerify in the mount test.
+type stubRegistry struct{}
+
+func (stubRegistry) GetCircuit(context.Context, []byte) (*verifytypes.Circuit, error) {
+	return &verifytypes.Circuit{IsActive: true, ProofSystem: "groth16-bn254"}, nil
+}
+func (stubRegistry) GetVerifyingKey(context.Context, []byte) (*verifytypes.VerifyingKey, error) {
+	return &verifytypes.VerifyingKey{IsActive: true}, nil
+}
+
+// stubJobs backs IPoUW in the mount test with a job bound to the harness seal.
+type stubJobs struct{ seal *sealtypes.DigitalSeal }
+
+func (s stubJobs) GetJob(context.Context, string) (*pouwtypes.ComputeJob, error) {
+	return &pouwtypes.ComputeJob{
+		Id: "job-evm-1", Status: pouwtypes.JobStatusCompleted,
+		ModelHash: s.seal.ModelCommitment, InputHash: s.seal.InputCommitment,
+		OutputHash: s.seal.OutputCommitment, RequestedBy: requester,
+		SealId: s.seal.Id, BlockHeight: 7, UsefulWorkUnits: 3,
+	}, nil
+}
+func (stubJobs) GetRegisteredModel(context.Context, []byte) (*pouwtypes.RegisteredModel, error) {
+	return &pouwtypes.RegisteredModel{IsActive: true, ModelId: "m1"}, nil
+}
