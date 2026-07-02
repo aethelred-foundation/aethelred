@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	evmrootante "github.com/cosmos/evm/ante"
 	evmcosmosante "github.com/cosmos/evm/ante/cosmos"
 	evmante "github.com/cosmos/evm/ante/evm"
 
@@ -64,7 +65,13 @@ func newCosmosAnteHandler(app *AethelredApp) sdk.AnteHandler {
 		ante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil),
 		ante.NewSetPubKeyDecorator(app.AccountKeeper),
 		ante.NewValidateSigCountDecorator(app.AccountKeeper),
-		ante.NewSigGasConsumeDecorator(app.AccountKeeper, ante.DefaultSigVerificationGasConsumer),
+		// cosmos/evm's gas consumer, NOT the SDK default: Aethelred accounts
+		// are eth_secp256k1, and the default consumer rejects that key type
+		// ("unrecognized public key type") — which blocked every native
+		// (bank/staking/gov) transaction from an EVM-keyed account. Found by
+		// the wallet's live native-tx E2E. Falls through to SDK behavior for
+		// all standard key types.
+		ante.NewSigGasConsumeDecorator(app.AccountKeeper, evmrootante.SigVerificationGasConsumer),
 		ante.NewSigVerificationDecorator(app.AccountKeeper, app.TxConfig().SignModeHandler()),
 		ante.NewIncrementSequenceDecorator(app.AccountKeeper),
 		// Custom Aethelred decorator: enforce compute job fees

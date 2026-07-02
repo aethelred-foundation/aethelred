@@ -31,6 +31,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
+	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/codec"
 	authcodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -43,6 +45,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
@@ -1019,7 +1022,18 @@ func (app *AethelredApp) GetSubspace(moduleName string) paramstypes.Subspace {
 
 // RegisterAPIRoutes registers all application module routes with the provided API server
 func (app *AethelredApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
-	// In Cosmos SDK v0.50, gRPC gateway routes are registered via the module manager
+	clientCtx := apiSvr.ClientCtx
+	// Tx service over REST (gRPC-gateway): /cosmos/tx/v1beta1/txs broadcast,
+	// simulate, and tx-by-hash. Without this, every standard Cosmos client
+	// (Keplr, cosmjs, the Aethelred Wallet's native path, relayers) gets
+	// HTTP 501 on broadcast even though module QUERY routes work — found by
+	// the wallet's live native-tx E2E.
+	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// CometBFT queries over REST (node_info, blocks, validator sets).
+	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Node service (config/status) over REST.
+	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Module gRPC gateway routes (bank, auth, staking, gov, seal, pouw, …).
 	ModuleBasics.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Aethelred-specific metrics endpoint
@@ -1180,20 +1194,33 @@ func (app *AethelredApp) HasValidatorPrivateKey() bool {
 	return len(app.validatorPrivKey) == 64
 }
 
-// RegisterNodeService implements the Application.RegisterNodeService method
+// RegisterNodeService registers the node config/status gRPC service on the
+// query router (the REST gateway in RegisterAPIRoutes proxies to it).
 func (app *AethelredApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
-	// Node service registration for Cosmos SDK v0.50+
-	// This is called by the server to register node-related services
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
 }
 
-// RegisterTendermintService implements the Application.RegisterTendermintService method
+// RegisterTendermintService registers the CometBFT query gRPC service
+// (node_info, blocks, validator sets) on the query router.
 func (app *AethelredApp) RegisterTendermintService(clientCtx client.Context) {
-	// CometBFT service registration for Cosmos SDK v0.50+
+	cmtservice.RegisterTendermintService(
+		clientCtx,
+		app.BaseApp.GRPCQueryRouter(),
+		app.interfaceRegistry,
+		app.Query,
+	)
 }
 
-// RegisterTxService implements the Application.RegisterTxService method
+// RegisterTxService registers the tx gRPC service (broadcast, simulate,
+// tx-by-hash) on the query router. These three registrations were empty
+// stubs — which made LCD tx broadcast return HTTP 501 chain-wide.
 func (app *AethelredApp) RegisterTxService(clientCtx client.Context) {
-	// Tx service registration for Cosmos SDK v0.50+
+	authtx.RegisterTxService(
+		app.BaseApp.GRPCQueryRouter(),
+		clientCtx,
+		app.BaseApp.Simulate,
+		app.interfaceRegistry,
+	)
 }
 
 // RegisterGRPCServer implements the Application.RegisterGRPCServer method
