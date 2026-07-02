@@ -16,6 +16,7 @@
 15,test-bob,Test Persona,E2E demo - settlement payer (NoblePay),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,
 16,test-carol,Test Persona,E2E demo - settlement payee (NoblePay),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,
 17,test-dave,Test Persona,E2E demo - credential subject (ZeroID),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,
-18,treasury,Treasury,Foundation multisig - grants/incentives/reserves (balancing),TO GENERATE,derived from key,8998240000,8998240000000000,8998240000000000uaethel,-,n/a,Holds remainder of total supply
-,TOTAL,,,,,10000000000,10000000000000000,10000000000000000uaethel,,,"= total supply (10,000,000,000 tAETHEL)"
+18,treasury,Treasury,Foundation multisig - grants/incentives/reserves (balancing),TO GENERATE,derived from key,8997240000,8997240000000000,8997240000000000uaethel,-,n/a,Holds remainder of total supply; multisig (2-of-3+) NOT a single key and NOT the gov module account
+19,pouw-reward-pool,Module Account,PoUW verification reward pool (x/pouw module account),MINTED BY CHAIN,n/a,1000000,1000000000000,do NOT add-genesis-account,-,n/a,"x/pouw InitGenesis mints 1M AETHEL to its module account (keeper.go DefaultRewardPoolInitial); counted here so TOTAL = real on-chain supply"
+,TOTAL,,,,,10000000000,10000000000000000,10000000000000000uaethel,,,"= total supply (10,000,000,000 tAETHEL) incl. the module-minted pouw pool"
 ,CHECK,,,,,0,0 (allocations - supply),,,,must be 0

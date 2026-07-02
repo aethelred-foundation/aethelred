@@ -68,6 +68,52 @@ integration (wallet, dApps, precompile tests) done against 7332.
 5. **The `Genesis coin string` column** in the CSV is paste-ready for
    `add-genesis-account`.
 
+## Supply, inflation, and treasury model (verified against the chain)
+
+**Where supply "lives":** Cosmos has no unminted reserve. `x/bank`'s total
+supply is the sum of all balances (`aethelredd q bank total`); genesis
+supply is exactly what the sheet allocates. A "max supply" is a policy
+(inflation zeroed + Minter permissions controlled), not a stored constant.
+
+**Three supply facts the sheet must respect (all verified in code / a live
+genesis):**
+
+1. **`x/mint` is wired with STOCK Cosmos inflation defaults** — 7%–20%
+   band, adjusting toward 20% until 67% bonded, minting `uaethel` every
+   block. Left unchanged, "10B fixed supply" grows ~1.3–2B AETHEL in year
+   one. If the fixed-supply model is intended (the sheet assumes it),
+   zero the params in genesis after `init`:
+
+   ```
+   app_state.mint.params.inflation_rate_change = "0.0"
+   app_state.mint.params.inflation_max        = "0.0"
+   app_state.mint.params.inflation_min        = "0.0"
+   app_state.mint.minter.inflation            = "0.0"
+   ```
+
+   Stakers then earn from tx fees + PoUW verification rewards — the
+   "work-backed emission, not idle inflation" story, coherent with the
+   PoUW thesis. Raising inflation later is a normal gov param change.
+2. **`x/pouw` mints 1,000,000 AETHEL at genesis** into its module account
+   (verification reward pool, `DefaultRewardPoolInitial`). The sheet now
+   carries this as row 19 (NOT an `add-genesis-account` row — the chain
+   mints it) and the treasury row is reduced by 1M so TOTAL = real
+   on-chain supply. Note the code's own comment: mainnet should fund this
+   pool from the allocation instead of a mint.
+3. **The community pool already exists** (`x/distribution`,
+   `community_tax = 2%` of block rewards) — the on-chain,
+   governance-spendable treasury. It accrues automatically; top it up
+   anytime with `tx distribution fund-community-pool`.
+
+**Treasury custody:** the treasury is NOT the gov module account (that
+address is the *authority* that executes passed proposals — an execution
+identity, not a vault) and must not be a single hot key. Testnet: a
+Cosmos-native **multisig** (2-of-3 minimum). Mainnet: split into
+(i) foundation multisig with a published spending policy, (ii) a
+community-pool tranche governed on-chain, (iii) vesting accounts for
+team/investor tranches per the tokenomics doc — a single account holding
+~90% of supply will not survive diligence.
+
 ## Residual to-do that actually remains
 
 - Merge/land the EVM stack (`release/public-testnet-pqc`) into the branch
