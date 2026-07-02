@@ -10,6 +10,9 @@ import (
 	"fmt"
 	"slices"
 
+	sdkmath "cosmossdk.io/math"
+
+	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 
 	precompileevm "github.com/aethelred/aethelred/precompiles/evm"
@@ -79,12 +82,20 @@ func normalizeAddr(a string) string {
 	return string(b)
 }
 
-// VMParams returns the x/vm module parameters for Aethelred: the default EVM
-// configuration with the EVM denom set to the extended (18-decimal) denom and
-// the verifiable-AI precompiles activated.
+// VMParams returns the x/vm module parameters for Aethelred with the
+// verifiable-AI precompiles activated.
+//
+// Denom semantics (x/vm's LoadEvmCoinInfo contract): EvmDenom is the INTEGER
+// bank denom (uaethel); the module resolves its decimals (6) from the display
+// unit's exponent in the bank metadata, and — because that is below 18 — takes
+// the EVM's 18-decimal denom from ExtendedDenomOptions (aaethel), which is
+// what activates the x/precisebank 1e12 bridge. Setting EvmDenom to the
+// extended denom instead makes the chain look 18-native and silently bypasses
+// the bridge: eth_getBalance then reads (empty) aaethel bank balances and every
+// funded account shows zero.
 func VMParams() evmtypes.Params {
 	p := evmtypes.DefaultParams()
-	p.EvmDenom = ExtendedDenom
+	p.EvmDenom = BankDenom
 	p.ExtendedDenomOptions = &evmtypes.ExtendedDenomOptions{ExtendedDenom: ExtendedDenom}
 	p.ActiveStaticPrecompiles = ActiveStaticPrecompiles()
 	return p
@@ -94,6 +105,26 @@ func VMParams() evmtypes.Params {
 // pre-funded EVM accounts or preinstalled contracts at genesis).
 func VMGenesis() *evmtypes.GenesisState {
 	return evmtypes.NewGenesisState(VMParams(), nil, nil)
+}
+
+// InitialBaseFee is the feemarket genesis base fee. x/feemarket stores the
+// base fee in INTEGER-denom units per gas (uaethel/gas) and the EVM layer
+// scales it by the 1e12 conversion factor when presenting aaethel-per-gas.
+// The upstream default (1e9 = "1 gwei") assumes an 18-decimal chain; on a
+// 6-decimal chain it must be divided by the conversion factor — exactly what
+// cosmos/evm's own six-decimals test setup does — or every transfer's gas
+// costs ~1e12× too much (a 21000-gas transfer would burn millions of AETHEL).
+func InitialBaseFee() sdkmath.LegacyDec {
+	conversion := evmtypes.Decimals(Decimals).ConversionFactor() // 1e12
+	return sdkmath.LegacyNewDec(1_000_000_000).QuoInt(conversion)
+}
+
+// FeeMarketGenesis returns the x/feemarket genesis for Aethelred: defaults
+// with the base fee rescaled to the 6-decimal bank denom.
+func FeeMarketGenesis() *feemarkettypes.GenesisState {
+	gs := feemarkettypes.DefaultGenesisState()
+	gs.Params.BaseFee = InitialBaseFee()
+	return gs
 }
 
 // Validate checks the configuration is internally consistent and accepted by
@@ -108,6 +139,9 @@ func Validate() error {
 	}
 	if err := VMGenesis().Validate(); err != nil {
 		return fmt.Errorf("evmconfig: x/vm genesis invalid: %w", err)
+	}
+	if err := FeeMarketGenesis().Validate(); err != nil {
+		return fmt.Errorf("evmconfig: x/feemarket genesis invalid: %w", err)
 	}
 	return nil
 }

@@ -100,7 +100,6 @@ import (
 	erc20 "github.com/cosmos/evm/x/erc20"
 	erc20keeper "github.com/cosmos/evm/x/erc20/keeper"
 	erc20types "github.com/cosmos/evm/x/erc20/types"
-	feemarket "github.com/cosmos/evm/x/feemarket"
 	feemarketkeeper "github.com/cosmos/evm/x/feemarket/keeper"
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	precisebank "github.com/cosmos/evm/x/precisebank"
@@ -157,9 +156,10 @@ var (
 		pouw.AppModuleBasic{},
 		verify.AppModuleBasic{},
 		ibcmodule.AppModuleBasic{},
-		// cosmos/evm stack (vm genesis overridden with Aethelred's EVM config)
+		// cosmos/evm stack (vm + feemarket genesis overridden with Aethelred's
+		// EVM config — see evm.go)
 		aethelredVMModuleBasic{},
-		feemarket.AppModuleBasic{},
+		aethelredFeeMarketModuleBasic{},
 		erc20.AppModuleBasic{},
 		precisebank.NewAppModuleBasic(),
 	)

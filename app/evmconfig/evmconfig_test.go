@@ -53,7 +53,7 @@ func TestNormalizeAddr(t *testing.T) {
 
 func TestVMParams_ValidAndPermissioned(t *testing.T) {
 	p := VMParams()
-	require.Equal(t, ExtendedDenom, p.EvmDenom, "EVM must operate in the 18-decimal denom")
+	require.Equal(t, BankDenom, p.EvmDenom, "EvmDenom is the INTEGER bank denom; x/vm resolves 6 decimals from bank metadata and bridges to the extended denom")
 	require.NotNil(t, p.ExtendedDenomOptions)
 	require.Equal(t, ExtendedDenom, p.ExtendedDenomOptions.ExtendedDenom)
 	require.Equal(t, ActiveStaticPrecompiles(), p.ActiveStaticPrecompiles)

@@ -184,6 +184,18 @@ func (aethelredVMModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessag
 	return cdc.MustMarshalJSON(evmconfig.VMGenesis())
 }
 
+// aethelredFeeMarketModuleBasic overrides x/feemarket's default genesis with
+// the base fee rescaled to the 6-decimal bank denom (see
+// evmconfig.InitialBaseFee — the upstream default assumes 18 decimals and
+// makes gas ~1e12× too expensive here).
+type aethelredFeeMarketModuleBasic struct {
+	feemarket.AppModuleBasic
+}
+
+func (aethelredFeeMarketModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(evmconfig.FeeMarketGenesis())
+}
+
 // aethelredBankModuleBasic extends x/bank's default genesis with the uaethel
 // denom metadata the EVM stack requires (the vm module resolves the EVM coin
 // info from bank metadata; a missing entry fails InitGenesis).
@@ -197,18 +209,20 @@ func (b aethelredBankModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMe
 	return cdc.MustMarshalJSON(gs)
 }
 
-// AethelDenomMetadata is the bank metadata for the native token: 6-decimal
-// base denom uaethel, 18-decimal extended denom aaethel (the EVM denom), and
-// the display unit aethel.
+// AethelDenomMetadata is the bank metadata for the native token, keyed by the
+// INTEGER bank denom uaethel (what x/bank actually holds). x/vm resolves the
+// EVM decimals from the display unit's exponent here (aethel at 6), which is
+// what routes balances through the x/precisebank 1e12 bridge to the virtual
+// 18-decimal aaethel; aaethel is NOT a bank denom and must not appear as a
+// metadata base (its metadata lookup happens under params.EvmDenom = uaethel).
 func AethelDenomMetadata() banktypes.Metadata {
 	return banktypes.Metadata{
 		Description: "The native token of the Aethelred network.",
 		DenomUnits: []*banktypes.DenomUnit{
-			{Denom: evmconfig.ExtendedDenom, Exponent: 0, Aliases: []string{"attoaethel"}},
-			{Denom: evmconfig.BankDenom, Exponent: 12, Aliases: []string{"microaethel"}},
-			{Denom: evmconfig.DisplayDenom, Exponent: 18},
+			{Denom: evmconfig.BankDenom, Exponent: 0, Aliases: []string{"microaethel"}},
+			{Denom: evmconfig.DisplayDenom, Exponent: 6},
 		},
-		Base:    evmconfig.ExtendedDenom,
+		Base:    evmconfig.BankDenom,
 		Display: evmconfig.DisplayDenom,
 		Name:    "Aethelred",
 		Symbol:  "AETHEL",
@@ -219,4 +233,5 @@ func AethelDenomMetadata() banktypes.Metadata {
 var (
 	_ module.HasGenesisBasics = aethelredVMModuleBasic{}
 	_ module.HasGenesisBasics = aethelredBankModuleBasic{}
+	_ module.HasGenesisBasics = aethelredFeeMarketModuleBasic{}
 )

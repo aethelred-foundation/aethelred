@@ -17,6 +17,8 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	evmcryptocodec "github.com/cosmos/evm/crypto/codec"
+	erc20types "github.com/cosmos/evm/x/erc20/types"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
 
 	// Aethelred custom modules
 	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
@@ -68,8 +70,12 @@ func MakeEncodingConfig() EncodingConfig {
 			AddressCodec:          accCodec,
 			ValidatorAddressCodec: address.NewBech32Codec(AccountAddressPrefix + "valoper"),
 			// Custom-module protos lack the (cosmos.msg.v1.signer) option, so their
-			// signers must be resolved explicitly (see signerFromField).
+			// signers must be resolved explicitly (see signerFromField). The
+			// cosmos/evm messages recover their signer from the Ethereum
+			// signature itself, via the getters the module exports.
 			CustomGetSigners: map[protoreflect.FullName]signing.GetSignersFunc{
+				evmtypes.MsgEthereumTxCustomGetSigner.MsgType:      evmtypes.MsgEthereumTxCustomGetSigner.Fn,
+				erc20types.MsgConvertERC20CustomGetSigner.MsgType:  erc20types.MsgConvertERC20CustomGetSigner.Fn,
 				"aethelred.pouw.v1.MsgSubmitJob":                   signerFromField(accCodec, "creator"),
 				"aethelred.pouw.v1.MsgRegisterModel":               signerFromField(accCodec, "owner"),
 				"aethelred.pouw.v1.MsgCancelJob":                   signerFromField(accCodec, "creator"),

@@ -106,7 +106,7 @@ func TestEVM_EthCall_ReachesISealPrecompile(t *testing.T) {
 
 	// The EVM config actually landed in state.
 	vmParams := app.EVMKeeper.GetParams(ctx)
-	require.Equal(t, evmconfig.ExtendedDenom, vmParams.EvmDenom)
+	require.Equal(t, evmconfig.BankDenom, vmParams.EvmDenom)
 	require.Contains(t, vmParams.ActiveStaticPrecompiles, sealprecompile.Address.Hex())
 
 	// Seed an ACTIVE Digital Seal for ISeal to read.
