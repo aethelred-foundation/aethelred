@@ -143,8 +143,9 @@ func TestCruzible_SealGatedStaking_RealPrecompile(t *testing.T) {
 	_, err = host.CallValue(ctx, alice, vault, swsData, 3_000_000, uint256.NewInt(5_000_000_000_000_000_000))
 	require.NoError(t, err, "policy-satisfying, alice-bound seal must admit")
 
+	// 5 AETHEL minus the 1000-wei MINIMUM_LIQUIDITY dead-shares bootstrap lock.
 	bal := callUint(t, host, ctx, tokenABI, alice, token, "balanceOf", alice)
-	require.Equal(t, "5000000000000000000", bal.String(), "admitted staker holds 5 stAETHEL")
+	require.Equal(t, "4999999999999999000", bal.String(), "admitted staker holds ~5 stAETHEL (net of dead-shares lock)")
 
 	admitted := callBool(t, host, ctx, vaultABI, alice, vault, "complianceAdmitted", alice)
 	require.True(t, admitted, "alice recorded as admitted")
