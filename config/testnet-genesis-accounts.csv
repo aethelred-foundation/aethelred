@@ -1,0 +1,21 @@
+#,Key Name,Category,Purpose / Role,Address (aethel1...),EVM Address (0x...),Amount (tAETHEL display),"Amount (uaethel = base, 10^6)",Genesis coin string,Self-bond @ gentx (tAETHEL),Fee-sponsored,Notes
+1,validator-1,Validator,"Genesis validator (bootstrap, us-east-1)",TO GENERATE,derived from key,10000,10000000000,10000000000uaethel,1000,No,Self-bond drawn from funded amount at gentx
+2,validator-2,Validator,"Genesis validator (bootstrap, eu-west-1)",TO GENERATE,derived from key,10000,10000000000,10000000000uaethel,1000,No,BFT min set = 4; grow toward target 50
+3,validator-3,Validator,"Genesis validator (bootstrap, ap-southeast-1)",TO GENERATE,derived from key,10000,10000000000,10000000000uaethel,1000,No,
+4,validator-4,Validator,"Genesis validator (bootstrap, us-east-2)",TO GENERATE,derived from key,10000,10000000000,10000000000uaethel,1000,No,4 = fault-tolerant quorum (tolerates 1 down)
+5,faucet,Infrastructure,"Public faucet drip source (10,000 tAETHEL / 24h)",TO GENERATE,derived from key,1000000000,1000000000000000,1000000000000000uaethel,-,n/a,~100k drips; keep isolated + refillable
+6,relayer-1,Infrastructure,IBC relayer gas (optional),TO GENERATE,derived from key,10000,10000000000,10000000000uaethel,-,Yes,Only if running IBC; feegrant-sponsored
+7,relayer-2,Infrastructure,MRV / custody-liability oracle gas (optional),TO GENERATE,derived from key,10000,10000000000,10000000000uaethel,-,Yes,TerraQura MRV / custody oracle
+8,gov-authority,Governance,Gov proposal deposits + param/upgrade authority,TO GENERATE,derived from key,1000000,1000000000000,1000000000000uaethel,-,No,Can be the treasury multisig instead
+9,cruzible-deployer,dApp Deployer,Deploy + operate Cruzible liquid staking,TO GENERATE,derived from key,100000,100000000000,100000000000uaethel,-,No,Separate key per dApp (blast-radius isolation)
+10,zeroid-deployer,dApp Deployer,Deploy ZeroID identity / credentials,TO GENERATE,derived from key,100000,100000000000,100000000000uaethel,-,No,
+11,terraqura-deployer,dApp Deployer,Deploy TerraQura RWA / carbon MRV,TO GENERATE,derived from key,100000,100000000000,100000000000uaethel,-,No,
+12,noblepay-deployer,dApp Deployer,Deploy NoblePay settlement rail,TO GENERATE,derived from key,100000,100000000000,100000000000uaethel,-,No,
+13,shiora-deployer,dApp Deployer,Deploy Shiora health-data attestation,TO GENERATE,derived from key,100000,100000000000,100000000000uaethel,-,No,
+14,test-alice,Test Persona,E2E demo - staking flow (Cruzible),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,Gas sponsored; holds stake amount for demo
+15,test-bob,Test Persona,E2E demo - settlement payer (NoblePay),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,
+16,test-carol,Test Persona,E2E demo - settlement payee (NoblePay),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,
+17,test-dave,Test Persona,E2E demo - credential subject (ZeroID),TO GENERATE,derived from key,50000,50000000000,50000000000uaethel,-,Yes,
+18,treasury,Treasury,Foundation multisig - grants/incentives/reserves (balancing),TO GENERATE,derived from key,8998240000,8998240000000000,8998240000000000uaethel,-,n/a,Holds remainder of total supply
+,TOTAL,,,,,10000000000,10000000000000000,10000000000000000uaethel,,,"= total supply (10,000,000,000 tAETHEL)"
+,CHECK,,,,,0,0 (allocations - supply),,,,must be 0
