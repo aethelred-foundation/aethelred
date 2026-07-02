@@ -91,9 +91,10 @@ genesis):**
    app_state.mint.minter.inflation            = "0.0"
    ```
 
-   Stakers then earn from tx fees + PoUW verification rewards — the
-   "work-backed emission, not idle inflation" story, coherent with the
-   PoUW thesis. Raising inflation later is a normal gov param change.
+   Stakers then earn from transaction fees and PoUW verification rewards —
+   emission backed by verification work rather than inflation, consistent
+   with the PoUW design. Inflation can be re-enabled later through a
+   standard governance parameter change.
 2. **`x/pouw` mints 1,000,000 AETHEL at genesis** into its module account
    (verification reward pool, `DefaultRewardPoolInitial`). The sheet now
    carries this as row 19 (NOT an `add-genesis-account` row — the chain
@@ -111,8 +112,9 @@ identity, not a vault) and must not be a single hot key. Testnet: a
 Cosmos-native **multisig** (2-of-3 minimum). Mainnet: split into
 (i) foundation multisig with a published spending policy, (ii) a
 community-pool tranche governed on-chain, (iii) vesting accounts for
-team/investor tranches per the tokenomics doc — a single account holding
-~90% of supply will not survive diligence.
+team/investor tranches per the tokenomics document. A single account
+holding ~90% of supply is not an acceptable custody posture for external
+review.
 
 ## Governance cadence for treasury spends (verified params)
 
@@ -135,6 +137,24 @@ CI/demos may patch to seconds as scripts/gov-e2e.sh does). **Mainnet:
 5–7 days standard + 24h expedited** (sovereign/institutional voters need
 internal sign-off time; 48h is too fast, 14d too slow), and raise
 `min_deposit` to 500–1,000+ AETHEL to price out spam proposals.
+
+## Validator allocations and the PoUW stake floor
+
+`x/pouw` hardcodes a **100,000 AETHEL minimum BONDED stake** per validator
+(stake_security.go) — below it a validator produces blocks but cannot
+register PoUW capability, receives no verification rewards, and mints no
+seals. The sheet's validator rows are therefore 150,000 tAETHEL funded /
+120,000 self-bonded (headroom for fees + slashing). Do not lower them
+below the floor.
+
+**Genesis generation is scripted:** `scripts/testnet-genesis.sh` in the
+chain repo (EVM branch) takes a validators file (name + public IP [+
+port]) plus this sheet, and emits per-server node bundles (peers wired,
+LCD/EVM-RPC/PQC enabled), the funded genesis, chmod-600 mnemonic
+secrets, and an address/balance manifest. Relaunching the testnet
+requires only re-running the script. All keys are created as eth_secp256k1 so
+every account works on both faces. `--zero-inflation` implements the
+fixed-supply option documented above.
 
 ## Residual to-do that actually remains
 
