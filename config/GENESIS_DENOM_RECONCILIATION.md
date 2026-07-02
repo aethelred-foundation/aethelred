@@ -114,6 +114,28 @@ community-pool tranche governed on-chain, (iii) vesting accounts for
 team/investor tranches per the tokenomics doc — a single account holding
 ~90% of supply will not survive diligence.
 
+## Governance cadence for treasury spends (verified params)
+
+The chain ships two gov tracks (from a live genesis): **standard =
+48h voting** (quorum 33.4%, threshold 50%, veto 33.4% burns deposit) and
+**expedited = 24h** (threshold 66.7%, 5× deposit). `max_deposit_period`
+48h; `min_deposit` 10 AETHEL. A community-pool spend therefore clears in
+~2 days, not the legacy-Hub 2–3 weeks (modern chains: Osmosis 5d,
+Injective/dYdX ~4d, Celestia ~7d).
+
+**Do not route every disbursement through a vote.** Use the
+budget-tranche pattern: one `CommunityPoolSpend` proposal funds a
+program multisig for a quarter (published policy + monthly reporting);
+payouts are then multisig ops and governance renews-or-kills quarterly.
+Combined with the treasury split above: foundation multisig = no votes,
+community pool = quarterly tranches, expedited track = emergencies.
+
+Recommended: **testnet keeps 48h** (team exercises the real loop;
+CI/demos may patch to seconds as scripts/gov-e2e.sh does). **Mainnet:
+5–7 days standard + 24h expedited** (sovereign/institutional voters need
+internal sign-off time; 48h is too fast, 14d too slow), and raise
+`min_deposit` to 500–1,000+ AETHEL to price out spam proposals.
+
 ## Residual to-do that actually remains
 
 - Merge/land the EVM stack (`release/public-testnet-pqc`) into the branch
