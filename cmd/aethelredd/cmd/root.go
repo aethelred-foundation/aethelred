@@ -30,6 +30,8 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
+	cosmosevmhd "github.com/cosmos/evm/crypto/hd"
+
 	"github.com/aethelred/aethelred/app"
 	"github.com/aethelred/aethelred/x/pouw"
 	"github.com/aethelred/aethelred/x/seal"
@@ -53,6 +55,12 @@ func NewRootCmd() *cobra.Command {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithHomeDir(app.DefaultNodeHome).
+		// eth_secp256k1 keyring support (cosmos/evm): Aethelred accounts are
+		// EVM-keyed, so `keys add --algo eth_secp256k1` MUST work — without
+		// this option the CLI silently creates vanilla cosmos keys whose
+		// accounts cannot sign EVM transactions (EVM-face-stranded funds).
+		// Vanilla secp256k1 stays supported for legacy/ops keys.
+		WithKeyringOptions(cosmosevmhd.EthSecp256k1Option()).
 		WithViper("AETHELRED")
 
 	rootCmd := &cobra.Command{
