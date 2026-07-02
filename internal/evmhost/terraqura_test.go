@@ -148,6 +148,16 @@ func TestTerraQura_SealProofOfPhysics_RealPrecompile(t *testing.T) {
 	seal.Revoke()
 	require.NoError(t, k.UpdateSeal(ctx, seal))
 	require.False(t, terraquraAnchored(t, host, ctx, abi, reg, operator, dacUnit, batch), "seal revocation invalidates the anchor live")
+
+	// Revocation permanence: even a FRESH, policy-satisfying, claim-bound seal
+	// cannot re-anchor the claim (AlreadyAnchored) — a withdrawn claim cannot
+	// be resurrected through the permissionless path.
+	seedMRVSeal(t, k, ctx, "job-mrv-003", dacUnit, batch, "AE")
+	anchorFresh, err := abi.Pack("anchor", dacUnit, batch, "job-mrv-003")
+	require.NoError(t, err)
+	_, err = host.Call(ctx, operator, reg, anchorFresh, 3_000_000)
+	require.Error(t, err, "re-anchoring a revoked claim with a fresh seal must fail (AlreadyAnchored)")
+	require.False(t, terraquraAnchored(t, host, ctx, abi, reg, operator, dacUnit, batch), "claim stays invalid after attempted re-anchor")
 }
 
 func terraquraAnchored(t *testing.T, host *evmhost.Host, ctx sdk.Context, abi gethabi.ABI, reg, caller common.Address, dacUnit, batch [32]byte) bool {
