@@ -31,6 +31,12 @@
 #   validator-1 203.0.113.10
 #   validator-2 203.0.113.20 26656
 #
+# LOCAL DRY-RUN: give every validator the same IP (127.0.0.1) and the script
+# detects the co-location and offsets each node's service ports (base + 100*n),
+# producing a runnable local multi-node testnet from the SAME bundle logic the
+# distributed deployment uses — so a genesis set can be booted and block
+# production confirmed on one machine before shipping to real servers.
+#
 # Accounts CSV: the allocation sheet (config/testnet-genesis-accounts.csv
 # in the main repo). Rows whose "Genesis coin string" ends in the denom are
 # funded; validator-named rows fund that validator's operator key; every
@@ -113,6 +119,35 @@ N=${#V_NAMES[@]}
 [ "$N" -ge 1 ] || { echo "no validators parsed from $VALIDATORS_FILE"; exit 2; }
 log "validators: $N ($(printf '%s ' "${V_NAMES[@]}"))"
 [ "$N" -ge 4 ] || warn "$N validator(s) < 4: no fault tolerance (BFT tolerates floor((N-1)/3) down)"
+
+# ── service ports, co-location aware ─────────────────────────────────────
+# Each node needs distinct P2P/RPC/gRPC/LCD/EVM-RPC/pprof ports only when it
+# shares a host with another node. Nodes on unique IPs keep the standard
+# ports (26656/26657/9090/1317/8545) — what a one-node-per-server deployment
+# wants. When an IP repeats (e.g. every validator on 127.0.0.1 for a local
+# multi-node run), the Nth node on that IP is offset by 100*N, matching
+# localnet.sh's convention, so the whole set runs on one machine.
+P2P_BASE=26656 RPC_BASE=26657 GRPC_BASE=9090 API_BASE=1317 EVMRPC_BASE=8545 PPROF_BASE=6060
+V_P2P=() V_RPC=() V_GRPC=() V_API=() V_EVMRPC=() V_PPROF=() V_OFFSET=()
+COLOCATED=0
+# bash 3.2 has no associative arrays; count earlier occurrences by scanning.
+for i in $(seq 0 $((N - 1))); do
+	ip="${V_IPS[$i]}"
+	localidx=0
+	for (( j=0; j<i; j++ )); do [ "${V_IPS[$j]}" = "$ip" ] && localidx=$((localidx + 1)); done
+	off=$((100 * localidx))
+	[ "$localidx" -gt 0 ] && COLOCATED=1
+	V_OFFSET+=("$off")
+	# Honor an explicit p2p port only for the first node on its IP; co-located
+	# peers follow the offset scheme so they cannot collide.
+	if [ "$localidx" -eq 0 ]; then V_P2P+=("${V_PORTS[$i]}"); else V_P2P+=("$((P2P_BASE + off))"); fi
+	V_RPC+=("$((RPC_BASE + off))")
+	V_GRPC+=("$((GRPC_BASE + off))")
+	V_API+=("$((API_BASE + off))")
+	V_EVMRPC+=("$((EVMRPC_BASE + off))")
+	V_PPROF+=("$((PPROF_BASE + off))")
+done
+[ "$COLOCATED" -eq 1 ] && log "co-located nodes detected (shared IP) — offsetting service ports per host"
 
 # ── helper: create an eth_secp256k1 key, persist its mnemonic secret ─────
 # Prints the bech32 address on stdout.
@@ -225,10 +260,10 @@ for i in $(seq 0 $((N - 1))); do
 	[ "${V_BONDS[$i]}" -ge "$POUW_MIN_BOND_UAETHEL" ] ||
 		warn "$name self-bond ${V_BONDS[$i]}$DENOM < 100k AETHEL PoUW minimum — it will produce blocks but CANNOT join PoUW verification"
 	[ "$home" = "$COMPOSER" ] || cp "$COMPOSER/config/genesis.json" "$home/config/genesis.json"
-	log "gentx $name (bond ${V_BONDS[$i]}$DENOM, peer ${V_IPS[$i]}:${V_PORTS[$i]})"
+	log "gentx $name (bond ${V_BONDS[$i]}$DENOM, peer ${V_IPS[$i]}:${V_P2P[$i]})"
 	"$BIN" gentx "$name" "${V_BONDS[$i]}$DENOM" --chain-id "$CHAIN_ID" \
 		--keyring-backend "$KEYRING" --home "$home" \
-		--ip "${V_IPS[$i]}" --p2p-port "${V_PORTS[$i]}" >/dev/null 2>&1
+		--ip "${V_IPS[$i]}" --p2p-port "${V_P2P[$i]}" >/dev/null 2>&1
 	cp "$home/config/gentx/"*.json "$OUT_DIR/gentxs/"
 done
 mkdir -p "$COMPOSER/config/gentx"
@@ -245,25 +280,38 @@ for i in $(seq 0 $((N - 1))); do
 	peers=""
 	for j in $(seq 0 $((N - 1))); do
 		[ "$j" -eq "$i" ] && continue
-		peers="${peers:+$peers,}${V_NODEIDS[$j]}@${V_IPS[$j]}:${V_PORTS[$j]}"
+		peers="${peers:+$peers,}${V_NODEIDS[$j]}@${V_IPS[$j]}:${V_P2P[$j]}"
 	done
 	cfg="$home/config/config.toml"
 	/usr/bin/sed -i.bak \
 		-e "s|^persistent_peers = .*|persistent_peers = \"$peers\"|" \
-		-e "s|^external_address = .*|external_address = \"${V_IPS[$i]}:${V_PORTS[$i]}\"|" \
-		-e "s|^laddr = \"tcp://0.0.0.0:26656\"|laddr = \"tcp://0.0.0.0:${V_PORTS[$i]}\"|" \
+		-e "s|^external_address = .*|external_address = \"${V_IPS[$i]}:${V_P2P[$i]}\"|" \
+		-e "s|^laddr = \"tcp://0.0.0.0:26656\"|laddr = \"tcp://0.0.0.0:${V_P2P[$i]}\"|" \
+		-e "s|^laddr = \"tcp://127.0.0.1:26657\"|laddr = \"tcp://0.0.0.0:${V_RPC[$i]}\"|" \
+		-e "s|^pprof_laddr = \".*\"|pprof_laddr = \"localhost:${V_PPROF[$i]}\"|" \
 		"$cfg"
+	# Co-located nodes share 127.0.0.1; CometBFT rejects duplicate peer IPs by
+	# default, which prevents the mesh from forming. Relax only for the local
+	# case — a distributed deployment keeps the secure defaults.
+	if [ "$COLOCATED" -eq 1 ]; then
+		/usr/bin/sed -i.bak4 \
+			-e "s|^addr_book_strict = true|addr_book_strict = false|" \
+			-e "s|^allow_duplicate_ip = false|allow_duplicate_ip = true|" \
+			"$cfg"
+	fi
 
 	appcfg="$home/config/app.toml"
 	/usr/bin/sed -i.bak \
 		-e "s|^minimum-gas-prices = .*|minimum-gas-prices = \"$MIN_GAS_PRICES\"|" \
+		-e "s|^address = \"localhost:9090\"|address = \"localhost:${V_GRPC[$i]}\"|" \
 		"$appcfg"
 	# Enable LCD (REST) — required for standard clients/wallet native path.
 	/usr/bin/sed -i.bak2 '/^\[api\]/,/^\[/ s/^enable = false/enable = true/' "$appcfg"
-	/usr/bin/sed -i.bak3 '/^\[api\]/,/^\[/ s|^address = \"tcp://localhost:1317\"|address = \"tcp://0.0.0.0:1317\"|' "$appcfg"
-	# EVM JSON-RPC + real PQC (both read via viper: app.toml sections).
-	printf '\n[json-rpc]\nenable = true\naddress = "0.0.0.0:8545"\n\n[aethelred.pqc]\nenabled = true\nmode = "hybrid"\n' >>"$appcfg"
-	rm -f "$home/config/"*.bak "$home/config/"*.bak2 "$home/config/"*.bak3
+	/usr/bin/sed -i.bak3 "/^\[api\]/,/^\[/ s|^address = \"tcp://localhost:1317\"|address = \"tcp://0.0.0.0:${V_API[$i]}\"|" "$appcfg"
+	# EVM JSON-RPC (HTTP + WS) + real PQC (read via viper: app.toml sections).
+	printf '\n[json-rpc]\nenable = true\naddress = "0.0.0.0:%s"\nws-address = "0.0.0.0:%s"\n\n[aethelred.pqc]\nenabled = true\nmode = "hybrid"\n' \
+		"${V_EVMRPC[$i]}" "$((V_EVMRPC[i] + 1))" >>"$appcfg"
+	rm -f "$home/config/"*.bak "$home/config/"*.bak2 "$home/config/"*.bak3 "$home/config/"*.bak4
 done
 
 # ── 6. manifest: every account, both faces, balances ─────────────────────
@@ -289,16 +337,29 @@ print('0x'+bytes(out).hex())
 # ── 7. deployment instructions ───────────────────────────────────────────
 DEPLOY="$OUT_DIR/DEPLOY.txt"
 {
-	echo "Aethelred distributed testnet — deployment ($CHAIN_ID, $(date -u +%Y-%m-%dT%H:%M:%SZ))"
-	echo
-	echo "Per server (repeat for each validator):"
-	for i in $(seq 0 $((N - 1))); do
+	if [ "$COLOCATED" -eq 1 ]; then
+		echo "Aethelred testnet — LOCAL multi-node run ($CHAIN_ID, $(date -u +%Y-%m-%dT%H:%M:%SZ))"
 		echo
-		echo "  ${V_NAMES[$i]}  @ ${V_IPS[$i]}"
-		echo "    rsync -a ${V_NAMES[$i]}/ user@${V_IPS[$i]}:~/.aethelredd/"
-		echo "    AETHELRED_TEE_MODE=simulated aethelredd start --home ~/.aethelredd"
-		echo "    open ports: ${V_PORTS[$i]}/p2p 26657/rpc 1317/lcd 8545/evm-rpc (firewall lcd/evm as needed)"
-	done
+		echo "Nodes share a host; service ports are offset per node (base + 100*n)."
+		echo "Start each in its own shell from $OUT_DIR:"
+		for i in $(seq 0 $((N - 1))); do
+			echo
+			echo "  ${V_NAMES[$i]}  (${V_IPS[$i]})"
+			echo "    AETHELRED_TEE_MODE=simulated aethelredd start --home ${V_NAMES[$i]}"
+			echo "    p2p ${V_P2P[$i]}  rpc ${V_RPC[$i]}  lcd ${V_API[$i]}  grpc ${V_GRPC[$i]}  evm-rpc ${V_EVMRPC[$i]}"
+		done
+	else
+		echo "Aethelred distributed testnet — deployment ($CHAIN_ID, $(date -u +%Y-%m-%dT%H:%M:%SZ))"
+		echo
+		echo "Per server (repeat for each validator):"
+		for i in $(seq 0 $((N - 1))); do
+			echo
+			echo "  ${V_NAMES[$i]}  @ ${V_IPS[$i]}"
+			echo "    rsync -a ${V_NAMES[$i]}/ user@${V_IPS[$i]}:~/.aethelredd/"
+			echo "    AETHELRED_TEE_MODE=simulated aethelredd start --home ~/.aethelredd"
+			echo "    open ports: ${V_P2P[$i]}/p2p ${V_RPC[$i]}/rpc ${V_API[$i]}/lcd ${V_EVMRPC[$i]}/evm-rpc (firewall lcd/evm as needed)"
+		done
+	fi
 	echo
 	echo "SECURITY:"
 	echo "  - node homes contain priv_validator_key.json, node_key.json, and a"
