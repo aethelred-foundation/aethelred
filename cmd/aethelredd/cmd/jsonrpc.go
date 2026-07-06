@@ -29,9 +29,10 @@ import (
 
 // Flag keys for the JSON-RPC side service.
 const (
-	flagJSONRPCEnable  = "json-rpc.enable"
-	flagJSONRPCAddress = "json-rpc.address"
-	flagJSONRPCAPI     = "json-rpc.api"
+	flagJSONRPCEnable    = "json-rpc.enable"
+	flagJSONRPCAddress   = "json-rpc.address"
+	flagJSONRPCWsAddress = "json-rpc.ws-address"
+	flagJSONRPCAPI       = "json-rpc.api"
 )
 
 // runningApp captures the concrete app the AppCreator built, so the PostSetup
@@ -48,6 +49,7 @@ func addJSONRPCStartFlags(base func(*cobra.Command)) func(*cobra.Command) {
 		}
 		cmd.Flags().Bool(flagJSONRPCEnable, false, "Enable the EVM JSON-RPC HTTP server")
 		cmd.Flags().String(flagJSONRPCAddress, cosmosevmserverconfig.DefaultJSONRPCAddress, "EVM JSON-RPC HTTP server listen address")
+		cmd.Flags().String(flagJSONRPCWsAddress, cosmosevmserverconfig.DefaultJSONRPCWsAddress, "EVM JSON-RPC WebSocket server listen address")
 		cmd.Flags().StringSlice(flagJSONRPCAPI, cosmosevmserverconfig.GetDefaultAPINamespaces(), "EVM JSON-RPC namespaces to enable (eth,net,web3,...)")
 	}
 }
@@ -75,12 +77,20 @@ func startJSONRPCPostSetup(svrCtx *server.Context, clientCtx client.Context, ctx
 	if addr := svrCtx.Viper.GetString(flagJSONRPCAddress); addr != "" {
 		cfg.JSONRPC.Address = addr
 	}
+	// Honor the configured WebSocket bind as well; without this the server
+	// falls back to the cosmos/evm default (127.0.0.1:8546) regardless of the
+	// app.toml [json-rpc] ws-address value, leaving WS unreachable on public
+	// nodes.
+	if wsAddr := svrCtx.Viper.GetString(flagJSONRPCWsAddress); wsAddr != "" {
+		cfg.JSONRPC.WsAddress = wsAddr
+	}
 	if apis := svrCtx.Viper.GetStringSlice(flagJSONRPCAPI); len(apis) > 0 {
 		cfg.JSONRPC.API = apis
 	}
 
 	svrCtx.Logger.Info("Starting EVM JSON-RPC server",
 		"address", cfg.JSONRPC.Address,
+		"ws_address", cfg.JSONRPC.WsAddress,
 		"namespaces", cfg.JSONRPC.API,
 	)
 

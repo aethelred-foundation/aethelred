@@ -353,7 +353,7 @@ for i in $(seq 0 $((N - 1))); do
 	appcfg="$home/config/app.toml"
 	/usr/bin/sed -i.bak \
 		-e "s|^minimum-gas-prices = .*|minimum-gas-prices = \"$MIN_GAS_PRICES\"|" \
-		-e "s|^address = \"localhost:9090\"|address = \"localhost:${V_GRPC[$i]}\"|" \
+		-e "s|^address = \"localhost:9090\"|address = \"0.0.0.0:${V_GRPC[$i]}\"|" \
 		"$appcfg"
 	# Enable LCD (REST) — required for standard clients/wallet native path.
 	/usr/bin/sed -i.bak2 '/^\[api\]/,/^\[/ s/^enable = false/enable = true/' "$appcfg"
@@ -407,7 +407,7 @@ DEPLOY="$OUT_DIR/DEPLOY.txt"
 			echo "  ${V_NAMES[$i]}  @ ${V_IPS[$i]}"
 			echo "    rsync -a ${V_NAMES[$i]}/ user@${V_IPS[$i]}:~/.aethelredd/"
 			echo "    AETHELRED_TEE_MODE=simulated aethelredd start --home ~/.aethelredd"
-			echo "    open ports: ${V_P2P[$i]}/p2p ${V_RPC[$i]}/rpc ${V_API[$i]}/lcd ${V_EVMRPC[$i]}/evm-rpc (firewall lcd/evm as needed)"
+			echo "    open ports: ${V_P2P[$i]}/p2p ${V_RPC[$i]}/rpc ${V_GRPC[$i]}/grpc ${V_API[$i]}/lcd ${V_EVMRPC[$i]}/evm-rpc (firewall grpc/lcd/evm as needed)"
 		done
 	fi
 	echo
