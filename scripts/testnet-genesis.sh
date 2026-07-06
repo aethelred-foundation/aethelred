@@ -42,6 +42,9 @@
 # funded; validator-named rows fund that validator's operator key; every
 # other row gets a fresh key in accounts-keyring. Rows marked "do NOT
 # add-genesis-account" (module-minted supply) are skipped by construction.
+# Rows marked "Fee-sponsored: Yes" additionally receive a genesis x/feegrant
+# BasicAllowance from the treasury (FEEGRANT_GRANTER / FEEGRANT_SPEND_LIMIT),
+# so sponsored clients can transact with zero balance of their own.
 #
 # Design notes (all verified against the chain):
 #   - Every key is created with --algo eth_secp256k1 (coin-type 60) so each
@@ -66,6 +69,9 @@ KEYRING="${KEYRING:-test}"
 DEFAULT_VALIDATOR_FUNDING="${DEFAULT_VALIDATOR_FUNDING:-150000000000}" # 150k AETHEL
 DEFAULT_SELF_BOND="${DEFAULT_SELF_BOND:-120000000000}"                 # 120k AETHEL
 POUW_MIN_BOND_UAETHEL=100000000000                                     # 100k AETHEL (hardcoded chain-side)
+# Genesis x/feegrant for rows marked "Fee-sponsored: Yes" in the accounts CSV.
+FEEGRANT_GRANTER="${FEEGRANT_GRANTER:-treasury}"           # granter key name (must be a CSV row)
+FEEGRANT_SPEND_LIMIT="${FEEGRANT_SPEND_LIMIT:-1000000000}" # 1k AETHEL gas budget per grantee
 
 VALIDATORS_FILE=""
 ACCOUNTS_CSV=""
@@ -202,6 +208,7 @@ PYEOF
 # per-validator self-bond overrides "BOND|name|uaethel".
 ACCOUNTS_KEYRING="$OUT_DIR/accounts-keyring"
 declare -a M_NAMES=() M_CATS=() M_ADDRS=() M_COINS=()
+declare -a SPONSORED_NAMES=() SPONSORED_ADDRS=()
 declare -a V_BONDS=()
 for i in $(seq 0 $((N - 1))); do V_BONDS+=("$DEFAULT_SELF_BOND"); done
 
@@ -213,7 +220,7 @@ fund() { # <name> <category> <address> <coin>
 
 if [ -n "$ACCOUNTS_CSV" ]; then
 	log "funding accounts from $(basename "$ACCOUNTS_CSV")"
-	while IFS='|' read -r name category coin bond; do
+	while IFS='|' read -r name category coin bond sponsored; do
 		vidx=-1
 		for i in $(seq 0 $((N - 1))); do
 			[ "${V_NAMES[$i]}" = "$name" ] && vidx=$i && break
@@ -221,9 +228,13 @@ if [ -n "$ACCOUNTS_CSV" ]; then
 		if [ "$vidx" -ge 0 ]; then
 			fund "$name" "$category" "${V_ADDRS[$vidx]}" "$coin"
 			[ -n "$bond" ] && V_BONDS[$vidx]="$bond"
+			addr="${V_ADDRS[$vidx]}"
 		else
 			addr="$(make_key "$name" "$ACCOUNTS_KEYRING")"
 			fund "$name" "$category" "$addr" "$coin"
+		fi
+		if [ "$sponsored" = "Yes" ]; then
+			SPONSORED_NAMES+=("$name"); SPONSORED_ADDRS+=("$addr")
 		fi
 	done < <(python3 - "$ACCOUNTS_CSV" "$DENOM" <<'PYEOF'
 import csv, sys
@@ -235,7 +246,8 @@ for row in list(csv.reader(open(path)))[1:]:
     if not coin.endswith(denom):
         continue  # module-minted rows ("do NOT add-genesis-account") etc.
     bond_u = str(int(bond) * 10**6) if bond.isdigit() else ""
-    print(f"{name}|{category}|{coin}|{bond_u}")
+    sponsored = row[10].strip() if len(row) > 10 else ""
+    print(f"{name}|{category}|{coin}|{bond_u}|{sponsored}")
 PYEOF
 	)
 	# Validators in the file but absent from the CSV still need funding.
@@ -252,6 +264,44 @@ else
 	for i in $(seq 0 $((N - 1))); do
 		fund "${V_NAMES[$i]}" "Validator" "${V_ADDRS[$i]}" "${DEFAULT_VALIDATOR_FUNDING}${DENOM}"
 	done
+fi
+
+# ── 3b. feegrant allowances for fee-sponsored accounts ───────────────────
+# Rows marked "Fee-sponsored: Yes" in the allocation sheet get a genesis
+# x/feegrant BasicAllowance from the treasury: they can transact (pay gas)
+# with ZERO spendable balance of their own — the zero-balance client UX.
+# The allowance caps the treasury's exposure per grantee.
+if [ ${#SPONSORED_ADDRS[@]} -gt 0 ]; then
+	granter=""
+	for j in "${!M_NAMES[@]}"; do
+		[ "${M_NAMES[$j]}" = "$FEEGRANT_GRANTER" ] && granter="${M_ADDRS[$j]}" && break
+	done
+	if [ -z "$granter" ]; then
+		warn "fee-sponsored rows present but granter '$FEEGRANT_GRANTER' not in accounts — skipping feegrant"
+	else
+		log "feegrant: $FEEGRANT_GRANTER sponsors ${#SPONSORED_ADDRS[@]} account(s) at ${FEEGRANT_SPEND_LIMIT}${DENOM} each (${SPONSORED_NAMES[*]})"
+		python3 - "$COMPOSER/config/genesis.json" "$granter" "$FEEGRANT_SPEND_LIMIT" "$DENOM" "${SPONSORED_ADDRS[@]}" <<'PYEOF'
+import json, sys
+path, granter, limit, denom, grantees = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5:]
+g = json.load(open(path))
+fg = g["app_state"].setdefault("feegrant", {"allowances": []})
+fg.setdefault("allowances", [])
+existing = {(a["granter"], a["grantee"]) for a in fg["allowances"]}
+for grantee in grantees:
+    if (granter, grantee) in existing or grantee == granter:
+        continue
+    fg["allowances"].append({
+        "granter": granter,
+        "grantee": grantee,
+        "allowance": {
+            "@type": "/cosmos.feegrant.v1beta1.BasicAllowance",
+            "spend_limit": [{"denom": denom, "amount": limit}],
+            "expiration": None,
+        },
+    })
+json.dump(g, open(path, "w"), indent=1)
+PYEOF
+	fi
 fi
 
 # ── 4. gentx per validator (with its PUBLIC ip:port), collect, validate ──
