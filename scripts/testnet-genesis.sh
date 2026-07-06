@@ -117,8 +117,15 @@ warn() { printf '\033[1;33m!!! %s\033[0m\n' "$*"; }
 
 # ── parse validators file ────────────────────────────────────────────────
 V_NAMES=() V_IPS=() V_PORTS=()
-while read -r name ip port _; do
+# The `|| [ -n "$name" ]` guard processes a final line that lacks a trailing
+# newline; plain `while read` silently drops it, which would generate an
+# N-1 validator network from an N-line file.
+while read -r name ip port _ || [ -n "$name" ]; do
 	case "$name" in ''|\#*) continue ;; esac
+	if [ -z "$ip" ]; then
+		echo "error: validator '$name' has no IP in $VALIDATORS_FILE"
+		exit 2
+	fi
 	V_NAMES+=("$name"); V_IPS+=("$ip"); V_PORTS+=("${port:-26656}")
 done <"$VALIDATORS_FILE"
 N=${#V_NAMES[@]}
