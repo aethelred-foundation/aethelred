@@ -77,13 +77,22 @@ Optional: `GATE_ADDRESS`, `PAYER` (default = deployer), `JOB_ID`.
 
 ### 4. TerraQura — MRV/carbon anchor · branch `fix/vercel-gitignore`
 
-The signer comes from `PRIVATE_KEY` (Hardhat feeds it to the network's
-accounts); `AETHELRED_TESTNET_RPC_URL` points the network at the node.
+TerraQura is a **pnpm monorepo** (pnpm ≥9, Node ≥20) — `npm install` fails with
+`EUNSUPPORTEDPROTOCOL "workspace:"`. Install with pnpm **from the repo root**,
+build the shared workspace packages (the hardhat config imports
+`@terraqura/network-manifest`, which builds to `dist/` via tsup), then run
+hardhat from `apps/contracts`. The signer comes from `PRIVATE_KEY` (Hardhat feeds
+it to the network's accounts); `AETHELRED_TESTNET_RPC_URL` points at the node.
 
 ```bash
-cd terraqura/apps/contracts && npm install && npx hardhat compile
+corepack enable && corepack prepare pnpm@9.0.0 --activate   # or: npm i -g pnpm@9
+cd terraqura
+pnpm install                          # from the ROOT — resolves workspace:* deps
+pnpm --filter "./packages/**" build   # builds network-manifest et al. (skips heavy apps)
+cd apps/contracts
+pnpm hardhat compile
 PRIVATE_KEY=0x<funded> AETHELRED_TESTNET_RPC_URL=http://<ip>:8545 \
-  npx hardhat run scripts/devnet-seal-proof-of-physics-e2e.ts --network aethelredTestnet
+  pnpm hardhat run scripts/devnet-seal-proof-of-physics-e2e.ts --network aethelredTestnet
 ```
 Optional: `REGISTRY_ADDRESS`, `DAC_UNIT`, `SENSOR_BATCH`, `JOB_ID`.
 
