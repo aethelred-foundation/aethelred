@@ -6,11 +6,18 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+
+	evmaddress "github.com/cosmos/evm/encoding/address"
+	distprecompile "github.com/cosmos/evm/precompiles/distribution"
+	stakingprecompile "github.com/cosmos/evm/precompiles/staking"
 
 	erc20 "github.com/cosmos/evm/x/erc20"
 	erc20keeper "github.com/cosmos/evm/x/erc20/keeper"
@@ -100,8 +107,7 @@ func (app *AethelredApp) initEVMKeepers(
 	)
 
 	// The verifiable-AI precompile surface (ISeal 0x0900, IVerify 0x0901,
-	// IPoUW 0x0902), backed by the real module keepers. Deliberately the ONLY
-	// static precompiles mounted — see evmconfig.ActiveStaticPrecompiles.
+	// IPoUW 0x0902), backed by the real module keepers.
 	staticPrecompiles, err := precompileevm.NewStaticPrecompiles(
 		&app.SealKeeper,
 		app.VerifyKeeper,
@@ -110,6 +116,34 @@ func (app *AethelredApp) initEVMKeepers(
 	if err != nil {
 		panic(fmt.Errorf("failed to build verifiable-AI precompiles: %w", err))
 	}
+
+	// Native-staking surface (ADR-0004 Phase 2 — real liquid-staking yield):
+	// cosmos/evm's upstream staking (0x800) and distribution (0x801)
+	// precompiles, so EVM contracts (the Cruzible vault) can delegate pooled
+	// AETHEL to validators and withdraw EARNED x/staking rewards instead of
+	// operator-pushed ones. Amount arguments are in the BOND DENOM's base
+	// units (uaethel, 6 decimals) — callers on the 18-decimal EVM face must
+	// divide by the precisebank 1e12 conversion factor. The bank view handed
+	// to both is PreciseBankKeeper, matching the EVM keeper's own bank view,
+	// so balance mutations stay consistent with the decimal bridge.
+	addrCodec := evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix())
+	stakingP := stakingprecompile.NewPrecompile(
+		*app.StakingKeeper,
+		stakingkeeper.NewMsgServerImpl(app.StakingKeeper),
+		stakingkeeper.NewQuerier(app.StakingKeeper),
+		app.PreciseBankKeeper,
+		addrCodec,
+	)
+	staticPrecompiles[stakingP.Address()] = stakingP
+	distP := distprecompile.NewPrecompile(
+		app.DistrKeeper,
+		distrkeeper.NewMsgServerImpl(app.DistrKeeper),
+		distrkeeper.NewQuerier(app.DistrKeeper),
+		*app.StakingKeeper,
+		app.PreciseBankKeeper,
+		addrCodec,
+	)
+	staticPrecompiles[distP.Address()] = distP
 
 	app.EVMKeeper = evmkeeper.NewKeeper(
 		appCodec,
