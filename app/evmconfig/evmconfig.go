@@ -55,10 +55,17 @@ func CoinInfo() evmtypes.EvmCoinInfo {
 
 // ActiveStaticPrecompiles is the sorted, unique list of precompile addresses
 // permissioned into the EVM at genesis: the verifiable-AI surface (ISeal
-// 0x0900, IVerify 0x0901, IPoUW 0x0902). x/vm requires this list to be sorted
-// for determinism (ValidatePrecompiles).
+// 0x0900, IVerify 0x0901, IPoUW 0x0902) plus the native-staking surface
+// (staking 0x0800, distribution 0x0801 — ADR-0004 Phase 2: EVM contracts such
+// as the Cruzible vault delegate pooled AETHEL and withdraw EARNED x/staking
+// rewards, replacing operator-pushed yield). x/vm requires this list to be
+// sorted for determinism (ValidatePrecompiles).
 func ActiveStaticPrecompiles() []string {
 	addrs := append([]string(nil), precompileevm.Addresses()...)
+	addrs = append(addrs,
+		evmtypes.StakingPrecompileAddress,
+		evmtypes.DistributionPrecompileAddress,
+	)
 	// Normalize to the lowercase form cosmos/evm's own addresses use, then sort
 	// so ValidatePrecompiles' determinism check passes regardless of source
 	// order.

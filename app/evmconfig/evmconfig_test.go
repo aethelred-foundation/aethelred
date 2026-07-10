@@ -25,12 +25,16 @@ func TestCoinInfo_SixDecimalBridge(t *testing.T) {
 
 func TestActiveStaticPrecompiles_SortedUniqueAndComplete(t *testing.T) {
 	got := ActiveStaticPrecompiles()
-	require.Len(t, got, 3)
+	require.Len(t, got, 5)
 
-	// Must be exactly the verifiable-AI surface.
+	// The verifiable-AI surface…
 	require.Contains(t, got, normalizeAddr(sealprecompile.Address.Hex()))
 	require.Contains(t, got, normalizeAddr(verifyprecompile.Address.Hex()))
 	require.Contains(t, got, normalizeAddr(pouwprecompile.Address.Hex()))
+	// …plus the native-staking surface (ADR-0004 Phase 2 — EVM contracts
+	// delegate pooled AETHEL and withdraw EARNED x/staking rewards).
+	require.Contains(t, got, normalizeAddr(evmtypes.StakingPrecompileAddress))
+	require.Contains(t, got, normalizeAddr(evmtypes.DistributionPrecompileAddress))
 
 	// x/vm requires the list sorted (determinism) and unique.
 	require.True(t, slices.IsSorted(got), "ActiveStaticPrecompiles must be sorted")
