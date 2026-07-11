@@ -39,7 +39,7 @@ jobs:
         working-directory: sdk/typescript
 
       - name: Validate M42 Python scripts compile
-        run: python3 -m py_compile scripts/m42_crypto.py scripts/m42_pqc.py scripts/m42_seal.py scripts/m42_stats.py scripts/m42_workloads.py scripts/m42_chemfp.py scripts/m42_realscreen.py scripts/m42_freivalds.py scripts/m42-sandbox-drill.py scripts/m42-pilot-gap-audit.py scripts/m42-verify.py scripts/m42-bench.py scripts/m42-realdata-validate.py scripts/m42-verifiable-inference.py
+        run: python3 -m py_compile scripts/m42_crypto.py scripts/m42_pqc.py scripts/m42_seal.py scripts/m42_stats.py scripts/m42_workloads.py scripts/m42_chemfp.py scripts/m42_realscreen.py scripts/m42_freivalds.py scripts/m42_energy.py scripts/m42-sandbox-drill.py scripts/m42-pilot-gap-audit.py scripts/m42-verify.py scripts/m42-bench.py scripts/m42-realdata-validate.py scripts/m42-verifiable-inference.py scripts/m42-adversarial.py scripts/m42-crossstack-vector.py
 
       - name: Install M42 test dependencies
         run: python3 -m pip install --quiet pytest scipy
@@ -77,6 +77,14 @@ jobs:
 
       - name: Prove verifiable LLM-scale inference (Freivalds) with a verifiable seal
         run: python3 scripts/m42-verifiable-inference.py
+
+      - name: Run the adversarial tamper-resistance matrix (every forgery rejected)
+        run: python3 scripts/m42-adversarial.py
+
+      - name: Cross-stack — Go production verifier checks a Python-generated artifact
+        run: |
+          python3 scripts/m42-crossstack-vector.py
+          go test -mod=mod ./internal/evidence/...
 
       - name: Validate M42 package preflight
         run: make m42-sandbox-preflight

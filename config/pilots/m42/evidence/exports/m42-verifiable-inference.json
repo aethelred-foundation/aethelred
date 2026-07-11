@@ -1,6 +1,6 @@
 {
   "artifact_mode": "verifiable_inference",
-  "generated_at": "2026-06-14T11:54:45Z",
+  "generated_at": "2026-07-11T13:41:43Z",
   "scheme": "Freivalds matmul verification over GF(2^61-1) + IO commitments + Digital Seal",
   "layer": {
     "d_out": 256,
@@ -12,8 +12,8 @@
     "soundness_error": 8.156630584998156e-56,
     "correct_output_verified": true,
     "single_element_tamper_rejected": true,
-    "prove_ms": 222.95,
-    "verify_ms": 34.5,
+    "prove_ms": 151.9,
+    "verify_ms": 23.65,
     "recompute_ops": 1048576,
     "freivalds_verify_ops": 135168,
     "speedup": 7.76
@@ -45,7 +45,7 @@
     ],
     "seal_results": [
       [
-        "e8f1daad25e6fed42a065132d8184e490da8371f3977f25b7761ebf0d4aabdbf",
+        "6dbaa6469fc429901e2c81693f1a5967fc1bf7247f919dc1b3c6c73876eb794b",
         true,
         [
           {

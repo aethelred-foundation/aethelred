@@ -34,7 +34,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate public-testnet-readiness m42-pilot-pretestnet m42-sandbox-prepare m42-sandbox-preflight m42-sandbox-drill m42-pilot-gap-audit m42-pilot-go-live m42-sandbox-up m42-sandbox-down m42-sandbox-status m42-sandbox-logs m42-sandbox-validate m42-pin-images m42-conversion-docs m42-workloads-generate m42-workloads-score m42-test m42-verify m42-bench m42-realdata m42-verifiable-inference m42-attestation m42-sandbox-drill-all release-preflight fuzz-check
+.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical local-readiness validator-helm-validate public-testnet-readiness m42-pilot-pretestnet m42-sandbox-prepare m42-sandbox-preflight m42-sandbox-drill m42-pilot-gap-audit m42-pilot-go-live m42-sandbox-up m42-sandbox-down m42-sandbox-status m42-sandbox-logs m42-sandbox-validate m42-pin-images m42-conversion-docs m42-workloads-generate m42-workloads-score m42-test m42-verify m42-bench m42-realdata m42-verifiable-inference m42-attestation m42-adversarial m42-crossstack m42-sandbox-drill-all release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -278,6 +278,15 @@ m42-verifiable-inference:
 ## m42-attestation: Verify a real attestation from all six platforms + show the vendor/test-root boundary
 m42-attestation:
 	@go run ./cmd/aethelred-attestation-demo/
+
+## m42-adversarial: Run the pre-agreed tamper-resistance matrix (for an M42 engineer to re-run)
+m42-adversarial:
+	@python3 ./scripts/m42-adversarial.py
+
+## m42-crossstack: Emit a Python-generated evidence vector and verify it with the Go stack
+m42-crossstack:
+	@python3 ./scripts/m42-crossstack-vector.py
+	@go test ./internal/evidence/ -run TestGoVerifiesPythonGeneratedArtifact -count=1
 
 ## m42-pilot-gap-audit: Generate M42 gap register, investor report, and sponsor evidence portal
 m42-pilot-gap-audit:
