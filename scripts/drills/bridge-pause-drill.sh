@@ -94,15 +94,23 @@ if [[ -z "$CIRCUIT_BREAKER_ADDRESS" ]]; then
   log "WARNING: Using bridge address as circuit breaker (no separate CircuitBreaker contract detected)"
 fi
 
-# Use Anvil default accounts if keys not provided
+# If keys are not provided via env vars, derive the well-known PUBLIC Anvil
+# default accounts from Anvil's published test mnemonic at runtime. No private
+# key material is stored in this file. These accounts are for LOCAL ANVIL ONLY
+# and never hold real funds — set GUARDIAN_PRIVATE_KEY / TEST_PRIVATE_KEY in the
+# environment for any non-local target.
+ANVIL_TEST_MNEMONIC="test test test test test test test test test test test junk"
+
 if [[ -z "$GUARDIAN_PRIVATE_KEY" ]]; then
-  GUARDIAN_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-  log "Using default Anvil account 0 as guardian"
+  GUARDIAN_PRIVATE_KEY=$(cast wallet private-key --mnemonic "$ANVIL_TEST_MNEMONIC" --mnemonic-index 0 2>/dev/null || true)
+  [[ -n "$GUARDIAN_PRIVATE_KEY" ]] || { echo "ERROR: set GUARDIAN_PRIVATE_KEY (cast could not derive the local Anvil default)" >&2; exit 1; }
+  log "Using default Anvil account 0 as guardian (derived from the public Anvil test mnemonic)"
 fi
 
 if [[ -z "$TEST_PRIVATE_KEY" ]]; then
-  TEST_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-  log "Using default Anvil account 1 for test deposits"
+  TEST_PRIVATE_KEY=$(cast wallet private-key --mnemonic "$ANVIL_TEST_MNEMONIC" --mnemonic-index 1 2>/dev/null || true)
+  [[ -n "$TEST_PRIVATE_KEY" ]] || { echo "ERROR: set TEST_PRIVATE_KEY (cast could not derive the local Anvil default)" >&2; exit 1; }
+  log "Using default Anvil account 1 for test deposits (derived from the public Anvil test mnemonic)"
 fi
 
 log ""

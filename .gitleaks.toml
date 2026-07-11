@@ -1,0 +1,31 @@
+# Aethelred gitleaks configuration.
+#
+# Extends the default gitleaks rules. The allowlist below is a curated set of
+# reviewed exceptions — each has been inspected and confirmed NOT to be a real
+# secret. See M42/pilot-package/security-remediation-register.md for the
+# disposition of every finding.
+
+title = "Aethelred gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed non-secrets: public cryptographic evidence, synthetic fixtures, and well-known public test keys."
+
+paths = [
+  # Digital Seal evidence bundles: high-entropy fields are PUBLIC cryptographic
+  # material (commitments, signatures, Merkle roots, attestation quotes) that are
+  # meant to be shared and independently verified — not secrets.
+  '''config/pilots/m42/evidence/.*\.json''',
+  # Synthetic, non-PHI fixtures (gitignored, but scanned on disk by --no-git).
+  '''docs/workload-packs/m42/workloads/.*\.jsonl''',
+  # Compiled bytecode and caches (gitignored).
+  '''.*__pycache__/.*''',
+  '''.*\.pyc$''',
+]
+
+regexes = [
+  # Base64 placeholder labels (e.g. decodes to "m42-verifying-key-hash").
+  '''bTQyLX[A-Za-z0-9+/=]+''',
+]
