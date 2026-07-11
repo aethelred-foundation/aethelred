@@ -70,3 +70,36 @@ def test_cost_ratio_favors_verifier_at_scale():
     c = fv.verify_cost_ratio(2048, 512, 64, rounds=3)
     assert c["speedup"] > 5.0
     assert c["soundness_error"] < 1e-50
+
+
+# ---------------------------------------------------------------------------
+# Challenge unpredictability (commit-then-challenge, no prover-known seed)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("seed", range(30))
+def test_secure_default_accepts_correct_rejects_tampered(seed):
+    # No rng override: the challenge is derived from a commitment to (W,X,Y).
+    W, X, Y = _random_layer(seed)
+    ok, err = fv.freivalds_verify(W, X, Y, rounds=3, nonce=b"batch-nonce")
+    assert ok and err < 1e-50
+    Y[0][0] = (Y[0][0] + 1) % fv.PRIME
+    bad, _ = fv.freivalds_verify(W, X, Y, rounds=3, nonce=b"batch-nonce")
+    assert not bad
+
+
+def test_challenge_is_bound_to_output_and_nonce():
+    W, X, Y = _random_layer(7)
+    base = fv.challenge_seed(W, X, Y, b"n1")
+    # Changing the output changes the challenge (commit-then-challenge).
+    Y2 = [row[:] for row in Y]
+    Y2[0][0] = (Y2[0][0] + 1) % fv.PRIME
+    assert fv.challenge_seed(W, X, Y2, b"n1") != base
+    # Changing the verifier nonce changes the challenge (freshness).
+    assert fv.challenge_seed(W, X, Y, b"n2") != base
+
+
+def test_challenge_is_deterministic_for_fixed_inputs():
+    # Same inputs + nonce -> same seed (a verifier reproduces the challenge).
+    W, X, Y = _random_layer(3)
+    assert fv.challenge_seed(W, X, Y, b"n") == fv.challenge_seed(W, X, Y, b"n")

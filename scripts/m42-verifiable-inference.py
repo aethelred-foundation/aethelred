@@ -52,14 +52,19 @@ def validate() -> dict:
     Y = fv.matmul_mod(W, X)
     prove_ms = (time.time() - t0) * 1000
 
+    # The verifier nonce makes the challenge fresh and unpredictable; in the seal
+    # flow it is the per-batch nonce, drawn after the prover commits Y.
+    verifier_nonce = crypto.sha256(b"m42-verifiable-inference-nonce")
+
     t0 = time.time()
-    ok, soundness = fv.freivalds_verify(W, X, Y, rounds=ROUNDS)
+    ok, soundness = fv.freivalds_verify(W, X, Y, rounds=ROUNDS, nonce=verifier_nonce)
     verify_ms = (time.time() - t0) * 1000
 
-    # An attacker who flips a single output element is caught.
+    # An attacker who flips a single output element is caught — and cannot adapt
+    # to the challenge because it is bound to a commitment of the (forged) Y.
     forged = [row[:] for row in Y]
     forged[7][3] = (forged[7][3] + 1) % fv.PRIME
-    tamper_caught, _ = fv.freivalds_verify(W, X, forged, rounds=ROUNDS)
+    tamper_caught, _ = fv.freivalds_verify(W, X, forged, rounds=ROUNDS, nonce=verifier_nonce)
 
     cost = fv.verify_cost_ratio(D_OUT, D_IN, BATCH, rounds=ROUNDS)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
