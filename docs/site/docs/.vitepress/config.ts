@@ -6,14 +6,14 @@ export default defineConfig({
     base: '/aethelred/',
 
     head: [
-        ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-        ['meta', { name: 'theme-color', content: '#6366f1' }],
+        ['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
+        ['meta', { name: 'theme-color', content: '#C1121F' }],
         ['meta', { property: 'og:title', content: 'Aethelred SDK Documentation' }],
         ['meta', { property: 'og:description', content: 'Enterprise-grade AI Blockchain SDK with post-quantum cryptography' }],
     ],
 
     themeConfig: {
-        logo: '/logo.svg',
+        logo: '/logo.png',
         siteTitle: 'Aethelred SDK',
 
         nav: [
