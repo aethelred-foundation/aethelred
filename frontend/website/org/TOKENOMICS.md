@@ -93,8 +93,8 @@ The tokenomics are designed around five core principles:
 | Cosmos Denomination | uaethel (micro-AETHEL, 6 decimals) |
 | EVM Denomination | wei (18 decimals) |
 | Cross-Layer Scale Factor | 1 uaethel = 10^12 wei |
-| Chain ID (Mainnet) | aethelred-mainnet-1 (Cosmos) / 8821 (EVM) |
-| Chain ID (Testnet) | aethelred-testnet-1 / 88210 (EVM) |
+| Chain ID (Mainnet) | aethelred-mainnet-1 (Cosmos) / 7331 (EVM) |
+| Chain ID (Testnet) | aethelred-testnet-1 / 7332 (EVM) |
 
 ### 2.2 Multi-Layer Denomination
 
@@ -1350,7 +1350,7 @@ Every economically significant action emits indexed events for off-chain monitor
 | EVM Denomination | wei (18 decimals) | `AethelredToken.sol` |
 | Scale Factor | 10^12 | `tokenomics.go:UaethToWeiScaleFactor` |
 | Chain ID (Cosmos) | aethelred-mainnet-1 | `mainnet_params.go` |
-| Chain ID (EVM) | 8821 | Protocol specification |
+| Chain ID (EVM) | 7331 | ecosystem/manifest.json v2.0.0 (8821 is the SLIP-44 coin type — not a chain id) |
 | TGE Target Price | $0.10 / AETHEL | Tokenomics Final v1.0 |
 | TGE FDV | $1,000,000,000 | Tokenomics Final v1.0 |
 

@@ -1,12 +1,72 @@
 {
-  "$schema": "https://aethelred.io/schemas/ecosystem-manifest-v1.json",
-  "version": "1.0.0",
-  "last_updated": "2026-04-05",
+  "$schema": "https://aethelred.io/schemas/ecosystem-manifest-v2.json",
+  "version": "2.0.0",
+  "last_updated": "2026-07-12",
+  "changelog": "2.0.0: canonical protocol identity block (consultant P0.1). EVM chain ids corrected to the CONFIRMED 7331/7332 \u2014 the 8821/88210 values published in 1.0.0 were never-deployed placeholders that conflated the SLIP-44 coin type (8821) with an EVM chain id. Adds denom/decimals, bech32 prefix, precompile registry, canonical endpoints, and per-dApp network-module pins.",
   "protocol": {
     "repo": "aethelred-foundation/aethelred",
-    "chain_id": 8821,
-    "testnet_chain_id": 88210,
-    "status": "testnet-preview"
+    "status": "testnet-preview",
+    "chain_id": 7331,
+    "testnet_chain_id": 7332,
+    "devnet_chain_id": 7332,
+    "chain_id_notes": {
+      "7331": "Reserved EVM EIP-155 mainnet id \u2014 no production network exists yet.",
+      "7332": "CONFIRMED live EVM id, baked into the x/vm chain config (eth_chainId -> 0x1ca4). Testnet and local devnet are the SAME chain id reached via different endpoints; a local `aethelredd start --json-rpc.enable` node reports 7332.",
+      "deprecated": {
+        "8821": "NEVER-DEPLOYED placeholder from manifest 1.0.0. 8821 is the SLIP-44 coin type (m/8821'/...), NOT an EVM chain id. Do not use as a chain id.",
+        "88210": "NEVER-DEPLOYED testnet placeholder from manifest 1.0.0. Do not use.",
+        "123456": "Never-deployed early placeholder. Do not use.",
+        "78432": "Never-deployed early placeholder. Do not use."
+      }
+    },
+    "cosmos": {
+      "mainnet_chain_id": "aethelred-mainnet-1",
+      "testnet_chain_id": "aethelred-testnet-1",
+      "bech32_account_prefix": "aethel",
+      "slip44_coin_type": 8821,
+      "base_denom": "uaethel",
+      "base_denom_exponent": 6,
+      "min_gas_price": "0.001uaethel"
+    },
+    "native_currency": {
+      "name": "AETHEL",
+      "symbol": "AETHEL",
+      "evm_decimals": 18,
+      "notes": "Canonical display symbol is AETHEL \u2014 'AETH' and 'AET' appearing in older materials are stale and must not be used. EVM balances are 18-decimal via x/precisebank scaling of the 6-exponent uaethel base denom."
+    },
+    "endpoints": {
+      "evm_json_rpc_mainnet": "https://evm-rpc.aethelred.network",
+      "evm_ws_mainnet": "wss://evm-ws.aethelred.network",
+      "evm_json_rpc_testnet": "https://evm-rpc-testnet.aethelred.network",
+      "evm_ws_testnet": "wss://evm-ws-testnet.aethelred.network",
+      "explorer_mainnet": "https://explorer.aethelred.network",
+      "explorer_testnet": "https://explorer-testnet.aethelred.network",
+      "local_devnet_json_rpc": "http://127.0.0.1:8545",
+      "notes": "Mainnet endpoints are reserved names \u2014 no production network exists yet. Canonical EVM host naming is evm-rpc.* / evm-ws.* (cosmos-plane RPC/REST/gRPC endpoints are distinct and will be added when public)."
+    },
+    "precompiles": {
+      "range": "0x0900-0x09FF (verifiable-AI precompile range)",
+      "iseal": {
+        "address": "0x0000000000000000000000000000000000000900",
+        "status": "implemented",
+        "interface_source": "precompiles/seal (branch: release/public-testnet-pqc)",
+        "notes": "Digital Seal registry \u2014 quorum-minted, PQC-finalized attestations incl. CEAP confidentiality. Any AIP or document placing ISeal at 0x0500 is a stale draft and must be updated to 0x0900 to match the implementation."
+      },
+      "iverify": {
+        "address": "0x0000000000000000000000000000000000000901",
+        "status": "reserved"
+      },
+      "ipouw": {
+        "address": "0x0000000000000000000000000000000000000902",
+        "status": "reserved"
+      }
+    },
+    "release": {
+      "protocol_release_id": "testnet-preview (branch: release/public-testnet-pqc)",
+      "genesis_hash_mainnet": null,
+      "genesis_hash_testnet": null,
+      "notes": "Genesis hashes are recorded here at network launch; null means the network has not launched. A deployment claiming to run on Aethelred must match these once set."
+    }
   },
   "tiers": {
     "core": [
@@ -26,7 +86,8 @@
         "name": "AIPs",
         "repo": "aethelred-foundation/AIPs",
         "role": "Governance proposals",
-        "canonical": true
+        "canonical": true,
+        "action_required": "Digital Seal AIP draft must be updated to the implemented precompile address 0x0900 (draft cited 0x0500) and the implemented ABI (see protocol.precompiles.iseal)."
       },
       {
         "name": "aethelred-docs",
@@ -81,12 +142,14 @@
       {
         "name": "Cruzible",
         "repo": "aethelred-foundation/cruzible",
-        "pinned_sha": "9be8e2dff6354c5984bf252f5f6cd0292f78861c",
-        "pinned_date": "2026-04-05",
+        "pinned_sha": "b9d231989d0a3e34241b2762d24947d32b4e33bc",
+        "pinned_date": "2026-07-12",
         "homepage": "https://cruzible.aethelred.io",
         "description": "Explorer, staking, and governance dashboard",
         "status": "testnet-preview",
         "canonical": true,
+        "network_module": "src/config/chains.ts",
+        "network_conformant": true,
         "monorepo_stub": "ecosystem/apps/cruzible/",
         "package_manager": "npm",
         "lockfile": "package-lock.json",
@@ -96,12 +159,14 @@
       {
         "name": "ZeroID",
         "repo": "aethelred-foundation/zeroid",
-        "pinned_sha": "08b1b82c09e8665b06fe6ff25aec0486f91bfcf5",
-        "pinned_date": "2026-04-05",
+        "pinned_sha": "f9cbd2f26fb51633ca219661dfd2d748e986efd0",
+        "pinned_date": "2026-07-12",
         "homepage": "https://zeroid.aethelred.io",
         "description": "Self-sovereign identity with ZK proofs and TEE attestation",
         "status": "testnet-preview",
         "canonical": true,
+        "network_module": "src/config/chains.ts",
+        "network_conformant": true,
         "monorepo_stub": "ecosystem/apps/zeroid/",
         "package_manager": "npm",
         "lockfile": "package-lock.json",
@@ -111,12 +176,14 @@
       {
         "name": "NoblePay",
         "repo": "aethelred-foundation/noblepay",
-        "pinned_sha": "4b92ea8334cce8aa8d07f61f4d5e1e203a614c5a",
-        "pinned_date": "2026-04-05",
+        "pinned_sha": "29c0612029e3c23c0f3e8b55ae4556a1241c83d8",
+        "pinned_date": "2026-07-12",
         "homepage": "https://app.thenoble.one",
         "description": "Enterprise cross-border payment platform with TEE compliance",
         "status": "testnet-preview",
         "canonical": true,
+        "network_module": "src/config/chains.ts",
+        "network_conformant": true,
         "monorepo_stub": "ecosystem/apps/noblepay/",
         "package_manager": "npm",
         "lockfile": "package-lock.json",
@@ -126,12 +193,14 @@
       {
         "name": "TerraQura",
         "repo": "aethelred-foundation/terraqura",
-        "pinned_sha": "adba87e32cfec766df4ced5925dee185abf98c12",
-        "pinned_date": "2026-04-05",
+        "pinned_sha": "468357b9e99e8d2e8ad15c0757423a130c96e208",
+        "pinned_date": "2026-07-12",
         "homepage": "https://app.terraqura.com",
         "description": "Institutional-grade carbon credit platform with Proof-of-Physics",
         "status": "testnet-preview",
         "canonical": true,
+        "network_module": "packages/network-manifest",
+        "network_conformant": true,
         "monorepo_stub": "ecosystem/apps/terraqura/",
         "package_manager": "pnpm",
         "lockfile": "pnpm-lock.yaml",
@@ -147,6 +216,9 @@
         "description": "Women's health AI platform with ZK-enabled privacy",
         "status": "testnet-preview",
         "canonical": true,
+        "network_module": null,
+        "network_conformant": null,
+        "conformance_notes": "Repo not re-audited in the 2026-07-12 pass; pin retained from 1.0.0. Must be checked against protocol.chain_id/testnet_chain_id before its next release.",
         "monorepo_stub": "ecosystem/apps/shiora/",
         "package_manager": "npm",
         "lockfile": "package-lock.json",
