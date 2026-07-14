@@ -864,9 +864,25 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 				}
 
 				if attestation.Platform == "aws-nitro" || attestation.Platform == "intel-sgx" {
+					// Measurements are registered under the validator's ACCOUNT
+					// address, but this extension identifies the validator by
+					// CONSENSUS address. Resolve the account-address key so the
+					// registry lookup — and any resulting slash — target the same
+					// identity the validator registered under. Fall back to the
+					// consensus form (fails closed) if resolution is impossible.
+					measurementValidatorKey := validatorAddr
+					if len(vote.Validator.Address) > 0 {
+						if accKey, ok := ch.keeper.RegisteredValidatorKeyForConsensus(
+							ctx,
+							sdk.ConsAddress(vote.Validator.Address),
+						); ok {
+							measurementValidatorKey = accKey
+						}
+					}
+
 					if err := ch.keeper.ValidateTEEAttestationMeasurement(
 						ctx,
-						validatorAddr,
+						measurementValidatorKey,
 						attestation.Platform,
 						attestation.Measurement,
 					); err != nil {
@@ -876,7 +892,7 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 							"platform", attestation.Platform,
 							"error", err,
 						)
-						ch.keeper.slashUntrustedAttestationValidator(ctx, validatorAddr, v.JobID, err.Error())
+						ch.keeper.slashUntrustedAttestationValidator(ctx, measurementValidatorKey, v.JobID, err.Error())
 						continue
 					}
 				}

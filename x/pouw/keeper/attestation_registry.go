@@ -148,6 +148,37 @@ func (k Keeper) RegisterValidatorPCR0(ctx context.Context, validatorAddr, pcr0He
 	return nil
 }
 
+// RegisteredValidatorKeyForConsensus resolves the account-address key form
+// under which a validator's TEE measurements are registered, starting from the
+// consensus address that identifies the validator in vote extensions.
+//
+// PoUW measurement registration (MsgRegisterValidatorPCR0 /
+// MsgRegisterValidatorMeasurement) is signed by, and keyed under, the
+// validator's ACCOUNT address, while vote extensions identify the validator by
+// CONSENSUS address. Without this bridge the registry lookup key
+// (validatorMeasurementKey(consensusAddr, ...)) can never match the stored key
+// (validatorMeasurementKey(accountAddr, ...)), so no TEE attestation validates
+// and no Digital Seal can ever be minted. The account/operator identity is the
+// standard Cosmos resolution: consAddr -> validator -> operator -> account.
+//
+// Returns ok=false when the mapping cannot be resolved (no staking keeper,
+// empty address, or unknown validator); callers then fall back to the raw
+// consensus key, which fails closed (rejects the attestation) rather than open.
+func (k Keeper) RegisteredValidatorKeyForConsensus(ctx context.Context, consAddr sdk.ConsAddress) (string, bool) {
+	if k.stakingKeeper == nil || len(consAddr) == 0 {
+		return "", false
+	}
+	validator, err := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
+	if err != nil {
+		return "", false
+	}
+	valAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return "", false
+	}
+	return sdk.AccAddress(valAddr).String(), true
+}
+
 // ValidateTEEAttestationMeasurement ensures the attested measurement is both globally
 // registered and bound to the submitting validator for the given platform.
 func (k Keeper) ValidateTEEAttestationMeasurement(
