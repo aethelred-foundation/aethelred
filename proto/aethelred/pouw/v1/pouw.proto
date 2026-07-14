@@ -599,6 +599,16 @@ message Params {
   map<string, string> utility_multipliers = 14;  // category -> multiplier (e.g., "MEDICAL" -> "2.0")
   bool use_logarithmic_scaling = 15;
   uint64 anti_whale_threshold = 16;
+
+  // data_residency_region is the sovereign jurisdiction this network's
+  // validators operate in — declared by governance and enforced at validator
+  // onboarding (legal/operational control, not per-enclave geo-attestation,
+  // which TEE hardware does not provide). When non-empty it is bound into every
+  // Digital Seal's confidentiality attestation as the achieved jurisdiction, so
+  // a CEAP data-residency policy (e.g. ["AE"]) can be satisfied on a sovereign
+  // deployment. Empty = no residency is claimed, so residency-restricted
+  // policies fail closed rather than being granted a fabricated region.
+  string data_residency_region = 19;
 }
 
 // GenesisState

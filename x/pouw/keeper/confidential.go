@@ -107,6 +107,7 @@ func deriveConfidentiality(job *types.ComputeJob, results []types.VerificationRe
 		trustBasisFromParams(params),
 		policy.CanonicalHash(),
 		primaryWorker(results),
+		params.DataResidencyRegion,
 	)
 	if err := att.Satisfies(policy); err != nil {
 		return nil, fmt.Errorf("confidentiality policy not satisfied: %w", err)
