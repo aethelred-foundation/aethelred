@@ -56,8 +56,13 @@ ok()   { printf '\033[1;32m  PASS\033[0m %s\n' "$*"; }
 step() { printf '\033[1;36m== %s\033[0m\n' "$*"; }
 die()  { printf '\033[1;31mFAIL\033[0m %s\n' "$*" >&2; [ -n "$NODE_PID" ] && kill "$NODE_PID" 2>/dev/null || true; exit 1; }
 cleanup() {
-  [ -n "$NODE_PID" ] && kill "$NODE_PID" 2>/dev/null || true
-  if [ "${KEEP:-0}" != "1" ]; then rm -rf "$HOME_DIR"; fi
+  # KEEP=1 preserves the RUNNING NODE as well as the home dir (the doc
+  # contract above) — killing the node on exit made every KEEP=1 run
+  # useless for the follow-on dApp-gate scripts it exists to serve.
+  if [ "${KEEP:-0}" != "1" ]; then
+    [ -n "$NODE_PID" ] && kill "$NODE_PID" 2>/dev/null || true
+    rm -rf "$HOME_DIR"
+  fi
 }
 trap cleanup EXIT
 
@@ -176,7 +181,11 @@ step "submit CEAP job and require a minted seal"
   --from val --home "$HOME_DIR" --chain-id "$CHAIN_ID" --keyring-backend "$KEYRING" \
   --node "$RPC" --gas auto --gas-adjustment 1.5 --yes 2>&1 | grep -qE '^code: 0' || die "submit-job failed"
 wait_for "$SEAL_WAIT" 'job_completed.*seal_id=' || die "no Digital Seal minted within ${SEAL_WAIT}s — cold-chain warm-up? retry with SEAL_WAIT=600 (see $LOG)"
-SEAL="$(grep -oE 'seal_id=[0-9a-f]{64}' "$LOG" | tail -1 | cut -d= -f2)"
+# The node colorizes key=value logs (ESC[0m sits between "seal_id=" and the
+# hex), so strip ANSI before extracting. The trailing `|| true` matters: with
+# set -e an empty grep would kill the script ON THE ASSIGNMENT, exiting 1
+# without ever reaching die — the exact silent failure this line used to have.
+SEAL="$(sed -E $'s/\x1b\\[[0-9;]*m//g' "$LOG" | grep -oE 'seal_id=[0-9a-f]{64}' | tail -1 | cut -d= -f2 || true)"
 [ -n "$SEAL" ] || die "seal_id not found despite job_completed"
 ok "Digital Seal minted: $SEAL"
 
