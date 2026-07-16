@@ -121,6 +121,24 @@ test-coverage:
 coverage-critical:
 	@python3 ./scripts/check_critical_coverage.py --threshold 95
 
+## public-testnet-readiness: Hard-blocker readiness gate for the release branch (see PUBLIC_TESTNET_LAUNCH_CHECKLIST.md §1.2)
+public-testnet-readiness:
+	@python3 ./scripts/validate-public-testnet-readiness.py
+
+## local-readiness: Local readiness checks (devnet genesis + topology validators)
+local-readiness:
+	@python3 ./scripts/validate-devnet-genesis.py
+	@python3 ./scripts/validate-devnet-topology.py
+
+## finalize-testnet-genesis: Finalize the testnet genesis (pass args via GENESIS_ARGS, e.g. GENESIS_ARGS="--launch-in 48h --image-tag ...")
+finalize-testnet-genesis:
+	@python3 ./scripts/finalize-testnet-genesis.py $(GENESIS_ARGS)
+
+## validator-helm-validate: Lint + template-render the validator Helm chart
+validator-helm-validate:
+	@helm lint deploy/helm/aethelred-validator
+	@helm template aethelred-validator deploy/helm/aethelred-validator >/dev/null && echo "validator helm template OK"
+
 ## bench: Run benchmarks for core packages
 bench:
 	@echo "Running benchmarks..."

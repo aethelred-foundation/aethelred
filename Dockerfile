@@ -11,7 +11,7 @@
 # ------------------------------------
 # Stage 1: Build the Go binary
 # ------------------------------------
-FROM --platform=$BUILDPLATFORM golang:1.25.8-bookworm AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25.12-bookworm AS builder
 
 WORKDIR /build
 
