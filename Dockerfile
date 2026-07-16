@@ -11,7 +11,23 @@
 # ------------------------------------
 # Stage 1: Build the Go binary
 # ------------------------------------
-FROM --platform=$BUILDPLATFORM golang:1.25.12-bookworm AS builder
+# CGO is REQUIRED: the cosmos/evm EIP-712 fee-payer path calls
+# secp256k1.RecoverPubkey / VerifySignature, which the cosmos go-ethereum
+# fork gates behind `//go:build !gofuzz && cgo` — there is NO pure-Go
+# fallback, so CGO_ENABLED=0 fails to compile (undefined symbols). We
+# therefore build with cgo + musl and statically link, which keeps the
+# distroless/static runtime (no libc) working.
+#
+# Multi-arch: build natively per TARGETPLATFORM (buildx emulates the
+# non-host arch). We must NOT cross-compile via GOOS/GOARCH here — cgo
+# cross-compilation would need a target-arch C toolchain the builder
+# image does not carry.
+# buildx already runs this stage on $TARGETPLATFORM by default (emulated for
+# the non-host arch), so each arch builds natively — which is what cgo needs.
+FROM golang:1.25.12-alpine AS builder
+
+# build-base provides the musl gcc toolchain cgo needs; git for VCS stamping.
+RUN apk add --no-cache build-base git
 
 WORKDIR /build
 
@@ -22,15 +38,14 @@ RUN go mod download
 # Copy source
 COPY . .
 
-# Build with optimizations and version info
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+# Build with optimizations and version info. Static musl link so the binary
+# runs on the libc-free distroless/static runtime.
 ARG VERSION=dev
 ARG COMMIT=unknown
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+RUN CGO_ENABLED=1 \
     go build \
       -tags production \
-      -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
+      -ldflags="-s -w -linkmode external -extldflags '-static' -X main.version=${VERSION} -X main.commit=${COMMIT}" \
       -trimpath \
       -o /build/bin/aethelredd \
       ./cmd/aethelredd/
