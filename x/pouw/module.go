@@ -154,6 +154,13 @@ func (am *AppModule) BeginBlock(ctx context.Context) error {
 func (am *AppModule) EndBlock(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	// Deterministically assign pending jobs to eligible validators. This writes
+	// scheduler.assigned_to onto each job's on-chain metadata so ExtendVote knows
+	// which jobs each validator must verify — the wire from job submission to the
+	// verification → Digital Seal pipeline. Runs in EndBlock so every validator
+	// computes the same assignment from the same state.
+	am.keeper.AssignPendingJobs(ctx)
+
 	// Expire old jobs using deterministic block-height-based expiry.
 	// DETERMINISM: Use block height (not wall-clock time) to ensure all
 	// validators agree on which jobs are expired.
@@ -205,11 +212,12 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	// Add tx commands here
-	// cmd.AddCommand(CmdSubmitJob())
-	// cmd.AddCommand(CmdRegisterModel())
+	cmd.AddCommand(cli.CmdRegisterModel())
+	cmd.AddCommand(cli.CmdSubmitJob())
 	cmd.AddCommand(cli.CmdStakeForPoUW())
 	cmd.AddCommand(cli.CmdRegisterValidatorCapability())
 	cmd.AddCommand(cli.CmdRegisterValidatorPCR0())
+	cmd.AddCommand(cli.CmdRegisterValidatorHybridKey())
 
 	return cmd
 }
@@ -230,6 +238,7 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(cli.CmdQueryPoUWStatus())
 	cmd.AddCommand(cli.CmdQueryValidatorPCR0())
 	cmd.AddCommand(cli.CmdQueryIsPCR0Registered())
+	cmd.AddCommand(cli.CmdQuerySealQuorum())
 
 	return cmd
 }

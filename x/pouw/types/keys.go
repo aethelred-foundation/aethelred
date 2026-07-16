@@ -78,7 +78,42 @@ var (
 
 	// TrustedMeasurementRevocationKeyPrefix stores persisted emergency revocation request state.
 	TrustedMeasurementRevocationKeyPrefix = []byte{0x10}
+
+	// WorkReceiptKeyPrefix stores the measured energy/cost receipt per job.
+	WorkReceiptKeyPrefix = []byte{0x11}
+
+	// EnergyAggregateKeyPrefix stores running network energy/cost/carbon totals.
+	EnergyAggregateKeyPrefix = []byte{0x12}
+
+	// EnergyParamsKey stores the governance-set energy conversion factors.
+	EnergyParamsKey = []byte{0x13}
+
+	// AttestationSummaryKeyPrefix stores the verified attestation summary per job.
+	AttestationSummaryKeyPrefix = []byte{0x14}
+
+	// ValidatorHybridKeyKeyPrefix stores validator -> hybrid (secp256k1 + ML-DSA)
+	// public key used to sign Digital Seal claims in vote extensions.
+	ValidatorHybridKeyKeyPrefix = []byte{0x15}
+
+	// SealQuorumSignatureKeyPrefix stores seal_id -> JSON-encoded slice of the
+	// validator-quorum hybrid signatures attached to that Digital Seal.
+	SealQuorumSignatureKeyPrefix = []byte{0x16}
 )
+
+// AttestationSummaryKey returns the store key for a job's attestation summary.
+func AttestationSummaryKey(jobID string) []byte {
+	return append(append([]byte{}, AttestationSummaryKeyPrefix...), []byte(jobID)...)
+}
+
+// WorkReceiptKey returns the store key for a job's measured work receipt.
+func WorkReceiptKey(jobID string) []byte {
+	return append(append([]byte{}, WorkReceiptKeyPrefix...), []byte(jobID)...)
+}
+
+// EnergyAggregateKey returns the store key for a named running energy total.
+func EnergyAggregateKey(field string) []byte {
+	return append(append([]byte{}, EnergyAggregateKeyPrefix...), []byte(field)...)
+}
 
 // JobKey returns the store key for a job with the given ID
 func JobKey(id string) []byte {

@@ -65,18 +65,6 @@ strip = true
 lto = true
 codegen-units = 1
 
-[[example]]
-name = "sovereign_data"
-path = "examples/sovereign_data.rs"
-
-[[example]]
-name = "zktensor_inference"
-path = "examples/zktensor_inference.rs"
-
-[[example]]
-name = "trade_finance"
-path = "examples/trade_finance.rs"
-
 [[bench]]
 name = "crypto_benchmarks"
 harness = false

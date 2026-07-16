@@ -60,6 +60,8 @@ func setupAppModule(t *testing.T) (*pouw.AppModule, sdk.Context, codec.Codec) {
 		RegisteredModels:      collections.NewMap(sb, collections.NewPrefix(types.ModelRegistryKeyPrefix), "registered_models", collections.StringKey, codec.CollValue[types.RegisteredModel](cdc)),
 		ValidatorStats:        collections.NewMap(sb, collections.NewPrefix(types.ValidatorStatsKeyPrefix), "validator_stats", collections.StringKey, codec.CollValue[types.ValidatorStats](cdc)),
 		ValidatorCapabilities: collections.NewMap(sb, collections.NewPrefix(types.ValidatorCapabilitiesKeyPrefix), "validator_capabilities", collections.StringKey, codec.CollValue[types.ValidatorCapability](cdc)),
+		ValidatorHybridKeys:   collections.NewMap(sb, collections.NewPrefix(types.ValidatorHybridKeyKeyPrefix), "validator_hybrid_keys", collections.StringKey, collections.BytesValue),
+		SealQuorumSignatures:  collections.NewMap(sb, collections.NewPrefix(types.SealQuorumSignatureKeyPrefix), "seal_quorum_signatures", collections.StringKey, collections.BytesValue),
 		JobCount:              collections.NewItem(sb, collections.NewPrefix(types.JobCountKey), "job_count", collections.Uint64Value),
 		Params:                collections.NewItem(sb, collections.NewPrefix(types.ParamsKey), "params", codec.CollValue[types.Params](cdc)),
 	}

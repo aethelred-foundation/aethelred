@@ -23,3 +23,6 @@ export function fromHex(hex: string): Uint8Array {
 }
 
 export { bytesToHex, hexToBytes };
+
+// Post-quantum cryptography (ML-DSA / ML-KEM) — public surface for dApps.
+export * from './pqc';

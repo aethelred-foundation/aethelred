@@ -1,0 +1,47 @@
+[
+  {
+    "type": "function",
+    "name": "getJob",
+    "stateMutability": "view",
+    "inputs": [{ "name": "jobId", "type": "string" }],
+    "outputs": [
+      { "name": "status", "type": "uint8" },
+      { "name": "modelHash", "type": "bytes32" },
+      { "name": "inputHash", "type": "bytes32" },
+      { "name": "outputHash", "type": "bytes32" },
+      { "name": "requestedBy", "type": "string" },
+      { "name": "sealId", "type": "string" },
+      { "name": "blockHeight", "type": "int64" },
+      { "name": "usefulWorkUnits", "type": "uint64" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getModel",
+    "stateMutability": "view",
+    "inputs": [{ "name": "modelHash", "type": "bytes32" }],
+    "outputs": [
+      { "name": "active", "type": "bool" },
+      { "name": "modelId", "type": "string" },
+      { "name": "name", "type": "string" },
+      { "name": "version", "type": "string" },
+      { "name": "owner", "type": "string" },
+      { "name": "circuitHash", "type": "bytes32" },
+      { "name": "verifyingKeyHash", "type": "bytes32" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "isModelActive",
+    "stateMutability": "view",
+    "inputs": [{ "name": "modelHash", "type": "bytes32" }],
+    "outputs": [{ "name": "active", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "isJobCompleted",
+    "stateMutability": "view",
+    "inputs": [{ "name": "jobId", "type": "string" }],
+    "outputs": [{ "name": "completed", "type": "bool" }]
+  }
+]

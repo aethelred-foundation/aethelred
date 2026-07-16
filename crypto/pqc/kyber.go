@@ -1,53 +1,60 @@
-// Package pqc implements Kyber Key Encapsulation Mechanism (NIST FIPS 203)
+// Package pqc implements ML-KEM key encapsulation (NIST FIPS 203).
+//
+// All ML-KEM operations delegate to the real circl backend (see
+// circl_backend.go). The hybrid key exchange combines ML-KEM with real X25519
+// ECDH (golang.org/x/crypto/curve25519).
 package pqc
 
 import (
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/sha512"
 	"errors"
 	"fmt"
+
+	"golang.org/x/crypto/curve25519"
 )
 
-// Kyber security levels as per NIST FIPS 203
+// Kyber security levels, mapped to ML-KEM parameter sets (FIPS 203).
 const (
-	KyberLevel512  = 512  // 128-bit classical
-	KyberLevel768  = 768  // 192-bit classical
-	KyberLevel1024 = 1024 // 256-bit classical
+	KyberLevel512  = 512  // ML-KEM-512
+	KyberLevel768  = 768  // ML-KEM-768 (recommended for Aethelred)
+	KyberLevel1024 = 1024 // ML-KEM-1024
 )
 
-// Kyber768 key and ciphertext sizes (recommended for Aethelred)
+// ML-KEM key and ciphertext sizes (FIPS 203). Mirrored by the circl backend.
 const (
+	// ML-KEM-768 (recommended for Aethelred)
 	Kyber768PublicKeySize    = 1184
 	Kyber768PrivateKeySize   = 2400
 	Kyber768CiphertextSize   = 1088
 	Kyber768SharedSecretSize = 32
 
-	// Kyber512 sizes
+	// ML-KEM-512
 	Kyber512PublicKeySize  = 800
 	Kyber512PrivateKeySize = 1632
 	Kyber512CiphertextSize = 768
 
-	// Kyber1024 sizes
+	// ML-KEM-1024
 	Kyber1024PublicKeySize  = 1568
 	Kyber1024PrivateKeySize = 3168
 	Kyber1024CiphertextSize = 1568
 )
 
-// KyberKeyPair represents a Kyber key pair for key encapsulation
+// KyberKeyPair represents an ML-KEM key pair for key encapsulation.
 type KyberKeyPair struct {
 	Level      int
 	PublicKey  []byte
 	PrivateKey []byte
 }
 
-// KyberCiphertext represents an encapsulated key
+// KyberCiphertext represents an encapsulated key.
 type KyberCiphertext struct {
 	Level      int
 	Ciphertext []byte
 }
 
-// KyberParams contains parameters for a specific Kyber level
+// KyberParams contains descriptive parameters and serialized sizes for a
+// specific ML-KEM level. Sizes are sourced from the circl backend.
 type KyberParams struct {
 	Level          int
 	N              int // Polynomial degree (256)
@@ -62,266 +69,92 @@ type KyberParams struct {
 	CiphertextSize int
 }
 
-// GetKyberParams returns parameters for a given security level
+// GetKyberParams returns parameters for a given security level.
 func GetKyberParams(level int) (*KyberParams, error) {
+	pkSize, skSize, ctSize, _, err := mlkemSizes(level)
+	if err != nil {
+		return nil, err
+	}
+
+	params := &KyberParams{
+		Level:          level,
+		N:              256,
+		Q:              3329,
+		PublicKeySize:  pkSize,
+		PrivateKeySize: skSize,
+		CiphertextSize: ctSize,
+	}
+
 	switch level {
 	case KyberLevel512:
-		return &KyberParams{
-			Level:          512,
-			N:              256,
-			K:              2,
-			Q:              3329,
-			Eta1:           3,
-			Eta2:           2,
-			Du:             10,
-			Dv:             4,
-			PublicKeySize:  Kyber512PublicKeySize,
-			PrivateKeySize: Kyber512PrivateKeySize,
-			CiphertextSize: Kyber512CiphertextSize,
-		}, nil
+		params.K, params.Eta1, params.Eta2, params.Du, params.Dv = 2, 3, 2, 10, 4
 	case KyberLevel768:
-		return &KyberParams{
-			Level:          768,
-			N:              256,
-			K:              3,
-			Q:              3329,
-			Eta1:           2,
-			Eta2:           2,
-			Du:             10,
-			Dv:             4,
-			PublicKeySize:  Kyber768PublicKeySize,
-			PrivateKeySize: Kyber768PrivateKeySize,
-			CiphertextSize: Kyber768CiphertextSize,
-		}, nil
+		params.K, params.Eta1, params.Eta2, params.Du, params.Dv = 3, 2, 2, 10, 4
 	case KyberLevel1024:
-		return &KyberParams{
-			Level:          1024,
-			N:              256,
-			K:              4,
-			Q:              3329,
-			Eta1:           2,
-			Eta2:           2,
-			Du:             11,
-			Dv:             5,
-			PublicKeySize:  Kyber1024PublicKeySize,
-			PrivateKeySize: Kyber1024PrivateKeySize,
-			CiphertextSize: Kyber1024CiphertextSize,
-		}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Kyber level: %d", level)
+		params.K, params.Eta1, params.Eta2, params.Du, params.Dv = 4, 2, 2, 11, 5
 	}
+
+	return params, nil
 }
 
-// GenerateKyberKeyPair generates a new Kyber key pair
+// GenerateKyberKeyPair generates a new ML-KEM key pair using the system CSPRNG.
 func GenerateKyberKeyPair(level int) (*KyberKeyPair, error) {
-	if pqcRequiresCircl(GetPQCMode()) {
-		circlKP, err := GenerateCirclKyberKeyPair(level)
-		if err != nil {
-			return nil, err
-		}
-		return &KyberKeyPair{
-			Level:      level,
-			PublicKey:  circlKP.PublicKey,
-			PrivateKey: circlKP.PrivateKey,
-		}, nil
-	}
-
-	params, err := GetKyberParams(level)
+	pub, priv, err := mlkemGenerateKey(level)
 	if err != nil {
 		return nil, err
 	}
-
-	// Generate random seed
-	seed := make([]byte, 64)
-	if _, err := rand.Read(seed); err != nil {
-		return nil, fmt.Errorf("failed to generate random seed: %w", err)
-	}
-
-	publicKey, privateKey := expandKyberKeyFromSeed(seed, params)
-
-	return &KyberKeyPair{
-		Level:      level,
-		PublicKey:  publicKey,
-		PrivateKey: privateKey,
-	}, nil
+	return &KyberKeyPair{Level: level, PublicKey: pub, PrivateKey: priv}, nil
 }
 
-// GenerateKyberKeyPairFromSeed generates a key pair from a seed
+// GenerateKyberKeyPairFromSeed deterministically derives an ML-KEM key pair from
+// a seed. The seed must be at least KeySeedSize bytes; the first KeySeedSize
+// bytes are used.
 func GenerateKyberKeyPairFromSeed(level int, seed []byte) (*KyberKeyPair, error) {
-	if pqcRequiresCircl(GetPQCMode()) {
-		return nil, errors.New("deterministic Kyber key generation is not supported in production/hybrid mode")
-	}
-
-	if len(seed) < 64 {
-		return nil, errors.New("seed must be at least 64 bytes")
-	}
-
-	params, err := GetKyberParams(level)
+	want, err := mlkemSeedSize(level)
 	if err != nil {
 		return nil, err
 	}
+	if len(seed) < want {
+		return nil, fmt.Errorf("seed must be at least %d bytes, got %d", want, len(seed))
+	}
 
-	publicKey, privateKey := expandKyberKeyFromSeed(seed[:64], params)
-
-	return &KyberKeyPair{
-		Level:      level,
-		PublicKey:  publicKey,
-		PrivateKey: privateKey,
-	}, nil
+	pub, priv, err := mlkemDeriveKey(level, seed[:want])
+	if err != nil {
+		return nil, err
+	}
+	return &KyberKeyPair{Level: level, PublicKey: pub, PrivateKey: priv}, nil
 }
 
-// expandKyberKeyFromSeed expands a seed into Kyber key pair
-func expandKyberKeyFromSeed(seed []byte, params *KyberParams) ([]byte, []byte) {
-	// Use SHAKE-256 style expansion
-	h := sha512.New()
-	h.Write(seed)
-	h.Write([]byte("kyber-keygen"))
-
-	expanded := h.Sum(nil)
-
-	// Generate public key (A matrix + t vector)
-	publicKey := make([]byte, params.PublicKeySize)
-	h.Reset()
-	h.Write(expanded)
-	h.Write([]byte("public"))
-	copy(publicKey, hashExpand(h.Sum(nil), params.PublicKeySize))
-
-	// Generate private key (s vector + public key)
-	privateKey := make([]byte, params.PrivateKeySize)
-	h.Reset()
-	h.Write(expanded)
-	h.Write([]byte("private"))
-	copy(privateKey, hashExpand(h.Sum(nil), params.PrivateKeySize))
-
-	// Embed public key hash in private key for verification
-	pkHash := sha256.Sum256(publicKey)
-	copy(privateKey[params.PrivateKeySize-64:params.PrivateKeySize-32], pkHash[:])
-
-	// Embed implicit rejection value
-	copy(privateKey[params.PrivateKeySize-32:], seed[32:64])
-
-	return publicKey, privateKey
-}
-
-// Encapsulate creates a shared secret and ciphertext from a public key
+// Encapsulate creates a shared secret and ciphertext using this key pair's own
+// public key.
 func (kp *KyberKeyPair) Encapsulate() (sharedSecret []byte, ciphertext *KyberCiphertext, err error) {
 	return Encapsulate(kp.Level, kp.PublicKey)
 }
 
-// Encapsulate creates a shared secret and ciphertext from a public key
+// Encapsulate creates a shared secret and ciphertext for a recipient public key.
 func Encapsulate(level int, publicKey []byte) (sharedSecret []byte, ciphertext *KyberCiphertext, err error) {
-	params, err := GetKyberParams(level)
+	ss, ct, err := mlkemEncapsulate(level, publicKey)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	if len(publicKey) != params.PublicKeySize {
-		return nil, nil, fmt.Errorf("invalid public key size: expected %d, got %d",
-			params.PublicKeySize, len(publicKey))
-	}
-
-	if pqcRequiresCircl(GetPQCMode()) {
-		return encapsulateCirclKyberReal(level, publicKey)
-	}
-
-	// Generate random message
-	m := make([]byte, 32)
-	if _, err := rand.Read(m); err != nil {
-		return nil, nil, fmt.Errorf("failed to generate random message: %w", err)
-	}
-
-	// Hash public key
-	pkHash := sha256.Sum256(publicKey)
-
-	// Generate Kr = (K || r) from m and public key hash
-	h := sha512.New()
-	h.Write(m)
-	h.Write(pkHash[:])
-	kr := h.Sum(nil)
-
-	// K is the shared secret
-	sharedSecretBytes := kr[:32]
-
-	// r is used to generate ciphertext
-	r := kr[32:]
-
-	// Generate ciphertext using r
-	ct := make([]byte, params.CiphertextSize)
-	h.Reset()
-	h.Write(r)
-	h.Write(publicKey)
-	h.Write(m)
-	copy(ct, hashExpand(h.Sum(nil), params.CiphertextSize))
-
-	return sharedSecretBytes, &KyberCiphertext{
-		Level:      level,
-		Ciphertext: ct,
-	}, nil
+	return ss, &KyberCiphertext{Level: level, Ciphertext: ct}, nil
 }
 
-// Decapsulate recovers the shared secret from a ciphertext
+// Decapsulate recovers the shared secret from a ciphertext.
 func (kp *KyberKeyPair) Decapsulate(ciphertext *KyberCiphertext) ([]byte, error) {
 	return Decapsulate(kp.Level, kp.PrivateKey, ciphertext)
 }
 
-// Decapsulate recovers the shared secret from a ciphertext
+// Decapsulate recovers the shared secret from a ciphertext.
 func Decapsulate(level int, privateKey []byte, ciphertext *KyberCiphertext) ([]byte, error) {
-	params, err := GetKyberParams(level)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(privateKey) != params.PrivateKeySize {
-		return nil, fmt.Errorf("invalid private key size: expected %d, got %d",
-			params.PrivateKeySize, len(privateKey))
-	}
-
 	if ciphertext.Level != level {
-		return nil, fmt.Errorf("ciphertext level mismatch: expected %d, got %d",
-			level, ciphertext.Level)
+		return nil, fmt.Errorf("ciphertext level mismatch: expected %d, got %d", level, ciphertext.Level)
 	}
-
-	if len(ciphertext.Ciphertext) != params.CiphertextSize {
-		return nil, fmt.Errorf("invalid ciphertext size: expected %d, got %d",
-			params.CiphertextSize, len(ciphertext.Ciphertext))
-	}
-
-	if pqcRequiresCircl(GetPQCMode()) {
-		circlKP := &CirclKyberKeyPair{
-			Level:      level,
-			PublicKey:  nil,
-			PrivateKey: privateKey,
-			useCircl:   true,
-		}
-		return decapsulateCirclKyberReal(circlKP, ciphertext)
-	}
-
-	// Decrypt to get m'
-	h := sha512.New()
-	h.Write(privateKey[:params.PrivateKeySize-64])
-	h.Write(ciphertext.Ciphertext)
-	decrypted := h.Sum(nil)
-	mPrime := decrypted[:32]
-
-	// Extract public key hash from private key
-	pkHash := privateKey[params.PrivateKeySize-64 : params.PrivateKeySize-32]
-
-	// Regenerate Kr = (K || r)
-	h.Reset()
-	h.Write(mPrime)
-	h.Write(pkHash)
-	kr := h.Sum(nil)
-
-	// K is the shared secret (if decapsulation is successful)
-	sharedSecret := make([]byte, Kyber768SharedSecretSize)
-	copy(sharedSecret, kr[:32])
-
-	return sharedSecret, nil
+	return mlkemDecapsulate(level, privateKey, ciphertext.Ciphertext)
 }
 
-// Serialize serializes the Kyber key pair
+// Serialize serializes the Kyber key pair as Level(2) || PublicKey || PrivateKey.
 func (kp *KyberKeyPair) Serialize() []byte {
-	// Level (2 bytes) + PublicKey + PrivateKey
 	data := make([]byte, 2+len(kp.PublicKey)+len(kp.PrivateKey))
 	data[0] = byte(kp.Level >> 8)
 	data[1] = byte(kp.Level)
@@ -330,7 +163,7 @@ func (kp *KyberKeyPair) Serialize() []byte {
 	return data
 }
 
-// DeserializeKyberKeyPair deserializes a Kyber key pair
+// DeserializeKyberKeyPair deserializes a Kyber key pair produced by Serialize.
 func DeserializeKyberKeyPair(data []byte) (*KyberKeyPair, error) {
 	if len(data) < 2 {
 		return nil, errors.New("data too short")
@@ -347,14 +180,21 @@ func DeserializeKyberKeyPair(data []byte) (*KyberKeyPair, error) {
 		return nil, fmt.Errorf("invalid data length: expected %d, got %d", expectedLen, len(data))
 	}
 
+	// Copy out of the input buffer so the key material does not alias a source
+	// slice the caller may zero after deserialization.
+	pub := make([]byte, params.PublicKeySize)
+	copy(pub, data[2:2+params.PublicKeySize])
+	priv := make([]byte, params.PrivateKeySize)
+	copy(priv, data[2+params.PublicKeySize:])
+
 	return &KyberKeyPair{
 		Level:      level,
-		PublicKey:  data[2 : 2+params.PublicKeySize],
-		PrivateKey: data[2+params.PublicKeySize:],
+		PublicKey:  pub,
+		PrivateKey: priv,
 	}, nil
 }
 
-// SerializeCiphertext serializes a Kyber ciphertext
+// SerializeCiphertext serializes a Kyber ciphertext.
 func (ct *KyberCiphertext) Serialize() []byte {
 	data := make([]byte, 2+len(ct.Ciphertext))
 	data[0] = byte(ct.Level >> 8)
@@ -363,7 +203,7 @@ func (ct *KyberCiphertext) Serialize() []byte {
 	return data
 }
 
-// DeserializeKyberCiphertext deserializes a Kyber ciphertext
+// DeserializeKyberCiphertext deserializes a Kyber ciphertext.
 func DeserializeKyberCiphertext(data []byte) (*KyberCiphertext, error) {
 	if len(data) < 2 {
 		return nil, errors.New("data too short")
@@ -380,109 +220,122 @@ func DeserializeKyberCiphertext(data []byte) (*KyberCiphertext, error) {
 		return nil, fmt.Errorf("invalid data length: expected %d, got %d", expectedLen, len(data))
 	}
 
+	ct := make([]byte, params.CiphertextSize)
+	copy(ct, data[2:])
+
 	return &KyberCiphertext{
 		Level:      level,
-		Ciphertext: data[2:],
+		Ciphertext: ct,
 	}, nil
 }
 
-// GetPublicKeyBytes returns the public key bytes
+// GetPublicKeyBytes returns the public key bytes.
 func (kp *KyberKeyPair) GetPublicKeyBytes() []byte {
 	return kp.PublicKey
 }
 
-// HybridKeyExchange performs a hybrid key exchange combining classical ECDH with Kyber
+// =============================================================================
+// Hybrid Key Exchange (X25519 ECDH + ML-KEM)
+// =============================================================================
+
+// HybridKeyExchange performs a hybrid key exchange combining classical X25519
+// ECDH with ML-KEM. Compromise of either primitive alone does not reveal the
+// shared secret.
 type HybridKeyExchange struct {
 	KyberKeyPair *KyberKeyPair
 	ECDHPublic   []byte
 	ECDHPrivate  []byte
 }
 
-// NewHybridKeyExchange creates a new hybrid key exchange
+// NewHybridKeyExchange creates a new hybrid key exchange with a fresh X25519 and
+// ML-KEM key pair.
 func NewHybridKeyExchange(kyberLevel int) (*HybridKeyExchange, error) {
 	kyberKP, err := GenerateKyberKeyPair(kyberLevel)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate Kyber key pair: %w", err)
+		return nil, fmt.Errorf("failed to generate ML-KEM key pair: %w", err)
 	}
 
-	// Generate ECDH key pair (X25519 simulation)
-	ecdhPrivate := make([]byte, 32)
+	ecdhPrivate := make([]byte, curve25519.ScalarSize)
 	if _, err := rand.Read(ecdhPrivate); err != nil {
-		return nil, fmt.Errorf("failed to generate ECDH private key: %w", err)
+		return nil, fmt.Errorf("failed to generate X25519 private key: %w", err)
 	}
 
-	ecdhPublic := sha256.Sum256(ecdhPrivate)
+	ecdhPublic, err := curve25519.X25519(ecdhPrivate, curve25519.Basepoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive X25519 public key: %w", err)
+	}
 
 	return &HybridKeyExchange{
 		KyberKeyPair: kyberKP,
-		ECDHPublic:   ecdhPublic[:],
+		ECDHPublic:   ecdhPublic,
 		ECDHPrivate:  ecdhPrivate,
 	}, nil
 }
 
-// GetHybridPublicKey returns the combined hybrid public key
+// GetHybridPublicKey returns the combined hybrid public key (X25519 || ML-KEM).
 func (h *HybridKeyExchange) GetHybridPublicKey() []byte {
 	combined := make([]byte, len(h.ECDHPublic)+len(h.KyberKeyPair.PublicKey))
-	copy(combined[:32], h.ECDHPublic)
-	copy(combined[32:], h.KyberKeyPair.PublicKey)
+	copy(combined[:len(h.ECDHPublic)], h.ECDHPublic)
+	copy(combined[len(h.ECDHPublic):], h.KyberKeyPair.PublicKey)
 	return combined
 }
 
-// EncapsulateHybrid performs hybrid encapsulation
+// EncapsulateHybrid performs hybrid encapsulation against a peer's X25519 and
+// ML-KEM public keys. The final secret binds both the X25519 shared point and
+// the ML-KEM shared secret.
 func (h *HybridKeyExchange) EncapsulateHybrid(peerECDHPublic, peerKyberPublic []byte) ([]byte, []byte, error) {
-	// Kyber encapsulation
 	kyberSecret, kyberCT, err := Encapsulate(h.KyberKeyPair.Level, peerKyberPublic)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Kyber encapsulation failed: %w", err)
+		return nil, nil, fmt.Errorf("ML-KEM encapsulation failed: %w", err)
 	}
 
-	// ECDH key agreement (simplified)
-	ecdhSecret := sha256.Sum256(append(h.ECDHPrivate, peerECDHPublic...))
+	ecdhSecret, err := curve25519.X25519(h.ECDHPrivate, peerECDHPublic)
+	if err != nil {
+		return nil, nil, fmt.Errorf("X25519 agreement failed: %w", err)
+	}
 
-	// Combine secrets
-	combinedSecret := make([]byte, 64)
-	copy(combinedSecret[:32], ecdhSecret[:])
-	copy(combinedSecret[32:], kyberSecret)
+	finalSecret := combineHybridSecret(ecdhSecret, kyberSecret)
 
-	// Derive final shared secret
-	finalSecret := sha256.Sum256(combinedSecret)
+	hybridCT := make([]byte, len(h.ECDHPublic)+len(kyberCT.Ciphertext))
+	copy(hybridCT[:len(h.ECDHPublic)], h.ECDHPublic)
+	copy(hybridCT[len(h.ECDHPublic):], kyberCT.Ciphertext)
 
-	// Combined ciphertext
-	hybridCT := make([]byte, 32+len(kyberCT.Ciphertext))
-	copy(hybridCT[:32], h.ECDHPublic)
-	copy(hybridCT[32:], kyberCT.Ciphertext)
-
-	return finalSecret[:], hybridCT, nil
+	return finalSecret, hybridCT, nil
 }
 
-// DecapsulateHybrid performs hybrid decapsulation
+// DecapsulateHybrid performs hybrid decapsulation of a ciphertext produced by
+// EncapsulateHybrid.
 func (h *HybridKeyExchange) DecapsulateHybrid(hybridCT []byte) ([]byte, error) {
-	if len(hybridCT) < 32 {
+	if len(hybridCT) < curve25519.PointSize {
 		return nil, errors.New("hybrid ciphertext too short")
 	}
 
-	peerECDHPublic := hybridCT[:32]
+	peerECDHPublic := hybridCT[:curve25519.PointSize]
 	kyberCT := &KyberCiphertext{
 		Level:      h.KyberKeyPair.Level,
-		Ciphertext: hybridCT[32:],
+		Ciphertext: hybridCT[curve25519.PointSize:],
 	}
 
-	// ECDH key agreement
-	ecdhSecret := sha256.Sum256(append(h.ECDHPrivate, peerECDHPublic...))
+	ecdhSecret, err := curve25519.X25519(h.ECDHPrivate, peerECDHPublic)
+	if err != nil {
+		return nil, fmt.Errorf("X25519 agreement failed: %w", err)
+	}
 
-	// Kyber decapsulation
 	kyberSecret, err := h.KyberKeyPair.Decapsulate(kyberCT)
 	if err != nil {
-		return nil, fmt.Errorf("Kyber decapsulation failed: %w", err)
+		return nil, fmt.Errorf("ML-KEM decapsulation failed: %w", err)
 	}
 
-	// Combine secrets
-	combinedSecret := make([]byte, 64)
-	copy(combinedSecret[:32], ecdhSecret[:])
-	copy(combinedSecret[32:], kyberSecret)
+	return combineHybridSecret(ecdhSecret, kyberSecret), nil
+}
 
-	// Derive final shared secret
-	finalSecret := sha256.Sum256(combinedSecret)
-
-	return finalSecret[:], nil
+// combineHybridSecret binds the classical and post-quantum shared secrets into a
+// single 32-byte key via SHA-256 over a domain-separated transcript.
+func combineHybridSecret(ecdhSecret, kyberSecret []byte) []byte {
+	h := sha256.New()
+	h.Write([]byte("aethelred-hybrid-kem-v1"))
+	h.Write(ecdhSecret)
+	h.Write(kyberSecret)
+	sum := h.Sum(nil)
+	return sum
 }

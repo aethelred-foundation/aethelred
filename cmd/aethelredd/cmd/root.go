@@ -3,9 +3,13 @@ package cmd
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
+	cmtcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/privval"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
 	"cosmossdk.io/log"
@@ -22,7 +26,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
+	cosmosevmhd "github.com/cosmos/evm/crypto/hd"
 
 	"github.com/aethelred/aethelred/app"
 	"github.com/aethelred/aethelred/x/pouw"
@@ -47,6 +55,12 @@ func NewRootCmd() *cobra.Command {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithHomeDir(app.DefaultNodeHome).
+		// eth_secp256k1 keyring support (cosmos/evm): Aethelred accounts are
+		// EVM-keyed, so `keys add --algo eth_secp256k1` MUST work — without
+		// this option the CLI silently creates vanilla cosmos keys whose
+		// accounts cannot sign EVM transactions (EVM-face-stranded funds).
+		// Vanilla secp256k1 stays supported for legacy/ops keys.
+		WithKeyringOptions(cosmosevmhd.EthSecp256k1Option()).
 		WithViper("AETHELRED")
 
 	rootCmd := &cobra.Command{
@@ -75,7 +89,8 @@ Learn more at https://aethelred.io`,
 				return err
 			}
 			customAppTemplate, customAppConfig := initAppConfig()
-			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, nil); err != nil {
+			customCMTConfig := initCometBFTConfig()
+			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
 				return err
 			}
 			return validateAppConfig(cmd)
@@ -84,8 +99,41 @@ Learn more at https://aethelred.io`,
 
 	initRootCmd(rootCmd, encodingConfig)
 
+	// Generate CLI tx/query commands for the standard cosmos-sdk modules (bank,
+	// staking, distribution, gov, slashing, mint, feegrant, authz, …) from their
+	// protobuf service definitions via autocli. A throwaway in-memory app instance
+	// supplies the module reflection and is discarded immediately. Custom modules
+	// (seal/pouw/verify) are registered manually in initRootCmd; autocli skips any
+	// command already present, so there are no duplicates.
+	//
+	// This CLI process is not a running node, so allow the throwaway app's
+	// verification-pipeline init to degrade to a warning (instead of panicking when
+	// no TEE endpoint is configured) by scoping AETHELRED_ALLOW_SIMULATED to just
+	// this construction — the real node app built later stays strict.
+	prevAllow, hadAllow := os.LookupEnv("AETHELRED_ALLOW_SIMULATED")
+	os.Setenv("AETHELRED_ALLOW_SIMULATED", "true")
+	tempApp := app.New(log.NewNopLogger(), dbm.NewMemDB(), nil, false, emptyAppOptions{})
+	if hadAllow {
+		os.Setenv("AETHELRED_ALLOW_SIMULATED", prevAllow)
+	} else {
+		os.Unsetenv("AETHELRED_ALLOW_SIMULATED")
+	}
+	// autocli's flag builder needs a proto file resolver; it reads it from
+	// AppOptions.ClientCtx.InterfaceRegistry, so wire the client context in.
+	autoCliOpts := tempApp.AutoCliOpts()
+	autoCliOpts.ClientCtx = initClientCtx
+	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
+		panic(err)
+	}
+
 	return rootCmd
 }
+
+// emptyAppOptions is a no-op AppOptions used only to construct the throwaway app
+// instance that provides autocli module reflection in NewRootCmd.
+type emptyAppOptions struct{}
+
+func (emptyAppOptions) Get(string) interface{} { return nil }
 
 // initConfig sets the SDK configuration
 func initConfig() {
@@ -99,8 +147,12 @@ func initConfig() {
 
 // AppConfig defines custom app configuration for Aethelred.
 type AppConfig struct {
-	serverconfig.Config
-	TEE TEEConfig `mapstructure:"tee"`
+	// ",squash" flattens the embedded server config so its keys (e.g.
+	// minimum-gas-prices) unmarshal from app.toml. Without it, viper/mapstructure
+	// leaves Config zero-valued and ValidateBasic falsely reports an unset min gas
+	// price.
+	serverconfig.Config `mapstructure:",squash"`
+	TEE                 TEEConfig `mapstructure:"tee"`
 }
 
 // TEEConfig defines configuration for the TEE worker integration.
@@ -132,6 +184,15 @@ endpoint = "{{ .TEE.Endpoint }}"
 	return customAppTemplate, customAppConfig
 }
 
+// initCometBFTConfig returns the CometBFT (consensus) config used to seed
+// config.toml on first run. It MUST be non-nil: cosmos-sdk's
+// InterceptConfigsPreRunHandler calls ValidateBasic() on this value when
+// config.toml does not yet exist (e.g. during `init`), so passing nil panics
+// with a nil-pointer dereference in cometbft/config.(*Config).ValidateBasic.
+func initCometBFTConfig() *cmtcfg.Config {
+	return cmtcfg.DefaultConfig()
+}
+
 // initRootCmd adds subcommands to the root command
 func initRootCmd(rootCmd *cobra.Command, encodingConfig app.EncodingConfig) {
 	cfg := sdk.GetConfig()
@@ -139,11 +200,27 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig app.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
+		// Genesis-bootstrap commands registered at the top level (Osmosis-style):
+		// `aethelredd add-genesis-account | gentx | collect-gentxs |
+		// validate-genesis | migrate`. Previously only init + migrate were
+		// registered, so these were missing entirely and a chain could not be set
+		// up via CLI. Address codecs come from the tx config's signing context.
+		genutilcli.AddGenesisAccountCmd(app.DefaultNodeHome, encodingConfig.TxConfig.SigningContext().AddressCodec()),
+		genutilcli.GenTxCmd(app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
+		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, genutiltypes.DefaultMessageValidator, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
+		genutilcli.ValidateGenesisCmd(app.ModuleBasics),
 		genutilcli.MigrateGenesisCmd(genesisMigrationMap()),
 		debug.Cmd(),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
+	// Use AddCommandsWithStartCmdOptions so a PostSetup hook can start the EVM
+	// JSON-RPC HTTP server alongside the node (ADR-0001 Phase 1) without
+	// replacing the custom ABCI++/PoUW start logic. JSON-RPC flags are appended
+	// to the existing module init flags.
+	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
+		AddFlags:  addJSONRPCStartFlags(addModuleInitFlags),
+		PostSetup: startJSONRPCPostSetup,
+	})
 
 	// Add query and tx commands
 	rootCmd.AddCommand(
@@ -161,13 +238,42 @@ func newApp(
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
-	return app.New(
+	// DefaultBaseappOptions wires chain-id (baseapp.SetChainID), pruning,
+	// min-gas-prices, snapshot, halt-height, and mempool settings from appOpts.
+	// Without these the baseapp chain-id stays empty and InitChain fails with
+	// "invalid chain-id on InitChain; expected: , got: <chain>".
+	baseappOptions := server.DefaultBaseappOptions(appOpts)
+	aethelredApp := app.New(
 		logger,
 		db,
 		traceStore,
 		true,
 		appOpts,
+		baseappOptions...,
 	)
+
+	// Configure the validator's signing key from priv_validator_key.json so the
+	// node can sign vote extensions and Digital Seal claims, and so it logs its
+	// derived hybrid (secp256k1 + ML-DSA) public key for on-chain registration
+	// (`aethelredd tx pouw register-hybrid-key <hex>`). Validator nodes have this
+	// key file; non-validator nodes do not, so this is best-effort and silently
+	// skipped when the file is absent.
+	if home := cast.ToString(appOpts.Get(flags.FlagHome)); home != "" {
+		keyFile := filepath.Join(home, "config", "priv_validator_key.json")
+		if _, statErr := os.Stat(keyFile); statErr == nil {
+			stateFile := filepath.Join(home, "data", "priv_validator_state.json")
+			filePV := privval.LoadFilePVEmptyState(keyFile, stateFile)
+			if keyErr := aethelredApp.SetValidatorPrivateKey(filePV.Key.PrivKey.Bytes()); keyErr != nil {
+				logger.Error("failed to configure validator signing key from priv_validator_key.json", "error", keyErr)
+			}
+		}
+	}
+
+	// Capture the concrete app so the start command's PostSetup hook can start
+	// the EVM JSON-RPC server against it (see jsonrpc.go).
+	runningApp = aethelredApp
+
+	return aethelredApp
 }
 
 // appExport exports app state
@@ -217,7 +323,10 @@ func queryCommand() *cobra.Command {
 		authcmd.QueryTxCmd(),
 	)
 
-	// Add custom module query commands
+	// Custom module query commands. The standard cosmos-sdk modules (bank,
+	// staking, distribution, gov, slashing, mint, …) are added separately via
+	// autocli in NewRootCmd (EnhanceRootCommand), which generates their commands
+	// from proto; autocli skips any module already registered here.
 	cmd.AddCommand(seal.GetQueryCmd())
 	cmd.AddCommand(pouw.GetQueryCmd())
 	cmd.AddCommand(verify.GetQueryCmd())
@@ -248,7 +357,11 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 	)
 
-	// Add custom module tx commands
+	// Custom module tx commands. The standard cosmos-sdk modules (bank send,
+	// staking delegate, distribution withdraw-rewards, gov vote, slashing unjail,
+	// …) are added separately via autocli in NewRootCmd (EnhanceRootCommand),
+	// which generates their commands from proto; autocli skips any module already
+	// registered here.
 	cmd.AddCommand(seal.GetTxCmd())
 	cmd.AddCommand(pouw.GetTxCmd())
 	cmd.AddCommand(verify.GetTxCmd())

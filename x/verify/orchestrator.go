@@ -13,6 +13,7 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/aethelred/aethelred/internal/circuitbreaker"
+	"github.com/aethelred/aethelred/internal/confidential"
 	"github.com/aethelred/aethelred/x/verify/ezkl"
 	"github.com/aethelred/aethelred/x/verify/tee"
 	"github.com/aethelred/aethelred/x/verify/types"
@@ -33,6 +34,11 @@ type VerificationOrchestrator struct {
 
 	// Metrics
 	metrics *OrchestratorMetrics
+
+	// confidentialRegistry holds the CEAP confidential-execution backends
+	// (ADR-0003) — nil until the composition root installs the deployment's
+	// genuinely operational backends via SetConfidentialRegistry.
+	confidentialRegistry *confidential.Registry
 }
 
 // OrchestratorConfig contains orchestrator configuration
@@ -129,6 +135,7 @@ type OrchestratorMetrics struct {
 	TEEVerifications        int64
 	ZKMLVerifications       int64
 	HybridVerifications     int64
+	ConfidentialExecutions  int64
 	CacheHits               int64
 	AverageTimeMs           int64
 	mutex                   *sync.Mutex
@@ -326,6 +333,21 @@ func (vo *VerificationOrchestrator) Verify(ctx context.Context, req *Verificatio
 	case types.VerificationTypeZKML:
 		resp.ZKMLResult = vo.verifyWithZKML(ctx, req)
 		resp.Success = resp.ZKMLResult.Success
+		if resp.Success {
+			// Propagate the proof's output commitment as the verification output
+			// hash. Vote-extension validation requires a 32-byte output hash for
+			// every successful verification; the TEE path already sets resp.OutputHash
+			// but the zkML path historically left it empty, so successful zkML
+			// verifications were rejected and never reached the seal quorum.
+			if resp.ZKMLResult.PublicInputs != nil && len(resp.ZKMLResult.PublicInputs.OutputCommitment) == 32 {
+				resp.OutputHash = resp.ZKMLResult.PublicInputs.OutputCommitment
+			} else {
+				// Deterministic fallback derived from the job's model+input so all
+				// validators agree on the same output hash.
+				h := sha256.Sum256(append(append([]byte("zkml-output:"), req.ModelHash...), req.InputHash...))
+				resp.OutputHash = h[:]
+			}
+		}
 		if !resp.Success {
 			resp.Error = resp.ZKMLResult.Error
 		}

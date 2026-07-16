@@ -11,8 +11,16 @@
 #   └── cmd/          Node binary  ├── aethelred-bridge     Bridge relayer
 #                                  └── falcon-lion          Trade demo
 #
-# Integration: HTTP/gRPC only (no FFI/CGo). Shared contract: proto/*.proto
-# Go chain is source of truth. Rust services are stateless workers.
+# Go<->Rust integration: HTTP/gRPC only (no FFI between the stacks). Shared
+# contract: proto/*.proto. Go chain is source of truth; Rust services are
+# stateless workers.
+#
+# NOTE: the Go node itself REQUIRES CGO. cosmos/evm depends on go-ethereum's
+# crypto/secp256k1, whose symbols (RecoverPubkey, VerifySignature) are build-
+# tagged cgo-only. Without a C compiler, Go silently sets CGO_ENABLED=0 and
+# the build fails with "undefined: secp256k1.RecoverPubkey". The build and
+# install targets therefore force CGO_ENABLED=1 and preflight for a compiler
+# (Debian/Ubuntu: apt-get install build-essential).
 
 BINARY_NAME = aethelredd
 BUILD_DIR = ./build
@@ -21,6 +29,7 @@ GO = go
 GOFLAGS ?= -mod=mod
 GOCACHE ?= $(CURDIR)/.cache/go-build
 LDFLAGS = -s -w -X github.com/aethelred/aethelred/app.Version=$(VERSION)
+CC_BIN := $(shell $(GO) env CC)
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.1.0-dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -34,7 +43,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical release-preflight fuzz-check
+.PHONY: all build install check-cgo clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -49,18 +58,27 @@ help:
 ## all: Build everything
 all: build
 
+# Fail fast with an actionable message when no C compiler is available,
+# instead of the confusing cgo-off symbol errors deep inside cosmos/evm.
+check-cgo:
+	@command -v $(CC_BIN) >/dev/null 2>&1 || { \
+		echo "error: C compiler '$(CC_BIN)' not found. aethelredd requires CGO"; \
+		echo "(go-ethereum crypto/secp256k1 is cgo-only)."; \
+		echo "Debian/Ubuntu: sudo apt-get install -y build-essential"; \
+		exit 1; }
+
 ## build: Build the aethelredd binary
-build:
+build: check-cgo
 	@echo "Building $(BINARY_NAME) $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(GOCACHE)
-	GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/aethelredd
+	CGO_ENABLED=1 GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/aethelredd
 
 ## install: Install aethelredd to GOPATH/bin
-install:
+install: check-cgo
 	@echo "Installing $(BINARY_NAME)..."
 	@mkdir -p $(GOCACHE)
-	GOCACHE=$(GOCACHE) $(GO) install $(GOFLAGS) -ldflags "$(LDFLAGS)" ./cmd/aethelredd
+	CGO_ENABLED=1 GOCACHE=$(GOCACHE) $(GO) install $(GOFLAGS) -ldflags "$(LDFLAGS)" ./cmd/aethelredd
 
 ## clean: Remove build artifacts
 clean:
@@ -235,7 +253,7 @@ start: build
 	@echo "Starting $(BINARY_NAME)..."
 	$(BUILD_DIR)/$(BINARY_NAME) start
 
-## testnet-start: Start local testnet (3 validators)
+## testnet-start: Bootstrap + run a local single-node testnet (see scripts/testnet.sh)
 testnet-start: build
 	@echo "Starting local testnet..."
 	@./scripts/testnet.sh start

@@ -179,6 +179,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/ListSealsResponse'
 
+  /aethelred/seal/v1/seals/by_model:
+    get:
+      tags: [Seals]
+      summary: List seals by model hash
+      operationId: listSealsByModel
+      parameters:
+        - name: model_hash
+          in: query
+          required: true
+          description: Base64-encoded SHA-256 model hash, matching proto bytes JSON mapping.
+          schema:
+            type: string
+            format: byte
+      responses:
+        '200':
+          description: List of seals for the model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSealsByModelResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /aethelred/seal/v1/seals/by_requester:
+    get:
+      tags: [Seals]
+      summary: List seals by requester
+      operationId: listSealsByRequester
+      parameters:
+        - name: requester
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of seals requested by the address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSealsByRequesterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
   /aethelred/seal/v1/seals/{seal_id}:
     get:
       tags: [Seals]
@@ -196,7 +240,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DigitalSeal'
+                $ref: '#/components/schemas/GetSealResponse'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -221,7 +265,60 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /aethelred/seal/v1/seals/{seal_id}/revoke:
+  /aethelred/seal/v1/seals/{seal_id}/export:
+    get:
+      tags: [Seals]
+      summary: Export a seal evidence object
+      operationId: exportSeal
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, compact, portable, audit]
+            default: json
+      responses:
+        '200':
+          description: Exported seal evidence object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportSealResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/seal/v1/evidence-bundles/{job_id}:
+    get:
+      tags: [Seals]
+      summary: Export an enterprise evidence bundle by job ID
+      operationId: exportEnterpriseEvidenceBundle
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canonical enterprise hybrid evidence bundle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnterpriseEvidenceBundleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/seal/v1/seals/{seal_id}:revoke:
     post:
       tags: [Seals]
       summary: Revoke a seal
@@ -346,6 +443,43 @@ paths:
                 $ref: '#/components/schemas/ValidatorStats'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /aethelred/pouw/v1/seals/{seal_id}/quorum:
+    get:
+      tags: [Seals]
+      summary: Get a Digital Seal's validator-quorum hybrid signatures
+      description: >-
+        Returns the validator-quorum hybrid (secp256k1 + ML-DSA) signatures
+        attached to a Digital Seal, for offline verification that a 2/3+ power
+        quorum of validators signed the seal claim.
+      operationId: getSealQuorum
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The seal's quorum signatures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seal_id:
+                    type: string
+                  signature_count:
+                    type: integer
+                  signatures:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        signer_address: { type: string }
+                        algorithm: { type: string }
+                        public_key: { type: string, format: byte }
+                        signature: { type: string, format: byte }
 
   /aethelred/pouw/v1/validators/{address}/capability:
     post:
@@ -783,6 +917,12 @@ components:
         tx_hash:
           type: string
 
+    GetSealResponse:
+      type: object
+      properties:
+        seal:
+          $ref: '#/components/schemas/DigitalSeal'
+
     ListSealsResponse:
       type: object
       properties:
@@ -790,33 +930,275 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DigitalSeal'
-        pagination:
-          $ref: '#/components/schemas/PageResponse'
+        total:
+          type: integer
+          format: uint64
+
+    ListSealsByModelResponse:
+      type: object
+      properties:
+        seals:
+          type: array
+          items:
+            $ref: '#/components/schemas/DigitalSeal'
+
+    ListSealsByRequesterResponse:
+      type: object
+      properties:
+        seals:
+          type: array
+          items:
+            $ref: '#/components/schemas/DigitalSeal'
 
     VerifySealResponse:
       type: object
       properties:
         valid:
           type: boolean
+        verification_type:
+          type: string
+          enum: [none, tee, zkml, hybrid]
+        status:
+          type: string
+
+    ExportSealResponse:
+      type: object
+      properties:
+        export:
+          $ref: '#/components/schemas/ExportedSeal'
+
+    ExportedSeal:
+      type: object
+      properties:
+        version:
+          type: string
+        format:
+          type: string
+          enum: [json, compact, portable, audit]
         seal:
-          $ref: '#/components/schemas/DigitalSeal'
-        verification_details:
+          type: object
+          additionalProperties: true
+        verification:
+          type: object
+          additionalProperties: true
+        metadata:
           type: object
           properties:
-            signature_valid:
+            exported_at:
+              type: string
+              format: date-time
+            exported_by:
+              type: string
+            chain_id:
+              type: string
+            block_height:
+              type: integer
+              format: int64
+            content_hash:
+              type: string
+
+    EnterpriseEvidenceBundleResponse:
+      type: object
+      required:
+        - evidence_bundle
+      properties:
+        evidence_bundle:
+          $ref: '#/components/schemas/EnterpriseEvidenceBundle'
+
+    EnterpriseEvidenceBundle:
+      type: object
+      description: Canonical enterprise hybrid evidence bundle matching docs/api/evidence-bundle-v1.schema.json.
+      additionalProperties: true
+      required:
+        - schema_version
+        - bundle_id
+        - job_id
+        - chain_id
+        - seal_id
+        - timestamp
+        - model_hash
+        - circuit_hash
+        - verifying_key_hash
+        - validator_signature
+        - confidence_score
+        - tee_evidence
+        - zkml_evidence
+        - region
+        - operator
+        - policy_decision
+        - archive_pointer
+        - verification
+      properties:
+        schema_version:
+          type: string
+          enum: ['1.0.0']
+        bundle_id:
+          type: string
+          pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        job_id:
+          type: string
+          pattern: '^[0-9A-Fa-f]{64}$'
+        chain_id:
+          type: string
+          minLength: 1
+        seal_id:
+          type: string
+          minLength: 1
+        timestamp:
+          type: string
+          format: date-time
+        model_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        circuit_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        verifying_key_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        validator_signature:
+          type: string
+          minLength: 4
+          pattern: '^[A-Za-z0-9+/]+=*$'
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        tee_evidence:
+          type: object
+          required:
+            - platform
+            - enclave_id
+            - measurement
+            - quote
+            - nonce
+          additionalProperties: false
+          properties:
+            platform:
+              type: string
+              enum: [sgx, nitro, sev-snp]
+            enclave_id:
+              type: string
+              minLength: 1
+            measurement:
+              type: string
+              pattern: '^[0-9a-f]+$'
+            quote:
+              type: string
+              minLength: 4
+              pattern: '^[A-Za-z0-9+/]+=*$'
+            nonce:
+              type: string
+              pattern: '^[0-9a-f]{64}$'
+        zkml_evidence:
+          type: object
+          required:
+            - proof_system
+            - proof_bytes
+            - public_inputs
+            - output_commitment
+          additionalProperties: false
+          properties:
+            proof_system:
+              type: string
+              enum: [groth16, plonk, ezkl, halo2, stark]
+            proof_bytes:
+              type: string
+              minLength: 4
+              pattern: '^[A-Za-z0-9+/]+=*$'
+            public_inputs:
+              type: string
+              minLength: 4
+              pattern: '^[A-Za-z0-9+/]+=*$'
+            output_commitment:
+              type: string
+              pattern: '^[0-9a-f]{64}$'
+        region:
+          type: string
+          minLength: 1
+        operator:
+          type: string
+          pattern: '^aethel1[a-z0-9]{38,58}$'
+        policy_decision:
+          type: object
+          required:
+            - mode
+            - require_both
+            - fallback_allowed
+          additionalProperties: true
+          properties:
+            mode:
+              type: string
+              enum: [hybrid]
+            require_both:
               type: boolean
-            tee_attestation_valid:
+              enum: [true]
+            fallback_allowed:
               type: boolean
-            zkml_proof_valid:
+              enum: [false]
+            policy_version:
+              type: string
+        archive_pointer:
+          type: object
+          required:
+            - archive_type
+            - index
+            - document_id
+            - uri
+            - retention_days
+            - write_status
+          additionalProperties: true
+          properties:
+            archive_type:
+              type: string
+              minLength: 1
+            index:
+              type: string
+              minLength: 1
+            document_id:
+              type: string
+              minLength: 1
+            uri:
+              type: string
+              minLength: 1
+            retention_days:
+              type: integer
+              minimum: 1
+            write_status:
+              type: string
+              minLength: 1
+        verification:
+          type: object
+          required:
+            - schema_verified
+            - policy_verified
+            - tee_attestation_verified
+            - zkml_proof_verified
+            - digital_seal_verified
+            - live_verification_required
+            - verifier_version
+          additionalProperties: true
+          properties:
+            artifact_mode:
+              type: string
+            schema_verified:
               type: boolean
-            not_expired:
+            policy_verified:
               type: boolean
-            not_revoked:
+            tee_attestation_verified:
               type: boolean
-        errors:
-          type: array
-          items:
-            type: string
+            zkml_proof_verified:
+              type: boolean
+            digital_seal_verified:
+              type: boolean
+            live_verification_required:
+              type: boolean
+            verifier_version:
+              type: string
+              minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
 
     RevokeSealRequest:
       type: object

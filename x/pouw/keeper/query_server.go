@@ -159,6 +159,40 @@ func (q queryServer) IsPCR0Registered(goCtx context.Context, req *types.QueryIsP
 	}, nil
 }
 
+// SealQuorum returns the validator-quorum hybrid signatures attached to a Digital
+// Seal, enabling an external party to verify offline that a 2/3+ power quorum of
+// validators signed the seal's claim (each signature is over the canonical seal
+// claim and is verifiable against the validator's registered hybrid public key).
+func (q queryServer) SealQuorum(goCtx context.Context, req *types.QuerySealQuorumRequest) (*types.QuerySealQuorumResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+	if req.SealId == "" {
+		return nil, fmt.Errorf("seal_id cannot be empty")
+	}
+
+	sigs, err := q.Keeper.GetSealQuorumSignatures(goCtx, req.SealId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query seal quorum signatures: %w", err)
+	}
+
+	out := make([]*types.SealQuorumSignature, 0, len(sigs))
+	for i := range sigs {
+		out = append(out, &types.SealQuorumSignature{
+			SignerAddress: sigs[i].SignerAddress,
+			Algorithm:     sigs[i].Algorithm,
+			PublicKey:     sigs[i].PublicKey,
+			Signature:     sigs[i].Signature,
+		})
+	}
+
+	return &types.QuerySealQuorumResponse{
+		SealId:         req.SealId,
+		Signatures:     out,
+		SignatureCount: uint32(len(out)),
+	}, nil
+}
+
 // ---------------------------------------------------------------------------
 // Module health & metrics queries (non-proto, for operator dashboards)
 // ---------------------------------------------------------------------------

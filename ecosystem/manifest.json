@@ -4,8 +4,11 @@
   "last_updated": "2026-04-05",
   "protocol": {
     "repo": "aethelred-foundation/aethelred",
-    "chain_id": 8821,
-    "testnet_chain_id": 88210,
+    "evm_chain_id": 7332,
+    "chain_id": 7332,
+    "testnet_chain_id": 7332,
+    "cosmos_chain_id_pattern": "aethelred-<network>-1",
+    "chain_id_note": "7332 is the confirmed EVM EIP-155 chain id baked into the x/vm chain config (eth_chainId returns 0x1ca4); wallets and dApps must use it. The Cosmos-level chain id is a per-deployment string (aethelred-<network>-1). The earlier 8821/88210 values were never-deployed placeholders.",
     "status": "testnet-preview"
   },
   "tiers": {

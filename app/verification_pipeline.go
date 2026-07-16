@@ -82,6 +82,7 @@ func (app *AethelredApp) initVerificationPipeline() {
 // value config (not pointer) suitable for NewVerificationOrchestrator.
 func (app *AethelredApp) buildFullOrchestratorConfig() verify.OrchestratorConfig {
 	cfg := verify.DefaultOrchestratorConfig()
+	simulated := startupAllowsVerificationInitFailure()
 
 	// --- Nitro / TEE configuration ---
 	if app.teeClient != nil {
@@ -103,13 +104,28 @@ func (app *AethelredApp) buildFullOrchestratorConfig() verify.OrchestratorConfig
 	}
 
 	// --- EZKL prover configuration ---
-	proverEndpoint := os.Getenv("AETHELRED_PROVER_ENDPOINT")
-	if proverEndpoint != "" {
-		cfg.ProverConfig = &ezkl.ProverConfig{
-			ProverEndpoint: proverEndpoint,
-			AllowSimulated: false,
+	// Start from the full default config (the orchestrator replaces, not merges,
+	// when ProverConfig is non-nil, so a partial config would drop timeouts etc.).
+	proverCfg := ezkl.DefaultProverConfig()
+	proverCfg.ProverEndpoint = os.Getenv("AETHELRED_PROVER_ENDPOINT")
+
+	// In simulated/dev mode (AETHELRED_TEE_MODE=simulated or AETHELRED_ALLOW_SIMULATED),
+	// enable deterministic simulated proofs and attestations so the zkML/TEE
+	// verification pipeline can complete without a real prover endpoint or TEE
+	// enclave. Without this, verifyWithZKML/verifyWithTEE always fail and no job
+	// ever reaches the Digital Seal quorum. Production mode (simulated=false) is
+	// unaffected: the prover/attestation still fail closed.
+	if simulated {
+		proverCfg.AllowSimulated = true
+		if cfg.NitroConfig == nil {
+			nitroCfg := tee.DefaultNitroConfig()
+			nitroCfg.AllowSimulated = true
+			cfg.NitroConfig = &nitroCfg
+		} else {
+			cfg.NitroConfig.AllowSimulated = true
 		}
 	}
+	cfg.ProverConfig = &proverCfg
 
 	return cfg
 }

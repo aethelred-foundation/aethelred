@@ -14,19 +14,25 @@ const SchemaVersionV1 = "1.0.0"
 // EvidenceBundle is the top-level structure for enterprise hybrid job evidence bundles.
 // It conforms to docs/api/evidence-bundle-v1.schema.json.
 type EvidenceBundle struct {
-	SchemaVersion   string          `json:"schema_version"`
-	BundleID        string          `json:"bundle_id"`
-	JobID           string          `json:"job_id"`
-	Timestamp       string          `json:"timestamp"`
-	ModelHash       string          `json:"model_hash"`
-	CircuitHash     string          `json:"circuit_hash"`
-	VerifyingKeyHash string         `json:"verifying_key_hash"`
-	TEEEvidence     TEEEvidenceV1   `json:"tee_evidence"`
-	ZKMLEvidence    ZKMLEvidenceV1  `json:"zkml_evidence"`
-	Region          string          `json:"region"`
-	Operator        string          `json:"operator"`
-	PolicyDecision  PolicyDecision  `json:"policy_decision"`
-	Metadata        map[string]any  `json:"metadata,omitempty"`
+	SchemaVersion      string         `json:"schema_version"`
+	BundleID           string         `json:"bundle_id"`
+	JobID              string         `json:"job_id"`
+	ChainID            string         `json:"chain_id"`
+	SealID             string         `json:"seal_id"`
+	Timestamp          string         `json:"timestamp"`
+	ModelHash          string         `json:"model_hash"`
+	CircuitHash        string         `json:"circuit_hash"`
+	VerifyingKeyHash   string         `json:"verifying_key_hash"`
+	ValidatorSignature string         `json:"validator_signature"`
+	ConfidenceScore    *float64       `json:"confidence_score"`
+	TEEEvidence        TEEEvidenceV1  `json:"tee_evidence"`
+	ZKMLEvidence       ZKMLEvidenceV1 `json:"zkml_evidence"`
+	Region             string         `json:"region"`
+	Operator           string         `json:"operator"`
+	PolicyDecision     PolicyDecision `json:"policy_decision"`
+	ArchivePointer     ArchivePointer `json:"archive_pointer"`
+	Verification       Verification   `json:"verification"`
+	Metadata           map[string]any `json:"metadata,omitempty"`
 }
 
 // TEEEvidenceV1 contains TEE attestation evidence matching the v1 schema.
@@ -50,8 +56,30 @@ type ZKMLEvidenceV1 struct {
 type PolicyDecision struct {
 	Mode            string `json:"mode"`
 	RequireBoth     bool   `json:"require_both"`
-	FallbackAllowed bool   `json:"fallback_allowed"`
+	FallbackAllowed *bool  `json:"fallback_allowed"`
 	PolicyVersion   string `json:"policy_version,omitempty"`
+}
+
+// ArchivePointer records where the retained evidence bundle can be audited.
+type ArchivePointer struct {
+	ArchiveType   string `json:"archive_type"`
+	Index         string `json:"index"`
+	DocumentID    string `json:"document_id"`
+	URI           string `json:"uri"`
+	RetentionDays int    `json:"retention_days"`
+	WriteStatus   string `json:"write_status"`
+}
+
+// Verification records schema, policy, attestation, proof, and Digital Seal checks.
+type Verification struct {
+	ArtifactMode             string `json:"artifact_mode,omitempty"`
+	SchemaVerified           bool   `json:"schema_verified"`
+	PolicyVerified           bool   `json:"policy_verified"`
+	TEEAttestationVerified   *bool  `json:"tee_attestation_verified"`
+	ZKMLProofVerified        *bool  `json:"zkml_proof_verified"`
+	DigitalSealVerified      *bool  `json:"digital_seal_verified"`
+	LiveVerificationRequired *bool  `json:"live_verification_required"`
+	VerifierVersion          string `json:"verifier_version"`
 }
 
 // Valid TEE platform values per schema v1.
@@ -104,6 +132,12 @@ func (b *EvidenceBundle) Validate() error {
 	if !jobIDRe.MatchString(b.JobID) {
 		return fmt.Errorf("job_id must be a 64-character hex string, got %q", b.JobID)
 	}
+	if strings.TrimSpace(b.ChainID) == "" {
+		return fmt.Errorf("chain_id is required")
+	}
+	if strings.TrimSpace(b.SealID) == "" {
+		return fmt.Errorf("seal_id is required")
+	}
 
 	// Timestamp (ISO 8601 with Z suffix)
 	if err := validateTimestamp(b.Timestamp); err != nil {
@@ -119,6 +153,15 @@ func (b *EvidenceBundle) Validate() error {
 	}
 	if err := validateSHA256Hex("verifying_key_hash", b.VerifyingKeyHash); err != nil {
 		return err
+	}
+	if err := validateBase64("validator_signature", b.ValidatorSignature); err != nil {
+		return err
+	}
+	if b.ConfidenceScore == nil {
+		return fmt.Errorf("confidence_score is required")
+	}
+	if *b.ConfidenceScore < 0 || *b.ConfidenceScore > 1 {
+		return fmt.Errorf("confidence_score must be between 0 and 1, got %v", *b.ConfidenceScore)
 	}
 
 	// TEE evidence
@@ -145,8 +188,24 @@ func (b *EvidenceBundle) Validate() error {
 	if err := b.PolicyDecision.Validate(); err != nil {
 		return fmt.Errorf("policy_decision: %w", err)
 	}
+	if err := b.ArchivePointer.Validate(); err != nil {
+		return fmt.Errorf("archive_pointer: %w", err)
+	}
+	if err := b.Verification.Validate(); err != nil {
+		return fmt.Errorf("verification: %w", err)
+	}
 
 	return nil
+}
+
+// Float64Ptr returns a pointer to v for required scalar JSON fields.
+func Float64Ptr(v float64) *float64 {
+	return &v
+}
+
+// BoolPtr returns a pointer to v for required scalar JSON fields that can be false.
+func BoolPtr(v bool) *bool {
+	return &v
 }
 
 // Validate checks TEE evidence required fields and format.
@@ -194,8 +253,60 @@ func (p *PolicyDecision) Validate() error {
 	if !p.RequireBoth {
 		return fmt.Errorf("require_both must be true for enterprise bundles")
 	}
-	if p.FallbackAllowed {
+	if p.FallbackAllowed == nil {
+		return fmt.Errorf("fallback_allowed is required")
+	}
+	if *p.FallbackAllowed {
 		return fmt.Errorf("fallback_allowed must be false for enterprise bundles")
+	}
+	return nil
+}
+
+// Validate checks that an archive pointer is complete enough for audit review.
+func (a *ArchivePointer) Validate() error {
+	if strings.TrimSpace(a.ArchiveType) == "" {
+		return fmt.Errorf("archive_type is required")
+	}
+	if strings.TrimSpace(a.Index) == "" {
+		return fmt.Errorf("index is required")
+	}
+	if strings.TrimSpace(a.DocumentID) == "" {
+		return fmt.Errorf("document_id is required")
+	}
+	if strings.TrimSpace(a.URI) == "" {
+		return fmt.Errorf("uri is required")
+	}
+	if a.RetentionDays < 1 {
+		return fmt.Errorf("retention_days must be positive")
+	}
+	if strings.TrimSpace(a.WriteStatus) == "" {
+		return fmt.Errorf("write_status is required")
+	}
+	return nil
+}
+
+// Validate checks verification status fields.
+func (v *Verification) Validate() error {
+	if !v.SchemaVerified {
+		return fmt.Errorf("schema_verified must be true")
+	}
+	if !v.PolicyVerified {
+		return fmt.Errorf("policy_verified must be true")
+	}
+	if v.TEEAttestationVerified == nil {
+		return fmt.Errorf("tee_attestation_verified is required")
+	}
+	if v.ZKMLProofVerified == nil {
+		return fmt.Errorf("zkml_proof_verified is required")
+	}
+	if v.DigitalSealVerified == nil {
+		return fmt.Errorf("digital_seal_verified is required")
+	}
+	if v.LiveVerificationRequired == nil {
+		return fmt.Errorf("live_verification_required is required")
+	}
+	if strings.TrimSpace(v.VerifierVersion) == "" {
+		return fmt.Errorf("verifier_version is required")
 	}
 	return nil
 }
@@ -205,7 +316,7 @@ func NewEnterprisePolicyDecision(policyVersion string) PolicyDecision {
 	return PolicyDecision{
 		Mode:            "hybrid",
 		RequireBoth:     true,
-		FallbackAllowed: false,
+		FallbackAllowed: BoolPtr(false),
 		PolicyVersion:   policyVersion,
 	}
 }

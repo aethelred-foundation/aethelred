@@ -732,6 +732,13 @@ func (k Keeper) NotifySubscribers(
 
 // InitGenesis initializes the module from genesis state
 func (k Keeper) InitGenesis(ctx sdk.Context, gs *types.GenesisState) {
+	// Persist module params at genesis so the IBC store is non-empty from height 1.
+	// An empty mounted IAVL store cannot be loaded by version under iavl v1.x
+	// ("version does not exist"), which breaks every versioned state query and
+	// prevents the node from reloading state on restart.
+	if paramsJSON, err := json.Marshal(gs.Params); err == nil {
+		_ = k.Params.Set(ctx, string(paramsJSON))
+	}
 	for _, proof := range gs.RelayedProofs {
 		proofJSON, _ := json.Marshal(proof)
 		_ = k.PacketReceipts.Set(ctx, proof.ProofID, true)

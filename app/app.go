@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,8 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/crypto/tmhash"
 
+	"cosmossdk.io/client/v2/autocli"
+	"cosmossdk.io/core/appmodule"
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/evidence"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
@@ -28,10 +31,13 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
+	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/codec"
 	authcodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -39,6 +45,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
@@ -62,6 +69,7 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -69,6 +77,7 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -78,6 +87,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	// Aethelred custom modules
+	pqc "github.com/aethelred/aethelred/crypto/pqc"
 	sovereigncrisiskeeper "github.com/aethelred/aethelred/x/crisis/keeper"
 	sovereigncrisistypes "github.com/aethelred/aethelred/x/crisis/types"
 	ibcmodule "github.com/aethelred/aethelred/x/ibc"
@@ -90,6 +100,18 @@ import (
 	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 	"github.com/aethelred/aethelred/x/seal"
 	sealkeeper "github.com/aethelred/aethelred/x/seal/keeper"
+	erc20 "github.com/cosmos/evm/x/erc20"
+	erc20keeper "github.com/cosmos/evm/x/erc20/keeper"
+	erc20types "github.com/cosmos/evm/x/erc20/types"
+	feemarketkeeper "github.com/cosmos/evm/x/feemarket/keeper"
+	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
+	precisebank "github.com/cosmos/evm/x/precisebank"
+	precisebankkeeper "github.com/cosmos/evm/x/precisebank/keeper"
+	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
+	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
+	gethcommon "github.com/ethereum/go-ethereum/common"
+
 	sealtypes "github.com/aethelred/aethelred/x/seal/types"
 	"github.com/aethelred/aethelred/x/verify"
 	verifykeeper "github.com/aethelred/aethelred/x/verify/keeper"
@@ -114,7 +136,9 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-		bank.AppModuleBasic{},
+		// bank with Aethelred's denom metadata in the default genesis (the EVM
+		// stack resolves its coin info from bank metadata — see evm.go).
+		aethelredBankModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
@@ -135,6 +159,12 @@ var (
 		pouw.AppModuleBasic{},
 		verify.AppModuleBasic{},
 		ibcmodule.AppModuleBasic{},
+		// cosmos/evm stack (vm + feemarket genesis overridden with Aethelred's
+		// EVM config — see evm.go)
+		aethelredVMModuleBasic{},
+		aethelredFeeMarketModuleBasic{},
+		erc20.AppModuleBasic{},
+		precisebank.NewAppModuleBasic(),
 	)
 )
 
@@ -186,6 +216,16 @@ type AethelredApp struct {
 	SovereignCrisisKeeper sovereigncrisiskeeper.Keeper
 	IBCKeeper             ibckeeper.Keeper
 
+	// keepers - cosmos/evm stack (ADR-0001 Phase 1; wiring in evm.go)
+	FeeMarketKeeper   feemarketkeeper.Keeper
+	EVMKeeper         *evmkeeper.Keeper
+	Erc20Keeper       erc20keeper.Keeper
+	PreciseBankKeeper precisebankkeeper.Keeper
+
+	// pendingTxListeners back the JSON-RPC newPendingTransactions stream
+	// (AppWithPendingTxStream); see jsonrpc.go.
+	pendingTxListeners []func(gethcommon.Hash)
+
 	// TEE client for compute verification
 	teeClient TEEClient
 
@@ -220,6 +260,12 @@ type AethelredApp struct {
 	// validatorConsAddr is the consensus address derived from validatorPrivKey.
 	// This is used to stamp vote extensions with the validator's own address.
 	validatorConsAddr []byte
+
+	// validatorHybridWallet is the validator's hybrid (secp256k1 + ML-DSA) key,
+	// derived deterministically from the ed25519 validator key seed. It signs
+	// Digital Seal claims in vote extensions so a 2/3+ quorum of these signatures
+	// can be aggregated onto each seal. Derived in SetValidatorPrivateKey.
+	validatorHybridWallet *pqc.DualKeyWallet
 
 	// voteExtensionCache stores verified vote extensions by height so
 	// ProcessProposal can enforce computation finality.
@@ -290,13 +336,19 @@ func New(
 		minttypes.StoreKey,
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
-		govtypes.StoreKey,
 		paramstypes.StoreKey,
 		upgradetypes.StoreKey,
+		govtypes.StoreKey,
+		authzkeeper.StoreKey,
 		feegrant.StoreKey,
 		evidencetypes.StoreKey,
-		authzkeeper.StoreKey,
 		crisistypes.StoreKey,
+		// Every mounted store belongs to a module registered in the module manager,
+		// so InitGenesis + the per-block commit keep it versioned. Modules whose
+		// genesis leaves the store empty (authz/feegrant/evidence) are seeded with a
+		// marker in InitChainer — an empty mounted IAVL store that never commits data
+		// cannot be loaded by version under iavl v1.x. Mount a store key only for a
+		// module that is actually wired.
 		// Aethelred custom module store keys
 		sealtypes.StoreKey,
 		pouwtypes.StoreKey,
@@ -305,7 +357,13 @@ func New(
 		sovereigncrisistypes.StoreKey,
 		ibctypes.StoreKey,
 	)
+	for _, k := range evmStoreKeys() {
+		keys[k] = storetypes.NewKVStoreKey(k)
+	}
 	tkeys := storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)
+	for _, k := range evmTransientKeys() {
+		tkeys[k] = storetypes.NewTransientStoreKey(k)
+	}
 	memKeys := storetypes.NewMemoryStoreKeys()
 
 	// Create the application
@@ -348,8 +406,18 @@ func New(
 	// Initialize Aethelred custom module keepers
 	app.initAethelredKeepers(keys, appCodec)
 
+	// Initialize the cosmos/evm stack (feemarket → precisebank → evm+precompiles
+	// → erc20); needs the account/bank/staking and seal/verify/pouw keepers.
+	app.initEVMKeepers(keys, tkeys, appCodec)
+
 	// Create module manager with all modules
 	app.setupModuleManager()
+
+	// Register every module's invariants with the crisis keeper so they can be
+	// checked (on demand via the crisis tx; automatic checks are disabled with
+	// invCheckPeriod=0). Must run after the module manager is populated.
+	app.ModuleManager.RegisterInvariants(app.CrisisKeeper)
+
 	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 	if err := app.ModuleManager.RegisterServices(app.configurator); err != nil {
 		panic(fmt.Errorf("failed to register module services: %w", err))
@@ -386,6 +454,7 @@ func New(
 
 	// Initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -478,6 +547,91 @@ func (app *AethelredApp) initStandardKeepers(
 		runtime.NewKVStoreService(keys[slashingtypes.StoreKey]),
 		app.StakingKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	// Register staking hooks so distribution and slashing receive validator
+	// lifecycle events (AfterValidatorCreated / AfterValidatorBonded / ...).
+	// Without this, the slashing module never creates ValidatorSigningInfo for
+	// genesis validators, which causes a "no validator signing info found"
+	// consensus failure at height 2 (height 1 has no commit to check; height 2
+	// processes height 1's vote and looks up the missing signing info). It also
+	// wires distribution's per-validator reward accounting. SetHooks must be
+	// called exactly once, after the staking, distribution, and slashing keepers
+	// all exist.
+	app.StakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			app.DistrKeeper.Hooks(),
+			app.SlashingKeeper.Hooks(),
+		),
+	)
+
+	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	// FeeGrant keeper — lets accounts grant fee allowances to others.
+	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[feegrant.StoreKey]),
+		app.AccountKeeper,
+	)
+
+	// Authz keeper — generic message authorization/delegation.
+	app.AuthzKeeper = authzkeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[authzkeeper.StoreKey]),
+		appCodec,
+		app.MsgServiceRouter(),
+		app.AccountKeeper,
+	)
+
+	// Evidence keeper — handles equivocation/downtime evidence and routes it to
+	// the slashing keeper. Uses the consensus-aware CometInfo service.
+	evidenceKeeper := evidencekeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[evidencetypes.StoreKey]),
+		app.StakingKeeper,
+		app.SlashingKeeper,
+		app.AccountKeeper.AddressCodec(),
+		runtime.ProvideCometInfoService(),
+	)
+	app.EvidenceKeeper = *evidenceKeeper
+
+	// Gov keeper — on-chain governance (proposals, deposits, voting, tallying).
+	// The gov module account (maccPerms) is the authority for privileged module
+	// params. Proposals are routed through the msg service router.
+	govKeeper := govkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[govtypes.StoreKey]),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
+		app.DistrKeeper,
+		app.MsgServiceRouter(),
+		govtypes.DefaultConfig(),
+		govAuthority,
+	)
+
+	// Legacy proposal-content router (gov v1beta1). Lets legacy proposals — text
+	// and parameter-change — be submitted (tx gov submit-legacy-proposal) and
+	// executed, alongside the modern msg-based gov v1 path (MsgUpdateParams etc.)
+	// which routes through the msg service router. Must be set before the keeper
+	// seals its router on first use.
+	govRouter := govv1beta1.NewRouter()
+	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler)
+	govRouter.AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper))
+	govKeeper.SetLegacyRouter(govRouter)
+
+	app.GovKeeper = *govKeeper
+
+	// Crisis keeper — runs the registered module invariants. invCheckPeriod=0
+	// disables automatic per-block checks (invariants stay runnable on demand via
+	// the crisis "invariant-broken" tx); the constant fee is charged to the caller.
+	app.CrisisKeeper = crisiskeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[crisistypes.StoreKey]),
+		0,
+		app.BankKeeper,
+		authtypes.FeeCollectorName,
+		govAuthority,
+		app.AccountKeeper.AddressCodec(),
 	)
 }
 
@@ -596,7 +750,7 @@ func firstNonEmpty(values ...string) string {
 
 // setupModuleManager creates and configures the module manager
 func (app *AethelredApp) setupModuleManager() {
-	app.ModuleManager = module.NewManager(
+	modules := []module.AppModule{
 		genutil.NewAppModule(app.AccountKeeper, app.StakingKeeper, app, app.txConfig),
 		auth.NewAppModule(app.appCodec, app.AccountKeeper, nil, app.GetSubspace(authtypes.ModuleName)),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
@@ -605,6 +759,11 @@ func (app *AethelredApp) setupModuleManager() {
 		mint.NewAppModule(app.appCodec, app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
 		distr.NewAppModule(app.appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
 		slashing.NewAppModule(app.appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
+		gov.NewAppModule(app.appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
+		authzmodule.NewAppModule(app.appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		feegrantmodule.NewAppModule(app.appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
+		evidence.NewAppModule(app.EvidenceKeeper),
+		crisis.NewAppModule(app.CrisisKeeper, true, app.GetSubspace(crisistypes.ModuleName)),
 		params.NewAppModule(app.ParamsKeeper),
 		consensus.NewAppModule(app.appCodec, app.ConsensusParamsKeeper),
 		// Aethelred custom modules
@@ -612,10 +771,13 @@ func (app *AethelredApp) setupModuleManager() {
 		pouw.NewAppModule(app.appCodec, &app.PouwKeeper),
 		verify.NewAppModule(app.appCodec, app.VerifyKeeper),
 		ibcmodule.NewAppModule(app.appCodec, app.IBCKeeper),
-	)
+	}
+	// cosmos/evm stack (constructed in evm.go)
+	modules = append(modules, app.evmAppModules()...)
+	app.ModuleManager = module.NewManager(modules...)
 
 	// Set order of module operations
-	app.ModuleManager.SetOrderBeginBlockers(
+	app.ModuleManager.SetOrderBeginBlockers(append([]string{
 		upgradetypes.ModuleName,
 		minttypes.ModuleName,
 		distrtypes.ModuleName,
@@ -636,20 +798,21 @@ func (app *AethelredApp) setupModuleManager() {
 		sealtypes.ModuleName,
 		verifytypes.ModuleName,
 		ibctypes.ModuleName,
-	)
+	}, evmBeginBlockers...)...)
 
-	app.ModuleManager.SetOrderEndBlockers(
+	app.ModuleManager.SetOrderEndBlockers(append([]string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
+		feegrant.ModuleName,
 		// Aethelred modules - process compute jobs at end of block
 		pouwtypes.ModuleName,
 		sealtypes.ModuleName,
 		verifytypes.ModuleName,
 		ibctypes.ModuleName,
-	)
+	}, evmEndBlockers...)...)
 
-	app.ModuleManager.SetOrderInitGenesis(
+	app.ModuleManager.SetOrderInitGenesis(append([]string{
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -670,13 +833,40 @@ func (app *AethelredApp) setupModuleManager() {
 		verifytypes.ModuleName,
 		pouwtypes.ModuleName,
 		ibctypes.ModuleName,
-	)
+	}, evmInitGenesis...)...)
 }
 
 // Name returns the name of the App
 func (app *AethelredApp) Name() string { return Name }
 
 // BeginBlocker application updates at every begin block
+// PreBlocker runs at the start of FinalizeBlock, before BeginBlock. It applies
+// the injected "create_seal_from_consensus" transactions that PrepareProposal
+// produced from the aggregated vote-extension verification results: each is
+// handed to the consensus handler, which creates the Digital Seal and marks the
+// job completed. Doing this here (deterministically, from the block's own txs)
+// is what turns a verified PoUW job into an on-chain Digital Seal. Module
+// PreBlock migrations then run as usual.
+func (app *AethelredApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (resp *sdk.ResponsePreBlock, err error) {
+	defer app.recoverABCI("PreBlocker", &err)
+
+	if app.consensusHandler != nil && req != nil {
+		for _, txBytes := range req.Txs {
+			if !pouwkeeper.IsSealTransaction(txBytes) {
+				continue
+			}
+			if procErr := app.consensusHandler.ProcessSealTransaction(ctx, txBytes); procErr != nil {
+				// Log but don't fail the block: a seal that can't be applied (e.g.
+				// the job already completed in an earlier block) must not halt
+				// consensus. The result is deterministic across validators.
+				app.Logger().Error("Failed to process injected seal transaction", "error", procErr)
+			}
+		}
+	}
+
+	return app.ModuleManager.PreBlock(ctx)
+}
+
 func (app *AethelredApp) BeginBlocker(ctx sdk.Context) (resp sdk.BeginBlock, err error) {
 	defer app.recoverABCI("BeginBlocker", &err)
 
@@ -728,12 +918,80 @@ func (app *AethelredApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain
 	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		return nil, err
 	}
+
+	// Persist the initial module version map to the upgrade store. Without this
+	// the upgrade store is never written at genesis and stays empty; an empty
+	// mounted IAVL store cannot be loaded by version (iavl v1.x), which would
+	// break versioned state queries and node restarts. This is also the standard
+	// cosmos-sdk InitChainer pattern for enabling in-place store migrations.
+	if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
+		return nil, err
+	}
+
+	// Seed the keeper-only custom modules (insurance escrow, sovereign crisis)
+	// at genesis. These keepers are not registered in the module manager, so they
+	// have no InitGenesis and their stores would otherwise stay empty until the
+	// first escrow/halt write — and an empty mounted IAVL store cannot be loaded
+	// by version (iavl v1.x), breaking all versioned queries and restart. Writing
+	// their initial state here keeps every mounted store non-empty from height 1.
+	if err := app.InsuranceKeeper.EscrowCount.Set(ctx, 0); err != nil {
+		return nil, err
+	}
+	if err := app.InsuranceKeeper.AppealCount.Set(ctx, 0); err != nil {
+		return nil, err
+	}
+	if err := app.SovereignCrisisKeeper.ClearHaltByAuthority(ctx, app.SovereignCrisisKeeper.GetAuthority()); err != nil {
+		return nil, err
+	}
+
+	// Seed the authz, feegrant, and evidence stores. Their genesis state is empty
+	// (no grants/evidence at launch), so their IAVL stores would never be written
+	// and — under iavl v1.x — a mounted store that never commits data cannot be
+	// loaded by version on restart ("version does not exist"). Write one reserved
+	// marker key per store so each is non-empty from height 1. The 0xFF-prefixed
+	// key sits outside every module's key prefixes, so it is invisible to the
+	// keepers and to ExportGenesis, and it is written identically on every
+	// validator (deterministic). gov is not seeded — its InitGenesis writes params.
+	storeInitMarker := append([]byte{0xFF}, []byte("aethelred_store_init")...)
+	// precisebank is seeded too: its default genesis (zero remainder, no
+	// fractional balances) writes nothing until the first EVM sub-unit
+	// operation, which would leave an empty mounted IAVL store.
+	for _, storeKey := range []string{authzkeeper.StoreKey, feegrant.StoreKey, evidencetypes.StoreKey, precisebanktypes.StoreKey} {
+		if key, ok := app.keys[storeKey]; ok {
+			ctx.KVStore(key).Set(storeInitMarker, []byte{1})
+		}
+	}
+
 	return app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
 // LoadHeight loads a particular height
 func (app *AethelredApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height)
+}
+
+// AutoCliOpts returns the autocli options used to generate CLI tx and query
+// commands for every module directly from its protobuf service definitions.
+// This is how the standard cosmos-sdk modules (bank, staking, distribution, gov,
+// slashing, mint, feegrant, authz, …) get their CLI in v0.50 — their commands
+// live in autocli, not a legacy client/cli package.
+func (app *AethelredApp) AutoCliOpts() autocli.AppOptions {
+	modules := make(map[string]appmodule.AppModule)
+	for _, m := range app.ModuleManager.Modules {
+		if moduleWithName, ok := m.(module.HasName); ok {
+			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
+				modules[moduleWithName.Name()] = appModule
+			}
+		}
+	}
+
+	return autocli.AppOptions{
+		Modules:               modules,
+		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules),
+		AddressCodec:          authcodec.NewBech32Codec(AccountAddressPrefix),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(AccountAddressPrefix + "valoper"),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(AccountAddressPrefix + "valcons"),
+	}
 }
 
 // LegacyAmino returns the legacy amino codec
@@ -764,7 +1022,18 @@ func (app *AethelredApp) GetSubspace(moduleName string) paramstypes.Subspace {
 
 // RegisterAPIRoutes registers all application module routes with the provided API server
 func (app *AethelredApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
-	// In Cosmos SDK v0.50, gRPC gateway routes are registered via the module manager
+	clientCtx := apiSvr.ClientCtx
+	// Tx service over REST (gRPC-gateway): /cosmos/tx/v1beta1/txs broadcast,
+	// simulate, and tx-by-hash. Without this, every standard Cosmos client
+	// (Keplr, cosmjs, the Aethelred Wallet's native path, relayers) gets
+	// HTTP 501 on broadcast even though module QUERY routes work — found by
+	// the wallet's live native-tx E2E.
+	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// CometBFT queries over REST (node_info, blocks, validator sets).
+	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Node service (config/status) over REST.
+	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Module gRPC gateway routes (bank, auth, staking, gov, seal, pouw, …).
 	ModuleBasics.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Aethelred-specific metrics endpoint
@@ -834,6 +1103,13 @@ var maccPerms = map[string][]string{
 	pouwtypes.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	pouwtypes.TreasuryModuleName:  nil,
 	pouwtypes.InsuranceModuleName: nil,
+	// cosmos/evm stack: the vm module escrows gas fees and mints/burns during
+	// EVM state transitions; erc20 mints/burns for token-pair conversions;
+	// precisebank mints/burns the sub-unit reserve for the 6→18 decimal bridge.
+	evmtypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+	feemarkettypes.ModuleName:   nil,
+	erc20types.ModuleName:       {authtypes.Minter, authtypes.Burner},
+	precisebanktypes.ModuleName: {authtypes.Minter, authtypes.Burner},
 }
 
 // Version is the application version
@@ -875,8 +1151,31 @@ func (app *AethelredApp) SetValidatorPrivateKey(privKey []byte) error {
 	app.validatorConsAddr = make([]byte, len(consAddr))
 	copy(app.validatorConsAddr, consAddr)
 
-	app.Logger().Info("Validator private key configured for vote extension signing")
+	// Derive the validator's hybrid (secp256k1 + ML-DSA) key deterministically
+	// from the ed25519 key seed. This ties the seal-signing key to the consensus
+	// key with no extra key files, and is reproducible for on-chain registration.
+	hybridWallet, err := pqc.NewDualKeyWalletFromMasterSeed(ed25519.PrivateKey(app.validatorPrivKey).Seed(), pqc.DilithiumLevel3)
+	if err != nil {
+		return fmt.Errorf("failed to derive validator hybrid key: %w", err)
+	}
+	app.validatorHybridWallet = hybridWallet
+
+	// Log the derived hybrid public key so the operator can register it on-chain
+	// (`aethelredd tx pouw register-hybrid-key <hex>`) unless it was seeded at genesis.
+	app.Logger().Info("Validator private key configured for vote extension signing",
+		"hybrid_public_key", hex.EncodeToString(hybridWallet.HybridPublicKey()),
+	)
 	return nil
+}
+
+// ValidatorHybridPublicKey returns the serialized hybrid public key the validator
+// uses to sign Digital Seal claims, or nil if no validator key is configured.
+// This is the value a validator registers on-chain via the pouw module.
+func (app *AethelredApp) ValidatorHybridPublicKey() []byte {
+	if app.validatorHybridWallet == nil {
+		return nil
+	}
+	return app.validatorHybridWallet.HybridPublicKey()
 }
 
 // validatorConsensusAddress derives the consensus address from the configured
@@ -895,20 +1194,33 @@ func (app *AethelredApp) HasValidatorPrivateKey() bool {
 	return len(app.validatorPrivKey) == 64
 }
 
-// RegisterNodeService implements the Application.RegisterNodeService method
+// RegisterNodeService registers the node config/status gRPC service on the
+// query router (the REST gateway in RegisterAPIRoutes proxies to it).
 func (app *AethelredApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
-	// Node service registration for Cosmos SDK v0.50+
-	// This is called by the server to register node-related services
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
 }
 
-// RegisterTendermintService implements the Application.RegisterTendermintService method
+// RegisterTendermintService registers the CometBFT query gRPC service
+// (node_info, blocks, validator sets) on the query router.
 func (app *AethelredApp) RegisterTendermintService(clientCtx client.Context) {
-	// CometBFT service registration for Cosmos SDK v0.50+
+	cmtservice.RegisterTendermintService(
+		clientCtx,
+		app.BaseApp.GRPCQueryRouter(),
+		app.interfaceRegistry,
+		app.Query,
+	)
 }
 
-// RegisterTxService implements the Application.RegisterTxService method
+// RegisterTxService registers the tx gRPC service (broadcast, simulate,
+// tx-by-hash) on the query router. These three registrations were empty
+// stubs — which made LCD tx broadcast return HTTP 501 chain-wide.
 func (app *AethelredApp) RegisterTxService(clientCtx client.Context) {
-	// Tx service registration for Cosmos SDK v0.50+
+	authtx.RegisterTxService(
+		app.BaseApp.GRPCQueryRouter(),
+		clientCtx,
+		app.BaseApp.Simulate,
+		app.interfaceRegistry,
+	)
 }
 
 // RegisterGRPCServer implements the Application.RegisterGRPCServer method

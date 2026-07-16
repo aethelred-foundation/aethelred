@@ -1,14 +1,10 @@
 // Package pqc provides production-ready post-quantum cryptography for Aethelred.
 //
-// IMPORTANT: This file contains the PRODUCTION implementation using NIST-certified
-// algorithms (Dilithium/ML-DSA from FIPS 204, Kyber/ML-KEM from FIPS 203).
-//
-// For production deployments, this module should use the Cloudflare circl library
-// or an equivalent NIST-compliant implementation. The current implementation
-// provides a compatible interface that can be swapped to use real lattice-based
-// cryptography by updating the build tags.
-//
-// Build with -tags=pqc_circl to enable real NIST implementations.
+// All algorithms are real NIST standards implemented by the Cloudflare circl
+// library (ML-DSA / FIPS 204 for signatures, ML-KEM / FIPS 203 for key
+// encapsulation), wired in unconditionally via circl_backend.go — no build tag,
+// no simulated-crypto fallback. This file layers production policy (composite
+// signature enforcement, readiness checks) over those primitives.
 package pqc
 
 import (
@@ -28,21 +24,27 @@ import (
 // PQCMode defines the operational mode for post-quantum cryptography
 type PQCMode int
 
+// NOTE: PQC cryptography is ALWAYS real (ML-DSA/ML-KEM via circl). PQCMode only
+// governs signature *policy* — specifically whether composite (classical + PQC)
+// signatures are mandatory. There is no longer a fake-crypto mode.
 const (
-	// PQCModeSimulated uses SHA-based simulation (for testing only)
+	// PQCModeSimulated is a permissive/dev policy: single-algorithm signatures
+	// are allowed. The cryptography is still real ML-DSA/ML-KEM.
 	PQCModeSimulated PQCMode = iota
 
-	// PQCModeProduction uses real NIST FIPS 204/203 algorithms
-	// Requires circl library or equivalent
+	// PQCModeProduction uses real NIST FIPS 204/203 algorithms and enforces
+	// strict size/format checks.
 	PQCModeProduction
 
-	// PQCModeHybrid uses both classical and PQC signatures
+	// PQCModeHybrid uses real PQC and additionally mandates composite
+	// (classical + PQC) signatures.
 	PQCModeHybrid
 )
 
-// DefaultPQCMode is the default mode (simulated unless explicitly enabled).
-// Production/hybrid should be enforced via EnforceProductionMode at startup.
-var DefaultPQCMode = PQCModeSimulated
+// DefaultPQCMode is the default operational mode. It defaults to Hybrid so that
+// composite (classical + PQC) signatures are required unless an operator
+// explicitly relaxes the policy.
+var DefaultPQCMode = PQCModeHybrid
 
 // pqcModeMu protects DefaultPQCMode from concurrent access
 var pqcModeMu sync.RWMutex
@@ -101,15 +103,9 @@ func NewProductionDilithiumKeyPair(level int) (*ProductionDilithiumKeyPair, erro
 	}
 }
 
-// Sign creates a production Dilithium signature with mode validation
+// Sign creates a production ML-DSA signature. Signing is backed by circl in all
+// modes.
 func (pkp *ProductionDilithiumKeyPair) Sign(message []byte) (*DilithiumSignature, error) {
-	if pkp.mode == PQCModeProduction {
-		// Production mode: Use real Dilithium signing
-		// This is a placeholder for circl integration
-		return pkp.DilithiumKeyPair.Sign(message)
-	}
-
-	// Simulated mode
 	return pkp.DilithiumKeyPair.Sign(message)
 }
 
@@ -339,18 +335,11 @@ func CheckPQCReadiness() *PQCReadinessCheck {
 	return check
 }
 
-// runKnownAnswerTests runs NIST KAT vectors for algorithm validation
+// runKnownAnswerTests runs deterministic consistency checks for the ML-DSA
+// backend. ML-DSA.KeyGen is deterministic in the seed, so the same seed must
+// always yield the same key pair, and a fresh signature must verify. Full NIST
+// ACVP known-answer vectors are validated separately (see the KAT test suite).
 func runKnownAnswerTests() bool {
-	if pqcRequiresCircl(GetPQCMode()) {
-		// Known-answer tests rely on deterministic seed expansion which is
-		// not supported by real PQC implementations. Skip in production/hybrid.
-		return true
-	}
-
-	// In production, this would validate against NIST's official test vectors
-	// For now, we run basic deterministic tests
-
-	// Test 1: Deterministic key generation from seed
 	seed := make([]byte, 32)
 	for i := range seed {
 		seed[i] = byte(i)
@@ -366,16 +355,22 @@ func runKnownAnswerTests() bool {
 		return false
 	}
 
-	// Keys should be identical for same seed.
-	// Use constant-time comparison to avoid leaking key material via timing.
-	if len(kp1.PublicKey) != len(kp2.PublicKey) {
-		return false
-	}
-	if subtle.ConstantTimeCompare(kp1.PublicKey, kp2.PublicKey) != 1 {
+	// Same seed must produce identical keys. Constant-time compare avoids
+	// leaking key material via timing.
+	if len(kp1.PublicKey) != len(kp2.PublicKey) ||
+		subtle.ConstantTimeCompare(kp1.PublicKey, kp2.PublicKey) != 1 ||
+		subtle.ConstantTimeCompare(kp1.PrivateKey, kp2.PrivateKey) != 1 {
 		return false
 	}
 
-	return true
+	// A fresh signature from the derived key must verify.
+	msg := []byte("aethelred-pqc-kat-selftest")
+	sig, err := kp1.Sign(msg)
+	if err != nil {
+		return false
+	}
+	valid, err := VerifyDilithium(kp1.PublicKey, msg, sig)
+	return err == nil && valid
 }
 
 // IsProductionReady returns true if PQC is ready for production use

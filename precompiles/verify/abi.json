@@ -1,0 +1,36 @@
+[
+  {
+    "type": "function",
+    "name": "getCircuit",
+    "stateMutability": "view",
+    "inputs": [{ "name": "circuitHash", "type": "bytes32" }],
+    "outputs": [
+      { "name": "active", "type": "bool" },
+      { "name": "proofSystem", "type": "string" },
+      { "name": "modelHash", "type": "bytes32" },
+      { "name": "registeredBy", "type": "string" },
+      { "name": "registeredAt", "type": "uint64" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getVerifyingKey",
+    "stateMutability": "view",
+    "inputs": [{ "name": "vkHash", "type": "bytes32" }],
+    "outputs": [
+      { "name": "active", "type": "bool" },
+      { "name": "proofSystem", "type": "string" },
+      { "name": "circuitHash", "type": "bytes32" },
+      { "name": "modelHash", "type": "bytes32" },
+      { "name": "registeredBy", "type": "string" },
+      { "name": "registeredAt", "type": "uint64" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "isCircuitActive",
+    "stateMutability": "view",
+    "inputs": [{ "name": "circuitHash", "type": "bytes32" }],
+    "outputs": [{ "name": "active", "type": "bool" }]
+  }
+]

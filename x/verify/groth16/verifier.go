@@ -73,14 +73,14 @@ type Verifier struct {
 
 // VerifierMetrics tracks verification performance
 type VerifierMetrics struct {
-	TotalVerifications   int64
-	SuccessfulVerifies   int64
-	FailedVerifies       int64
-	AverageVerifyTimeMs  int64
-	TotalVerifyTimeMs    int64
-	CacheHits            int64
-	CacheMisses          int64
-	mu                   sync.Mutex
+	TotalVerifications  int64
+	SuccessfulVerifies  int64
+	FailedVerifies      int64
+	AverageVerifyTimeMs int64
+	TotalVerifyTimeMs   int64
+	CacheHits           int64
+	CacheMisses         int64
+	mu                  sync.Mutex
 }
 
 // NewVerifier creates a new Groth16 verifier
@@ -140,20 +140,10 @@ func (v *Verifier) Verify(proof *Proof, vk *VerifyingKey, inputs *PublicInputs) 
 		}
 	}
 
-	// Compute the input commitment: vk_x = IC[0] + Σ(input[i] * IC[i+1])
-	vkX, err := v.computeInputCommitment(vk.IC, inputs.Values)
-	if err != nil {
-		return false, fmt.Errorf("failed to compute input commitment: %w", err)
-	}
-
-	// Groth16 verification equation:
-	// e(π_A, π_B) = e(α, β) * e(vk_x, γ) * e(π_C, δ)
-	//
-	// This is equivalent to checking:
-	// e(π_A, π_B) * e(-α, β) * e(-vk_x, γ) * e(-π_C, δ) = 1
-	//
-	// In production, this would use bn254 pairing operations
-	verified, err := v.verifyPairing(proof, vk, vkX)
+	// Groth16 verification equation, computed with a real BN254 pairing
+	// (gnark-crypto). vk_x is computed inside from IC and the public inputs:
+	//   e(π_A, π_B) == e(α, β) · e(vk_x, γ) · e(π_C, δ)
+	verified, err := verifyGroth16Gnark(proof, vk, inputs.Values)
 	if err != nil {
 		return false, fmt.Errorf("pairing verification failed: %w", err)
 	}
@@ -245,72 +235,6 @@ func (v *Verifier) isOnG2Curve(p *G2Point) bool {
 		}
 	}
 	return true
-}
-
-// computeInputCommitment computes vk_x = IC[0] + Σ(input[i] * IC[i+1])
-func (v *Verifier) computeInputCommitment(ic []*G1Point, inputs []*big.Int) (*G1Point, error) {
-	if len(ic) == 0 {
-		return nil, errors.New("IC array is empty")
-	}
-	if len(inputs) != len(ic)-1 {
-		return nil, fmt.Errorf("input length %d doesn't match IC length %d", len(inputs), len(ic)-1)
-	}
-
-	// Start with IC[0]
-	result := &G1Point{
-		X: new(big.Int).Set(ic[0].X),
-		Y: new(big.Int).Set(ic[0].Y),
-	}
-
-	// Add input[i] * IC[i+1] for each input
-	for i, input := range inputs {
-		if input.Sign() == 0 {
-			continue // Skip zero inputs
-		}
-
-		// Scalar multiplication: input * IC[i+1]
-		scaledPoint := v.scalarMulG1(ic[i+1], input)
-
-		// Point addition: result + scaledPoint
-		result = v.addG1(result, scaledPoint)
-	}
-
-	return result, nil
-}
-
-// scalarMulG1 performs scalar multiplication on G1
-// In production, this would use optimized elliptic curve operations
-func (v *Verifier) scalarMulG1(p *G1Point, scalar *big.Int) *G1Point {
-	// Placeholder - would use actual EC scalar multiplication
-	x := new(big.Int).Mul(p.X, scalar)
-	x.Mod(x, curveOrder)
-	y := new(big.Int).Mul(p.Y, scalar)
-	y.Mod(y, curveOrder)
-	return &G1Point{X: x, Y: y}
-}
-
-// addG1 performs point addition on G1
-func (v *Verifier) addG1(p1, p2 *G1Point) *G1Point {
-	// Placeholder - would use actual EC point addition
-	x := new(big.Int).Add(p1.X, p2.X)
-	x.Mod(x, curveOrder)
-	y := new(big.Int).Add(p1.Y, p2.Y)
-	y.Mod(y, curveOrder)
-	return &G1Point{X: x, Y: y}
-}
-
-// verifyPairing performs the Groth16 pairing check
-func (v *Verifier) verifyPairing(proof *Proof, vk *VerifyingKey, vkX *G1Point) (bool, error) {
-	// A production verifier must perform:
-	// e(π_A, π_B) = e(α, β) * e(vk_x, γ) * e(π_C, δ)
-	//
-	// Using multi-pairing for efficiency:
-	// e(π_A, π_B) * e(-α, β) * e(-vk_x, γ) * e(-π_C, δ) = 1
-	//
-	// This requires integration with a real BN254 pairing backend.
-	// Failing closed here is safer than structurally accepting proofs.
-	_, _, _ = proof, vk, vkX
-	return false, ErrPairingBackendUnavailable
 }
 
 // hashVK computes a hash of the verifying key
