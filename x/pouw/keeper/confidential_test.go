@@ -117,6 +117,39 @@ func TestDeriveConfidentiality_NoPolicyAlwaysSeals(t *testing.T) {
 	}
 }
 
+func TestDeriveConfidentiality_DataResidencyFromNetworkRegion(t *testing.T) {
+	// A job requiring AE data residency. Before the region param existed this
+	// could NEVER seal (attestation jurisdiction was always empty).
+	aeJob := &types.ComputeJob{ConfidentialityPolicy: &types.ConfidentialityPolicy{
+		AllowedBackends: []string{"tee"},
+		DataResidency:   []string{"AE"},
+	}}
+
+	// No declared network region -> fail closed (never fabricate a region).
+	if _, err := deriveConfidentiality(aeJob, teeResults(), &types.Params{AllowSimulated: true}); err == nil {
+		t.Fatal("AE-residency job must fail closed when the network declares no region")
+	}
+
+	// The network declares AE (governance-set, enforced at onboarding) ->
+	// the seal binds jurisdiction=AE and satisfies the AE residency policy.
+	att, err := deriveConfidentiality(aeJob, teeResults(), &types.Params{
+		AllowSimulated: true, DataResidencyRegion: "AE",
+	})
+	if err != nil {
+		t.Fatalf("AE network region must satisfy AE residency policy, got %v", err)
+	}
+	if att.Jurisdiction != "AE" {
+		t.Fatalf("seal jurisdiction must be AE, got %q", att.Jurisdiction)
+	}
+
+	// A network in EU must NOT satisfy an AE-only residency policy.
+	if _, err := deriveConfidentiality(aeJob, teeResults(), &types.Params{
+		AllowSimulated: true, DataResidencyRegion: "EU",
+	}); err == nil {
+		t.Fatal("EU network region must fail an AE-only residency policy")
+	}
+}
+
 func TestDeriveConfidentiality_VendorRootEnforced(t *testing.T) {
 	// Policy requires a vendor root; a simulated chain only reaches a test root,
 	// so the seal must be rejected.

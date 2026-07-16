@@ -3188,8 +3188,17 @@ type Params struct {
 	UtilityMultipliers    map[string]string `protobuf:"bytes,14,rep,name=utility_multipliers,json=utilityMultipliers,proto3" json:"utility_multipliers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // category -> multiplier (e.g., "MEDICAL" -> "2.0")
 	UseLogarithmicScaling bool              `protobuf:"varint,15,opt,name=use_logarithmic_scaling,json=useLogarithmicScaling,proto3" json:"use_logarithmic_scaling,omitempty"`
 	AntiWhaleThreshold    uint64            `protobuf:"varint,16,opt,name=anti_whale_threshold,json=antiWhaleThreshold,proto3" json:"anti_whale_threshold,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// data_residency_region is the sovereign jurisdiction this network's
+	// validators operate in — declared by governance and enforced at validator
+	// onboarding (legal/operational control, not per-enclave geo-attestation,
+	// which TEE hardware does not provide). When non-empty it is bound into every
+	// Digital Seal's confidentiality attestation as the achieved jurisdiction, so
+	// a CEAP data-residency policy (e.g. ["AE"]) can be satisfied on a sovereign
+	// deployment. Empty = no residency is claimed, so residency-restricted
+	// policies fail closed rather than being granted a fabricated region.
+	DataResidencyRegion string `protobuf:"bytes,19,opt,name=data_residency_region,json=dataResidencyRegion,proto3" json:"data_residency_region,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Params) Reset() {
@@ -3346,6 +3355,13 @@ func (x *Params) GetAntiWhaleThreshold() uint64 {
 		return x.AntiWhaleThreshold
 	}
 	return 0
+}
+
+func (x *Params) GetDataResidencyRegion() string {
+	if x != nil {
+		return x.DataResidencyRegion
+	}
+	return ""
 }
 
 // GenesisState
@@ -3843,7 +3859,7 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\n" +
 	"uwu_earned\x18\x02 \x01(\x04R\tuwuEarned\x12%\n" +
 	"\x0ejobs_completed\x18\x03 \x01(\x04R\rjobsCompleted\x12#\n" +
-	"\rreward_earned\x18\x04 \x01(\tR\frewardEarned\"\xfd\a\n" +
+	"\rreward_earned\x18\x04 \x01(\tR\frewardEarned\"\xb1\b\n" +
 	"\x06Params\x12%\n" +
 	"\x0emin_validators\x18\x01 \x01(\x03R\rminValidators\x12/\n" +
 	"\x13consensus_threshold\x18\x02 \x01(\x03R\x12consensusThreshold\x12,\n" +
@@ -3864,7 +3880,8 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\x0fbase_uwu_reward\x18\r \x01(\tR\rbaseUwuReward\x12b\n" +
 	"\x13utility_multipliers\x18\x0e \x03(\v21.aethelred.pouw.v1.Params.UtilityMultipliersEntryR\x12utilityMultipliers\x126\n" +
 	"\x17use_logarithmic_scaling\x18\x0f \x01(\bR\x15useLogarithmicScaling\x120\n" +
-	"\x14anti_whale_threshold\x18\x10 \x01(\x04R\x12antiWhaleThreshold\x1aE\n" +
+	"\x14anti_whale_threshold\x18\x10 \x01(\x04R\x12antiWhaleThreshold\x122\n" +
+	"\x15data_residency_region\x18\x13 \x01(\tR\x13dataResidencyRegion\x1aE\n" +
 	"\x17UtilityMultipliersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8d\x04\n" +
@@ -3935,7 +3952,8 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\n" +
 	"EpochStats\x12).aethelred.pouw.v1.QueryEpochStatsRequest\x1a*.aethelred.pouw.v1.QueryEpochStatsResponse\"/\x82\xd3\xe4\x93\x02)\x12'/aethelred/pouw/v1/stats/epochs/{epoch}\x12\x96\x01\n" +
 	"\n" +
-	"SealQuorum\x12).aethelred.pouw.v1.QuerySealQuorumRequest\x1a*.aethelred.pouw.v1.QuerySealQuorumResponse\"1\x82\xd3\xe4\x93\x02+\x12)/aethelred/pouw/v1/seals/{seal_id}/quorumB-Z+github.com/aethelred/aethelred/x/pouw/typesb\x06proto3"
+	"SealQuorum\x12).aethelred.pouw.v1.QuerySealQuorumRequest\x1a*.aethelred.pouw.v1.QuerySealQuorumResponse\"1\x82\xd3\xe4\x93\x02+\x12)/aethelred/pouw/v1/seals/{seal_id}/quorumB\xb5\x01\n" +
+	"\x15com.aethelred.pouw.v1B\tPouwProtoP\x01Z+github.com/aethelred/aethelred/x/pouw/types\xa2\x02\x03APX\xaa\x02\x11Aethelred.Pouw.V1\xca\x02\x11Aethelred\\Pouw\\V1\xe2\x02\x1dAethelred\\Pouw\\V1\\GPBMetadata\xea\x02\x13Aethelred::Pouw::V1b\x06proto3"
 
 var (
 	file_aethelred_pouw_v1_pouw_proto_rawDescOnce sync.Once

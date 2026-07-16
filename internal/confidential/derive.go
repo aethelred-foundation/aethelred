@@ -80,11 +80,16 @@ func verificationForType(attestationType string) Verification {
 // output on every validator, which is what makes Satisfies a safe consensus
 // check.
 //
-// Fields it cannot yet witness on-chain are left honestly empty: Measurement is
-// nil (the raw quote is carried separately on the seal's TEEAttestation) and
-// Jurisdiction is empty until a deployment pins its region, so a residency-
-// restricted policy fails closed rather than being granted a fabricated region.
-func DeriveAttestation(signals []ResultSignal, trustBasis attestation.TrustBasis, policyHash []byte, worker string) ConfidentialityAttestation {
+// region is the sovereign jurisdiction this network's validators operate in,
+// declared by governance (Params.DataResidencyRegion) and enforced at validator
+// onboarding — not per-enclave geo-attestation, which TEE hardware does not
+// provide. It is consensus-deterministic (a chain param, identical on every
+// validator). When empty, Jurisdiction stays empty and a residency-restricted
+// policy fails closed rather than being granted a fabricated region.
+//
+// Measurement is left nil (the raw quote is carried separately on the seal's
+// TEEAttestation).
+func DeriveAttestation(signals []ResultSignal, trustBasis attestation.TrustBasis, policyHash []byte, worker string, region string) ConfidentialityAttestation {
 	backend := BackendNone
 	verification := VerificationNone
 	var platform attestation.Platform
@@ -111,8 +116,9 @@ func DeriveAttestation(signals []ResultSignal, trustBasis attestation.TrustBasis
 		TrustBasis:   trustBasis,
 		// A non-none confidentiality backend seals the input to its boundary;
 		// "none" leaves the data public, so it is not sealed.
-		DataSealed: backend != BackendNone,
-		PolicyHash: policyHash,
-		Worker:     worker,
+		DataSealed:   backend != BackendNone,
+		PolicyHash:   policyHash,
+		Worker:       worker,
+		Jurisdiction: Jurisdiction(region),
 	}
 }

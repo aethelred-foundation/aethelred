@@ -186,6 +186,50 @@ func TestAttestationRegistry_RegisterAndValidateSGXMRENCLAVE(t *testing.T) {
 	require.ErrorContains(t, err, "unregistered intel-sgx measurement")
 }
 
+// TestMeasurementLookup_ConsensusToAccountResolution proves the fix for the
+// address-key mismatch that blocked all seal minting: a measurement registered
+// under a validator's ACCOUNT address (as MsgRegisterValidatorPCR0 stores it)
+// must be found when the vote-extension verifier presents the validator's
+// CONSENSUS address. RegisteredValidatorKeyForConsensus bridges the two the
+// same way seal-quorum resolution does (consensus -> operator -> account).
+func TestMeasurementLookup_ConsensusToAccountResolution(t *testing.T) {
+	op := make([]byte, 20)
+	copy(op, []byte("operator-account-20b"))
+	consBytes := make([]byte, 20)
+	copy(consBytes, []byte("consensus-addr-20byt"))
+
+	valoper := sdk.ValAddress(op).String()
+	account := sdk.AccAddress(op).String()
+	consAddr := sdk.ConsAddress(consBytes)
+
+	k, ctx := newRegistryTestKeeperWithStaking(t, registryStakingKeeper{
+		byConsAddr: map[string]stakingtypes.Validator{
+			consAddr.String(): {OperatorAddress: valoper},
+		},
+	})
+
+	// Registration is keyed by the validator's ACCOUNT address (what the
+	// MsgRegisterValidatorPCR0 signer provides).
+	measurement := sha256.Sum256([]byte("nitro-pcr0-real"))
+	measurementHex := hex.EncodeToString(measurement[:])
+	require.NoError(t, k.RegisterValidatorMeasurement(ctx, account, "aws-nitro", measurementHex))
+
+	// The verifier only has the CONSENSUS address; resolving it must recover
+	// the exact account key the measurement was registered under.
+	resolved, ok := k.RegisteredValidatorKeyForConsensus(ctx, consAddr)
+	require.True(t, ok)
+	require.Equal(t, account, resolved)
+	require.NoError(t, k.ValidateTEEAttestationMeasurement(ctx, resolved, "aws-nitro", measurement[:]))
+
+	// Pre-fix behavior: looking up by the raw consensus form never matches.
+	err := k.ValidateTEEAttestationMeasurement(ctx, consAddr.String(), "aws-nitro", measurement[:])
+	require.Error(t, err)
+
+	// Unknown consensus address resolves to not-ok, so callers fail closed.
+	_, ok = k.RegisteredValidatorKeyForConsensus(ctx, sdk.ConsAddress(make([]byte, 20)))
+	require.False(t, ok)
+}
+
 func TestExtractTEETrustedMeasurementsFromPlatforms(t *testing.T) {
 	nitro := sha256.Sum256([]byte("nitro"))
 	sgx := sha256.Sum256([]byte("sgx"))
