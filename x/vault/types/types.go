@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	sdkmath "cosmossdk.io/math"
 )
 
 // Sentinel errors for the vault module.
@@ -121,14 +123,14 @@ const (
 
 // StakerRecord represents a user's staking position.
 type StakerRecord struct {
-	Address      string    `json:"address"`
-	EvmAddress   string    `json:"evm_address"`   // Canonical 20-byte EVM address (hex, no 0x prefix)
-	Shares       uint64    `json:"shares"`        // stAETHEL shares
-	StakedAmount uint64    `json:"staked_amount"` // Original AETHEL staked (uaethel)
-	DelegatedTo  string    `json:"delegated_to"`  // Validator address
-	StakedAt     time.Time `json:"staked_at"`
-	LastRewardAt time.Time `json:"last_reward_at"`
-	ReferralCode uint64    `json:"referral_code"`
+	Address      string      `json:"address"`
+	EvmAddress   string      `json:"evm_address"`   // Canonical 20-byte EVM address (hex, no 0x prefix)
+	Shares       sdkmath.Int `json:"shares"`        // stAETHEL shares
+	StakedAmount sdkmath.Int `json:"staked_amount"` // Original AETHEL staked (uaethel)
+	DelegatedTo  string      `json:"delegated_to"`  // Validator address
+	StakedAt     time.Time   `json:"staked_at"`
+	LastRewardAt time.Time   `json:"last_reward_at"`
+	ReferralCode uint64      `json:"referral_code"`
 }
 
 // ValidatorRecord represents a validator in the active set.
@@ -139,19 +141,19 @@ type StakerRecord struct {
 // not been populated (TelemetryUpdatedAt is zero), preventing the TEE from
 // scoring fabricated data.
 type ValidatorRecord struct {
-	Address               string    `json:"address"`
-	DelegatedStake        uint64    `json:"delegated_stake"`
-	PerformanceScore      uint32    `json:"performance_score"`      // 0-10000
-	DecentralizationScore uint32    `json:"decentralization_score"` // 0-10000
-	ReputationScore       uint32    `json:"reputation_score"`       // 0-10000
-	CompositeScore        uint32    `json:"composite_score"`
-	TEEPublicKey          []byte    `json:"tee_public_key"`
-	Commission            uint32    `json:"commission"` // Basis points
-	ActiveSince           time.Time `json:"active_since"`
-	SlashCount            uint32    `json:"slash_count"`
-	IsActive              bool      `json:"is_active"`
-	GeographicRegion      string    `json:"geographic_region"`
-	OperatorID            string    `json:"operator_id"`
+	Address               string      `json:"address"`
+	DelegatedStake        sdkmath.Int `json:"delegated_stake"`
+	PerformanceScore      uint32      `json:"performance_score"`      // 0-10000
+	DecentralizationScore uint32      `json:"decentralization_score"` // 0-10000
+	ReputationScore       uint32      `json:"reputation_score"`       // 0-10000
+	CompositeScore        uint32      `json:"composite_score"`
+	TEEPublicKey          []byte      `json:"tee_public_key"`
+	Commission            uint32      `json:"commission"` // Basis points
+	ActiveSince           time.Time   `json:"active_since"`
+	SlashCount            uint32      `json:"slash_count"`
+	IsActive              bool        `json:"is_active"`
+	GeographicRegion      string      `json:"geographic_region"`
+	OperatorID            string      `json:"operator_id"`
 
 	// ── Telemetry (oracle-supplied) ─────────────────────────────────────
 	// These fields are written by UpdateValidatorTelemetry() and read by
@@ -178,51 +180,51 @@ type ValidatorRecord struct {
 
 // WithdrawalRequest represents an unbonding request.
 type WithdrawalRequest struct {
-	ID             uint64    `json:"id"`
-	Owner          string    `json:"owner"`
-	Shares         uint64    `json:"shares"`
-	AethelAmount   uint64    `json:"aethel_amount"` // uaethel
-	RequestTime    time.Time `json:"request_time"`
-	CompletionTime time.Time `json:"completion_time"`
-	Claimed        bool      `json:"claimed"`
+	ID             uint64      `json:"id"`
+	Owner          string      `json:"owner"`
+	Shares         sdkmath.Int `json:"shares"`
+	AethelAmount   sdkmath.Int `json:"aethel_amount"` // uaethel
+	RequestTime    time.Time   `json:"request_time"`
+	CompletionTime time.Time   `json:"completion_time"`
+	Claimed        bool        `json:"claimed"`
 }
 
 // EpochSnapshot stores the state at the end of each epoch.
 type EpochSnapshot struct {
-	Epoch              uint64    `json:"epoch"`
-	TotalPooledAethel  uint64    `json:"total_pooled_aethel"`
-	TotalShares        uint64    `json:"total_shares"`
-	RewardsDistributed uint64    `json:"rewards_distributed"`
-	MEVRedistributed   uint64    `json:"mev_redistributed"`
-	ProtocolFee        uint64    `json:"protocol_fee"`
-	RewardsMerkleRoot  []byte    `json:"rewards_merkle_root"`
-	ValidatorSetHash   []byte    `json:"validator_set_hash"`
-	TEEAttestationHash []byte    `json:"tee_attestation_hash"`
-	Timestamp          time.Time `json:"timestamp"`
-	Finalized          bool      `json:"finalized"`
+	Epoch              uint64      `json:"epoch"`
+	TotalPooledAethel  sdkmath.Int `json:"total_pooled_aethel"`
+	TotalShares        sdkmath.Int `json:"total_shares"`
+	RewardsDistributed sdkmath.Int `json:"rewards_distributed"`
+	MEVRedistributed   sdkmath.Int `json:"mev_redistributed"`
+	ProtocolFee        sdkmath.Int `json:"protocol_fee"`
+	RewardsMerkleRoot  []byte      `json:"rewards_merkle_root"`
+	ValidatorSetHash   []byte      `json:"validator_set_hash"`
+	TEEAttestationHash []byte      `json:"tee_attestation_hash"`
+	Timestamp          time.Time   `json:"timestamp"`
+	Finalized          bool        `json:"finalized"`
 }
 
 // RewardAllocation is an individual staker's reward for an epoch.
 type RewardAllocation struct {
-	Address          string `json:"address"`
-	BaseReward       uint64 `json:"base_reward"`
-	PerformanceBonus uint64 `json:"performance_bonus"`
-	MEVShare         uint64 `json:"mev_share"`
-	TotalReward      uint64 `json:"total_reward"`
+	Address          string      `json:"address"`
+	BaseReward       sdkmath.Int `json:"base_reward"`
+	PerformanceBonus sdkmath.Int `json:"performance_bonus"`
+	MEVShare         sdkmath.Int `json:"mev_share"`
+	TotalReward      sdkmath.Int `json:"total_reward"`
 }
 
 // VaultParams stores configurable protocol parameters.
 type VaultParams struct {
-	MinStake          uint64 `json:"min_stake"`
-	UnbondingPeriod   uint64 `json:"unbonding_period"` // seconds
-	EpochDuration     uint64 `json:"epoch_duration"`   // seconds
-	ProtocolFeeBPS    uint32 `json:"protocol_fee_bps"`
-	MEVStakerShareBPS uint32 `json:"mev_staker_share_bps"`
-	MaxCommission     uint32 `json:"max_commission"`
-	MaxValidators     uint32 `json:"max_validators"`
-	MinValidators     uint32 `json:"min_validators"`
-	TEEWorkerURL      string `json:"tee_worker_url"`
-	Treasury          string `json:"treasury"`
+	MinStake          sdkmath.Int `json:"min_stake"`
+	UnbondingPeriod   uint64      `json:"unbonding_period"` // seconds
+	EpochDuration     uint64      `json:"epoch_duration"`   // seconds
+	ProtocolFeeBPS    uint32      `json:"protocol_fee_bps"`
+	MEVStakerShareBPS uint32      `json:"mev_staker_share_bps"`
+	MaxCommission     uint32      `json:"max_commission"`
+	MaxValidators     uint32      `json:"max_validators"`
+	MinValidators     uint32      `json:"min_validators"`
+	TEEWorkerURL      string      `json:"tee_worker_url"`
+	Treasury          string      `json:"treasury"`
 	// TelemetryMaxAgeSec is the maximum age (in seconds) for validator
 	// telemetry to be considered fresh.  Validators whose
 	// TelemetryUpdatedAt is older than block_time - TelemetryMaxAgeSec
@@ -241,7 +243,7 @@ type VaultParams struct {
 // DefaultParams returns the default vault parameters.
 func DefaultParams() VaultParams {
 	return VaultParams{
-		MinStake:              MinStakeUAETH,
+		MinStake:              sdkmath.NewInt(MinStakeUAETH),
 		UnbondingPeriod:       UnbondingPeriodSeconds,
 		EpochDuration:         EpochDurationSeconds,
 		ProtocolFeeBPS:        ProtocolFeeBPS,
@@ -258,7 +260,7 @@ func DefaultParams() VaultParams {
 
 // Validate checks the parameters for correctness.
 func (p VaultParams) Validate() error {
-	if p.MinStake == 0 {
+	if p.MinStake.IsNil() || !p.MinStake.IsPositive() {
 		return fmt.Errorf("min_stake must be > 0")
 	}
 	if p.UnbondingPeriod == 0 {
@@ -434,14 +436,14 @@ type OperatorAction struct {
 
 // VaultStatus represents the overall vault state for API responses.
 type VaultStatus struct {
-	TotalPooledAethel  uint64      `json:"total_pooled_aethel"`
-	TotalShares        uint64      `json:"total_shares"`
+	TotalPooledAethel  sdkmath.Int `json:"total_pooled_aethel"`
+	TotalShares        sdkmath.Int `json:"total_shares"`
 	ExchangeRate       float64     `json:"exchange_rate"`
 	CurrentEpoch       uint64      `json:"current_epoch"`
 	ActiveValidators   uint32      `json:"active_validators"`
 	TotalStakers       uint64      `json:"total_stakers"`
-	PendingWithdrawals uint64      `json:"pending_withdrawals"`
-	TotalMEVRevenue    uint64      `json:"total_mev_revenue"`
+	PendingWithdrawals sdkmath.Int `json:"pending_withdrawals"`
+	TotalMEVRevenue    sdkmath.Int `json:"total_mev_revenue"`
 	EffectiveAPY       float64     `json:"effective_apy"`
 	Params             VaultParams `json:"params"`
 	Paused             bool        `json:"paused"`

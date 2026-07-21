@@ -32,6 +32,7 @@ import (
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
+	sdkmath "cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	btcecdsa "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -82,22 +83,22 @@ type Keeper struct {
 
 	// Store-backed scalar state.
 	Params                  collections.Item[string]
-	TotalPooledAethel       collections.Item[uint64]
-	TotalShares             collections.Item[uint64]
+	TotalPooledAethel       collections.Item[sdkmath.Int]
+	TotalShares             collections.Item[sdkmath.Int]
 	CurrentEpoch            collections.Item[uint64]
 	NextWithdrawalID        collections.Item[uint64]
-	TotalPendingWithdrawals collections.Item[uint64]
-	TotalMEVRevenue         collections.Item[uint64]
+	TotalPendingWithdrawals collections.Item[sdkmath.Int]
+	TotalMEVRevenue         collections.Item[sdkmath.Int]
 	ActiveValidatorsList    collections.Item[string] // JSON array of validator addresses
 
 	// Store-backed maps.
-	Stakers         collections.Map[string, string] // address → JSON StakerRecord
-	Validators      collections.Map[string, string] // address → JSON ValidatorRecord
-	Withdrawals     collections.Map[string, string] // withdrawalID (string) → JSON WithdrawalRequest
-	EpochSnapshots  collections.Map[string, string] // epoch (string) → JSON EpochSnapshot
-	StakePerEpoch   collections.Map[string, uint64] // epoch (string) → total staked this epoch
-	RewardsClaimed  collections.Map[string, string] // "addr:epoch" → "true"
-	UserWithdrawals collections.Map[string, string] // address → JSON array of withdrawal IDs
+	Stakers         collections.Map[string, string]      // address → JSON StakerRecord
+	Validators      collections.Map[string, string]      // address → JSON ValidatorRecord
+	Withdrawals     collections.Map[string, string]      // withdrawalID (string) → JSON WithdrawalRequest
+	EpochSnapshots  collections.Map[string, string]      // epoch (string) → JSON EpochSnapshot
+	StakePerEpoch   collections.Map[string, sdkmath.Int] // epoch (string) → total staked this epoch
+	RewardsClaimed  collections.Map[string, string]      // "addr:epoch" → "true"
+	UserWithdrawals collections.Map[string, string]      // address → JSON array of withdrawal IDs
 
 	// TEE verification state.
 	RegisteredEnclaves  collections.Map[string, string] // enclaveID (hex) → JSON EnclaveRegistration
@@ -120,11 +121,11 @@ type Keeper struct {
 	DelegationSnapshots collections.Map[string, string] // epoch (string) → JSON []stakerStakeEntry
 
 	// Emergency pause and circuit breaker state.
-	PauseState        collections.Item[string]        // JSON PauseState
-	CircuitBreakerCfg collections.Item[string]        // JSON CircuitBreakerConfig
-	EpochUnstakeAccum collections.Map[string, uint64] // epoch (string) → cumulative unstaked uaethel
-	EpochSlashCount   collections.Map[string, uint64] // epoch (string) → number of slashes
-	OperatorAuditLog  collections.Map[string, string] // auto-increment index → JSON OperatorAction
+	PauseState        collections.Item[string]             // JSON PauseState
+	CircuitBreakerCfg collections.Item[string]             // JSON CircuitBreakerConfig
+	EpochUnstakeAccum collections.Map[string, sdkmath.Int] // epoch (string) → cumulative unstaked uaethel
+	EpochSlashCount   collections.Map[string, uint64]      // epoch (string) → number of slashes
+	OperatorAuditLog  collections.Map[string, string]      // auto-increment index → JSON OperatorAction
 }
 
 // NewKeeper creates a new Cruzible keeper with store-backed collections.
@@ -142,19 +143,19 @@ func NewKeeper(
 		authority:    authority,
 
 		Params:                  collections.NewItem(sb, ParamsKey, "params", collections.StringValue),
-		TotalPooledAethel:       collections.NewItem(sb, TotalPooledAethelKey, "total_pooled_aethel", collections.Uint64Value),
-		TotalShares:             collections.NewItem(sb, TotalSharesKey, "total_shares", collections.Uint64Value),
+		TotalPooledAethel:       collections.NewItem(sb, TotalPooledAethelKey, "total_pooled_aethel", sdk.IntValue),
+		TotalShares:             collections.NewItem(sb, TotalSharesKey, "total_shares", sdk.IntValue),
 		CurrentEpoch:            collections.NewItem(sb, CurrentEpochKey, "current_epoch", collections.Uint64Value),
 		NextWithdrawalID:        collections.NewItem(sb, NextWithdrawalIDKey, "next_withdrawal_id", collections.Uint64Value),
-		TotalPendingWithdrawals: collections.NewItem(sb, TotalPendingKey, "total_pending_withdrawals", collections.Uint64Value),
-		TotalMEVRevenue:         collections.NewItem(sb, TotalMEVKey, "total_mev_revenue", collections.Uint64Value),
+		TotalPendingWithdrawals: collections.NewItem(sb, TotalPendingKey, "total_pending_withdrawals", sdk.IntValue),
+		TotalMEVRevenue:         collections.NewItem(sb, TotalMEVKey, "total_mev_revenue", sdk.IntValue),
 		ActiveValidatorsList:    collections.NewItem(sb, ActiveValidatorsKey, "active_validators", collections.StringValue),
 
 		Stakers:         collections.NewMap(sb, StakersKey, "stakers", collections.StringKey, collections.StringValue),
 		Validators:      collections.NewMap(sb, ValidatorsKey, "validators", collections.StringKey, collections.StringValue),
 		Withdrawals:     collections.NewMap(sb, WithdrawalsKey, "withdrawals", collections.StringKey, collections.StringValue),
 		EpochSnapshots:  collections.NewMap(sb, EpochSnapshotsKey, "epoch_snapshots", collections.StringKey, collections.StringValue),
-		StakePerEpoch:   collections.NewMap(sb, StakePerEpochKey, "stake_per_epoch", collections.StringKey, collections.Uint64Value),
+		StakePerEpoch:   collections.NewMap(sb, StakePerEpochKey, "stake_per_epoch", collections.StringKey, sdk.IntValue),
 		RewardsClaimed:  collections.NewMap(sb, RewardsClaimedKey, "rewards_claimed", collections.StringKey, collections.StringValue),
 		UserWithdrawals: collections.NewMap(sb, UserWithdrawalsKey, "user_withdrawals", collections.StringKey, collections.StringValue),
 
@@ -168,7 +169,7 @@ func NewKeeper(
 
 		PauseState:        collections.NewItem(sb, PauseStateKey, "pause_state", collections.StringValue),
 		CircuitBreakerCfg: collections.NewItem(sb, CircuitBreakerConfigKey, "circuit_breaker_config", collections.StringValue),
-		EpochUnstakeAccum: collections.NewMap(sb, EpochUnstakeAccumKey, "epoch_unstake_accum", collections.StringKey, collections.Uint64Value),
+		EpochUnstakeAccum: collections.NewMap(sb, EpochUnstakeAccumKey, "epoch_unstake_accum", collections.StringKey, sdk.IntValue),
 		EpochSlashCount:   collections.NewMap(sb, EpochSlashCountKey, "epoch_slash_count", collections.StringKey, collections.Uint64Value),
 		OperatorAuditLog:  collections.NewMap(sb, OperatorAuditLogKey, "operator_audit_log", collections.StringKey, collections.StringValue),
 	}
@@ -186,16 +187,16 @@ func (k *Keeper) InitializeDefaults(ctx context.Context) error {
 		if err := k.NextWithdrawalID.Set(ctx, 1); err != nil {
 			return err
 		}
-		if err := k.TotalPooledAethel.Set(ctx, 0); err != nil {
+		if err := k.TotalPooledAethel.Set(ctx, sdkmath.ZeroInt()); err != nil {
 			return err
 		}
-		if err := k.TotalShares.Set(ctx, 0); err != nil {
+		if err := k.TotalShares.Set(ctx, sdkmath.ZeroInt()); err != nil {
 			return err
 		}
-		if err := k.TotalPendingWithdrawals.Set(ctx, 0); err != nil {
+		if err := k.TotalPendingWithdrawals.Set(ctx, sdkmath.ZeroInt()); err != nil {
 			return err
 		}
-		if err := k.TotalMEVRevenue.Set(ctx, 0); err != nil {
+		if err := k.TotalMEVRevenue.Set(ctx, sdkmath.ZeroInt()); err != nil {
 			return err
 		}
 		paramsJSON, err := json.Marshal(types.DefaultParams())
@@ -248,6 +249,14 @@ func (k *Keeper) getUint64(ctx context.Context, item collections.Item[uint64]) u
 	val, err := item.Get(ctx)
 	if err != nil {
 		return 0
+	}
+	return val
+}
+
+func (k *Keeper) getInt(ctx context.Context, item collections.Item[sdkmath.Int]) sdkmath.Int {
+	val, err := item.Get(ctx)
+	if err != nil || val.IsNil() {
+		return sdkmath.ZeroInt()
 	}
 	return val
 }
@@ -519,13 +528,16 @@ func (k *Keeper) checkCircuitBreaker(ctx context.Context, trigger string) error 
 
 	// Check unstake accumulator against TVL percentage threshold.
 	if cfg.MaxUnstakePerEpochPct > 0 {
-		totalPooled := k.getUint64(ctx, k.TotalPooledAethel)
+		totalPooled := k.getInt(ctx, k.TotalPooledAethel)
 		epochUnstaked, _ := k.EpochUnstakeAccum.Get(ctx, epochKey)
+		if epochUnstaked.IsNil() {
+			epochUnstaked = sdkmath.ZeroInt()
+		}
 		// threshold = totalPooled * maxPct / 100  (but use total BEFORE unstake for reference)
-		threshold := (totalPooled + epochUnstaked) * uint64(cfg.MaxUnstakePerEpochPct) / 100
-		if threshold > 0 && epochUnstaked > threshold {
+		threshold := totalPooled.Add(epochUnstaked).MulRaw(int64(cfg.MaxUnstakePerEpochPct)).QuoRaw(100)
+		if threshold.IsPositive() && epochUnstaked.GT(threshold) {
 			reason := fmt.Sprintf(
-				"circuit breaker: epoch %d unstake volume %d exceeds %d%% of TVL (threshold %d)",
+				"circuit breaker: epoch %d unstake volume %s exceeds %d%% of TVL (threshold %s)",
 				currentEpoch, epochUnstaked, cfg.MaxUnstakePerEpochPct, threshold,
 			)
 			ps := k.getPauseState(ctx)
@@ -590,18 +602,23 @@ func (k *Keeper) appendOperatorAuditLog(ctx context.Context, action types.Operat
 // Staking Operations
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Stake processes a staking request.
-func (k *Keeper) Stake(ctx context.Context, address string, amount uint64, validatorAddr string, referralCode uint64) (shares uint64, err error) {
+// Stake processes a staking request. Monetary values use the Cosmos SDK's
+// bounded arbitrary-precision integer so share-ratio multiplication cannot
+// silently overflow uint64.
+func (k *Keeper) Stake(ctx context.Context, address string, amount sdkmath.Int, validatorAddr string, referralCode uint64) (shares sdkmath.Int, err error) {
 	if err := k.requireNotPaused(ctx); err != nil {
-		return 0, err
+		return sdkmath.ZeroInt(), err
+	}
+	if amount.IsNil() || !amount.IsPositive() {
+		return sdkmath.ZeroInt(), fmt.Errorf("amount must be positive")
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	blockTime := sdkCtx.BlockTime()
 
 	params := k.getParams(ctx)
-	if amount < params.MinStake {
-		return 0, fmt.Errorf("amount %d below minimum stake %d", amount, params.MinStake)
+	if amount.LT(params.MinStake) {
+		return sdkmath.ZeroInt(), fmt.Errorf("amount %s below minimum stake %s", amount, params.MinStake)
 	}
 
 	// Validate delegation target.
@@ -609,14 +626,14 @@ func (k *Keeper) Stake(ctx context.Context, address string, amount uint64, valid
 	// An empty validatorAddr is rejected — delegation is mandatory for
 	// performance-weighted reward distribution.
 	if validatorAddr == "" {
-		return 0, fmt.Errorf("validatorAddr is required: delegation is mandatory for reward weighting")
+		return sdkmath.ZeroInt(), fmt.Errorf("validatorAddr is required: delegation is mandatory for reward weighting")
 	}
 	val, valExists := k.getValidator(ctx, validatorAddr)
 	if !valExists {
-		return 0, fmt.Errorf("validator %s not found", validatorAddr)
+		return sdkmath.ZeroInt(), fmt.Errorf("validator %s not found", validatorAddr)
 	}
 	if !val.IsActive {
-		return 0, fmt.Errorf("validator %s is not active", validatorAddr)
+		return sdkmath.ZeroInt(), fmt.Errorf("validator %s is not active", validatorAddr)
 	}
 
 	currentEpoch := k.getUint64(ctx, k.CurrentEpoch)
@@ -624,39 +641,42 @@ func (k *Keeper) Stake(ctx context.Context, address string, amount uint64, valid
 	// Rate limit check
 	epochKey := strconv.FormatUint(currentEpoch, 10)
 	epochStake, _ := k.StakePerEpoch.Get(ctx, epochKey)
-	epochStake += amount
-	if epochStake > types.MaxStakePerEpochUAETH {
-		return 0, fmt.Errorf("epoch rate limit exceeded")
+	if epochStake.IsNil() {
+		epochStake = sdkmath.ZeroInt()
+	}
+	epochStake = epochStake.Add(amount)
+	if epochStake.GT(sdkmath.NewInt(types.MaxStakePerEpochUAETH)) {
+		return sdkmath.ZeroInt(), fmt.Errorf("epoch rate limit exceeded")
 	}
 	if err := k.StakePerEpoch.Set(ctx, epochKey, epochStake); err != nil {
-		return 0, fmt.Errorf("set stake per epoch: %w", err)
+		return sdkmath.ZeroInt(), fmt.Errorf("set stake per epoch: %w", err)
 	}
 
-	totalPooled := k.getUint64(ctx, k.TotalPooledAethel)
-	totalShares := k.getUint64(ctx, k.TotalShares)
+	totalPooled := k.getInt(ctx, k.TotalPooledAethel)
+	totalShares := k.getInt(ctx, k.TotalShares)
 
 	// Calculate shares
-	if totalPooled == 0 {
+	if totalPooled.IsZero() {
 		shares = amount // 1:1 for first staker
 	} else {
-		shares = (amount * totalShares) / totalPooled
+		shares = amount.Mul(totalShares).Quo(totalPooled)
 	}
-	if shares == 0 {
-		return 0, fmt.Errorf("computed shares is zero")
+	if !shares.IsPositive() {
+		return sdkmath.ZeroInt(), fmt.Errorf("computed shares is zero")
 	}
 
 	// Update totals
-	if err := k.TotalPooledAethel.Set(ctx, totalPooled+amount); err != nil {
-		return 0, err
+	if err := k.TotalPooledAethel.Set(ctx, totalPooled.Add(amount)); err != nil {
+		return sdkmath.ZeroInt(), err
 	}
-	if err := k.TotalShares.Set(ctx, totalShares+shares); err != nil {
-		return 0, err
+	if err := k.TotalShares.Set(ctx, totalShares.Add(shares)); err != nil {
+		return sdkmath.ZeroInt(), err
 	}
 
 	// Resolve the canonical 20-byte EVM address for registry root compatibility.
 	evmAddr, evmErr := resolveEvmAddress(address)
 	if evmErr != nil {
-		return 0, fmt.Errorf("resolve EVM address for staker: %w", evmErr)
+		return sdkmath.ZeroInt(), fmt.Errorf("resolve EVM address for staker: %w", evmErr)
 	}
 
 	// Update staker record and validator DelegatedStake accounting.
@@ -668,8 +688,8 @@ func (k *Keeper) Stake(ctx context.Context, address string, amount uint64, valid
 		}
 		oldDelegatedTo := staker.DelegatedTo
 		oldStakedAmount := staker.StakedAmount
-		staker.Shares += shares
-		staker.StakedAmount += amount
+		staker.Shares = staker.Shares.Add(shares)
+		staker.StakedAmount = staker.StakedAmount.Add(amount)
 		staker.DelegatedTo = validatorAddr
 
 		if oldDelegatedTo != validatorAddr {
@@ -677,20 +697,20 @@ func (k *Keeper) Stake(ctx context.Context, address string, amount uint64, valid
 			if oldDelegatedTo != "" {
 				oldVal, oldValExists := k.getValidator(ctx, oldDelegatedTo)
 				if oldValExists {
-					if oldVal.DelegatedStake >= oldStakedAmount {
-						oldVal.DelegatedStake -= oldStakedAmount
+					if oldVal.DelegatedStake.GTE(oldStakedAmount) {
+						oldVal.DelegatedStake = oldVal.DelegatedStake.Sub(oldStakedAmount)
 					} else {
-						oldVal.DelegatedStake = 0
+						oldVal.DelegatedStake = sdkmath.ZeroInt()
 					}
 					if err := k.setValidator(ctx, oldVal); err != nil {
-						return 0, err
+						return sdkmath.ZeroInt(), err
 					}
 				}
 			}
-			val.DelegatedStake += oldStakedAmount + amount
+			val.DelegatedStake = val.DelegatedStake.Add(oldStakedAmount).Add(amount)
 		} else {
 			// Same validator: just add the new amount.
-			val.DelegatedStake += amount
+			val.DelegatedStake = val.DelegatedStake.Add(amount)
 		}
 	} else {
 		staker = &types.StakerRecord{
@@ -702,13 +722,13 @@ func (k *Keeper) Stake(ctx context.Context, address string, amount uint64, valid
 			StakedAt:     blockTime,
 			ReferralCode: referralCode,
 		}
-		val.DelegatedStake += amount
+		val.DelegatedStake = val.DelegatedStake.Add(amount)
 	}
 	if err := k.setValidator(ctx, val); err != nil {
-		return 0, err
+		return sdkmath.ZeroInt(), err
 	}
 	if err := k.setStaker(ctx, staker); err != nil {
-		return 0, err
+		return sdkmath.ZeroInt(), err
 	}
 
 	return shares, nil
@@ -747,17 +767,17 @@ func (k *Keeper) DelegateStake(ctx context.Context, stakerAddr string, validator
 		if oldDelegatedTo != "" {
 			oldVal, oldValExists := k.getValidator(ctx, oldDelegatedTo)
 			if oldValExists {
-				if oldVal.DelegatedStake >= staker.StakedAmount {
-					oldVal.DelegatedStake -= staker.StakedAmount
+				if oldVal.DelegatedStake.GTE(staker.StakedAmount) {
+					oldVal.DelegatedStake = oldVal.DelegatedStake.Sub(staker.StakedAmount)
 				} else {
-					oldVal.DelegatedStake = 0
+					oldVal.DelegatedStake = sdkmath.ZeroInt()
 				}
 				if err := k.setValidator(ctx, oldVal); err != nil {
 					return err
 				}
 			}
 		}
-		val.DelegatedStake += staker.StakedAmount
+		val.DelegatedStake = val.DelegatedStake.Add(staker.StakedAmount)
 		if err := k.setValidator(ctx, val); err != nil {
 			return err
 		}
@@ -768,9 +788,12 @@ func (k *Keeper) DelegateStake(ctx context.Context, stakerAddr string, validator
 }
 
 // Unstake initiates an unbonding request.
-func (k *Keeper) Unstake(ctx context.Context, address string, shares uint64) (withdrawalID uint64, aethelAmount uint64, err error) {
+func (k *Keeper) Unstake(ctx context.Context, address string, shares sdkmath.Int) (withdrawalID uint64, aethelAmount sdkmath.Int, err error) {
 	if err := k.requireNotPaused(ctx); err != nil {
-		return 0, 0, err
+		return 0, sdkmath.ZeroInt(), err
+	}
+	if shares.IsNil() || !shares.IsPositive() {
+		return 0, sdkmath.ZeroInt(), fmt.Errorf("shares must be positive")
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -780,74 +803,75 @@ func (k *Keeper) Unstake(ctx context.Context, address string, shares uint64) (wi
 
 	staker, exists := k.getStaker(ctx, address)
 	if !exists {
-		return 0, 0, fmt.Errorf("staker not found: %s", address)
+		return 0, sdkmath.ZeroInt(), fmt.Errorf("staker not found: %s", address)
 	}
-	if staker.Shares < shares {
-		return 0, 0, fmt.Errorf("insufficient shares: have %d, want %d", staker.Shares, shares)
+	if staker.Shares.LT(shares) {
+		return 0, sdkmath.ZeroInt(), fmt.Errorf("insufficient shares: have %s, want %s", staker.Shares, shares)
 	}
 
 	userIDs := k.getUserWithdrawalIDs(ctx, address)
 	if len(userIDs) >= types.MaxWithdrawalRequestsPerUser {
-		return 0, 0, fmt.Errorf("too many withdrawal requests for %s", address)
+		return 0, sdkmath.ZeroInt(), fmt.Errorf("too many withdrawal requests for %s", address)
 	}
 
-	totalPooled := k.getUint64(ctx, k.TotalPooledAethel)
-	totalShares := k.getUint64(ctx, k.TotalShares)
+	totalPooled := k.getInt(ctx, k.TotalPooledAethel)
+	totalShares := k.getInt(ctx, k.TotalShares)
 
 	// Calculate AETHEL amount
-	if totalShares > 0 {
-		aethelAmount = (shares * totalPooled) / totalShares
+	aethelAmount = sdkmath.ZeroInt()
+	if totalShares.IsPositive() {
+		aethelAmount = shares.Mul(totalPooled).Quo(totalShares)
 	}
-	if aethelAmount == 0 {
-		return 0, 0, fmt.Errorf("computed aethel amount is zero")
+	if !aethelAmount.IsPositive() {
+		return 0, sdkmath.ZeroInt(), fmt.Errorf("computed aethel amount is zero")
 	}
 
 	// Update validator DelegatedStake accounting.
 	// Compute proportional StakedAmount being withdrawn before modifying shares.
-	if staker.DelegatedTo != "" && staker.Shares > 0 {
-		stakedReduction := (shares * staker.StakedAmount) / staker.Shares
-		if stakedReduction > staker.StakedAmount {
+	if staker.DelegatedTo != "" && staker.Shares.IsPositive() {
+		stakedReduction := shares.Mul(staker.StakedAmount).Quo(staker.Shares)
+		if stakedReduction.GT(staker.StakedAmount) {
 			stakedReduction = staker.StakedAmount
 		}
 
 		delegatedVal, dvExists := k.getValidator(ctx, staker.DelegatedTo)
 		if dvExists {
-			if delegatedVal.DelegatedStake >= stakedReduction {
-				delegatedVal.DelegatedStake -= stakedReduction
+			if delegatedVal.DelegatedStake.GTE(stakedReduction) {
+				delegatedVal.DelegatedStake = delegatedVal.DelegatedStake.Sub(stakedReduction)
 			} else {
-				delegatedVal.DelegatedStake = 0
+				delegatedVal.DelegatedStake = sdkmath.ZeroInt()
 			}
 			if err := k.setValidator(ctx, delegatedVal); err != nil {
-				return 0, 0, err
+				return 0, sdkmath.ZeroInt(), err
 			}
 		}
-		staker.StakedAmount -= stakedReduction
+		staker.StakedAmount = staker.StakedAmount.Sub(stakedReduction)
 	}
 
 	// Update staker
-	staker.Shares -= shares
+	staker.Shares = staker.Shares.Sub(shares)
 	if err := k.setStaker(ctx, staker); err != nil {
-		return 0, 0, err
+		return 0, sdkmath.ZeroInt(), err
 	}
 
 	// Update totals
-	if err := k.TotalPooledAethel.Set(ctx, totalPooled-aethelAmount); err != nil {
-		return 0, 0, err
+	if err := k.TotalPooledAethel.Set(ctx, totalPooled.Sub(aethelAmount)); err != nil {
+		return 0, sdkmath.ZeroInt(), err
 	}
-	if err := k.TotalShares.Set(ctx, totalShares-shares); err != nil {
-		return 0, 0, err
+	if err := k.TotalShares.Set(ctx, totalShares.Sub(shares)); err != nil {
+		return 0, sdkmath.ZeroInt(), err
 	}
 
-	pending := k.getUint64(ctx, k.TotalPendingWithdrawals)
-	if err := k.TotalPendingWithdrawals.Set(ctx, pending+aethelAmount); err != nil {
-		return 0, 0, err
+	pending := k.getInt(ctx, k.TotalPendingWithdrawals)
+	if err := k.TotalPendingWithdrawals.Set(ctx, pending.Add(aethelAmount)); err != nil {
+		return 0, sdkmath.ZeroInt(), err
 	}
 
 	// Create withdrawal request
 	nextID := k.getUint64(ctx, k.NextWithdrawalID)
 	withdrawalID = nextID
 	if err := k.NextWithdrawalID.Set(ctx, nextID+1); err != nil {
-		return 0, 0, err
+		return 0, sdkmath.ZeroInt(), err
 	}
 
 	params := k.getParams(ctx)
@@ -863,18 +887,21 @@ func (k *Keeper) Unstake(ctx context.Context, address string, shares uint64) (wi
 		Claimed:        false,
 	}
 	if err := k.setWithdrawal(ctx, w); err != nil {
-		return 0, 0, err
+		return 0, sdkmath.ZeroInt(), err
 	}
 
 	userIDs = append(userIDs, withdrawalID)
 	if err := k.setUserWithdrawalIDs(ctx, address, userIDs); err != nil {
-		return 0, 0, err
+		return 0, sdkmath.ZeroInt(), err
 	}
 
 	// Track cumulative unstake volume for circuit breaker evaluation.
 	epochAccum, _ := k.EpochUnstakeAccum.Get(ctx, epochKey)
-	if err := k.EpochUnstakeAccum.Set(ctx, epochKey, epochAccum+aethelAmount); err != nil {
-		return 0, 0, err
+	if epochAccum.IsNil() {
+		epochAccum = sdkmath.ZeroInt()
+	}
+	if err := k.EpochUnstakeAccum.Set(ctx, epochKey, epochAccum.Add(aethelAmount)); err != nil {
+		return 0, sdkmath.ZeroInt(), err
 	}
 	// Evaluate circuit breaker thresholds (may auto-pause if breached).
 	// The current unstake still succeeds — the pause takes effect on the NEXT operation.
@@ -884,9 +911,9 @@ func (k *Keeper) Unstake(ctx context.Context, address string, shares uint64) (wi
 }
 
 // Withdraw completes an unbonding request after the period has elapsed.
-func (k *Keeper) Withdraw(ctx context.Context, address string, withdrawalID uint64) (amount uint64, err error) {
+func (k *Keeper) Withdraw(ctx context.Context, address string, withdrawalID uint64) (amount sdkmath.Int, err error) {
 	if err := k.requireNotPaused(ctx); err != nil {
-		return 0, err
+		return sdkmath.ZeroInt(), err
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -894,26 +921,26 @@ func (k *Keeper) Withdraw(ctx context.Context, address string, withdrawalID uint
 
 	req, exists := k.getWithdrawal(ctx, withdrawalID)
 	if !exists {
-		return 0, fmt.Errorf("withdrawal %d not found", withdrawalID)
+		return sdkmath.ZeroInt(), fmt.Errorf("withdrawal %d not found", withdrawalID)
 	}
 	if req.Owner != address {
-		return 0, fmt.Errorf("withdrawal %d not owned by %s", withdrawalID, address)
+		return sdkmath.ZeroInt(), fmt.Errorf("withdrawal %d not owned by %s", withdrawalID, address)
 	}
 	if req.Claimed {
-		return 0, fmt.Errorf("withdrawal %d already claimed", withdrawalID)
+		return sdkmath.ZeroInt(), fmt.Errorf("withdrawal %d already claimed", withdrawalID)
 	}
 	if blockTime.Before(req.CompletionTime) {
-		return 0, fmt.Errorf("withdrawal %d not ready until %s", withdrawalID, req.CompletionTime)
+		return sdkmath.ZeroInt(), fmt.Errorf("withdrawal %d not ready until %s", withdrawalID, req.CompletionTime)
 	}
 
 	req.Claimed = true
 	if err := k.setWithdrawal(ctx, req); err != nil {
-		return 0, err
+		return sdkmath.ZeroInt(), err
 	}
 
-	pending := k.getUint64(ctx, k.TotalPendingWithdrawals)
-	if err := k.TotalPendingWithdrawals.Set(ctx, pending-req.AethelAmount); err != nil {
-		return 0, err
+	pending := k.getInt(ctx, k.TotalPendingWithdrawals)
+	if err := k.TotalPendingWithdrawals.Set(ctx, pending.Sub(req.AethelAmount)); err != nil {
+		return sdkmath.ZeroInt(), err
 	}
 
 	return req.AethelAmount, nil
@@ -949,7 +976,7 @@ func (k *Keeper) Withdraw(ctx context.Context, address string, withdrawalID uint
 // Matching implementations:
 //   - Rust: server::compute_validator_set_hash()
 //   - Solidity: Cruzible._computeValidatorSetHash()
-func computeValidatorSetHash(epoch uint64, validators []types.ValidatorRecord) [32]byte {
+func computeValidatorSetHash(epoch uint64, validators []types.ValidatorRecord) ([32]byte, error) {
 	h := sha256.New()
 	h.Write([]byte("CruzibleValidatorSet-v1"))
 
@@ -962,27 +989,64 @@ func computeValidatorSetHash(epoch uint64, validators []types.ValidatorRecord) [
 	h.Write(countBuf[:])
 
 	for i := range validators {
-		innerHash := computeValidatorInnerHash(&validators[i])
+		innerHash, err := computeValidatorInnerHash(&validators[i])
+		if err != nil {
+			return [32]byte{}, fmt.Errorf("validator %s: %w", validators[i].Address, err)
+		}
 		h.Write(innerHash[:])
 	}
 
 	var result [32]byte
 	copy(result[:], h.Sum(nil))
-	return result
+	return result, nil
+}
+
+// sdkIntToUint256 returns the Solidity-compatible uint256 representation of a
+// non-negative Cosmos SDK Int. It validates the bit width defensively because
+// sdkmath.Int exposes BigIntMut(), which can violate the constructor's 256-bit
+// invariant if misused by a caller.
+func sdkIntToUint256(value sdkmath.Int) ([32]byte, error) {
+	var encoded [32]byte
+	if value.IsNil() {
+		return encoded, fmt.Errorf("value is uninitialized")
+	}
+	if value.IsNegative() {
+		return encoded, fmt.Errorf("value must be non-negative")
+	}
+	valueBytes := value.BigInt().Bytes()
+	if len(valueBytes) > len(encoded) {
+		return encoded, fmt.Errorf("value exceeds uint256 range")
+	}
+	copy(encoded[len(encoded)-len(valueBytes):], valueBytes)
+	return encoded, nil
+}
+
+// sdkIntAsUint128JSONNumber preserves the Rust TEE worker's current u128 wire
+// contract while native-chain accounting uses the wider SDK Int type.
+func sdkIntAsUint128JSONNumber(value sdkmath.Int) (json.Number, error) {
+	if value.IsNil() || value.IsNegative() {
+		return "", fmt.Errorf("value must be a non-negative integer")
+	}
+	if value.BigInt().BitLen() > 128 {
+		return "", fmt.Errorf("value exceeds TEE uint128 range")
+	}
+	return json.Number(value.String()), nil
 }
 
 // computeValidatorInnerHash computes the per-validator inner hash
 // (8 fields × 32 bytes = 256 bytes → SHA-256).
-func computeValidatorInnerHash(v *types.ValidatorRecord) [32]byte {
+func computeValidatorInnerHash(v *types.ValidatorRecord) ([32]byte, error) {
 	inner := sha256.New()
 
 	// address → left-pad to 32 bytes (ABI uint256 encoding of address)
 	addrBytes32 := addressToBytes32(v.Address)
 	inner.Write(addrBytes32[:])
 
-	// stake as uint256 (uint64 → 32 bytes big-endian, left-padded)
-	var stakePadded [32]byte
-	binary.BigEndian.PutUint64(stakePadded[24:], v.DelegatedStake)
+	// stake as uint256 (SDK Int → 32 bytes big-endian, left-padded)
+	stakePadded, err := sdkIntToUint256(v.DelegatedStake)
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("delegated stake: %w", err)
+	}
 	inner.Write(stakePadded[:])
 
 	// performance_score as uint256
@@ -1023,7 +1087,7 @@ func computeValidatorInnerHash(v *types.ValidatorRecord) [32]byte {
 
 	var result [32]byte
 	copy(result[:], inner.Sum(nil))
-	return result
+	return result, nil
 }
 
 // addressToBytes32 converts a validator address (hex or bech32) to a 32-byte
@@ -1150,6 +1214,11 @@ func (k *Keeper) ApplyValidatorSelection(
 	if len(validators) == 0 {
 		return fmt.Errorf("empty validator set")
 	}
+	for _, validator := range validators {
+		if validator.DelegatedStake.IsNil() || validator.DelegatedStake.IsNegative() {
+			return fmt.Errorf("validator %s has invalid delegated stake", validator.Address)
+		}
+	}
 
 	// 1. Verify the TEE attestation (signature, enclave, operator, freshness, nonce)
 	if err := k.verifyAttestation(ctx, attestation); err != nil {
@@ -1173,7 +1242,10 @@ func (k *Keeper) ApplyValidatorSelection(
 	//    The epoch is included in canonical_hash to prevent cross-epoch replay.
 	//    The universe hash ensures a malicious relayer cannot silently omit
 	//    validators from the candidate set to bias selection.
-	canonicalHash := computeValidatorSetHash(epoch, validators)
+	canonicalHash, err := computeValidatorSetHash(epoch, validators)
+	if err != nil {
+		return fmt.Errorf("compute canonical validator set hash: %w", err)
+	}
 
 	// Compute the expected policy hash from chain parameters
 	params := k.getParams(ctx)
@@ -1185,7 +1257,7 @@ func (k *Keeper) ApplyValidatorSelection(
 		params.MaxCommission,
 		0, // max_per_region (dynamic, 0 = no limit)
 		3, // max_per_operator (protocol default)
-		new(big.Int).SetUint64(params.MinStake),
+		params.MinStake.BigInt(),
 	)
 
 	// Compute the expected universe hash from on-chain telemetry state.
@@ -1201,6 +1273,9 @@ func (k *Keeper) ApplyValidatorSelection(
 		maxAgeSec = types.DefaultTelemetryMaxAgeSec
 	}
 	eligibleResult := k.getValidatorInputs(ctx, blockTime, maxAgeSec)
+	if eligibleResult.err != nil {
+		return fmt.Errorf("derive eligible validator universe: %w", eligibleResult.err)
+	}
 	universeHash := computeEligibleUniverseHash(eligibleResult.eligibleAddrs)
 
 	// Build expected 96-byte payload: canonicalHash || policyHash || universeHash
@@ -2556,6 +2631,9 @@ func (k *Keeper) BuildValidatorSelectionRequest(ctx context.Context) ([]byte, er
 	}
 
 	result := k.getValidatorInputs(ctx, blockTime, maxAge)
+	if result.err != nil {
+		return nil, fmt.Errorf("build validator inputs: %w", result.err)
+	}
 
 	if result.eligible == 0 {
 		return nil, fmt.Errorf(
@@ -2594,6 +2672,10 @@ func (k *Keeper) BuildValidatorSelectionRequest(ctx context.Context) ([]byte, er
 	// candidate set, enabling on-chain verification that no validators
 	// were omitted between BuildValidatorSelectionRequest and the TEE.
 	universeHash := computeEligibleUniverseHash(result.eligibleAddrs)
+	minStake, err := sdkIntAsUint128JSONNumber(params.MinStake)
+	if err != nil {
+		return nil, fmt.Errorf("min_stake: %w", err)
+	}
 
 	reqBody := map[string]interface{}{
 		"epoch":                  currentEpoch,
@@ -2611,7 +2693,7 @@ func (k *Keeper) BuildValidatorSelectionRequest(ctx context.Context) ([]byte, er
 			"max_commission_bps":      params.MaxCommission,
 			"max_per_region":          0,
 			"max_per_operator":        3,
-			"min_stake":               params.MinStake,
+			"min_stake":               minStake,
 		},
 	}
 
@@ -2629,6 +2711,7 @@ type validatorInputsResult struct {
 	eligible      int                      // active with fresh telemetry (= len(inputs))
 	skippedStale  int                      // active but stale/missing telemetry
 	eligibleAddrs []string                 // sorted addresses of eligible validators
+	err           error                    // malformed or unsupported monetary input
 }
 
 // getValidatorInputs converts stored validator records to TEE request format.
@@ -2662,11 +2745,16 @@ func (k *Keeper) getValidatorInputs(ctx context.Context, blockTime time.Time, ma
 			result.skippedStale++
 			return false, nil
 		}
+		stake, err := sdkIntAsUint128JSONNumber(v.DelegatedStake)
+		if err != nil {
+			result.err = fmt.Errorf("validator %s delegated stake: %w", v.Address, err)
+			return true, nil
+		}
 
 		result.eligibleAddrs = append(result.eligibleAddrs, v.Address)
 		result.inputs = append(result.inputs, map[string]interface{}{
 			"address":              v.Address,
-			"stake":                v.DelegatedStake,
+			"stake":                stake,
 			"uptime_pct":           v.UptimePct,
 			"avg_response_ms":      v.AvgResponseMs,
 			"geographic_region":    v.GeographicRegion,
@@ -2786,12 +2874,12 @@ func (k *Keeper) SlashValidator(ctx context.Context, validatorAddr string, reaso
 
 // GetVaultStatus returns the current vault state.
 func (k *Keeper) GetVaultStatus(ctx context.Context) types.VaultStatus {
-	totalPooled := k.getUint64(ctx, k.TotalPooledAethel)
-	totalShares := k.getUint64(ctx, k.TotalShares)
+	totalPooled := k.getInt(ctx, k.TotalPooledAethel)
+	totalShares := k.getInt(ctx, k.TotalShares)
 
 	var exchangeRate float64
-	if totalShares > 0 {
-		exchangeRate = float64(totalPooled) / float64(totalShares)
+	if totalShares.IsPositive() {
+		exchangeRate, _ = new(big.Rat).SetFrac(totalPooled.BigInt(), totalShares.BigInt()).Float64()
 	} else {
 		exchangeRate = 1.0
 	}
@@ -2814,8 +2902,8 @@ func (k *Keeper) GetVaultStatus(ctx context.Context) types.VaultStatus {
 		CurrentEpoch:       k.getUint64(ctx, k.CurrentEpoch),
 		ActiveValidators:   uint32(len(activeAddrs)),
 		TotalStakers:       totalStakers,
-		PendingWithdrawals: k.getUint64(ctx, k.TotalPendingWithdrawals),
-		TotalMEVRevenue:    k.getUint64(ctx, k.TotalMEVRevenue),
+		PendingWithdrawals: k.getInt(ctx, k.TotalPendingWithdrawals),
+		TotalMEVRevenue:    k.getInt(ctx, k.TotalMEVRevenue),
 		Params:             k.getParams(ctx),
 		Paused:             ps.Paused,
 		PauseReason:        ps.Reason,
@@ -2833,12 +2921,13 @@ func (k *Keeper) GetStaker(ctx context.Context, address string) (*types.StakerRe
 
 // GetExchangeRate returns the current AETHEL/stAETHEL rate.
 func (k *Keeper) GetExchangeRate(ctx context.Context) float64 {
-	totalShares := k.getUint64(ctx, k.TotalShares)
-	if totalShares == 0 {
+	totalShares := k.getInt(ctx, k.TotalShares)
+	if !totalShares.IsPositive() {
 		return 1.0
 	}
-	totalPooled := k.getUint64(ctx, k.TotalPooledAethel)
-	return float64(totalPooled) / float64(totalShares)
+	totalPooled := k.getInt(ctx, k.TotalPooledAethel)
+	exchangeRate, _ := new(big.Rat).SetFrac(totalPooled.BigInt(), totalShares.BigInt()).Float64()
+	return exchangeRate
 }
 
 // GetActiveValidators returns the current active validator set.
@@ -2885,9 +2974,18 @@ func (k *Keeper) GetEpochSnapshot(ctx context.Context, epoch uint64) (*types.Epo
 // stakerStakeEntry represents a staker's stake data for TEE request formatting.
 // JSON tags match the Rust StakerStake struct expected by /attest-delegation.
 type stakerStakeEntry struct {
-	Address     string `json:"address"`
-	Shares      uint64 `json:"shares"`
-	DelegatedTo string `json:"delegated_to"`
+	Address     string      `json:"address"`
+	Shares      sdkmath.Int `json:"shares"`
+	DelegatedTo string      `json:"delegated_to"`
+}
+
+// stakerStakeWire is the Rust TEE request representation. Snapshots retain the
+// SDK Int's canonical decimal-string JSON, while the existing Rust u128 API
+// receives an exact JSON number after an explicit range check.
+type stakerStakeWire struct {
+	Address     string      `json:"address"`
+	Shares      json.Number `json:"shares"`
+	DelegatedTo string      `json:"delegated_to"`
 }
 
 // SnapshotDelegationState freezes the current delegation mapping for the
@@ -2978,7 +3076,7 @@ func (k *Keeper) collectStakerEntries(ctx context.Context) ([]stakerStakeEntry, 
 		if json.Unmarshal([]byte(raw), &s) != nil {
 			return false, nil // skip malformed records
 		}
-		if s.Shares == 0 {
+		if s.Shares.IsNil() || !s.Shares.IsPositive() {
 			return false, nil
 		}
 
@@ -3087,14 +3185,29 @@ func (k *Keeper) BuildDelegationAttestationRequest(ctx context.Context) ([]byte,
 	if len(entries) == 0 {
 		return nil, fmt.Errorf("delegation snapshot for epoch %d contains no stakers", currentEpoch)
 	}
+	wireEntries := make([]stakerStakeWire, 0, len(entries))
+	for _, entry := range entries {
+		shares, err := sdkIntAsUint128JSONNumber(entry.Shares)
+		if err != nil {
+			return nil, fmt.Errorf("staker %s shares: %w", entry.Address, err)
+		}
+		wireEntries = append(wireEntries, stakerStakeWire{
+			Address:     entry.Address,
+			Shares:      shares,
+			DelegatedTo: entry.DelegatedTo,
+		})
+	}
 
 	// Compute the staker registry root — XOR of keccak256(address, shares)
 	// for each staker. This matches the Rust and Solidity implementations.
-	registryRoot := computeStakerRegistryRoot(entries)
+	registryRoot, err := computeStakerRegistryRoot(entries)
+	if err != nil {
+		return nil, fmt.Errorf("compute staker registry root: %w", err)
+	}
 
 	reqBody := map[string]interface{}{
 		"epoch":                currentEpoch,
-		"staker_stakes":        entries,
+		"staker_stakes":        wireEntries,
 		"staker_registry_root": hex.EncodeToString(registryRoot[:]),
 	}
 
@@ -3120,11 +3233,17 @@ func (k *Keeper) BuildDelegationAttestationRequest(ctx context.Context) ([]byte,
 //   - Shares:  encoded as uint256 (32 bytes big-endian, matching Solidity)
 //   - Hash:    Keccak-256 (Ethereum's flavour, via sha3.NewLegacyKeccak256)
 //   - Combine: XOR accumulator
-func computeStakerRegistryRoot(entries []stakerStakeEntry) [32]byte {
+func computeStakerRegistryRoot(entries []stakerStakeEntry) ([32]byte, error) {
 	var accumulator [32]byte
 
 	for _, e := range entries {
-		if e.Shares == 0 {
+		if e.Shares.IsNil() {
+			return [32]byte{}, fmt.Errorf("staker %s shares are uninitialized", e.Address)
+		}
+		if e.Shares.IsNegative() {
+			return [32]byte{}, fmt.Errorf("staker %s shares must be non-negative", e.Address)
+		}
+		if e.Shares.IsZero() {
 			continue
 		}
 
@@ -3132,13 +3251,10 @@ func computeStakerRegistryRoot(entries []stakerStakeEntry) [32]byte {
 		addrBytes := parseAddressBytes(e.Address)
 
 		// Shares as uint256 (32 bytes big-endian), matching Solidity uint256.
-		// Uses big.Int for explicit uint256 encoding — correct for any value
-		// width (uint64 today, but future-proof if shares type is ever widened
-		// to match Rust u128 or Solidity uint256).
-		sharesBig := new(big.Int).SetUint64(e.Shares)
-		var sharesBE [32]byte
-		sharesBytes := sharesBig.Bytes() // big-endian, minimal encoding
-		copy(sharesBE[32-len(sharesBytes):], sharesBytes)
+		sharesBE, err := sdkIntToUint256(e.Shares)
+		if err != nil {
+			return [32]byte{}, fmt.Errorf("staker %s shares: %w", e.Address, err)
+		}
 
 		// keccak256(abi.encodePacked(address, shares))
 		h := sha3.NewLegacyKeccak256()
@@ -3151,7 +3267,7 @@ func computeStakerRegistryRoot(entries []stakerStakeEntry) [32]byte {
 		}
 	}
 
-	return accumulator
+	return accumulator, nil
 }
 
 // parseAddressBytes converts an address string to 20 bytes, matching the Rust

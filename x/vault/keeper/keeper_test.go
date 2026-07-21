@@ -12,11 +12,13 @@ import (
 	"math"
 	"math/big"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	btcecdsa "github.com/btcsuite/btcd/btcec/v2/ecdsa"
@@ -41,6 +43,21 @@ const (
 	testAddrBob   = "0x000000000000000000000000000000000000b0bb"
 	testAddrCarol = "0x0000000000000000000000000000000000ca401e"
 )
+
+func testInt(value int64) sdkmath.Int {
+	return sdkmath.NewInt(value)
+}
+
+func testIntFromUint64(value uint64) sdkmath.Int {
+	return sdkmath.NewIntFromUint64(value)
+}
+
+func testIntFromString(t testing.TB, value string) sdkmath.Int {
+	t.Helper()
+	result, ok := sdkmath.NewIntFromString(value)
+	require.True(t, ok, "%q must be a valid SDK integer", value)
+	return result
+}
 
 // setupKeeper creates a fresh Keeper backed by an in-memory store.
 func setupKeeper(t *testing.T) (*Keeper, sdk.Context) {
@@ -185,8 +202,8 @@ func registerTestEnclaveAndOperator(
 // testValidators returns a small validator set for testing.
 func testValidators() []types.ValidatorRecord {
 	return []types.ValidatorRecord{
-		{Address: "aethel1val1", DelegatedStake: 1000, PerformanceScore: 9500, Commission: 500},
-		{Address: "aethel1val2", DelegatedStake: 2000, PerformanceScore: 9800, Commission: 400},
+		{Address: "aethel1val1", DelegatedStake: testInt(1000), PerformanceScore: 9500, Commission: 500},
+		{Address: "aethel1val2", DelegatedStake: testInt(2000), PerformanceScore: 9800, Commission: 400},
 	}
 }
 
@@ -266,7 +283,8 @@ func signAttestationWithUniverse(
 	// The policy hash binds the attestation to the selection parameters.
 	// The universe hash binds the attestation to the full eligible candidate set.
 	// This matches the 96-byte verification in ApplyValidatorSelection.
-	canonicalHash := computeValidatorSetHash(epoch, validators)
+	canonicalHash, err := computeValidatorSetHash(epoch, validators)
+	require.NoError(t, err)
 	policyHash := testPolicyHash()
 
 	var payload [96]byte
@@ -377,13 +395,13 @@ func TestStakeAndUnstake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-1")
 
 	// Stake
-	shares, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	shares, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
-	require.Equal(t, uint64(100_000_000), shares)
+	require.Equal(t, testInt(100_000_000), shares)
 
 	// Check totals
-	require.Equal(t, uint64(100_000_000), k.getUint64(ctx, k.TotalPooledAethel))
-	require.Equal(t, uint64(100_000_000), k.getUint64(ctx, k.TotalShares))
+	require.Equal(t, testInt(100_000_000), k.getInt(ctx, k.TotalPooledAethel))
+	require.Equal(t, testInt(100_000_000), k.getInt(ctx, k.TotalShares))
 
 	// Verify delegation was persisted
 	staker, exists := k.getStaker(ctx, testAddrAlice)
@@ -391,11 +409,153 @@ func TestStakeAndUnstake(t *testing.T) {
 	require.Equal(t, "val-1", staker.DelegatedTo)
 
 	// Unstake
-	wID, amount, err := k.Unstake(ctx, testAddrAlice, 50_000_000)
+	wID, amount, err := k.Unstake(ctx, testAddrAlice, testInt(50_000_000))
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), wID)
-	require.Equal(t, uint64(50_000_000), amount)
-	require.Equal(t, uint64(50_000_000), k.getUint64(ctx, k.TotalPooledAethel))
+	require.Equal(t, testInt(50_000_000), amount)
+	require.Equal(t, testInt(50_000_000), k.getInt(ctx, k.TotalPooledAethel))
+}
+
+func TestMonetaryCollectionsRoundTripBeyondUint64(t *testing.T) {
+	k, ctx := setupKeeper(t)
+	beyondUint64 := testIntFromString(t, "184467440737095516160")
+
+	require.NoError(t, k.TotalPooledAethel.Set(ctx, beyondUint64))
+	require.NoError(t, k.TotalShares.Set(ctx, beyondUint64.AddRaw(1)))
+	require.NoError(t, k.TotalPendingWithdrawals.Set(ctx, beyondUint64.AddRaw(2)))
+	require.NoError(t, k.TotalMEVRevenue.Set(ctx, beyondUint64.AddRaw(3)))
+	require.NoError(t, k.StakePerEpoch.Set(ctx, "7", beyondUint64.AddRaw(4)))
+	require.NoError(t, k.EpochUnstakeAccum.Set(ctx, "7", beyondUint64.AddRaw(5)))
+
+	pooled, err := k.TotalPooledAethel.Get(ctx)
+	require.NoError(t, err)
+	require.True(t, pooled.Equal(beyondUint64))
+	shares, err := k.TotalShares.Get(ctx)
+	require.NoError(t, err)
+	require.True(t, shares.Equal(beyondUint64.AddRaw(1)))
+	pending, err := k.TotalPendingWithdrawals.Get(ctx)
+	require.NoError(t, err)
+	require.True(t, pending.Equal(beyondUint64.AddRaw(2)))
+	mev, err := k.TotalMEVRevenue.Get(ctx)
+	require.NoError(t, err)
+	require.True(t, mev.Equal(beyondUint64.AddRaw(3)))
+	epochStake, err := k.StakePerEpoch.Get(ctx, "7")
+	require.NoError(t, err)
+	require.True(t, epochStake.Equal(beyondUint64.AddRaw(4)))
+	epochUnstake, err := k.EpochUnstakeAccum.Get(ctx, "7")
+	require.NoError(t, err)
+	require.True(t, epochUnstake.Equal(beyondUint64.AddRaw(5)))
+}
+
+func TestStakeAndUnstakeRatioMathDoesNotOverflowUint64(t *testing.T) {
+	k, ctx := setupKeeper(t)
+	registerActiveValidator(t, k, ctx, "val-wide")
+
+	totalPooled := testIntFromString(t, "20000000000000000000")
+	totalShares := testIntFromString(t, "30000000000000000000")
+	require.NoError(t, k.TotalPooledAethel.Set(ctx, totalPooled))
+	require.NoError(t, k.TotalShares.Set(ctx, totalShares))
+
+	amount := testInt(100_000_000)
+	expectedShares := amount.Mul(totalShares).Quo(totalPooled)
+	shares, err := k.Stake(ctx, testAddrAlice, amount, "val-wide", 0)
+	require.NoError(t, err)
+	require.True(t, shares.Equal(expectedShares))
+	require.True(t, k.getInt(ctx, k.TotalPooledAethel).Equal(totalPooled.Add(amount)))
+	require.True(t, k.getInt(ctx, k.TotalShares).Equal(totalShares.Add(expectedShares)))
+
+	unstakeShares := shares.QuoRaw(2)
+	pooledBeforeUnstake := k.getInt(ctx, k.TotalPooledAethel)
+	sharesBeforeUnstake := k.getInt(ctx, k.TotalShares)
+	expectedAmount := unstakeShares.Mul(pooledBeforeUnstake).Quo(sharesBeforeUnstake)
+	_, unstakedAmount, err := k.Unstake(ctx, testAddrAlice, unstakeShares)
+	require.NoError(t, err)
+	require.True(t, unstakedAmount.Equal(expectedAmount))
+}
+
+func TestStakeAndUnstakeRejectNonPositiveSDKIntegers(t *testing.T) {
+	k, ctx := setupKeeper(t)
+	registerActiveValidator(t, k, ctx, "val-1")
+
+	_, err := k.Stake(ctx, testAddrAlice, sdkmath.ZeroInt(), "val-1", 0)
+	require.ErrorContains(t, err, "amount must be positive")
+	_, err = k.Stake(ctx, testAddrAlice, testInt(-1), "val-1", 0)
+	require.ErrorContains(t, err, "amount must be positive")
+	_, _, err = k.Unstake(ctx, testAddrAlice, sdkmath.ZeroInt())
+	require.ErrorContains(t, err, "shares must be positive")
+}
+
+func TestTEEIntegerWireBoundary(t *testing.T) {
+	maxUint128 := testIntFromString(t, "340282366920938463463374607431768211455")
+	number, err := sdkIntAsUint128JSONNumber(maxUint128)
+	require.NoError(t, err)
+	require.Equal(t, json.Number(maxUint128.String()), number)
+
+	overflowUint128 := testIntFromString(t, "340282366920938463463374607431768211456")
+	_, err = sdkIntAsUint128JSONNumber(overflowUint128)
+	require.ErrorContains(t, err, "exceeds TEE uint128 range")
+}
+
+func TestSDKIntToUint256FailsClosedAtBoundaries(t *testing.T) {
+	maxUint256 := testIntFromString(t, "115792089237316195423570985008687907853269984665640564039457584007913129639935")
+	encoded, err := sdkIntToUint256(maxUint256)
+	require.NoError(t, err)
+	require.Equal(t, strings.Repeat("ff", 32), hex.EncodeToString(encoded[:]))
+
+	_, err = sdkIntToUint256(sdkmath.Int{})
+	require.ErrorContains(t, err, "uninitialized")
+	_, err = sdkIntToUint256(testInt(-1))
+	require.ErrorContains(t, err, "non-negative")
+
+	// Public constructors reject >256-bit values, but BigIntMut can violate
+	// that invariant. Encoding must return an error instead of panicking or
+	// truncating such a value.
+	tooWide := sdkmath.OneInt()
+	tooWide.BigIntMut().Lsh(tooWide.BigIntMut(), 256)
+	require.NotPanics(t, func() {
+		_, err = sdkIntToUint256(tooWide)
+	})
+	require.ErrorContains(t, err, "exceeds uint256 range")
+
+	_, ok := sdkmath.NewIntFromString("115792089237316195423570985008687907853269984665640564039457584007913129639936")
+	require.False(t, ok, "SDK constructor must reject values above uint256")
+}
+
+func TestCanonicalHashesRejectInvalidSDKIntegers(t *testing.T) {
+	tooWide := sdkmath.OneInt()
+	tooWide.BigIntMut().Lsh(tooWide.BigIntMut(), 256)
+
+	_, err := computeValidatorSetHash(1, []types.ValidatorRecord{{
+		Address:        "0x1111111111111111111111111111111111111111",
+		DelegatedStake: tooWide,
+	}})
+	require.ErrorContains(t, err, "exceeds uint256 range")
+
+	_, err = computeStakerRegistryRoot([]stakerStakeEntry{{
+		Address: "0x1111111111111111111111111111111111111111",
+		Shares:  tooWide,
+	}})
+	require.ErrorContains(t, err, "exceeds uint256 range")
+}
+
+func TestValidatorSelectionWirePreservesStakeBeyondUint64(t *testing.T) {
+	k, ctx := setupKeeper(t)
+	ctx = setBlockTime(ctx, time.Now())
+	wideStake := testIntFromString(t, "20000000000000000000")
+	require.NoError(t, k.setValidator(ctx, &types.ValidatorRecord{
+		Address:          "aethel1wide",
+		DelegatedStake:   wideStake,
+		Commission:       500,
+		IsActive:         true,
+		GeographicRegion: "us-east",
+		OperatorID:       "operator-wide",
+	}))
+	require.NoError(t, k.UpdateValidatorTelemetry(ctx, "aethel1wide", 99.9, 20, 100, "US"))
+
+	body, err := k.BuildValidatorSelectionRequest(ctx)
+	require.NoError(t, err)
+	require.Contains(t, string(body), `"stake":20000000000000000000`)
+	require.NotContains(t, string(body), `"stake":"20000000000000000000"`)
 }
 
 func TestExchangeRate(t *testing.T) {
@@ -406,7 +566,7 @@ func TestExchangeRate(t *testing.T) {
 
 	// After stake, still 1.0
 	registerActiveValidator(t, k, ctx, "val-1")
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, 1.0, k.GetExchangeRate(ctx))
 }
@@ -419,7 +579,7 @@ func TestStake_RequiresValidator(t *testing.T) {
 	k, ctx := setupKeeper(t)
 
 	// Empty validatorAddr → error
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "", 0)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validatorAddr is required")
 }
@@ -427,7 +587,7 @@ func TestStake_RequiresValidator(t *testing.T) {
 func TestStake_RejectsUnknownValidator(t *testing.T) {
 	k, ctx := setupKeeper(t)
 
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "nonexistent-val", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "nonexistent-val", 0)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validator nonexistent-val not found")
 }
@@ -441,7 +601,7 @@ func TestStake_RejectsInactiveValidator(t *testing.T) {
 		IsActive: false,
 	}))
 
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "inactive-val", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "inactive-val", 0)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validator inactive-val is not active")
 }
@@ -453,13 +613,13 @@ func TestStake_UpdatesDelegationOnRestake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-2")
 
 	// Initial stake delegates to val-1
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	staker, _ := k.getStaker(ctx, testAddrAlice)
 	require.Equal(t, "val-1", staker.DelegatedTo)
 
 	// Re-stake with val-2 updates delegation
-	_, err = k.Stake(ctx, testAddrAlice, 100_000_000, "val-2", 0)
+	_, err = k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-2", 0)
 	require.NoError(t, err)
 	staker, _ = k.getStaker(ctx, testAddrAlice)
 	require.Equal(t, "val-2", staker.DelegatedTo)
@@ -472,7 +632,7 @@ func TestDelegateStake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-2")
 
 	// Stake with val-1
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 
 	// Re-delegate to val-2
@@ -487,7 +647,7 @@ func TestDelegateStake_RejectsEmpty(t *testing.T) {
 	k, ctx := setupKeeper(t)
 
 	registerActiveValidator(t, k, ctx, "val-1")
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 
 	err = k.DelegateStake(ctx, testAddrAlice, "")
@@ -507,7 +667,7 @@ func TestDelegateStake_RejectsInactiveValidator(t *testing.T) {
 	k, ctx := setupKeeper(t)
 
 	registerActiveValidator(t, k, ctx, "val-1")
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 
 	// Register an inactive validator
@@ -529,7 +689,7 @@ func getValidatorDelegatedStake(t *testing.T, k *Keeper, ctx sdk.Context, addr s
 	t.Helper()
 	v, ok := k.getValidator(ctx, addr)
 	require.True(t, ok, "validator %s should exist", addr)
-	return v.DelegatedStake
+	return v.DelegatedStake.Uint64()
 }
 
 func TestStake_IncrementsValidatorDelegatedStake(t *testing.T) {
@@ -540,17 +700,17 @@ func TestStake_IncrementsValidatorDelegatedStake(t *testing.T) {
 	require.Equal(t, uint64(0), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
 	// First staker adds 100.
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(100_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
 	// Second staker adds 200 to the same validator.
-	_, err = k.Stake(ctx, testAddrBob, 200_000_000, "val-1", 0)
+	_, err = k.Stake(ctx, testAddrBob, testInt(200_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(300_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
 	// Alice re-stakes 50 more to the same validator.
-	_, err = k.Stake(ctx, testAddrAlice, 50_000_000, "val-1", 0)
+	_, err = k.Stake(ctx, testAddrAlice, testInt(50_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(350_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 }
@@ -561,7 +721,7 @@ func TestStake_RestakeTransfersDelegatedStake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-2")
 
 	// Alice stakes 100 to val-1.
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(100_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 	require.Equal(t, uint64(0), getValidatorDelegatedStake(t, k, ctx, "val-2"))
@@ -569,7 +729,7 @@ func TestStake_RestakeTransfersDelegatedStake(t *testing.T) {
 	// Alice re-stakes 50 more but changes delegation to val-2.
 	// Old validator should lose 100 (alice's full previous position).
 	// New validator should gain 100 + 50 = 150.
-	_, err = k.Stake(ctx, testAddrAlice, 50_000_000, "val-2", 0)
+	_, err = k.Stake(ctx, testAddrAlice, testInt(50_000_000), "val-2", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 	require.Equal(t, uint64(150_000_000), getValidatorDelegatedStake(t, k, ctx, "val-2"))
@@ -580,7 +740,7 @@ func TestUnstake_DecrementsValidatorDelegatedStake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-1")
 
 	// Alice stakes 100 and gets shares.
-	shares, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	shares, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(100_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
@@ -595,12 +755,12 @@ func TestUnstake_PartialDecrementsValidatorDelegatedStake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-1")
 
 	// Alice stakes 200.
-	shares, err := k.Stake(ctx, testAddrAlice, 200_000_000, "val-1", 0)
+	shares, err := k.Stake(ctx, testAddrAlice, testInt(200_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(200_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
 	// Partial unstake: withdraw half the shares.
-	halfShares := shares / 2
+	halfShares := shares.QuoRaw(2)
 	_, _, err = k.Unstake(ctx, testAddrAlice, halfShares)
 	require.NoError(t, err)
 
@@ -615,7 +775,7 @@ func TestDelegateStake_TransfersDelegatedStake(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-2")
 
 	// Alice stakes 100 to val-1.
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(100_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 	require.Equal(t, uint64(0), getValidatorDelegatedStake(t, k, ctx, "val-2"))
@@ -631,7 +791,7 @@ func TestDelegateStake_SameValidatorNoOp(t *testing.T) {
 	k, ctx := setupKeeper(t)
 	registerActiveValidator(t, k, ctx, "val-1")
 
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(100_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
@@ -648,13 +808,13 @@ func TestDelegatedStake_ConsistentAfterMultipleOperations(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-3")
 
 	// Alice: 100 → val-1
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 	// Bob: 200 → val-1
-	_, err = k.Stake(ctx, testAddrBob, 200_000_000, "val-1", 0)
+	_, err = k.Stake(ctx, testAddrBob, testInt(200_000_000), "val-1", 0)
 	require.NoError(t, err)
 	// Carol: 150 → val-2
-	_, err = k.Stake(ctx, testAddrCarol, 150_000_000, "val-2", 0)
+	_, err = k.Stake(ctx, testAddrCarol, testInt(150_000_000), "val-2", 0)
 	require.NoError(t, err)
 
 	require.Equal(t, uint64(300_000_000), getValidatorDelegatedStake(t, k, ctx, "val-1"))
@@ -678,7 +838,7 @@ func TestDelegatedStake_ConsistentAfterMultipleOperations(t *testing.T) {
 
 	// Carol partially unstakes half (75 leaves val-2).
 	carolStaker, _ := k.getStaker(ctx, testAddrCarol)
-	halfShares := carolStaker.Shares / 2
+	halfShares := carolStaker.Shares.QuoRaw(2)
 	_, _, err = k.Unstake(ctx, testAddrCarol, halfShares)
 	require.NoError(t, err)
 	require.Equal(t, uint64(75_000_000), getValidatorDelegatedStake(t, k, ctx, "val-2"))
@@ -688,7 +848,7 @@ func TestDelegatedStake_ConsistentAfterMultipleOperations(t *testing.T) {
 	aliceStaker, _ := k.getStaker(ctx, testAddrAlice)
 	bobStaker, _ = k.getStaker(ctx, testAddrBob)
 	carolStaker, _ = k.getStaker(ctx, testAddrCarol)
-	totalStaked := aliceStaker.StakedAmount + bobStaker.StakedAmount + carolStaker.StakedAmount
+	totalStaked := aliceStaker.StakedAmount.Add(bobStaker.StakedAmount).Add(carolStaker.StakedAmount).Uint64()
 	totalDelegated := getValidatorDelegatedStake(t, k, ctx, "val-1") +
 		getValidatorDelegatedStake(t, k, ctx, "val-2") +
 		getValidatorDelegatedStake(t, k, ctx, "val-3")
@@ -702,7 +862,7 @@ func TestUnstake_ThenRestake_ValidatorAccountingCorrect(t *testing.T) {
 	registerActiveValidator(t, k, ctx, "val-2")
 
 	// Alice stakes 100 to val-1.
-	shares, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val-1", 0)
+	shares, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val-1", 0)
 	require.NoError(t, err)
 
 	// Full unstake.
@@ -711,7 +871,7 @@ func TestUnstake_ThenRestake_ValidatorAccountingCorrect(t *testing.T) {
 	require.Equal(t, uint64(0), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 
 	// Re-stake to val-2.
-	_, err = k.Stake(ctx, testAddrAlice, 80_000_000, "val-2", 0)
+	_, err = k.Stake(ctx, testAddrAlice, testInt(80_000_000), "val-2", 0)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), getValidatorDelegatedStake(t, k, ctx, "val-1"))
 	require.Equal(t, uint64(80_000_000), getValidatorDelegatedStake(t, k, ctx, "val-2"))
@@ -800,7 +960,8 @@ func TestApplyValidatorSelection_WrongEnclaveBinding(t *testing.T) {
 	blockTime := time.Now()
 	ctx = setBlockTime(ctx, blockTime)
 
-	canonicalHash := computeValidatorSetHash(1, validators)
+	canonicalHash, err := computeValidatorSetHash(1, validators)
+	require.NoError(t, err)
 	policyHash := testPolicyHash()
 	var payload [64]byte
 	copy(payload[:32], canonicalHash[:])
@@ -915,7 +1076,7 @@ func TestApplyValidatorSelection_PayloadMismatch(t *testing.T) {
 
 	// Try to apply with a DIFFERENT validator set B
 	validatorsB := []types.ValidatorRecord{
-		{Address: "aethel1attacker", DelegatedStake: 999999, PerformanceScore: 10000, Commission: 0},
+		{Address: "aethel1attacker", DelegatedStake: testInt(999999), PerformanceScore: 10000, Commission: 0},
 	}
 
 	err = k.ApplyValidatorSelection(ctx, validatorsB, att, 1)
@@ -984,8 +1145,8 @@ func TestApplyValidatorSelection_DuplicateAddressRejected(t *testing.T) {
 
 	// Construct a validator set with duplicate addresses
 	validators := []types.ValidatorRecord{
-		{Address: "aethel1val1", DelegatedStake: 1000, PerformanceScore: 9500, Commission: 500},
-		{Address: "aethel1val1", DelegatedStake: 2000, PerformanceScore: 9800, Commission: 400}, // duplicate
+		{Address: "aethel1val1", DelegatedStake: testInt(1000), PerformanceScore: 9500, Commission: 500},
+		{Address: "aethel1val1", DelegatedStake: testInt(2000), PerformanceScore: 9800, Commission: 400}, // duplicate
 	}
 
 	blockTime := time.Now()
@@ -1361,7 +1522,7 @@ func TestBuildValidatorSelectionRequest_RejectsWithoutTelemetry(t *testing.T) {
 	// Store a validator WITHOUT telemetry
 	v := &types.ValidatorRecord{
 		Address:          "aethel1val1",
-		DelegatedStake:   1000,
+		DelegatedStake:   testInt(1000),
 		Commission:       500,
 		IsActive:         true,
 		GeographicRegion: "us-east",
@@ -1385,7 +1546,7 @@ func TestBuildValidatorSelectionRequest_SucceedsWithTelemetry(t *testing.T) {
 	// Store a validator
 	v := &types.ValidatorRecord{
 		Address:          "aethel1val1",
-		DelegatedStake:   1000,
+		DelegatedStake:   testInt(1000),
 		Commission:       500,
 		IsActive:         true,
 		GeographicRegion: "us-east",
@@ -1424,7 +1585,7 @@ func TestUpdateValidatorTelemetry_Validation(t *testing.T) {
 	// Store a validator
 	v := &types.ValidatorRecord{
 		Address:          "aethel1val1",
-		DelegatedStake:   1000,
+		DelegatedStake:   testInt(1000),
 		IsActive:         true,
 		GeographicRegion: "us-east",
 		OperatorID:       "op-1",
@@ -1474,7 +1635,7 @@ func TestBuildValidatorSelectionRequest_RejectsStaleTelemetry(t *testing.T) {
 
 	v := &types.ValidatorRecord{
 		Address:          "aethel1stale",
-		DelegatedStake:   5000,
+		DelegatedStake:   testInt(5000),
 		Commission:       500,
 		IsActive:         true,
 		GeographicRegion: "eu-west",
@@ -1503,7 +1664,7 @@ func TestBuildValidatorSelectionRequest_QuorumNotMet(t *testing.T) {
 	// Validator A: telemetry updated at baseTime (fresh)
 	vA := &types.ValidatorRecord{
 		Address:          "aethel1fresh",
-		DelegatedStake:   5000,
+		DelegatedStake:   testInt(5000),
 		Commission:       500,
 		IsActive:         true,
 		GeographicRegion: "us-east",
@@ -1516,7 +1677,7 @@ func TestBuildValidatorSelectionRequest_QuorumNotMet(t *testing.T) {
 	oldCtx := setBlockTime(ctx, baseTime.Add(-73*time.Hour))
 	vB := &types.ValidatorRecord{
 		Address:          "aethel1stale",
-		DelegatedStake:   3000,
+		DelegatedStake:   testInt(3000),
 		Commission:       300,
 		IsActive:         true,
 		GeographicRegion: "eu-west",
@@ -1542,7 +1703,7 @@ func TestBuildValidatorSelectionRequest_QuorumMetFiltersStale(t *testing.T) {
 	for i, addr := range []string{"aethel1val1", "aethel1val2", "aethel1val3"} {
 		v := &types.ValidatorRecord{
 			Address:          addr,
-			DelegatedStake:   uint64(1000 * (i + 1)),
+			DelegatedStake:   testInt(int64(1000 * (i + 1))),
 			Commission:       500,
 			IsActive:         true,
 			GeographicRegion: "us-east",
@@ -1557,7 +1718,7 @@ func TestBuildValidatorSelectionRequest_QuorumMetFiltersStale(t *testing.T) {
 	oldCtx := setBlockTime(ctx, baseTime.Add(-73*time.Hour))
 	vStale := &types.ValidatorRecord{
 		Address:          "aethel1stale",
-		DelegatedStake:   2000,
+		DelegatedStake:   testInt(2000),
 		Commission:       300,
 		IsActive:         true,
 		GeographicRegion: "eu-west",
@@ -1598,7 +1759,7 @@ func TestBuildValidatorSelectionRequest_InactiveNotCountedInQuorum(t *testing.T)
 	// 1 active validator with fresh telemetry
 	vActive := &types.ValidatorRecord{
 		Address:          "aethel1active",
-		DelegatedStake:   5000,
+		DelegatedStake:   testInt(5000),
 		Commission:       500,
 		IsActive:         true,
 		GeographicRegion: "us-east",
@@ -1610,7 +1771,7 @@ func TestBuildValidatorSelectionRequest_InactiveNotCountedInQuorum(t *testing.T)
 	// 1 inactive validator (slashed) — should NOT count against quorum
 	vInactive := &types.ValidatorRecord{
 		Address:          "aethel1inactive",
-		DelegatedStake:   3000,
+		DelegatedStake:   testInt(3000),
 		Commission:       300,
 		IsActive:         false, // slashed / deactivated
 		GeographicRegion: "eu-west",
@@ -1642,7 +1803,7 @@ func TestBuildValidatorSelectionRequest_UniverseHashDeterministic(t *testing.T) 
 	for _, addr := range []string{"aethel1zz", "aethel1aa", "aethel1mm"} {
 		v := &types.ValidatorRecord{
 			Address:          addr,
-			DelegatedStake:   1000,
+			DelegatedStake:   testInt(1000),
 			Commission:       500,
 			IsActive:         true,
 			GeographicRegion: "us-east",
@@ -1677,7 +1838,7 @@ func TestBuildValidatorSelectionRequest_TelemetryAtBoundaryIncluded(t *testing.T
 	ctx = setBlockTime(ctx, baseTime)
 	v := &types.ValidatorRecord{
 		Address:          "aethel1edge",
-		DelegatedStake:   4000,
+		DelegatedStake:   testInt(4000),
 		Commission:       400,
 		IsActive:         true,
 		GeographicRegion: "ap-east",
@@ -1716,7 +1877,7 @@ func addTestStaker(t *testing.T, k *Keeper, ctx sdk.Context, addr string, shares
 	rec := &types.StakerRecord{
 		Address:     addr,
 		EvmAddress:  evmAddr,
-		Shares:      shares,
+		Shares:      testIntFromUint64(shares),
 		DelegatedTo: delegatedTo,
 		StakedAt:    time.Now(),
 	}
@@ -1756,6 +1917,24 @@ func TestBuildDelegationAttestationRequest_basic(t *testing.T) {
 	require.Equal(t, 64, len(root))
 	_, err = hex.DecodeString(root)
 	require.NoError(t, err)
+}
+
+func TestDelegationWirePreservesSharesBeyondUint64(t *testing.T) {
+	k, ctx := setupKeeper(t)
+	require.NoError(t, k.setValidator(ctx, &types.ValidatorRecord{Address: "aethel1val1", IsActive: true}))
+	wideShares := testIntFromString(t, "20000000000000000000")
+	require.NoError(t, k.setStaker(ctx, &types.StakerRecord{
+		Address:     "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		EvmAddress:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Shares:      wideShares,
+		DelegatedTo: "aethel1val1",
+	}))
+	require.NoError(t, k.SnapshotDelegationState(ctx))
+
+	body, err := k.BuildDelegationAttestationRequest(ctx)
+	require.NoError(t, err)
+	require.Contains(t, string(body), `"shares":20000000000000000000`)
+	require.NotContains(t, string(body), `"shares":"20000000000000000000"`)
 }
 
 func TestBuildDelegationAttestationRequest_requiresSnapshot(t *testing.T) {
@@ -1846,7 +2025,7 @@ func TestSnapshotDelegationState_rejectsEmptyDelegation(t *testing.T) {
 	s := &types.StakerRecord{
 		Address:     "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 		EvmAddress:  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-		Shares:      1000,
+		Shares:      testInt(1000),
 		DelegatedTo: "",
 	}
 	data, _ := json.Marshal(s)
@@ -1908,12 +2087,14 @@ func TestBuildDelegationAttestationRequest_freezesDelegation(t *testing.T) {
 
 func TestComputeStakerRegistryRoot_deterministic(t *testing.T) {
 	entries := []stakerStakeEntry{
-		{Address: "0x1111111111111111111111111111111111111111", Shares: 1000, DelegatedTo: "val1"},
-		{Address: "0x2222222222222222222222222222222222222222", Shares: 2000, DelegatedTo: "val2"},
+		{Address: "0x1111111111111111111111111111111111111111", Shares: testInt(1000), DelegatedTo: "val1"},
+		{Address: "0x2222222222222222222222222222222222222222", Shares: testInt(2000), DelegatedTo: "val2"},
 	}
 
-	root1 := computeStakerRegistryRoot(entries)
-	root2 := computeStakerRegistryRoot(entries)
+	root1, err := computeStakerRegistryRoot(entries)
+	require.NoError(t, err)
+	root2, err := computeStakerRegistryRoot(entries)
+	require.NoError(t, err)
 	require.Equal(t, root1, root2, "registry root must be deterministic")
 	require.NotEqual(t, [32]byte{}, root1, "registry root must not be zero")
 }
@@ -1921,29 +2102,33 @@ func TestComputeStakerRegistryRoot_deterministic(t *testing.T) {
 func TestComputeStakerRegistryRoot_orderIndependent(t *testing.T) {
 	// XOR is commutative, so order should not matter.
 	entriesA := []stakerStakeEntry{
-		{Address: "0x1111111111111111111111111111111111111111", Shares: 1000, DelegatedTo: "v1"},
-		{Address: "0x2222222222222222222222222222222222222222", Shares: 2000, DelegatedTo: "v2"},
+		{Address: "0x1111111111111111111111111111111111111111", Shares: testInt(1000), DelegatedTo: "v1"},
+		{Address: "0x2222222222222222222222222222222222222222", Shares: testInt(2000), DelegatedTo: "v2"},
 	}
 	entriesB := []stakerStakeEntry{
-		{Address: "0x2222222222222222222222222222222222222222", Shares: 2000, DelegatedTo: "v2"},
-		{Address: "0x1111111111111111111111111111111111111111", Shares: 1000, DelegatedTo: "v1"},
+		{Address: "0x2222222222222222222222222222222222222222", Shares: testInt(2000), DelegatedTo: "v2"},
+		{Address: "0x1111111111111111111111111111111111111111", Shares: testInt(1000), DelegatedTo: "v1"},
 	}
 
-	rootA := computeStakerRegistryRoot(entriesA)
-	rootB := computeStakerRegistryRoot(entriesB)
+	rootA, err := computeStakerRegistryRoot(entriesA)
+	require.NoError(t, err)
+	rootB, err := computeStakerRegistryRoot(entriesB)
+	require.NoError(t, err)
 	require.Equal(t, rootA, rootB, "XOR accumulator must be order-independent")
 }
 
 func TestComputeStakerRegistryRoot_differentSharesProduceDifferentRoot(t *testing.T) {
 	entriesA := []stakerStakeEntry{
-		{Address: "0x1111111111111111111111111111111111111111", Shares: 1000, DelegatedTo: "v1"},
+		{Address: "0x1111111111111111111111111111111111111111", Shares: testInt(1000), DelegatedTo: "v1"},
 	}
 	entriesB := []stakerStakeEntry{
-		{Address: "0x1111111111111111111111111111111111111111", Shares: 2000, DelegatedTo: "v1"},
+		{Address: "0x1111111111111111111111111111111111111111", Shares: testInt(2000), DelegatedTo: "v1"},
 	}
 
-	rootA := computeStakerRegistryRoot(entriesA)
-	rootB := computeStakerRegistryRoot(entriesB)
+	rootA, err := computeStakerRegistryRoot(entriesA)
+	require.NoError(t, err)
+	rootB, err := computeStakerRegistryRoot(entriesB)
+	require.NoError(t, err)
 	require.NotEqual(t, rootA, rootB, "different shares must produce different roots")
 }
 
@@ -1993,9 +2178,10 @@ func TestComputeStakerRegistryRoot_crossLanguageVector(t *testing.T) {
 	// Staker: address=0x1234...1234 (20 bytes), shares=1000
 	// Expected: keccak256(address_20bytes || shares_uint256) = single-element XOR root
 	entries := []stakerStakeEntry{
-		{Address: "0x1234567890abcdef1234567890abcdef12345678", Shares: 1000, DelegatedTo: "val1"},
+		{Address: "0x1234567890abcdef1234567890abcdef12345678", Shares: testInt(1000), DelegatedTo: "val1"},
 	}
-	root := computeStakerRegistryRoot(entries)
+	root, err := computeStakerRegistryRoot(entries)
+	require.NoError(t, err)
 
 	// Manually compute the expected value.
 	addrBytes := parseAddressBytes("0x1234567890abcdef1234567890abcdef12345678")
@@ -2134,7 +2320,7 @@ func TestPause_blocksStake(t *testing.T) {
 	require.NoError(t, k.PauseVault(ctx, "authority", "maintenance"))
 
 	// Stake should fail.
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val1", 0)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "vault is paused")
 }
@@ -2149,14 +2335,14 @@ func TestPause_blocksUnstake(t *testing.T) {
 	}))
 	require.NoError(t, k.setActiveValidatorAddrs(ctx, []string{"val1"}))
 
-	_, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val1", 0)
 	require.NoError(t, err)
 
 	// Pause vault.
 	require.NoError(t, k.PauseVault(ctx, "authority", "exploit detected"))
 
 	// Unstake should fail.
-	_, _, err = k.Unstake(ctx, testAddrAlice, 50_000_000)
+	_, _, err = k.Unstake(ctx, testAddrAlice, testInt(50_000_000))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "vault is paused")
 }
@@ -2211,9 +2397,9 @@ func TestPause_unpauseThenOperate(t *testing.T) {
 	require.NoError(t, k.UnpauseVault(ctx, "authority", "all clear"))
 
 	// Stake should now work.
-	shares, err := k.Stake(ctx, testAddrAlice, 100_000_000, "val1", 0)
+	shares, err := k.Stake(ctx, testAddrAlice, testInt(100_000_000), "val1", 0)
 	require.NoError(t, err)
-	require.True(t, shares > 0)
+	require.True(t, shares.IsPositive())
 }
 
 func TestPause_vaultStatusReflects(t *testing.T) {
@@ -2252,16 +2438,16 @@ func TestCircuitBreaker_unstakeThreshold(t *testing.T) {
 	require.NoError(t, k.setActiveValidatorAddrs(ctx, []string{"val1"}))
 
 	// Stake 1,000,000,000 uAETHEL (1000 AETHEL).
-	_, err := k.Stake(ctx, testAddrAlice, 1_000_000_000, "val1", 0)
+	_, err := k.Stake(ctx, testAddrAlice, testInt(1_000_000_000), "val1", 0)
 	require.NoError(t, err)
 
 	// Unstake 5% — should succeed without tripping circuit breaker.
-	_, _, err = k.Unstake(ctx, testAddrAlice, 50_000_000)
+	_, _, err = k.Unstake(ctx, testAddrAlice, testInt(50_000_000))
 	require.NoError(t, err)
 	require.False(t, k.IsPaused(ctx))
 
 	// Unstake another 6% — should succeed but the circuit breaker should trip (>10%).
-	_, _, err = k.Unstake(ctx, testAddrAlice, 60_000_000)
+	_, _, err = k.Unstake(ctx, testAddrAlice, testInt(60_000_000))
 	require.NoError(t, err)          // The unstake itself succeeds
 	require.True(t, k.IsPaused(ctx)) // But the vault is now paused
 
@@ -2507,9 +2693,23 @@ type conformanceValidatorVector struct {
 			CommissionBps         uint32 `json:"commission_bps"`
 			Rank                  int    `json:"rank"`
 		} `json:"validators"`
+		Config struct {
+			PerformanceWeight      float64 `json:"performance_weight"`
+			DecentralizationWeight float64 `json:"decentralization_weight"`
+			ReputationWeight       float64 `json:"reputation_weight"`
+			MinUptimePct           float64 `json:"min_uptime_pct"`
+			MaxCommissionBps       uint32  `json:"max_commission_bps"`
+			MaxPerRegion           uint64  `json:"max_per_region"`
+			MaxPerOperator         uint64  `json:"max_per_operator"`
+			MinStake               string  `json:"min_stake"`
+		} `json:"config"`
+		EligibleAddresses []string `json:"eligible_addresses"`
 	} `json:"input"`
 	Expected struct {
 		ValidatorSetHash string `json:"validator_set_hash"`
+		PolicyHash       string `json:"policy_hash"`
+		UniverseHash     string `json:"universe_hash"`
+		PayloadHex       string `json:"payload_hex"`
 	} `json:"expected"`
 }
 
@@ -2533,18 +2733,10 @@ type conformanceRewardVector struct {
 	} `json:"expected"`
 }
 
-// parseStakeUint64 converts a decimal string (possibly very large) to uint64.
-// For values that exceed uint64, it returns 0 (test vectors should use values
-// that fit in uint64 for Go conformance since the keeper uses uint64 internally).
-func parseStakeUint64(s string) uint64 {
-	v, ok := new(big.Int).SetString(s, 10)
-	if !ok {
-		return 0
-	}
-	if !v.IsUint64() {
-		return 0
-	}
-	return v.Uint64()
+// parseStakeInt converts a canonical decimal monetary value to the Cosmos SDK
+// integer used by the keeper, including values wider than uint64.
+func parseStakeInt(s string) (sdkmath.Int, bool) {
+	return sdkmath.NewIntFromString(s)
 }
 
 func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
@@ -2563,19 +2755,12 @@ func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
 		t.Skip("test vector has no expected validator_set_hash")
 	}
 
-	// Convert JSON validators to types.ValidatorRecord.
-	// Note: The Go keeper uses uint64 for DelegatedStake while the SDKs use
-	// arbitrary-precision uint256. If any stake value exceeds uint64 max, the
-	// Go encoding will differ from the SDK encoding, and this test will
-	// correctly surface the representation gap. Skip those vectors with a
-	// diagnostic message so the gap is tracked without blocking CI.
+	// Convert JSON validators to types.ValidatorRecord using the same bounded
+	// uint256-compatible SDK integer representation as the keeper.
 	var validators []types.ValidatorRecord
 	for _, v := range vector.Input.Validators {
-		stake := parseStakeUint64(v.Stake)
-		if stake == 0 && v.Stake != "0" {
-			t.Skipf("stake %q exceeds uint64; Go keeper cannot match SDK uint256 encoding — "+
-				"this is a known representation gap (Track 8 follow-up)", v.Stake)
-		}
+		stake, ok := parseStakeInt(v.Stake)
+		require.True(t, ok, "stake %q must be a valid SDK integer", v.Stake)
 		teeKey, _ := hex.DecodeString(strings.TrimPrefix(v.TEEPublicKey, "0x"))
 		validators = append(validators, types.ValidatorRecord{
 			Address:               v.Address,
@@ -2589,12 +2774,38 @@ func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
 		})
 	}
 
-	hash := computeValidatorSetHash(vector.Input.Epoch, validators)
+	hash, err := computeValidatorSetHash(vector.Input.Epoch, validators)
+	require.NoError(t, err)
 	got := "0x" + hex.EncodeToString(hash[:])
 	expected := strings.ToLower(vector.Expected.ValidatorSetHash)
 
 	require.Equal(t, expected, got,
 		"Go computeValidatorSetHash must match test vector (cross-language conformance)")
+
+	minStake, ok := new(big.Int).SetString(vector.Input.Config.MinStake, 10)
+	require.True(t, ok, "min_stake must be a valid integer")
+	policyHash := computeSelectionPolicyHash(
+		vector.Input.Config.PerformanceWeight,
+		vector.Input.Config.DecentralizationWeight,
+		vector.Input.Config.ReputationWeight,
+		vector.Input.Config.MinUptimePct,
+		vector.Input.Config.MaxCommissionBps,
+		vector.Input.Config.MaxPerRegion,
+		vector.Input.Config.MaxPerOperator,
+		minStake,
+	)
+	eligibleAddresses := append([]string(nil), vector.Input.EligibleAddresses...)
+	sort.Strings(eligibleAddresses)
+	universeHash := computeEligibleUniverseHash(eligibleAddresses)
+	require.Equal(t, strings.ToLower(vector.Expected.PolicyHash), "0x"+hex.EncodeToString(policyHash[:]))
+	require.Equal(t, strings.ToLower(vector.Expected.UniverseHash), "0x"+hex.EncodeToString(universeHash[:]))
+
+	payload := make([]byte, 0, 96)
+	payload = append(payload, hash[:]...)
+	payload = append(payload, policyHash[:]...)
+	payload = append(payload, universeHash[:]...)
+	require.Equal(t, strings.ToLower(vector.Expected.PayloadHex), "0x"+hex.EncodeToString(payload),
+		"canonical validator payload must contain the regenerated hash, policy, and universe commitments")
 }
 
 func TestConformance_stakerRegistryRoot_fromVectors(t *testing.T) {
@@ -2615,19 +2826,157 @@ func TestConformance_stakerRegistryRoot_fromVectors(t *testing.T) {
 
 	var entries []stakerStakeEntry
 	for _, s := range vector.Input.StakerStakes {
+		shares, ok := parseStakeInt(s.Shares)
+		require.True(t, ok, "shares %q must be a valid SDK integer", s.Shares)
 		entries = append(entries, stakerStakeEntry{
 			Address:     s.Address,
-			Shares:      parseStakeUint64(s.Shares),
+			Shares:      shares,
 			DelegatedTo: s.DelegatedTo,
 		})
 	}
 
-	root := computeStakerRegistryRoot(entries)
+	root, err := computeStakerRegistryRoot(entries)
+	require.NoError(t, err)
 	got := "0x" + hex.EncodeToString(root[:])
 	expected := strings.ToLower(vector.Expected.StakerRegistryRoot)
 
 	require.Equal(t, expected, got,
 		"Go computeStakerRegistryRoot must match test vector (cross-language conformance)")
+}
+
+func TestConformance_edgeValidatorSetHashes(t *testing.T) {
+	paths := []string{
+		"../../../testdata/cruzible/test-vectors/edge-cases/single-validator.json",
+		"../../../testdata/cruzible/test-vectors/edge-cases/max-uint64-values.json",
+		"../../../testdata/cruzible/test-vectors/edge-cases/empty-tee-key.json",
+		"../../../testdata/cruzible/test-vectors/edge-cases/special-addresses.json",
+		"../../../testdata/cruzible/test-vectors/edge-cases/max-validators.json",
+	}
+
+	for _, vectorPath := range paths {
+		vectorPath := vectorPath
+		t.Run(filepath.Base(vectorPath), func(t *testing.T) {
+			data, err := os.ReadFile(vectorPath)
+			require.NoError(t, err)
+
+			var vector conformanceValidatorVector
+			require.NoError(t, json.Unmarshal(data, &vector))
+			require.NotEmpty(t, vector.Expected.ValidatorSetHash)
+
+			validators := make([]types.ValidatorRecord, 0, len(vector.Input.Validators))
+			for _, v := range vector.Input.Validators {
+				stake, ok := parseStakeInt(v.Stake)
+				require.True(t, ok, "stake %q must be a valid SDK integer", v.Stake)
+				teeKey, err := hex.DecodeString(strings.TrimPrefix(v.TEEPublicKey, "0x"))
+				require.NoError(t, err)
+				validators = append(validators, types.ValidatorRecord{
+					Address:               v.Address,
+					DelegatedStake:        stake,
+					PerformanceScore:      v.PerformanceScore,
+					DecentralizationScore: v.DecentralizationScore,
+					ReputationScore:       v.ReputationScore,
+					CompositeScore:        v.CompositeScore,
+					TEEPublicKey:          teeKey,
+					Commission:            v.CommissionBps,
+				})
+			}
+
+			hash, err := computeValidatorSetHash(vector.Input.Epoch, validators)
+			require.NoError(t, err)
+			require.Equal(t, strings.ToLower(vector.Expected.ValidatorSetHash), "0x"+hex.EncodeToString(hash[:]))
+		})
+	}
+}
+
+func TestConformance_edgeStakerRegistryRoots(t *testing.T) {
+	paths := []string{
+		"../../../testdata/cruzible/test-vectors/edge-cases/zero-stake.json",
+		"../../../testdata/cruzible/test-vectors/edge-cases/max-uint64-values.json",
+		"../../../testdata/cruzible/test-vectors/edge-cases/special-addresses.json",
+	}
+
+	for _, vectorPath := range paths {
+		vectorPath := vectorPath
+		t.Run(filepath.Base(vectorPath), func(t *testing.T) {
+			data, err := os.ReadFile(vectorPath)
+			require.NoError(t, err)
+
+			var vector conformanceRewardVector
+			require.NoError(t, json.Unmarshal(data, &vector))
+			require.NotEmpty(t, vector.Expected.StakerRegistryRoot)
+
+			entries := make([]stakerStakeEntry, 0, len(vector.Input.StakerStakes))
+			for _, staker := range vector.Input.StakerStakes {
+				shares, ok := parseStakeInt(staker.Shares)
+				require.True(t, ok, "shares %q must be a valid SDK integer", staker.Shares)
+				entries = append(entries, stakerStakeEntry{
+					Address:     staker.Address,
+					Shares:      shares,
+					DelegatedTo: staker.DelegatedTo,
+				})
+			}
+
+			root, err := computeStakerRegistryRoot(entries)
+			require.NoError(t, err)
+			require.Equal(t, strings.ToLower(vector.Expected.StakerRegistryRoot), "0x"+hex.EncodeToString(root[:]))
+		})
+	}
+}
+
+func TestConformance_defaultFixtureDerivationsStayLinked(t *testing.T) {
+	readFixture := func(path string) map[string]interface{} {
+		t.Helper()
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		var result map[string]interface{}
+		require.NoError(t, json.Unmarshal(data, &result))
+		return result
+	}
+	object := func(value interface{}) map[string]interface{} {
+		t.Helper()
+		result, ok := value.(map[string]interface{})
+		require.True(t, ok)
+		return result
+	}
+
+	validator := readFixture("../../../testdata/cruzible/test-vectors/validator-selection/default.json")
+	reward := readFixture("../../../testdata/cruzible/test-vectors/reward/default.json")
+	delegation := readFixture("../../../testdata/cruzible/test-vectors/delegation/default.json")
+	reconciliation := readFixture("../../../testdata/cruzible/test-vectors/reconciliation/default.json")
+
+	validatorExpected := object(validator["expected"])
+	validatorHash := validatorExpected["validator_set_hash"].(string)
+	validatorPayload := validatorExpected["payload_hex"].(string)
+	require.Equal(t,
+		validatorHash+strings.TrimPrefix(validatorExpected["policy_hash"].(string), "0x")+
+			strings.TrimPrefix(validatorExpected["universe_hash"].(string), "0x"),
+		validatorPayload,
+	)
+
+	rewardInput := object(reward["input"])
+	rewardExpected := object(reward["expected"])
+	require.Equal(t, validatorHash, rewardInput["validator_set_hash"])
+	rewardPayload, err := hex.DecodeString(strings.TrimPrefix(rewardExpected["payload_hex"].(string), "0x"))
+	require.NoError(t, err)
+	require.Len(t, rewardPayload, 256)
+	require.Equal(t, strings.TrimPrefix(validatorHash, "0x"), hex.EncodeToString(rewardPayload[160:192]),
+		"reward payload word 5 must use the regenerated validator-set hash")
+
+	observed := object(reconciliation["observed"])
+	observedValidator := object(observed["validator_selection"])
+	require.Equal(t, validatorExpected["validator_set_hash"], observedValidator["validator_set_hash"])
+	require.Equal(t, validatorExpected["policy_hash"], observedValidator["policy_hash"])
+	require.Equal(t, validatorExpected["universe_hash"], observedValidator["universe_hash"])
+	require.Equal(t, validatorExpected["payload_hex"], observedValidator["payload_hex"])
+
+	observedReward := object(observed["reward_calculation"])
+	for _, field := range []string{"stake_snapshot_hash", "staker_registry_root", "delegation_registry_root", "payload_hex"} {
+		require.Equal(t, rewardExpected[field], observedReward[field], "reconciliation reward field %s", field)
+	}
+
+	observedDelegation := object(observed["delegation_attestation"])
+	delegationExpected := object(delegation["expected"])
+	require.Equal(t, delegationExpected["payload_hex"], observedDelegation["payload_hex"])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3318,7 +3667,7 @@ func BenchmarkStake(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		addr := fmt.Sprintf("0x%040x", i+1)
-		_, _ = k.Stake(ctx, addr, 100_000_000, "benchval1", 0)
+		_, _ = k.Stake(ctx, addr, testInt(100_000_000), "benchval1", 0)
 	}
 }
 
@@ -3328,15 +3677,15 @@ func BenchmarkUnstake(b *testing.B) {
 	// Pre-stake for all iterations.
 	for i := 0; i < b.N; i++ {
 		addr := fmt.Sprintf("0x%040x", i+1)
-		_, _ = k.Stake(ctx, addr, 100_000_000, "benchval1", 0)
+		_, _ = k.Stake(ctx, addr, testInt(100_000_000), "benchval1", 0)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		addr := fmt.Sprintf("0x%040x", i+1)
 		staker, _ := k.getStaker(ctx, addr)
-		if staker != nil && staker.Shares > 0 {
-			_, _, _ = k.Unstake(ctx, addr, staker.Shares/2)
+		if staker != nil && staker.Shares.IsPositive() {
+			_, _, _ = k.Unstake(ctx, addr, staker.Shares.QuoRaw(2))
 		}
 	}
 }
@@ -3347,7 +3696,7 @@ func BenchmarkComputeValidatorSetHash(b *testing.B) {
 	for i := range validators {
 		validators[i] = types.ValidatorRecord{
 			Address:               fmt.Sprintf("0x%040x", i+1),
-			DelegatedStake:        uint64(i+1) * 1_000_000,
+			DelegatedStake:        testInt(int64(i+1) * 1_000_000),
 			PerformanceScore:      uint32(8000 + i),
 			DecentralizationScore: uint32(7000 + i),
 			ReputationScore:       uint32(9000 + i),
@@ -3369,7 +3718,7 @@ func BenchmarkGetVaultStatus(b *testing.B) {
 	// Add some stakers and state.
 	for i := 0; i < 100; i++ {
 		addr := fmt.Sprintf("0x%040x", i+1)
-		_, _ = k.Stake(ctx, addr, 100_000_000, "benchval1", 0)
+		_, _ = k.Stake(ctx, addr, testInt(100_000_000), "benchval1", 0)
 	}
 
 	b.ResetTimer()
@@ -3392,8 +3741,8 @@ func BenchmarkGetExchangeRate(b *testing.B) {
 	k, ctx := setupBenchKeeper(b)
 
 	// Set up meaningful totals.
-	_ = k.TotalPooledAethel.Set(ctx, 142_570_000_000)
-	_ = k.TotalShares.Set(ctx, 131_500_000_000)
+	_ = k.TotalPooledAethel.Set(ctx, testInt(142_570_000_000))
+	_ = k.TotalShares.Set(ctx, testInt(131_500_000_000))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

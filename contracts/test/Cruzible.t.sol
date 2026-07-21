@@ -1507,6 +1507,73 @@ contract CruzibleTest is Test {
     }
 
     /// @notice Compute canonical validator set hash (mirrors Cruzible._computeValidatorSetHash).
+    function test_canonicalValidatorHash_defaultCrossLanguageVector() public pure {
+        address[] memory addrs = new address[](2);
+        addrs[0] = address(0x1111111111111111111111111111111111111111);
+        addrs[1] = address(0x2222222222222222222222222222222222222222);
+
+        uint256[] memory stakes = new uint256[](2);
+        stakes[0] = 32_000_000_000_000_000_000;
+        stakes[1] = 64_000_000_000_000_000_000;
+
+        uint256[] memory perfScores = new uint256[](2);
+        perfScores[0] = 9100;
+        perfScores[1] = 8600;
+        uint256[] memory decentScores = new uint256[](2);
+        decentScores[0] = 7300;
+        decentScores[1] = 7600;
+        uint256[] memory repScores = new uint256[](2);
+        repScores[0] = 8800;
+        repScores[1] = 9000;
+        uint256[] memory compositeScores = new uint256[](2);
+        compositeScores[0] = 8430;
+        compositeScores[1] = 8450;
+
+        bytes32[] memory teeKeys = new bytes32[](2);
+        teeKeys[0] = bytes32(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+        teeKeys[1] = bytes32(0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
+
+        uint256[] memory commissions = new uint256[](2);
+        commissions[0] = 300;
+        commissions[1] = 450;
+
+        bytes32 hash = _computeTestValidatorSetHash(
+            7,
+            addrs,
+            stakes,
+            perfScores,
+            decentScores,
+            repScores,
+            compositeScores,
+            teeKeys,
+            commissions
+        );
+        assertEq(hash, bytes32(0x2140fafd3ee542f61f122e6755ab06d115afc3c35fd66f055b555f644670c08f));
+    }
+
+    function test_canonicalRewardPayload_defaultCrossLanguageVector() public pure {
+        bytes memory payload = abi.encode(
+            uint256(7),
+            uint256(5_000_000_000_000_000_000),
+            bytes32(0x4444444444444444444444444444444444444444444444444444444444444444),
+            uint256(250_000_000_000_000_000),
+            bytes32(0x5554bdbdff9c966a12eda3caf9e366048d25d65065d76133271b4fa141a8e462),
+            bytes32(0x2140fafd3ee542f61f122e6755ab06d115afc3c35fd66f055b555f644670c08f),
+            bytes32(0xed70b32f5b9136d0dc0df5851b2cab3b69c9f6c5be313c2a45e467311e58b9cc),
+            bytes32(0x6f458aa7de95452bfa9532412cfb20a8df4b454527fbb1eab6c051c0e25d163a)
+        );
+        bytes memory expected = hex"0000000000000000000000000000000000000000000000000000000000000007"
+            hex"0000000000000000000000000000000000000000000000004563918244f40000"
+            hex"4444444444444444444444444444444444444444444444444444444444444444"
+            hex"00000000000000000000000000000000000000000000000003782dace9d90000"
+            hex"5554bdbdff9c966a12eda3caf9e366048d25d65065d76133271b4fa141a8e462"
+            hex"2140fafd3ee542f61f122e6755ab06d115afc3c35fd66f055b555f644670c08f"
+            hex"ed70b32f5b9136d0dc0df5851b2cab3b69c9f6c5be313c2a45e467311e58b9cc"
+            hex"6f458aa7de95452bfa9532412cfb20a8df4b454527fbb1eab6c051c0e25d163a";
+
+        assertEq(payload, expected);
+    }
+
     function _computeTestValidatorSetHash(
         uint256 epoch,
         address[] memory addrs,
@@ -4406,5 +4473,4 @@ contract CruzibleTest is Test {
         vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, admin));
         vault.withdrawKeeperBond(bondMinimum);
     }
-
 }

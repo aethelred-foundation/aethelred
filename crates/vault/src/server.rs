@@ -2239,6 +2239,310 @@ async fn attest_delegation_handler(
 mod tests {
     use super::*;
 
+    #[derive(serde::Deserialize)]
+    struct ValidatorHashFixture {
+        input: ValidatorHashFixtureInput,
+        expected: ValidatorHashFixtureExpected,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ValidatorHashFixtureInput {
+        epoch: u64,
+        validators: Vec<ValidatorHashFixtureEntry>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ValidatorHashFixtureEntry {
+        address: String,
+        stake: String,
+        performance_score: u32,
+        decentralization_score: u32,
+        reputation_score: u32,
+        composite_score: u32,
+        tee_public_key: String,
+        commission_bps: u32,
+        rank: u32,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ValidatorHashFixtureExpected {
+        validator_set_hash: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct StakerHashFixture {
+        input: StakerHashFixtureInput,
+        expected: StakerHashFixtureExpected,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct StakerHashFixtureInput {
+        epoch: u64,
+        staker_stakes: Vec<StakerHashFixtureEntry>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct StakerHashFixtureEntry {
+        address: String,
+        shares: String,
+        delegated_to: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct StakerHashFixtureExpected {
+        stake_snapshot_hash: String,
+        staker_registry_root: String,
+        delegation_registry_root: String,
+    }
+
+    fn fixture_validators(entries: Vec<ValidatorHashFixtureEntry>) -> Vec<ScoredValidator> {
+        entries
+            .into_iter()
+            .map(|entry| ScoredValidator {
+                address: entry.address,
+                stake: entry.stake.parse().expect("fixture stake must fit uint128"),
+                performance_score: entry.performance_score,
+                decentralization_score: entry.decentralization_score,
+                reputation_score: entry.reputation_score,
+                composite_score: entry.composite_score,
+                tee_public_key: entry.tee_public_key,
+                commission_bps: entry.commission_bps,
+                rank: entry.rank,
+            })
+            .collect()
+    }
+
+    fn fixture_stakers(entries: Vec<StakerHashFixtureEntry>) -> Vec<StakerStake> {
+        entries
+            .into_iter()
+            .map(|entry| StakerStake {
+                address: entry.address,
+                shares: entry
+                    .shares
+                    .parse()
+                    .expect("fixture shares must fit uint128"),
+                delegated_to: entry.delegated_to,
+            })
+            .collect()
+    }
+
+    /// Canonical default fixture shared by Go, Rust, Solidity, TypeScript,
+    /// and Python. This uses stakes above uint64 to guard the exact uint256
+    /// padding that motivated the native keeper's SDK Int migration.
+    #[test]
+    fn test_validator_set_hash_default_cross_language_vector() {
+        let validators = vec![
+            ScoredValidator {
+                address: "0x1111111111111111111111111111111111111111".to_string(),
+                stake: 32_000_000_000_000_000_000,
+                performance_score: 9100,
+                decentralization_score: 7300,
+                reputation_score: 8800,
+                composite_score: 8430,
+                tee_public_key:
+                    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+                commission_bps: 300,
+                rank: 1,
+            },
+            ScoredValidator {
+                address: "0x2222222222222222222222222222222222222222".to_string(),
+                stake: 64_000_000_000_000_000_000,
+                performance_score: 8600,
+                decentralization_score: 7600,
+                reputation_score: 9000,
+                composite_score: 8450,
+                tee_public_key:
+                    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+                commission_bps: 450,
+                rank: 2,
+            },
+        ];
+
+        let validator_hash = compute_validator_set_hash(7, &validators);
+        assert_eq!(
+            hex::encode(validator_hash),
+            "2140fafd3ee542f61f122e6755ab06d115afc3c35fd66f055b555f644670c08f"
+        );
+
+        let policy_hash = compute_selection_policy_hash(&SelectionConfig::default());
+        assert_eq!(
+            hex::encode(policy_hash),
+            "6f9bf0a4758a80c32322ea56dafd048c1232b59493854f7c993489b686f8814a"
+        );
+
+        let eligible_addresses = vec![
+            "0x2222222222222222222222222222222222222222".to_string(),
+            "0x1111111111111111111111111111111111111111".to_string(),
+            "0x3333333333333333333333333333333333333333".to_string(),
+        ];
+        let universe_hash = compute_eligible_universe_hash(&eligible_addresses);
+        assert_eq!(
+            hex::encode(universe_hash),
+            "943404e37eb0d797c384a8dc956736e0a946cc33d06b324e3f233953365774e7"
+        );
+
+        let mut payload = Vec::with_capacity(96);
+        payload.extend_from_slice(&validator_hash);
+        payload.extend_from_slice(&policy_hash);
+        payload.extend_from_slice(&universe_hash);
+        assert_eq!(
+            hex::encode(payload),
+            concat!(
+                "2140fafd3ee542f61f122e6755ab06d115afc3c35fd66f055b555f644670c08f",
+                "6f9bf0a4758a80c32322ea56dafd048c1232b59493854f7c993489b686f8814a",
+                "943404e37eb0d797c384a8dc956736e0a946cc33d06b324e3f233953365774e7"
+            )
+        );
+
+        let stakers = vec![
+            StakerStake {
+                address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+                shares: 1000,
+                delegated_to: "0x1111111111111111111111111111111111111111".to_string(),
+            },
+            StakerStake {
+                address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+                shares: 3000,
+                delegated_to: "0x2222222222222222222222222222222222222222".to_string(),
+            },
+        ];
+        let snapshot_hash = compute_stake_snapshot_hash(7, &stakers);
+        let registry_root = compute_staker_registry_root(&stakers);
+        let delegation_root = compute_delegation_registry_root(&stakers);
+        assert_eq!(
+            hex::encode(snapshot_hash),
+            "5554bdbdff9c966a12eda3caf9e366048d25d65065d76133271b4fa141a8e462"
+        );
+        assert_eq!(
+            hex::encode(registry_root),
+            "ed70b32f5b9136d0dc0df5851b2cab3b69c9f6c5be313c2a45e467311e58b9cc"
+        );
+        assert_eq!(
+            hex::encode(delegation_root),
+            "6f458aa7de95452bfa9532412cfb20a8df4b454527fbb1eab6c051c0e25d163a"
+        );
+
+        let reward_payload = compute_canonical_reward_payload(
+            7,
+            5_000_000_000_000_000_000,
+            &[0x44; 32],
+            250_000_000_000_000_000,
+            &snapshot_hash,
+            &validator_hash,
+            &registry_root,
+            &delegation_root,
+        );
+        assert_eq!(
+            hex::encode(reward_payload),
+            concat!(
+                "0000000000000000000000000000000000000000000000000000000000000007",
+                "0000000000000000000000000000000000000000000000004563918244f40000",
+                "4444444444444444444444444444444444444444444444444444444444444444",
+                "00000000000000000000000000000000000000000000000003782dace9d90000",
+                "5554bdbdff9c966a12eda3caf9e366048d25d65065d76133271b4fa141a8e462",
+                "2140fafd3ee542f61f122e6755ab06d115afc3c35fd66f055b555f644670c08f",
+                "ed70b32f5b9136d0dc0df5851b2cab3b69c9f6c5be313c2a45e467311e58b9cc",
+                "6f458aa7de95452bfa9532412cfb20a8df4b454527fbb1eab6c051c0e25d163a"
+            )
+        );
+    }
+
+    #[test]
+    fn test_edge_hash_fixtures_cross_language() {
+        let validator_fixtures = [
+            (
+                "single-validator",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/single-validator.json"
+                ),
+            ),
+            (
+                "max-uint64-values",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/max-uint64-values.json"
+                ),
+            ),
+            (
+                "empty-tee-key",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/empty-tee-key.json"
+                ),
+            ),
+            (
+                "special-addresses",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/special-addresses.json"
+                ),
+            ),
+            (
+                "max-validators",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/max-validators.json"
+                ),
+            ),
+        ];
+
+        for (name, json) in validator_fixtures {
+            let fixture: ValidatorHashFixture =
+                serde_json::from_str(json).unwrap_or_else(|error| panic!("{name}: {error}"));
+            let hash = compute_validator_set_hash(
+                fixture.input.epoch,
+                &fixture_validators(fixture.input.validators),
+            );
+            assert_eq!(
+                format!("0x{}", hex::encode(hash)),
+                fixture.expected.validator_set_hash,
+                "{name} validator hash"
+            );
+        }
+
+        let staker_fixtures = [
+            (
+                "zero-stake",
+                include_str!("../../../testdata/cruzible/test-vectors/edge-cases/zero-stake.json"),
+            ),
+            (
+                "max-uint64-values",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/max-uint64-values.json"
+                ),
+            ),
+            (
+                "special-addresses",
+                include_str!(
+                    "../../../testdata/cruzible/test-vectors/edge-cases/special-addresses.json"
+                ),
+            ),
+        ];
+
+        for (name, json) in staker_fixtures {
+            let fixture: StakerHashFixture =
+                serde_json::from_str(json).unwrap_or_else(|error| panic!("{name}: {error}"));
+            let stakers = fixture_stakers(fixture.input.staker_stakes);
+            assert_eq!(
+                format!(
+                    "0x{}",
+                    hex::encode(compute_stake_snapshot_hash(fixture.input.epoch, &stakers))
+                ),
+                fixture.expected.stake_snapshot_hash,
+                "{name} stake snapshot hash"
+            );
+            assert_eq!(
+                format!("0x{}", hex::encode(compute_staker_registry_root(&stakers))),
+                fixture.expected.staker_registry_root,
+                "{name} staker registry root"
+            );
+            assert_eq!(
+                format!(
+                    "0x{}",
+                    hex::encode(compute_delegation_registry_root(&stakers))
+                ),
+                fixture.expected.delegation_registry_root,
+                "{name} delegation registry root"
+            );
+        }
+    }
+
     /// Cross-language test vector for the canonical reward payload.
     ///
     /// The byte output must match Solidity's:
