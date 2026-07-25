@@ -672,7 +672,10 @@ func packProposalTransactions(sealTxs, mempoolTxs [][]byte, maxTxBytes int64) []
 	if maxTxBytes >= 0 {
 		totalLimit = maxTxBytes
 	}
-	proposal := make([][]byte, 0, len(sealTxs)+len(mempoolTxs))
+	// Do not derive the allocation capacity by adding two caller-controlled
+	// lengths. The slices already bound the actual append work, while avoiding
+	// the preallocation removes the integer-overflow/OOM edge entirely.
+	proposal := make([][]byte, 0)
 	totalBytes := int64(0)
 	injectedBytes := int64(0)
 	injectedCount := 0

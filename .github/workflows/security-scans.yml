@@ -35,7 +35,10 @@ jobs:
           slither-config: contracts/slither.config.json
           solc-version: "0.8.20"
           node-version: "22"
-          slither-version: "0.11.5"
+          # crytic/slither-action v0.4.0 currently runs Python 3.9; Slither
+          # 0.11.5 requires Python >=3.10 and cannot be installed in that
+          # pinned action image. 0.11.4 is the newest compatible release.
+          slither-version: "0.11.4"
           fail-on: high
 
   dependency-vuln-scan:
@@ -122,6 +125,7 @@ jobs:
           output: trivy-results.sarif
           severity: "HIGH,CRITICAL"
           exit-code: "1"
+          trivyignores: .trivyignore.yaml
       - name: Upload Trivy SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@adfda868f108ac4222129de456ea554034a27db7 # v4

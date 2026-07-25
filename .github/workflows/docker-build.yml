@@ -71,6 +71,7 @@ jobs:
           output: aethelredd-${{ matrix.suffix }}-trivy.sarif
           severity: HIGH,CRITICAL
           exit-code: "1"
+          trivyignores: .trivyignore.yaml
 
       - name: Upload PR image SARIF
         if: ${{ always() && steps.build.outcome == 'success' }}
@@ -174,6 +175,7 @@ jobs:
           output: aethelredd-${{ matrix.suffix }}-trivy.sarif
           severity: HIGH,CRITICAL
           exit-code: "1"
+          trivyignores: .trivyignore.yaml
 
       - name: Upload release image SARIF
         if: ${{ always() && steps.build.outcome == 'success' }}

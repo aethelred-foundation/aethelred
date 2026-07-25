@@ -11,6 +11,7 @@ import (
 
 	"cosmossdk.io/log"
 
+	cmtcfg "github.com/cometbft/cometbft/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -76,7 +77,12 @@ Learn more at https://aethelred.io`,
 				return err
 			}
 			customAppTemplate, customAppConfig := initAppConfig()
-			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, nil); err != nil {
+			if err := server.InterceptConfigsPreRunHandler(
+				cmd,
+				customAppTemplate,
+				customAppConfig,
+				cmtcfg.DefaultConfig(),
+			); err != nil {
 				return err
 			}
 			return validateAppConfig(cmd)
@@ -100,8 +106,8 @@ func initConfig() {
 
 // AppConfig defines custom app configuration for Aethelred.
 type AppConfig struct {
-	serverconfig.Config
-	TEE TEEConfig `mapstructure:"tee"`
+	serverconfig.Config `mapstructure:",squash"`
+	TEE                 TEEConfig `mapstructure:"tee"`
 }
 
 // TEEConfig defines configuration for the TEE worker integration.
