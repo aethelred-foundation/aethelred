@@ -1,20 +1,18 @@
 name: Security Scans
+
 permissions:
   contents: read
-
 
 on:
   push:
     branches: [main, develop, "release/**"]
   pull_request:
-    branches: [main, develop, "release/**"]
   workflow_dispatch:
 
 env:
-  GO_VERSION: "1.25.8"
+  GO_VERSION: "1.25.12"
   RUST_VERSION: "1.85.0"
   GOFLAGS: "-mod=mod"
-  STRICT_SECURITY_GATES: "false"  # Relaxed until upstream dependency vulnerabilities are resolved
 
 jobs:
   solidity-static-analysis:
@@ -24,43 +22,49 @@ jobs:
       run:
         working-directory: contracts
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
       - name: Install contract dependencies
-        run: npm install --no-fund --no-audit
-      - name: Slither scan
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
-        uses: crytic/slither-action@v0.4.0
+        run: npm ci --no-fund --no-audit
+      - name: Slither high-severity gate
+        uses: crytic/slither-action@f197989dea5b53e986d0f88c60a034ddd77ec9a8 # v0.4.0
         with:
           target: contracts
           slither-config: contracts/slither.config.json
+          solc-version: "0.8.20"
+          node-version: "22"
+          slither-version: "0.11.5"
+          fail-on: high
 
   dependency-vuln-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: Go vulnerability scan
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
+      - name: Go reachable-vulnerability gate
+        shell: bash
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+          python3 -m unittest scripts/tests/test_validate_govulncheck.py
+          report="${RUNNER_TEMP}/govulncheck.json"
+          govulncheck -format=json ./... > "${report}"
+          python3 scripts/validate_govulncheck.py "${report}"
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
       - name: Install cargo-audit
         # cargo-audit 0.22.2 requires rustc 1.88. Keep the scanner compatible
         # with the repository's explicitly supported Rust 1.85 toolchain.
         run: cargo install cargo-audit --version 0.22.1 --locked
-      - name: Rust advisory audit
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
+      - name: Rust advisory gate
         shell: bash
         run: |
           set -euo pipefail
@@ -75,42 +79,41 @@ jobs:
             cargo audit --file "${lockfile}"
           done
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
-      - name: NPM dependency audit (contracts)
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
+      - name: NPM production dependency gate (contracts)
         working-directory: contracts
         run: |
-          npm install --no-fund --no-audit
+          npm ci --no-fund --no-audit
           npm audit --omit=dev --audit-level=high
 
-  sast-and-secrets:
-    name: SAST + Secrets Scan
+  gosec:
+    name: Go Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run pinned gosec gate
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.28.0
+          # G104 is covered by the required errcheck lint gate. Every intentional
+          # fixed-width G115 conversion is documented at the exact conversion.
+          gosec -severity medium -confidence medium -exclude=G104 ./...
+
+  trivy:
+    name: Filesystem Vulnerability Scan
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Run gosec
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
-        uses: securego/gosec@master
-        with:
-          # G104: unchecked errors (handled by errcheck linter in CI)
-          # G115: integer overflow conversions — high false-positive rate on Cosmos SDK
-          #       chains where proto int64 ↔ Go uint64 casts are ubiquitous and safe
-          #       in context (block heights are always positive, byte encoding is intentional)
-          args: -severity medium -confidence medium -exclude=G104,G115 ./...
-
-      - name: Trivy filesystem scan
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0 pinned by SHA
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Trivy high/critical gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: "."
@@ -119,20 +122,43 @@ jobs:
           output: trivy-results.sarif
           severity: "HIGH,CRITICAL"
           exit-code: "1"
-
       - name: Upload Trivy SARIF
         if: always()
-        continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@adfda868f108ac4222129de456ea554034a27db7 # v4
         with:
           sarif_file: trivy-results.sarif
 
-      - name: Gitleaks scan
-        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+  gitleaks:
+    name: Secret History Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install checksum-verified Gitleaks 8.30.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/gitleaks_8.30.1_linux_x64.tar.gz"
+          bindir="${RUNNER_TEMP}/gitleaks-bin"
+          mkdir -p "${bindir}"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            --output "${archive}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz"
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  ${archive}" \
+            | sha256sum --check --strict
+          tar --extract --gzip --file "${archive}" --directory "${bindir}" gitleaks
+          echo "${bindir}" >> "${GITHUB_PATH}"
+      - name: Scan complete fetched Git history
+        shell: bash
+        run: |
+          set -euo pipefail
+          gitleaks git . \
+            --config .gitleaks.toml \
+            --log-opts="--all" \
+            --redact \
+            --no-banner
 
   security-required-gate:
     name: Security Required Gate
@@ -141,11 +167,21 @@ jobs:
     needs:
       - solidity-static-analysis
       - dependency-vuln-scan
-      - sast-and-secrets
+      - gosec
+      - trivy
+      - gitleaks
     steps:
-      - name: Enforce required gate status
+      - name: Enforce every security gate
+        shell: bash
         run: |
+          set -euo pipefail
           echo "solidity-static-analysis=${{ needs.solidity-static-analysis.result }}"
           echo "dependency-vuln-scan=${{ needs.dependency-vuln-scan.result }}"
-          echo "sast-and-secrets=${{ needs.sast-and-secrets.result }}"
-          test "${{ needs.sast-and-secrets.result }}" = "success"
+          echo "gosec=${{ needs.gosec.result }}"
+          echo "trivy=${{ needs.trivy.result }}"
+          echo "gitleaks=${{ needs.gitleaks.result }}"
+          test "${{ needs.solidity-static-analysis.result }}" = "success"
+          test "${{ needs.dependency-vuln-scan.result }}" = "success"
+          test "${{ needs.gosec.result }}" = "success"
+          test "${{ needs.trivy.result }}" = "success"
+          test "${{ needs.gitleaks.result }}" = "success"

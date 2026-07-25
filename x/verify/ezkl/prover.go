@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +21,8 @@ import (
 	"github.com/aethelred/aethelred/x/verify/httputil"
 )
 
+const zkMLAPITokenEnv = "AETHELRED_ZKML_API_TOKEN"
+
 // ProverService provides EZKL zkML proof generation capabilities
 // In production, this would communicate with a dedicated EZKL prover node
 // or execute EZKL directly in a TEE
@@ -26,6 +30,9 @@ type ProverService struct {
 	logger log.Logger
 	config ProverConfig
 	client *http.Client
+	// clientErr is retained because this constructor predates error returns.
+	// Remote operations fail closed if the secure transport cannot be created.
+	clientErr error
 
 	// Circuit cache for faster proving
 	circuitCache *lru.Cache[string, *CachedCircuit]
@@ -53,6 +60,10 @@ func max(a, b int) int {
 type ProverConfig struct {
 	// ProverEndpoint is the URL of the EZKL prover service
 	ProverEndpoint string
+
+	// APIToken authenticates requests to the remote prover service. When empty,
+	// NewProverService falls back to AETHELRED_ZKML_API_TOKEN.
+	APIToken string
 
 	// MaxConcurrentProofs limits parallel proof generation
 	MaxConcurrentProofs int
@@ -128,6 +139,8 @@ type ProofRequest struct {
 	OutputData []byte `json:"output_data"`
 
 	// OutputHash is the SHA-256 hash of the output
+	// and is already the canonical output commitment. Provers MUST place these
+	// exact bytes in PublicInputs.OutputCommitment rather than hashing it again.
 	OutputHash []byte `json:"output_hash"`
 
 	// VerifyingKeyHash identifies the verifying key to use
@@ -200,6 +213,7 @@ type PublicInputs struct {
 	InputCommitment []byte `json:"input_commitment"`
 
 	// OutputCommitment is a commitment to the output
+	// and contains the canonical SHA-256 OutputHash bytes directly.
 	OutputCommitment []byte `json:"output_commitment"`
 
 	// Scale factors used in quantization
@@ -226,34 +240,46 @@ type ModelSchema struct {
 
 // NewProverService creates a new EZKL prover service
 func NewProverService(logger log.Logger, config ProverConfig) *ProverService {
+	config.APIToken = strings.TrimSpace(config.APIToken)
+	if config.APIToken == "" {
+		config.APIToken = strings.TrimSpace(os.Getenv(zkMLAPITokenEnv))
+	}
 	cacheSize := config.CircuitCacheSize
 	if cacheSize <= 0 {
 		cacheSize = 1
+	}
+	maxConcurrentProofs := config.MaxConcurrentProofs
+	if maxConcurrentProofs <= 0 {
+		maxConcurrentProofs = 1
 	}
 	cache, err := lru.New[string, *CachedCircuit](cacheSize)
 	if err != nil {
 		cache, _ = lru.New[string, *CachedCircuit](1)
 	}
 
+	baseClient := httpclient.NewPooledClient(httpclient.PoolConfig{
+		Timeout:             time.Duration(config.ProofTimeoutSeconds) * time.Second,
+		MaxIdleConns:        max(20, maxConcurrentProofs*2),
+		MaxIdleConnsPerHost: max(10, maxConcurrentProofs),
+		MaxConnsPerHost:     max(20, maxConcurrentProofs*2),
+		IdleConnTimeout:     90 * time.Second,
+	})
+	secureClient, secureClientErr := httputil.NewSecureClient(baseClient)
+
 	ps := &ProverService{
 		logger:          logger,
 		config:          config,
 		circuitCache:    cache,
-		proverPool:      make(chan struct{}, config.MaxConcurrentProofs),
+		proverPool:      make(chan struct{}, maxConcurrentProofs),
 		metrics:         &ProverMetrics{mutex: &sync.Mutex{}},
 		proverBreaker:   circuitbreaker.NewDefault("ezkl_prover"),
 		verifierBreaker: circuitbreaker.NewDefault("ezkl_verifier"),
-		client: httpclient.NewPooledClient(httpclient.PoolConfig{
-			Timeout:             time.Duration(config.ProofTimeoutSeconds) * time.Second,
-			MaxIdleConns:        max(20, config.MaxConcurrentProofs*2),
-			MaxIdleConnsPerHost: max(10, config.MaxConcurrentProofs),
-			MaxConnsPerHost:     max(20, config.MaxConcurrentProofs*2),
-			IdleConnTimeout:     90 * time.Second,
-		}),
+		client:          secureClient,
+		clientErr:       secureClientErr,
 	}
 
 	// Initialize prover pool
-	for i := 0; i < config.MaxConcurrentProofs; i++ {
+	for i := 0; i < maxConcurrentProofs; i++ {
 		ps.proverPool <- struct{}{}
 	}
 
@@ -262,6 +288,13 @@ func NewProverService(logger log.Logger, config ProverConfig) *ProverService {
 
 // GenerateProof generates a zkML proof for the given request
 func (ps *ProverService) GenerateProof(ctx context.Context, req *ProofRequest) (*ProofResult, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("proof generation context cannot be nil")
+	}
+	if err := validateProofRequest(req); err != nil {
+		return nil, err
+	}
+
 	startTime := time.Now()
 
 	// Acquire prover slot
@@ -274,7 +307,7 @@ func (ps *ProverService) GenerateProof(ctx context.Context, req *ProofRequest) (
 
 	ps.logger.Info("Starting proof generation",
 		"request_id", req.RequestID,
-		"model_hash", fmt.Sprintf("%x", req.ModelHash[:8]),
+		"model_hash", shortHashHex(req.ModelHash),
 	)
 
 	result := &ProofResult{
@@ -344,6 +377,46 @@ func (ps *ProverService) GenerateProof(ctx context.Context, req *ProofRequest) (
 	return result, nil
 }
 
+func validateProofRequest(req *ProofRequest) error {
+	if req == nil {
+		return fmt.Errorf("proof request cannot be nil")
+	}
+	requiredHashes := []struct {
+		name  string
+		value []byte
+	}{
+		{name: "model hash", value: req.ModelHash},
+		{name: "circuit hash", value: req.CircuitHash},
+		{name: "input hash", value: req.InputHash},
+		{name: "verifying key hash", value: req.VerifyingKeyHash},
+	}
+	for _, hash := range requiredHashes {
+		if len(hash.value) != sha256.Size {
+			return fmt.Errorf("%s must be exactly %d bytes, got %d", hash.name, sha256.Size, len(hash.value))
+		}
+	}
+	// A remote prover may compute an output that was not known before proving.
+	// When supplied, OutputHash remains an exact 32-byte expected commitment;
+	// any other non-zero length is malformed. The simulated prover performs a
+	// second strict check because it cannot authenticate an unknown output.
+	if len(req.OutputHash) != 0 && len(req.OutputHash) != sha256.Size {
+		return fmt.Errorf(
+			"output hash must be empty or exactly %d bytes, got %d",
+			sha256.Size,
+			len(req.OutputHash),
+		)
+	}
+	return nil
+}
+
+func shortHashHex(hash []byte) string {
+	const logPrefixBytes = 8
+	if len(hash) > logPrefixBytes {
+		hash = hash[:logPrefixBytes]
+	}
+	return fmt.Sprintf("%x", hash)
+}
+
 // generateProofInternal handles the actual proof generation
 func (ps *ProverService) generateProofInternal(ctx context.Context, req *ProofRequest, cached *CachedCircuit) ([]byte, *PublicInputs, error) {
 	// In production, call the remote prover if configured.
@@ -365,14 +438,19 @@ func (ps *ProverService) generateProofInternal(ctx context.Context, req *ProofRe
 
 // simulateProofGeneration creates a simulated but valid-looking proof
 func (ps *ProverService) simulateProofGeneration(req *ProofRequest) ([]byte, *PublicInputs, error) {
+	outputHash, err := canonicalOutputHash(req.OutputHash)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Create public inputs
 	publicInputs := &PublicInputs{
 		ModelCommitment:  sha256Hash(req.ModelHash),
 		InputCommitment:  sha256Hash(req.InputHash),
-		OutputCommitment: sha256Hash(req.OutputHash),
+		OutputCommitment: outputHash,
 		Instances: [][]byte{
-			req.InputHash,
-			req.OutputHash,
+			append([]byte(nil), req.InputHash...),
+			append([]byte(nil), outputHash...),
 		},
 	}
 
@@ -387,6 +465,28 @@ func (ps *ProverService) simulateProofGeneration(req *ProofRequest) ([]byte, *Pu
 	}
 
 	return proof, publicInputs, nil
+}
+
+func canonicalOutputHash(outputHash []byte) ([]byte, error) {
+	if len(outputHash) != sha256.Size {
+		return nil, fmt.Errorf(
+			"output hash must be exactly %d bytes, got %d",
+			sha256.Size,
+			len(outputHash),
+		)
+	}
+	return append([]byte(nil), outputHash...), nil
+}
+
+// OutputHashFromPublicInputs returns the canonical output commitment encoded by
+// a proof's public inputs. Callers must cryptographically verify the proof
+// against these exact public inputs before treating the returned value as
+// authenticated.
+func OutputHashFromPublicInputs(publicInputs *PublicInputs) ([]byte, error) {
+	if publicInputs == nil {
+		return nil, fmt.Errorf("public inputs cannot be nil")
+	}
+	return canonicalOutputHash(publicInputs.OutputCommitment)
 }
 
 // SimulatedEZKLProof represents a simulated EZKL proof structure
@@ -649,6 +749,9 @@ func (ps *ProverService) CallRemoteProver(ctx context.Context, req *ProofRequest
 	if ps.proverBreaker != nil && !ps.proverBreaker.Allow() {
 		return nil, fmt.Errorf("zkML prover circuit open")
 	}
+	if ps.clientErr != nil {
+		return nil, fmt.Errorf("secure prover HTTP client unavailable: %w", ps.clientErr)
+	}
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
@@ -674,6 +777,9 @@ func (ps *ProverService) CallRemoteProver(ctx context.Context, req *ProofRequest
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if ps.config.APIToken != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+ps.config.APIToken)
+	}
 
 	resp, err := ps.client.Do(httpReq)
 	if err != nil {
@@ -714,6 +820,9 @@ func (ps *ProverService) CallRemoteVerifier(ctx context.Context, proof []byte, p
 	if ps.verifierBreaker != nil && !ps.verifierBreaker.Allow() {
 		return false, fmt.Errorf("zkML verifier circuit open")
 	}
+	if ps.clientErr != nil {
+		return false, fmt.Errorf("secure verifier HTTP client unavailable: %w", ps.clientErr)
+	}
 
 	payload := struct {
 		Proof        []byte        `json:"proof"`
@@ -749,6 +858,9 @@ func (ps *ProverService) CallRemoteVerifier(ctx context.Context, proof []byte, p
 		return false, fmt.Errorf("failed to create verifier request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if ps.config.APIToken != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+ps.config.APIToken)
+	}
 
 	resp, err := ps.client.Do(httpReq)
 	if err != nil {

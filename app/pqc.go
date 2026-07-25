@@ -25,7 +25,7 @@ func resolvePQCMode(appOpts servertypes.AppOptions) string {
 		))
 	}
 	if mode == "" {
-		mode = "simulated"
+		mode = defaultPQCMode
 	}
 	return mode
 }

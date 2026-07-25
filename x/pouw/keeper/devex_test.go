@@ -94,14 +94,36 @@ func (committeeTestBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) s
 
 type committeeTestStakingKeeper struct {
 	validators []stakingtypes.Validator
+	lastPowers map[string]int64
 }
 
 func (m committeeTestStakingKeeper) GetAllValidators(context.Context) ([]stakingtypes.Validator, error) {
 	return m.validators, nil
 }
 
-func (committeeTestStakingKeeper) GetValidator(context.Context, sdk.ValAddress) (stakingtypes.Validator, error) {
-	return stakingtypes.Validator{}, nil
+func (m committeeTestStakingKeeper) GetValidator(_ context.Context, address sdk.ValAddress) (stakingtypes.Validator, error) {
+	for _, validator := range m.validators {
+		operator, err := sdk.ValAddressFromBech32(validator.GetOperator())
+		if err == nil && operator.Equals(address) {
+			return validator, nil
+		}
+	}
+	return stakingtypes.Validator{}, fmt.Errorf("validator not found")
+}
+
+func (m committeeTestStakingKeeper) GetLastValidatorPower(_ context.Context, address sdk.ValAddress) (int64, error) {
+	if m.lastPowers != nil {
+		power, ok := m.lastPowers[address.String()]
+		if !ok {
+			return 0, fmt.Errorf("validator power not found")
+		}
+		return power, nil
+	}
+	validator, err := m.GetValidator(context.Background(), address)
+	if err != nil {
+		return 0, err
+	}
+	return validator.GetConsensusPower(sdk.DefaultPowerReduction), nil
 }
 
 func makeCommitteeTestValidator(seed string, tokens int64) stakingtypes.Validator {
@@ -122,6 +144,14 @@ func defaultCommitteeValidators() []stakingtypes.Validator {
 }
 
 func newCommitteeTestKeeper(t *testing.T, validators []stakingtypes.Validator) (keeper.Keeper, sdk.Context) {
+	return newCommitteeTestKeeperWithPowerSnapshot(t, validators, nil)
+}
+
+func newCommitteeTestKeeperWithPowerSnapshot(
+	t *testing.T,
+	validators []stakingtypes.Validator,
+	lastPowers map[string]int64,
+) (keeper.Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.ModuleName)
@@ -144,7 +174,7 @@ func newCommitteeTestKeeper(t *testing.T, validators []stakingtypes.Validator) (
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
-		committeeTestStakingKeeper{validators: validators},
+		committeeTestStakingKeeper{validators: validators, lastPowers: lastPowers},
 		committeeTestBankKeeper{},
 		sealkeeper.Keeper{},
 		verifykeeper.Keeper{},

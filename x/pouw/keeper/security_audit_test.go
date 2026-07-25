@@ -116,8 +116,9 @@ func TestThreatModel_RuntimeEnforcementNarratives(t *testing.T) {
 	require.NotNil(t, as16)
 	require.Equal(t, "mitigated", as16.Status)
 	require.NotContains(t, as16.Name, "Not Implemented")
-	require.Contains(t, as16.Mitigation, "BlockMissTracker")
-	require.Contains(t, as16.Mitigation, "IntegratedEvidenceProcessor")
+	require.Contains(t, as16.Mitigation, "x/slashing")
+	require.Contains(t, as16.Mitigation, "VoteInfos")
+	require.Contains(t, as16.Mitigation, "preventing duplicate penalties")
 
 	require.NotNil(t, as17)
 	require.Equal(t, "partial", as17.Status)

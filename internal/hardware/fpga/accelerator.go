@@ -5,6 +5,7 @@ package fpga
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync"
@@ -119,12 +120,12 @@ func DefaultAcceleratorConfig() *AcceleratorConfig {
 
 // KernelInstance represents a loaded FPGA kernel
 type KernelInstance struct {
-	Type        BitstreamType
-	Device      *DeviceInfo
-	LoadedAt    time.Time
-	CallCount   uint64
-	TotalTime   time.Duration
-	Handle      uint64
+	Type      BitstreamType
+	Device    *DeviceInfo
+	LoadedAt  time.Time
+	CallCount uint64
+	TotalTime time.Duration
+	Handle    uint64
 }
 
 // NewFPGAAccelerator creates a new FPGA accelerator
@@ -347,7 +348,7 @@ func (a *FPGAAccelerator) ExecuteNTT(ctx context.Context, coefficients []uint64,
 	// Simulate NTT execution
 	result := make([]byte, len(coefficients)*8)
 	for i, c := range coefficients {
-		result[i*8] = byte(c)
+		binary.LittleEndian.PutUint64(result[i*8:(i+1)*8], c)
 	}
 
 	a.mu.Lock()

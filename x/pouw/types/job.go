@@ -130,6 +130,9 @@ func (j *ComputeJob) Validate() error {
 	if len(j.InputHash) != 32 {
 		return fmt.Errorf("input hash must be 32 bytes (SHA-256)")
 	}
+	if err := ValidateInputDataURI(j.InputDataUri); err != nil {
+		return fmt.Errorf("invalid input data URI: %w", err)
+	}
 	if _, err := sdk.AccAddressFromBech32(j.RequestedBy); err != nil {
 		return fmt.Errorf("invalid requester address: %w", err)
 	}
@@ -215,11 +218,19 @@ func (j *ComputeJob) CanTransitionTo(target JobStatus) bool {
 // TransitionTo attempts a state transition, returning an error if the
 // transition is invalid. This enforces the state machine at the type level.
 func (j *ComputeJob) TransitionTo(target JobStatus) error {
+	return j.TransitionToAt(target, time.Now().UTC())
+}
+
+// TransitionToAt attempts a state transition using consensus-supplied block
+// time. Consensus handlers and ABCI lifecycle callbacks must use this method
+// rather than TransitionTo, which intentionally retains wall-clock behavior
+// for backwards-compatible tooling outside consensus.
+func (j *ComputeJob) TransitionToAt(target JobStatus, blockTime time.Time) error {
 	if !j.CanTransitionTo(target) {
 		return fmt.Errorf("invalid state transition: %s → %s", j.Status, target)
 	}
 	j.Status = target
-	j.UpdatedAt = timestamppb.Now()
+	j.UpdatedAt = timestamppb.New(blockTime.UTC())
 	return nil
 }
 
@@ -229,17 +240,28 @@ func (j *ComputeJob) MarkProcessing() error {
 	return j.TransitionTo(JobStatusProcessing)
 }
 
+// MarkProcessingAt marks the job as processing at consensus block time.
+func (j *ComputeJob) MarkProcessingAt(blockTime time.Time) error {
+	return j.TransitionToAt(JobStatusProcessing, blockTime)
+}
+
 // MarkCompleted marks the job as completed.
 // Returns an error if the transition is invalid.
 func (j *ComputeJob) MarkCompleted(outputHash []byte, sealID string) error {
-	if err := j.TransitionTo(JobStatusCompleted); err != nil {
-		return err
+	return j.MarkCompletedAt(outputHash, sealID, time.Now().UTC())
+}
+
+// MarkCompletedAt marks a job completed using consensus-supplied block time.
+func (j *ComputeJob) MarkCompletedAt(outputHash []byte, sealID string, blockTime time.Time) error {
+	if !j.CanTransitionTo(JobStatusCompleted) {
+		return fmt.Errorf("invalid state transition: %s → %s", j.Status, JobStatusCompleted)
 	}
+	j.Status = JobStatusCompleted
+	now := timestamppb.New(blockTime.UTC())
+	j.UpdatedAt = now
+	j.CompletedAt = now
 	j.OutputHash = outputHash
 	j.SealId = sealID
-	now := timestamppb.Now()
-	j.CompletedAt = now
-	j.UpdatedAt = now
 	return nil
 }
 
@@ -249,16 +271,32 @@ func (j *ComputeJob) MarkFailed() error {
 	return j.TransitionTo(JobStatusFailed)
 }
 
+// MarkFailedAt marks the job as failed at consensus block time.
+func (j *ComputeJob) MarkFailedAt(blockTime time.Time) error {
+	return j.TransitionToAt(JobStatusFailed, blockTime)
+}
+
 // MarkExpired marks the job as expired.
 // Returns an error if the transition is invalid.
 func (j *ComputeJob) MarkExpired() error {
 	return j.TransitionTo(JobStatusExpired)
 }
 
+// MarkExpiredAt marks the job as expired at consensus block time.
+func (j *ComputeJob) MarkExpiredAt(blockTime time.Time) error {
+	return j.TransitionToAt(JobStatusExpired, blockTime)
+}
+
 // RequeueForRetry transitions from Processing back to Pending for retry.
 // Returns an error if the transition is invalid.
 func (j *ComputeJob) RequeueForRetry() error {
 	return j.TransitionTo(JobStatusPending)
+}
+
+// RequeueForRetryAt returns a processing job to pending at consensus block
+// time.
+func (j *ComputeJob) RequeueForRetryAt(blockTime time.Time) error {
+	return j.TransitionToAt(JobStatusPending, blockTime)
 }
 
 // IsExpired checks if the job has expired.
@@ -293,6 +331,26 @@ func NewRegisteredModel(
 	modelID, name, description, version, architecture string,
 	owner string,
 ) *RegisteredModel {
+	return NewRegisteredModelAt(
+		modelHash,
+		modelID,
+		name,
+		description,
+		version,
+		architecture,
+		owner,
+		time.Now().UTC(),
+	)
+}
+
+// NewRegisteredModelAt creates a registered model using consensus-supplied
+// block time.
+func NewRegisteredModelAt(
+	modelHash []byte,
+	modelID, name, description, version, architecture string,
+	owner string,
+	blockTime time.Time,
+) *RegisteredModel {
 	return &RegisteredModel{
 		ModelHash:    modelHash,
 		ModelId:      modelID,
@@ -301,38 +359,46 @@ func NewRegisteredModel(
 		Version:      version,
 		Architecture: architecture,
 		Owner:        owner,
-		RegisteredAt: timestamppb.Now(),
+		RegisteredAt: timestamppb.New(blockTime.UTC()),
 		IsActive:     true,
 	}
 }
 
 // NewValidatorStats creates new validator stats
 func NewValidatorStats(validatorAddr string) *ValidatorStats {
+	return NewValidatorStatsAt(validatorAddr, time.Now().UTC())
+}
+
+// NewValidatorStatsAt creates validator stats using consensus-supplied time.
+func NewValidatorStatsAt(validatorAddr string, blockTime time.Time) *ValidatorStats {
 	return &ValidatorStats{
 		ValidatorAddress:       validatorAddr,
 		TotalJobsProcessed:     0,
 		SuccessfulJobs:         0,
 		FailedJobs:             0,
 		AverageExecutionTimeMs: 0,
-		LastActiveAt:           timestamppb.Now(),
+		LastActiveAt:           timestamppb.New(blockTime.UTC()),
 		TeeCapabilities:        make([]string, 0),
 		ZkmlCapabilities:       make([]string, 0),
-		ReputationScore:        50, // Start at 50%
+		ReputationScore:        50,
 		SlashingEvents:         0,
 	}
 }
 
 // RecordSuccess records a successful verification
 func (vs *ValidatorStats) RecordSuccess(executionTimeMs int64) {
+	vs.RecordSuccessAt(executionTimeMs, time.Now().UTC())
+}
+
+// RecordSuccessAt records a successful verification at consensus block time.
+func (vs *ValidatorStats) RecordSuccessAt(executionTimeMs int64, blockTime time.Time) {
 	vs.TotalJobsProcessed++
 	vs.SuccessfulJobs++
-	vs.LastActiveAt = timestamppb.Now()
+	vs.LastActiveAt = timestamppb.New(blockTime.UTC())
 
-	// Update average execution time
 	total := vs.AverageExecutionTimeMs * (vs.TotalJobsProcessed - 1)
 	vs.AverageExecutionTimeMs = (total + executionTimeMs) / vs.TotalJobsProcessed
 
-	// Increase reputation
 	if vs.ReputationScore < 100 {
 		vs.ReputationScore++
 	}
@@ -340,11 +406,15 @@ func (vs *ValidatorStats) RecordSuccess(executionTimeMs int64) {
 
 // RecordFailure records a failed verification
 func (vs *ValidatorStats) RecordFailure() {
+	vs.RecordFailureAt(time.Now().UTC())
+}
+
+// RecordFailureAt records a failed verification at consensus block time.
+func (vs *ValidatorStats) RecordFailureAt(blockTime time.Time) {
 	vs.TotalJobsProcessed++
 	vs.FailedJobs++
-	vs.LastActiveAt = timestamppb.Now()
+	vs.LastActiveAt = timestamppb.New(blockTime.UTC())
 
-	// Decrease reputation
 	if vs.ReputationScore > 0 {
 		vs.ReputationScore -= 5
 	}

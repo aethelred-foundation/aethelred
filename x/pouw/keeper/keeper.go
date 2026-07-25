@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/aethelred/aethelred/x/pouw/types"
 	sealkeeper "github.com/aethelred/aethelred/x/seal/keeper"
@@ -431,30 +432,62 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 
 	// Add verification results
 	for i := range verificationResults {
-		job.AddVerificationResult(&verificationResults[i])
+		job.AddVerificationResultAt(&verificationResults[i], sdkCtx.BlockTime())
 	}
 
 	// Create Digital Seal
-	seal := sealtypes.NewDigitalSeal(
+	seal := sealtypes.NewDigitalSealForJobAtBlockTime(
+		jobID,
 		job.ModelHash,
 		job.InputHash,
 		outputHash,
 		sdkCtx.BlockHeight(),
 		job.RequestedBy,
 		job.Purpose,
+		sdkCtx.BlockTime(),
 	)
 
-	// Add TEE attestations from verification results
+	// Preserve the exact TEE and zkML evidence that reached consensus.
+	seenSealValidators := make(map[string]struct{}, len(verificationResults))
 	for _, result := range verificationResults {
-		if result.Success && result.AttestationType == "tee" {
+		if !result.Success {
+			continue
+		}
+		evidence, err := decodeVerificationEvidence(result.AttestationData)
+		if err != nil {
+			return fmt.Errorf("invalid consensus evidence for validator %s: %w", result.ValidatorAddress, err)
+		}
+		if evidence.TEEAttestation != nil {
+			tee := evidence.TEEAttestation
 			attestation := &sealtypes.TEEAttestation{
 				ValidatorAddress: result.ValidatorAddress,
-				Platform:         result.TeePlatform,
-				Quote:            result.AttestationData,
-				Timestamp:        result.Timestamp,
+				Platform:         tee.Platform,
+				EnclaveId:        tee.EnclaveID,
+				Measurement:      tee.Measurement,
+				Quote:            tee.Quote,
+				Signature:        tee.Signature,
+				Timestamp:        timestamppb.New(tee.Timestamp),
 			}
 			seal.AddAttestation(attestation)
+			seenSealValidators[result.ValidatorAddress] = struct{}{}
 		}
+		if evidence.ZKProof != nil && seal.ZkProof == nil {
+			proof := evidence.ZKProof
+			seal.SetZKProof(&sealtypes.ZKMLProof{
+				ProofSystem:      proof.ProofSystem,
+				ProofBytes:       proof.Proof,
+				PublicInputs:     proof.PublicInputs,
+				VerifyingKeyHash: proof.VerifyingKeyHash,
+				CircuitHash:      proof.CircuitHash,
+			})
+		}
+		if _, exists := seenSealValidators[result.ValidatorAddress]; !exists {
+			seal.ValidatorSet = append(seal.ValidatorSet, result.ValidatorAddress)
+			seenSealValidators[result.ValidatorAddress] = struct{}{}
+		}
+	}
+	if !seal.IsVerified() {
+		return fmt.Errorf("cannot activate seal without TEE or zkML evidence")
 	}
 
 	// Activate the seal
@@ -466,7 +499,7 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 	}
 
 	// Mark job as completed (state machine enforces valid transition)
-	if err := job.MarkCompleted(outputHash, seal.Id); err != nil {
+	if err := job.MarkCompletedAt(outputHash, seal.Id, sdkCtx.BlockTime()); err != nil {
 		return fmt.Errorf("invalid job state transition: %w", err)
 	}
 
@@ -496,10 +529,10 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 
 		stats, _ := k.GetValidatorStats(ctx, result.ValidatorAddress)
 		if stats == nil {
-			stats = types.NewValidatorStats(result.ValidatorAddress)
+			stats = types.NewValidatorStatsAt(result.ValidatorAddress, sdkCtx.BlockTime())
 		}
 		if result.Success {
-			stats.RecordSuccess(result.ExecutionTimeMs)
+			stats.RecordSuccessAt(result.ExecutionTimeMs, sdkCtx.BlockTime())
 			successfulValidators++
 
 			// Distribute verification reward from the pouw module account
@@ -532,7 +565,7 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 				)
 			}
 		} else {
-			stats.RecordFailure()
+			stats.RecordFailureAt(sdkCtx.BlockTime())
 
 			// Apply slashing penalty for incorrect verification.
 			// First attempt to slash locked bonded stake via staking keeper.
@@ -745,11 +778,13 @@ func (k Keeper) GetValidatorCapability(ctx context.Context, validatorAddr string
 // GetAllValidatorCapabilities returns all registered validator capabilities.
 func (k Keeper) GetAllValidatorCapabilities(ctx context.Context) ([]*types.ValidatorCapability, error) {
 	var caps []*types.ValidatorCapability
-	_ = k.ValidatorCapabilities.Walk(ctx, nil, func(id string, cap types.ValidatorCapability) (bool, error) {
+	if err := k.ValidatorCapabilities.Walk(ctx, nil, func(id string, cap types.ValidatorCapability) (bool, error) {
 		capCopy := cap
 		caps = append(caps, &capCopy)
 		return false, nil
-	})
+	}); err != nil {
+		return nil, fmt.Errorf("walk validator capabilities: %w", err)
+	}
 	return caps, nil
 }
 

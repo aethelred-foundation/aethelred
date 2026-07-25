@@ -7,15 +7,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
 	"time"
 
 	"cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/aethelred/aethelred/crypto/bls"
 	"github.com/aethelred/aethelred/x/pouw/types"
+	verifytee "github.com/aethelred/aethelred/x/verify/tee"
 )
 
 // ConsensusHandler handles the Proof-of-Useful-Work consensus logic
@@ -43,6 +47,8 @@ type ConsensusHandler struct {
 	consensusThreshold int // Percentage required for consensus (e.g., 67 for 2/3)
 	maxJobsPerBlock    int
 }
+
+const compactValidatorSignatureVersion = 1
 
 // Scheduler returns the job scheduler used by the consensus handler.
 // It enables graceful shutdown coordination from the app layer.
@@ -143,8 +149,11 @@ func requiredThresholdCount[T ~int | ~int64](total T, threshold int) T {
 	if threshold >= 100 {
 		return total
 	}
-	numerator := total*T(threshold) + 99
-	required := numerator / 100
+	// Split the multiplication so total*threshold cannot overflow near the
+	// CometBFT voting-power limit.
+	whole := (total / 100) * T(threshold)
+	remainder := total % 100
+	required := whole + (remainder*T(threshold)+99)/100
 	if required > total {
 		return total
 	}
@@ -169,6 +178,7 @@ func (ch *ConsensusHandler) GetEvidenceCollector() *EvidenceCollector {
 type VoteExtensionWire struct {
 	Version          int32              `json:"version"`
 	Height           int64              `json:"height"`
+	ChainID          string             `json:"chain_id"`
 	ValidatorAddress json.RawMessage    `json:"validator_address"`
 	Verifications    []VerificationWire `json:"verifications"`
 	Timestamp        time.Time          `json:"timestamp"`
@@ -184,18 +194,22 @@ type VoteExtensionWire struct {
 // VerificationWire is the wire format for a single verification result.
 // Mirrors ComputeVerification from app/vote_extension.go.
 type VerificationWire struct {
-	JobID           string          `json:"job_id"`
-	ModelHash       []byte          `json:"model_hash"`
-	InputHash       []byte          `json:"input_hash"`
-	OutputHash      []byte          `json:"output_hash"`
-	AttestationType string          `json:"attestation_type"`
-	TEEAttestation  json.RawMessage `json:"tee_attestation,omitempty"`
-	ZKProof         json.RawMessage `json:"zk_proof,omitempty"`
-	ExecutionTimeMs int64           `json:"execution_time_ms"`
-	Success         bool            `json:"success"`
-	ErrorCode       string          `json:"error_code,omitempty"`
-	ErrorMessage    string          `json:"error_message,omitempty"`
-	Nonce           []byte          `json:"nonce"`
+	JobID                     string          `json:"job_id"`
+	ModelHash                 []byte          `json:"model_hash"`
+	InputHash                 []byte          `json:"input_hash"`
+	OutputHash                []byte          `json:"output_hash"`
+	AttestationType           string          `json:"attestation_type"`
+	TEEAttestation            json.RawMessage `json:"tee_attestation,omitempty"`
+	ZKProof                   json.RawMessage `json:"zk_proof,omitempty"`
+	ExecutionTimeMs           int64           `json:"execution_time_ms"`
+	Success                   bool            `json:"success"`
+	ErrorCode                 string          `json:"error_code,omitempty"`
+	ErrorMessage              string          `json:"error_message,omitempty"`
+	Nonce                     []byte          `json:"nonce"`
+	ValidatorSignatureVersion int32           `json:"validator_signature_version,omitempty"`
+	VoteBlockHash             []byte          `json:"vote_block_hash,omitempty"`
+	ExtensionNonce            []byte          `json:"extension_nonce,omitempty"`
+	ValidatorSignature        []byte          `json:"validator_signature,omitempty"`
 }
 
 // AggregatedResult represents consensus results for a job.
@@ -221,18 +235,23 @@ type AggregatedResult struct {
 
 // ValidatorResult represents a single validator's result
 type ValidatorResult struct {
-	ValidatorAddress string
-	OutputHash       []byte
-	AttestationType  string
-	TEEPlatform      string
-	AttestationQuote []byte
-	ZKProof          []byte
-	ExecutionTimeMs  int64
-	Timestamp        time.Time
+	ValidatorAddress          string              `json:"validator_address"`
+	ValidatorConsensusAddress []byte              `json:"validator_consensus_address"`
+	OutputHash                []byte              `json:"output_hash"`
+	AttestationType           string              `json:"attestation_type"`
+	TEEAttestation            *TEEAttestationWire `json:"tee_attestation,omitempty"`
+	ZKProof                   *ZKProofWire        `json:"zk_proof,omitempty"`
+	Nonce                     []byte              `json:"nonce"`
+	ExecutionTimeMs           int64               `json:"execution_time_ms"`
+	Timestamp                 time.Time           `json:"timestamp"`
+	ValidatorSignatureVersion int32               `json:"validator_signature_version"`
+	VoteBlockHash             []byte              `json:"vote_block_hash"`
+	ExtensionNonce            []byte              `json:"extension_nonce"`
+	ValidatorSignature        []byte              `json:"validator_signature"`
 
 	// BLS signature components for aggregation
-	BLSSignature []byte `json:"bls_signature,omitempty"`
-	BLSPubKey    []byte `json:"bls_pub_key,omitempty"`
+	BLSSignature []byte `json:"-"`
+	BLSPubKey    []byte `json:"-"`
 }
 
 // PrepareVoteExtension creates verification data for the current validator.
@@ -434,6 +453,9 @@ func (ch *ConsensusHandler) VerifyVoteExtension(ctx sdk.Context, extensionBytes 
 	if extension.Height != ctx.BlockHeight() {
 		return fmt.Errorf("vote extension height mismatch: expected %d, got %d", ctx.BlockHeight(), extension.Height)
 	}
+	if extension.ChainID == "" || extension.ChainID != ctx.ChainID() {
+		return fmt.Errorf("vote extension chain ID mismatch: expected %q, got %q", ctx.ChainID(), extension.ChainID)
+	}
 
 	// SECURITY FIX (P1): Use deterministic block time instead of time.Now()
 	// This ensures all validators make the same acceptance decision.
@@ -458,10 +480,31 @@ func (ch *ConsensusHandler) VerifyVoteExtension(ctx sdk.Context, extensionBytes 
 		return fmt.Errorf("SECURITY: missing extension hash in production mode")
 	}
 
+	seenJobs := make(map[string]struct{}, len(extension.Verifications))
+
 	// Validate each verification
 	for i, v := range extension.Verifications {
+		if _, duplicate := seenJobs[v.JobID]; duplicate {
+			return fmt.Errorf("duplicate job ID %q in vote extension", v.JobID)
+		}
+		seenJobs[v.JobID] = struct{}{}
+
 		if err := ch.validateVerificationWireWithCtx(&ctx, &v); err != nil {
 			return fmt.Errorf("invalid verification at index %d: %w", i, err)
+		}
+		teeEvidence, _, err := ch.parseVerificationEvidence(&v)
+		if err != nil {
+			return fmt.Errorf("invalid verification evidence at index %d: %w", i, err)
+		}
+		if teeEvidence != nil {
+			if err := validateTEEAttestationDomain(
+				teeEvidence,
+				v.OutputHash,
+				extension.Height,
+				extension.ChainID,
+			); err != nil {
+				return fmt.Errorf("verification %d TEE domain rejected: %w", i, err)
+			}
 		}
 
 		// Production: reject simulated TEE at the keeper level too
@@ -478,9 +521,15 @@ func (ch *ConsensusHandler) VerifyVoteExtension(ctx sdk.Context, extensionBytes 
 
 		// Verify the job exists on-chain (prevent phantom job votes)
 		if v.Success && ch.keeper != nil {
-			_, err := ch.keeper.GetJob(ctx, v.JobID)
+			job, err := ch.keeper.GetJob(ctx, v.JobID)
 			if err != nil {
 				return fmt.Errorf("verification %d references unknown job %s", i, v.JobID)
+			}
+			if !bytes.Equal(v.ModelHash, job.ModelHash) {
+				return fmt.Errorf("verification %d model hash does not match job %s", i, v.JobID)
+			}
+			if !bytes.Equal(v.InputHash, job.InputHash) {
+				return fmt.Errorf("verification %d input hash does not match job %s", i, v.JobID)
 			}
 		}
 	}
@@ -490,13 +539,17 @@ func (ch *ConsensusHandler) VerifyVoteExtension(ctx sdk.Context, extensionBytes 
 
 // TEEAttestationWire is the wire format for TEE attestation data inside a verification.
 type TEEAttestationWire struct {
-	Platform    string    `json:"platform"`
-	EnclaveID   string    `json:"enclave_id"`
-	Measurement []byte    `json:"measurement"`
-	Quote       []byte    `json:"quote"`
-	UserData    []byte    `json:"user_data"`
-	Timestamp   time.Time `json:"timestamp"`
-	Nonce       []byte    `json:"nonce"`
+	Platform         string    `json:"platform"`
+	EnclaveID        string    `json:"enclave_id"`
+	Measurement      []byte    `json:"measurement"`
+	Quote            []byte    `json:"quote"`
+	UserData         []byte    `json:"user_data"`
+	CertificateChain [][]byte  `json:"certificate_chain,omitempty"`
+	Timestamp        time.Time `json:"timestamp"`
+	Nonce            []byte    `json:"nonce"`
+	Signature        []byte    `json:"signature,omitempty"`
+	BlockHeight      int64     `json:"block_height,omitempty"`
+	ChainID          string    `json:"chain_id,omitempty"`
 }
 
 // ZKProofWire is the wire format for ZK proof data inside a verification.
@@ -534,6 +587,9 @@ func (ch *ConsensusHandler) validateVerificationWireWithCtx(ctxPtr *sdk.Context,
 		// Model hash and input hash must be present for successful verifications
 		if len(v.ModelHash) != 32 {
 			return fmt.Errorf("successful verification must have 32-byte model hash")
+		}
+		if len(v.InputHash) != 32 {
+			return fmt.Errorf("successful verification must have 32-byte input hash")
 		}
 
 		// Nonce is required for replay protection
@@ -657,9 +713,20 @@ func (ch *ConsensusHandler) validateTEEAttestationWireWithCtx(ctxPtr *sdk.Contex
 		return fmt.Errorf("TEE attestation missing user data binding")
 	}
 
-	// Cross-check: user data must contain the output hash
-	if !bytes.Equal(attestation.UserData, v.OutputHash) {
-		return fmt.Errorf("TEE attestation user data does not match output hash")
+	if attestation.BlockHeight > 0 || attestation.ChainID != "" {
+		if attestation.BlockHeight <= 0 || attestation.ChainID == "" {
+			return fmt.Errorf("TEE attestation domain binding is incomplete")
+		}
+		expected := verifytee.ComputeAttestationUserData(
+			v.OutputHash,
+			attestation.BlockHeight,
+			attestation.ChainID,
+		)
+		if !bytes.Equal(attestation.UserData, expected) {
+			return fmt.Errorf("TEE attestation domain-bound user data does not match output hash")
+		}
+	} else if !bytes.Equal(attestation.UserData, v.OutputHash) {
+		return fmt.Errorf("legacy TEE attestation user data does not match output hash")
 	}
 
 	// Nonce must be present for freshness
@@ -667,29 +734,49 @@ func (ch *ConsensusHandler) validateTEEAttestationWireWithCtx(ctxPtr *sdk.Contex
 		return fmt.Errorf("TEE attestation missing nonce")
 	}
 
-	// Timestamp freshness.
-	// Consensus paths must be deterministic and anchored to block time.
+	// The quote timestamp must be present. Freshness is not compared to the
+	// current proposal time here: this validator result belongs to the prior
+	// vote height, and a long inter-block gap must not make an authenticated
+	// quorum certificate unprocessable. Height/chain/output bindings prevent
+	// replay; platform-specific quote-age policy belongs at attestation
+	// verification time.
 	if attestation.Timestamp.IsZero() {
 		return fmt.Errorf("TEE attestation missing timestamp")
 	}
-	const maxAttestationAge = 10 * time.Minute
-	const maxFutureSkew = 1 * time.Minute
 
-	if ctxPtr != nil {
-		blockTime := ctxPtr.BlockTime()
-		if blockTime.IsZero() {
-			return fmt.Errorf("missing block time for deterministic attestation freshness check")
-		}
-		if attestation.Timestamp.After(blockTime.Add(maxFutureSkew)) {
-			return fmt.Errorf("TEE attestation timestamp is too far in the future")
-		}
-		if attestation.Timestamp.Before(blockTime.Add(-maxAttestationAge)) {
-			return fmt.Errorf("TEE attestation is stale (>10 minutes old by block time)")
-		}
+	return nil
+}
+
+func validateTEEAttestationDomain(
+	attestation *TEEAttestationWire,
+	outputHash []byte,
+	expectedHeight int64,
+	expectedChainID string,
+) error {
+	if attestation == nil {
+		return nil
 	}
-	// else: No block context: skip freshness enforcement to avoid non-deterministic
-	// wall-clock checks in shared validation paths.
-
+	if expectedHeight <= 0 || expectedChainID == "" {
+		return fmt.Errorf("missing expected TEE consensus domain")
+	}
+	if attestation.BlockHeight != expectedHeight {
+		return fmt.Errorf(
+			"TEE block height mismatch: got %d, expected %d",
+			attestation.BlockHeight,
+			expectedHeight,
+		)
+	}
+	if attestation.ChainID != expectedChainID {
+		return fmt.Errorf(
+			"TEE chain ID mismatch: got %q, expected %q",
+			attestation.ChainID,
+			expectedChainID,
+		)
+	}
+	expected := verifytee.ComputeAttestationUserData(outputHash, expectedHeight, expectedChainID)
+	if !bytes.Equal(attestation.UserData, expected) {
+		return fmt.Errorf("TEE user data does not match the expected consensus domain")
+	}
 	return nil
 }
 
@@ -730,6 +817,81 @@ func (ch *ConsensusHandler) validateZKProofWire(v *VerificationWire) error {
 	return nil
 }
 
+func (ch *ConsensusHandler) resolveValidatorIdentity(
+	ctx sdk.Context,
+	vote abci.ExtendedVoteInfo,
+	extension *VoteExtensionWire,
+) (string, []byte, error) {
+	if extension == nil {
+		return "", nil, fmt.Errorf("vote extension is nil")
+	}
+
+	var extensionAddr []byte
+	if err := json.Unmarshal(extension.ValidatorAddress, &extensionAddr); err != nil || len(extensionAddr) == 0 {
+		// Legacy unit-test fixtures used a plain string without a consensus
+		// address. Never permit that representation for a real commit vote.
+		if len(vote.Validator.Address) > 0 {
+			return "", nil, fmt.Errorf("invalid consensus address in vote extension")
+		}
+		var legacyAddr string
+		if legacyErr := json.Unmarshal(extension.ValidatorAddress, &legacyAddr); legacyErr != nil || legacyAddr == "" {
+			return "", nil, fmt.Errorf("invalid validator address in vote extension")
+		}
+		return legacyAddr, nil, nil
+	}
+
+	if len(vote.Validator.Address) == 0 {
+		return sdk.ConsAddress(extensionAddr).String(), extensionAddr, nil
+	}
+	if !bytes.Equal(extensionAddr, vote.Validator.Address) {
+		return "", nil, fmt.Errorf("vote extension validator address does not match commit validator")
+	}
+
+	// Persist the account address used by scheduler assignments and economics,
+	// while retaining the consensus address separately for quorum identity.
+	if ch.keeper != nil && ch.keeper.stakingKeeper != nil {
+		stakingKeeper, ok := ch.keeper.stakingKeeper.(StakingKeeperFull)
+		if !ok {
+			return "", nil, fmt.Errorf("staking keeper cannot resolve consensus validators")
+		}
+		validator, err := stakingKeeper.GetValidatorByConsAddr(ctx, sdk.ConsAddress(extensionAddr))
+		if err != nil {
+			return "", nil, fmt.Errorf("consensus validator is not present in staking state: %w", err)
+		}
+		operatorAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
+		if err != nil {
+			return "", nil, fmt.Errorf("decode validator operator address: %w", err)
+		}
+		return sdk.AccAddress(operatorAddr).String(), extensionAddr, nil
+	}
+
+	return sdk.ConsAddress(extensionAddr).String(), extensionAddr, nil
+}
+
+func (ch *ConsensusHandler) parseVerificationEvidence(
+	v *VerificationWire,
+) (*TEEAttestationWire, *ZKProofWire, error) {
+	var teeEvidence *TEEAttestationWire
+	var zkEvidence *ZKProofWire
+
+	if v.AttestationType == "tee" || v.AttestationType == "hybrid" {
+		var tee TEEAttestationWire
+		if err := json.Unmarshal(v.TEEAttestation, &tee); err != nil {
+			return nil, nil, fmt.Errorf("decode TEE evidence: %w", err)
+		}
+		teeEvidence = &tee
+	}
+	if v.AttestationType == "zkml" || v.AttestationType == "hybrid" {
+		var proof ZKProofWire
+		if err := json.Unmarshal(v.ZKProof, &proof); err != nil {
+			return nil, nil, fmt.Errorf("decode zkML evidence: %w", err)
+		}
+		zkEvidence = &proof
+	}
+
+	return teeEvidence, zkEvidence, nil
+}
+
 // AggregateVoteExtensions combines vote extensions from all validators
 // and determines consensus on computation results
 func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abci.ExtendedVoteInfo) map[string]*AggregatedResult {
@@ -740,7 +902,24 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 
 	totalVotes := len(votes)
 	totalPower := int64(0)
+	seenCommitValidators := make(map[string]struct{}, len(votes))
 	for _, vote := range votes {
+		if vote.Validator.Power < 0 {
+			ch.logger.Error("SECURITY: negative validator voting power in extended commit")
+			return aggregated
+		}
+		if len(vote.Validator.Address) > 0 {
+			key := hex.EncodeToString(vote.Validator.Address)
+			if _, duplicate := seenCommitValidators[key]; duplicate {
+				ch.logger.Error("SECURITY: duplicate validator in extended commit", "validator", key)
+				return aggregated
+			}
+			seenCommitValidators[key] = struct{}{}
+		}
+		if totalPower > math.MaxInt64-vote.Validator.Power {
+			ch.logger.Error("SECURITY: total voting power overflow")
+			return aggregated
+		}
 		totalPower += vote.Validator.Power
 	}
 
@@ -774,6 +953,9 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 	requiredPower := requiredThresholdCount(totalPower, consensusThreshold)
 
 	for _, vote := range votes {
+		if vote.BlockIdFlag != cmtproto.BlockIDFlagCommit {
+			continue
+		}
 		if len(vote.VoteExtension) == 0 {
 			continue
 		}
@@ -788,6 +970,18 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 		if err := json.Unmarshal(vote.VoteExtension, &extension); err != nil {
 			ch.logger.Warn("Failed to unmarshal vote extension", "error", err)
 			continue
+		}
+		if ch.keeper != nil {
+			expectedHeight := ctx.BlockHeight() - 1
+			if extension.Height != expectedHeight || extension.ChainID != ctx.ChainID() {
+				ch.logger.Warn("Skipping vote extension from the wrong consensus domain",
+					"extension_height", extension.Height,
+					"expected_height", expectedHeight,
+					"extension_chain_id", extension.ChainID,
+					"expected_chain_id", ctx.ChainID(),
+				)
+				continue
+			}
 		}
 
 		// ── Mandatory Signing Enforcement ──
@@ -804,65 +998,105 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 			}
 		}
 
-		// Extract validator address once per vote extension.
-		var validatorAddr string
-		if err := json.Unmarshal(extension.ValidatorAddress, &validatorAddr); err != nil || validatorAddr == "" {
-			ch.logger.Warn("Invalid validator address in vote extension",
-				"error", err,
-			)
+		validatorAddr, validatorConsAddr, err := ch.resolveValidatorIdentity(ctx, vote, &extension)
+		if err != nil {
+			ch.logger.Warn("Invalid validator identity in vote extension", "error", err)
 			continue
 		}
 
-		// SECURITY FIX (P2): Cross-check extension address against consensus validator identity.
-		// A malicious validator could submit a mismatched address to mis-attribute votes.
-		// We use the consensus validator address (from vote.Validator.Address) as the authoritative source.
-		if len(vote.Validator.Address) > 0 {
-			var extensionAddrBytes []byte
-			if err := json.Unmarshal(extension.ValidatorAddress, &extensionAddrBytes); err != nil || len(extensionAddrBytes) == 0 {
-				ch.logger.Warn("Failed to decode validator address bytes in vote extension",
-					"error", err,
-				)
-				continue
-			}
-			if !bytes.Equal(extensionAddrBytes, vote.Validator.Address) {
-				ch.logger.Warn("Vote extension validator address mismatch",
-					"extension_addr", validatorAddr,
-				)
-				continue
-			}
-		}
-
-		// Process each verification
+		// Process each verification. Each successful result carries its own
+		// compact validator signature; the ABCI verifier authenticates it before
+		// this pure aggregation step.
+		seenJobs := make(map[string]struct{}, len(extension.Verifications))
 		for _, v := range extension.Verifications {
+			if _, duplicate := seenJobs[v.JobID]; duplicate {
+				ch.logger.Warn("Skipping duplicate job in validator vote extension",
+					"job_id", v.JobID,
+					"validator", validatorAddr,
+				)
+				continue
+			}
+			seenJobs[v.JobID] = struct{}{}
+
 			if !v.Success {
 				continue
 			}
 
-			if ch.keeper != nil && len(v.TEEAttestation) > 0 && (v.AttestationType == "tee" || v.AttestationType == "hybrid") {
-				var attestation TEEAttestationWire
-				if err := json.Unmarshal(v.TEEAttestation, &attestation); err != nil {
-					ch.logger.Warn("Skipping verification due to malformed TEE attestation payload",
+			var canonicalModelHash = v.ModelHash
+			var canonicalInputHash = v.InputHash
+			if ch.keeper != nil {
+				if err := ch.validateVerificationWireWithCtx(&ctx, &v); err != nil {
+					ch.logger.Warn("Skipping invalid consensus verification",
 						"job_id", v.JobID,
 						"validator", validatorAddr,
 						"error", err,
 					)
 					continue
 				}
+				job, err := ch.keeper.GetJob(ctx, v.JobID)
+				if err != nil ||
+					!bytes.Equal(job.ModelHash, v.ModelHash) ||
+					!bytes.Equal(job.InputHash, v.InputHash) {
+					ch.logger.Warn("Skipping verification not bound to canonical job",
+						"job_id", v.JobID,
+						"validator", validatorAddr,
+						"error", err,
+					)
+					continue
+				}
+				assigned, assignErr := IsValidatorAssigned(job, validatorAddr)
+				if assignErr != nil || !assigned {
+					ch.logger.Warn(
+						"Skipping verification from unassigned validator",
+						"job_id", v.JobID,
+						"validator", validatorAddr,
+						"error", assignErr,
+					)
+					continue
+				}
+				canonicalModelHash = job.ModelHash
+				canonicalInputHash = job.InputHash
+			}
 
-				if attestation.Platform == "aws-nitro" || attestation.Platform == "intel-sgx" {
+			teeEvidence, zkEvidence, evidenceErr := ch.parseVerificationEvidence(&v)
+			if evidenceErr != nil && ch.keeper != nil {
+				ch.logger.Warn("Skipping verification with malformed evidence",
+					"job_id", v.JobID,
+					"validator", validatorAddr,
+					"error", evidenceErr,
+				)
+				continue
+			}
+			if ch.keeper != nil && teeEvidence != nil {
+				if err := validateTEEAttestationDomain(
+					teeEvidence,
+					v.OutputHash,
+					extension.Height,
+					extension.ChainID,
+				); err != nil {
+					ch.logger.Warn("Skipping TEE evidence from the wrong consensus domain",
+						"job_id", v.JobID,
+						"validator", validatorAddr,
+						"error", err,
+					)
+					continue
+				}
+			}
+
+			if ch.keeper != nil && teeEvidence != nil {
+				if teeEvidence.Platform == "aws-nitro" || teeEvidence.Platform == "intel-sgx" {
 					if err := ch.keeper.ValidateTEEAttestationMeasurement(
 						ctx,
 						validatorAddr,
-						attestation.Platform,
-						attestation.Measurement,
+						teeEvidence.Platform,
+						teeEvidence.Measurement,
 					); err != nil {
 						ch.logger.Warn("Rejected verification due to untrusted TEE measurement",
 							"job_id", v.JobID,
 							"validator", validatorAddr,
-							"platform", attestation.Platform,
+							"platform", teeEvidence.Platform,
 							"error", err,
 						)
-						ch.keeper.slashUntrustedAttestationValidator(ctx, validatorAddr, v.JobID, err.Error())
 						continue
 					}
 				}
@@ -880,13 +1114,21 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 
 			// Create validator result, including BLS signature if present
 			valResult := ValidatorResult{
-				ValidatorAddress: validatorAddr,
-				OutputHash:       v.OutputHash,
-				AttestationType:  v.AttestationType,
-				ExecutionTimeMs:  v.ExecutionTimeMs,
-				Timestamp:        extension.Timestamp,
-				BLSSignature:     extension.BLSSignature,
-				BLSPubKey:        extension.BLSPubKey,
+				ValidatorAddress:          validatorAddr,
+				ValidatorConsensusAddress: validatorConsAddr,
+				OutputHash:                append([]byte(nil), v.OutputHash...),
+				AttestationType:           v.AttestationType,
+				TEEAttestation:            teeEvidence,
+				ZKProof:                   zkEvidence,
+				Nonce:                     append([]byte(nil), v.Nonce...),
+				ExecutionTimeMs:           v.ExecutionTimeMs,
+				Timestamp:                 extension.Timestamp,
+				ValidatorSignatureVersion: v.ValidatorSignatureVersion,
+				VoteBlockHash:             append([]byte(nil), v.VoteBlockHash...),
+				ExtensionNonce:            append([]byte(nil), v.ExtensionNonce...),
+				ValidatorSignature:        append([]byte(nil), v.ValidatorSignature...),
+				BLSSignature:              append([]byte(nil), extension.BLSSignature...),
+				BLSPubKey:                 append([]byte(nil), extension.BLSPubKey...),
 			}
 
 			outputVotes[v.JobID][outputHashHex] = append(outputVotes[v.JobID][outputHashHex], valResult)
@@ -896,8 +1138,8 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 			if aggregated[v.JobID] == nil {
 				aggregated[v.JobID] = &AggregatedResult{
 					JobID:            v.JobID,
-					ModelHash:        v.ModelHash,
-					InputHash:        v.InputHash,
+					ModelHash:        append([]byte(nil), canonicalModelHash...),
+					InputHash:        append([]byte(nil), canonicalInputHash...),
 					TotalVotes:       totalVotes,
 					TotalPower:       totalPower,
 					ValidatorResults: make([]ValidatorResult, 0),
@@ -908,10 +1150,22 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 
 	// Determine consensus for each job
 	hasConsensus := false
-	for jobID, outputs := range outputVotes {
+	jobIDs := make([]string, 0, len(outputVotes))
+	for jobID := range outputVotes {
+		jobIDs = append(jobIDs, jobID)
+	}
+	sort.Strings(jobIDs)
+	for _, jobID := range jobIDs {
+		outputs := outputVotes[jobID]
 		agg := aggregated[jobID]
 
-		for outputHashHex, results := range outputs {
+		outputHashes := make([]string, 0, len(outputs))
+		for outputHashHex := range outputs {
+			outputHashes = append(outputHashes, outputHashHex)
+		}
+		sort.Strings(outputHashes)
+		for _, outputHashHex := range outputHashes {
+			results := outputs[outputHashHex]
 			agreementPower := outputPower[jobID][outputHashHex]
 			if agreementPower >= requiredPower {
 				outputHash, err := hex.DecodeString(outputHashHex)
@@ -938,9 +1192,6 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 					"total_power", totalPower,
 					"output_hash", outputHashHex[:16],
 				)
-				if ch.keeper != nil && ch.keeper.auditLogger != nil {
-					ch.keeper.auditLogger.AuditConsensusReached(ctx, jobID, len(results), totalVotes)
-				}
 				break
 			}
 		}
@@ -950,111 +1201,10 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 		ch.keeper.metrics.RecordConsensus(time.Since(start), hasConsensus)
 	}
 
-	// ── Misbehavior detection ──
-	// After consensus is determined, scan vote extensions for evidence of
-	// invalid outputs, double-signing, and collusion.
-	if ch.evidenceCollector != nil {
-		// Reconstruct full VoteExtensionWire list for evidence analysis
-		var allExtensions []VoteExtensionWire
-		for _, vote := range votes {
-			if len(vote.VoteExtension) == 0 {
-				continue
-			}
-			var ext VoteExtensionWire
-			if err := json.Unmarshal(vote.VoteExtension, &ext); err == nil {
-				allExtensions = append(allExtensions, ext)
-			}
-		}
-
-		evidence := ch.evidenceCollector.CollectEvidenceFromConsensus(ctx, aggregated, allExtensions)
-		if len(evidence) > 0 {
-			ch.logger.Warn("Misbehavior evidence collected during aggregation",
-				"evidence_count", len(evidence),
-				"height", ctx.BlockHeight(),
-			)
-			if ch.keeper != nil && ch.keeper.auditLogger != nil {
-				for _, record := range evidence {
-					ch.keeper.auditLogger.AuditEvidenceDetected(ctx, record.ValidatorAddress, record.Condition, record.DetectedBy, record.JobID)
-				}
-			}
-
-			// Apply economic penalties for detected misbehavior.
-			if ch.keeper != nil {
-				slashErrs := ch.evidenceCollector.ApplySlashingPenalties(ctx, evidence)
-				for i, err := range slashErrs {
-					if err != nil {
-						ch.logger.Warn("Failed to apply slashing penalty",
-							"validator", evidence[i].ValidatorAddress,
-							"condition", evidence[i].Condition,
-							"error", err,
-						)
-					}
-				}
-			}
-		}
-	}
-
-	// ── Downtime Tracking & Slashing ──
-	// Record participation for validators who submitted valid extensions,
-	// and record misses for validators who were expected to vote but didn't.
-	// This feeds the BlockMissTracker which triggers slashing after threshold.
-	if ch.evidenceProcessor != nil {
-		participatingValidators := make(map[string]bool)
-		for _, vote := range votes {
-			if len(vote.VoteExtension) == 0 {
-				continue
-			}
-			var ext VoteExtensionWire
-			if err := json.Unmarshal(vote.VoteExtension, &ext); err != nil {
-				continue
-			}
-			var addr string
-			if err := json.Unmarshal(ext.ValidatorAddress, &addr); err == nil && addr != "" {
-				participatingValidators[addr] = true
-			}
-		}
-
-		// Record participation for all validators who submitted extensions
-		for addr := range participatingValidators {
-			ep := ch.evidenceProcessor
-			ep.blockMissTracker.RecordParticipation(addr, ctx.BlockHeight())
-		}
-
-		// Record misses for validators who had power but submitted no extension.
-		// vote.Validator.Address is the consensus address from CometBFT.
-		for _, vote := range votes {
-			if len(vote.VoteExtension) > 0 {
-				continue // Already participated
-			}
-			valAddr := hex.EncodeToString(vote.Validator.Address)
-			if valAddr == "" {
-				continue
-			}
-			ch.evidenceProcessor.RecordValidatorMiss(ctx, valAddr)
-		}
-
-		// Apply downtime penalties at the end of aggregation
-		result := ch.evidenceProcessor.ProcessEndBlockEvidence(ctx)
-		if len(result.DowntimePenalties) > 0 || len(result.EquivocationSlashes) > 0 {
-			ch.logger.Warn("Downtime/equivocation penalties applied",
-				"height", ctx.BlockHeight(),
-				"downtime_penalties", len(result.DowntimePenalties),
-				"equivocation_slashes", len(result.EquivocationSlashes),
-				"total_slashed", result.TotalSlashed().String(),
-			)
-		}
-	}
-
-	// ── BLS Signature Aggregation ──
-	// For each job that reached consensus, aggregate individual BLS signatures
-	// into a single 96-byte aggregate. This replaces N*96 bytes of individual
-	// signatures with a single 96-byte aggregate + the list of signer pubkeys.
-	for jobID, agg := range aggregated {
-		if !agg.HasConsensus {
-			continue
-		}
-		ch.aggregateBLSSignatures(ctx, jobID, agg)
-	}
+	// Aggregation is intentionally pure. PrepareProposal and ProcessProposal
+	// may run repeatedly, on rejected candidates, and after cache loss; they
+	// must never mutate keeper state, audit chains, schedulers, or slashing
+	// trackers. Deterministic state transitions occur only in FinalizeBlock.
 
 	return aggregated
 }
@@ -1135,6 +1285,35 @@ func (ch *ConsensusHandler) aggregateBLSSignatures(ctx sdk.Context, jobID string
 	)
 }
 
+const verificationEvidenceVersion = 2
+
+// VerificationEvidenceEnvelope preserves both halves of hybrid verification
+// evidence while using the existing VerificationResult attestation_data field.
+type VerificationEvidenceEnvelope struct {
+	Version        int                 `json:"version"`
+	TEEAttestation *TEEAttestationWire `json:"tee_attestation,omitempty"`
+	ZKProof        *ZKProofWire        `json:"zk_proof,omitempty"`
+}
+
+func encodeVerificationEvidence(result ValidatorResult) ([]byte, error) {
+	return json.Marshal(VerificationEvidenceEnvelope{
+		Version:        verificationEvidenceVersion,
+		TEEAttestation: result.TEEAttestation,
+		ZKProof:        result.ZKProof,
+	})
+}
+
+func decodeVerificationEvidence(data []byte) (*VerificationEvidenceEnvelope, error) {
+	var evidence VerificationEvidenceEnvelope
+	if err := json.Unmarshal(data, &evidence); err != nil {
+		return nil, fmt.Errorf("decode verification evidence: %w", err)
+	}
+	if evidence.Version != verificationEvidenceVersion {
+		return nil, fmt.Errorf("unsupported verification evidence version: %d", evidence.Version)
+	}
+	return &evidence, nil
+}
+
 // SealCreationTx represents a transaction to create a Digital Seal
 type SealCreationTx struct {
 	Type             string            `json:"type"`
@@ -1155,10 +1334,24 @@ type SealCreationTx struct {
 func (ch *ConsensusHandler) CreateSealTransactions(ctx sdk.Context, results map[string]*AggregatedResult) [][]byte {
 	var txs [][]byte
 
-	for _, result := range results {
-		if !result.HasConsensus {
+	jobIDs := make([]string, 0, len(results))
+	for jobID := range results {
+		jobIDs = append(jobIDs, jobID)
+	}
+	sort.Strings(jobIDs)
+
+	for _, jobID := range jobIDs {
+		result := results[jobID]
+		if result == nil || !result.HasConsensus {
 			continue
 		}
+		validatorResults := append([]ValidatorResult(nil), result.ValidatorResults...)
+		sort.Slice(validatorResults, func(i, j int) bool {
+			return bytes.Compare(
+				validatorResults[i].ValidatorConsensusAddress,
+				validatorResults[j].ValidatorConsensusAddress,
+			) < 0
+		})
 
 		// SECURITY FIX: Use deterministic block time instead of time.Now()
 		// This ensures all validators create identical seal transactions.
@@ -1168,11 +1361,11 @@ func (ch *ConsensusHandler) CreateSealTransactions(ctx sdk.Context, results map[
 			ModelHash:        result.ModelHash,
 			InputHash:        result.InputHash,
 			OutputHash:       result.OutputHash,
-			ValidatorCount:   result.AgreementCount,
+			ValidatorCount:   len(validatorResults),
 			TotalVotes:       result.TotalVotes,
 			AgreementPower:   result.AgreementPower,
 			TotalPower:       result.TotalPower,
-			ValidatorResults: result.ValidatorResults,
+			ValidatorResults: validatorResults,
 			BlockHeight:      ctx.BlockHeight(),
 			Timestamp:        ctx.BlockTime().UTC(),
 		}
@@ -1212,6 +1405,21 @@ func (ch *ConsensusHandler) ValidateSealTransaction(ctx sdk.Context, txBytes []b
 	if len(sealTx.OutputHash) != 32 {
 		return fmt.Errorf("invalid output hash length")
 	}
+	if len(sealTx.ModelHash) != 32 {
+		return fmt.Errorf("invalid model hash length")
+	}
+	if len(sealTx.InputHash) != 32 {
+		return fmt.Errorf("invalid input hash length")
+	}
+	if sealTx.BlockHeight != ctx.BlockHeight() {
+		return fmt.Errorf("seal transaction height mismatch: got %d, expected %d", sealTx.BlockHeight, ctx.BlockHeight())
+	}
+	if sealTx.Timestamp.IsZero() || !sealTx.Timestamp.Equal(ctx.BlockTime().UTC()) {
+		return fmt.Errorf("seal transaction timestamp does not match block time")
+	}
+	if ch.keeper == nil {
+		return fmt.Errorf("pouw keeper is not configured")
+	}
 
 	// Validate job exists
 	job, err := ch.keeper.GetJob(ctx, sealTx.JobID)
@@ -1227,20 +1435,153 @@ func (ch *ConsensusHandler) ValidateSealTransaction(ctx sdk.Context, txBytes []b
 	if !bytes.Equal(job.InputHash, sealTx.InputHash) {
 		return fmt.Errorf("input hash mismatch")
 	}
+	if job.Status != types.JobStatusProcessing {
+		return fmt.Errorf("job %s is not processing", sealTx.JobID)
+	}
 
-	// Validate consensus threshold was met (voting power preferred).
-	// Get threshold from on-chain params (BFT-safe, minimum 67%)
+	if sealTx.ValidatorCount <= 0 || sealTx.TotalVotes <= 0 {
+		return fmt.Errorf("validator counts must be positive")
+	}
+	if sealTx.ValidatorCount > sealTx.TotalVotes {
+		return fmt.Errorf("validator count exceeds total votes")
+	}
+	if sealTx.ValidatorCount != len(sealTx.ValidatorResults) {
+		return fmt.Errorf("validator count does not match validator results")
+	}
+	if sealTx.TotalPower <= 0 {
+		return fmt.Errorf("total voting power must be positive")
+	}
+	if sealTx.AgreementPower <= 0 || sealTx.AgreementPower > sealTx.TotalPower {
+		return fmt.Errorf("invalid agreement voting power")
+	}
+
+	expectedType := ""
+	switch job.ProofType {
+	case types.ProofTypeTEE:
+		expectedType = "tee"
+	case types.ProofTypeZKML:
+		expectedType = "zkml"
+	case types.ProofTypeHybrid:
+		expectedType = "hybrid"
+	default:
+		return fmt.Errorf("unsupported job proof type: %s", job.ProofType)
+	}
+
+	seenAccounts := make(map[string]struct{}, len(sealTx.ValidatorResults))
+	seenConsensusAddresses := make(map[string]struct{}, len(sealTx.ValidatorResults))
+	var previousConsensusAddress []byte
+	var voteBlockHash []byte
+	for i := range sealTx.ValidatorResults {
+		result := &sealTx.ValidatorResults[i]
+		if i > 0 && bytes.Compare(previousConsensusAddress, result.ValidatorConsensusAddress) >= 0 {
+			return fmt.Errorf("validator results are not in canonical consensus-address order")
+		}
+		previousConsensusAddress = append(
+			previousConsensusAddress[:0],
+			result.ValidatorConsensusAddress...,
+		)
+		if result.ValidatorAddress == "" {
+			return fmt.Errorf("validator result %d has empty validator address", i)
+		}
+		if _, duplicate := seenAccounts[result.ValidatorAddress]; duplicate {
+			return fmt.Errorf("duplicate validator account in seal evidence: %s", result.ValidatorAddress)
+		}
+		seenAccounts[result.ValidatorAddress] = struct{}{}
+		assigned, err := IsValidatorAssigned(job, result.ValidatorAddress)
+		if err != nil {
+			return fmt.Errorf("validate validator result %d assignment: %w", i, err)
+		}
+		if !assigned {
+			return fmt.Errorf(
+				"validator result %d account %s is not assigned to job %s",
+				i,
+				result.ValidatorAddress,
+				sealTx.JobID,
+			)
+		}
+
+		if len(result.ValidatorConsensusAddress) == 0 {
+			return fmt.Errorf("validator result %d is missing consensus address", i)
+		}
+		if result.ValidatorSignatureVersion != compactValidatorSignatureVersion {
+			return fmt.Errorf(
+				"validator result %d has unsupported signature version %d",
+				i,
+				result.ValidatorSignatureVersion,
+			)
+		}
+		if len(result.VoteBlockHash) != sha256.Size {
+			return fmt.Errorf("validator result %d has invalid vote block hash length", i)
+		}
+		if i == 0 {
+			voteBlockHash = append([]byte(nil), result.VoteBlockHash...)
+		} else if !bytes.Equal(voteBlockHash, result.VoteBlockHash) {
+			return fmt.Errorf("validator results attest different proposal block hashes")
+		}
+		if len(result.ExtensionNonce) != 32 {
+			return fmt.Errorf("validator result %d has invalid extension nonce length", i)
+		}
+		if len(result.ValidatorSignature) != 64 {
+			return fmt.Errorf("validator result %d has invalid compact signature length", i)
+		}
+		consensusKey := hex.EncodeToString(result.ValidatorConsensusAddress)
+		if _, duplicate := seenConsensusAddresses[consensusKey]; duplicate {
+			return fmt.Errorf("duplicate validator consensus address in seal evidence: %s", consensusKey)
+		}
+		seenConsensusAddresses[consensusKey] = struct{}{}
+
+		if !bytes.Equal(result.OutputHash, sealTx.OutputHash) {
+			return fmt.Errorf("validator result %d output hash mismatch", i)
+		}
+		if result.AttestationType != expectedType {
+			return fmt.Errorf(
+				"validator result %d attestation type %q does not match job type %q",
+				i,
+				result.AttestationType,
+				expectedType,
+			)
+		}
+
+		teeJSON, err := json.Marshal(result.TEEAttestation)
+		if err != nil {
+			return fmt.Errorf("marshal validator result %d TEE evidence: %w", i, err)
+		}
+		zkJSON, err := json.Marshal(result.ZKProof)
+		if err != nil {
+			return fmt.Errorf("marshal validator result %d zkML evidence: %w", i, err)
+		}
+		wire := VerificationWire{
+			JobID:           sealTx.JobID,
+			ModelHash:       sealTx.ModelHash,
+			InputHash:       sealTx.InputHash,
+			OutputHash:      result.OutputHash,
+			AttestationType: result.AttestationType,
+			TEEAttestation:  teeJSON,
+			ZKProof:         zkJSON,
+			ExecutionTimeMs: result.ExecutionTimeMs,
+			Success:         true,
+			Nonce:           result.Nonce,
+		}
+		if err := ch.validateVerificationWireWithCtx(&ctx, &wire); err != nil {
+			return fmt.Errorf("validator result %d evidence is invalid: %w", i, err)
+		}
+		if result.TEEAttestation != nil {
+			if err := validateTEEAttestationDomain(
+				result.TEEAttestation,
+				result.OutputHash,
+				sealTx.BlockHeight-1,
+				ctx.ChainID(),
+			); err != nil {
+				return fmt.Errorf("validator result %d TEE domain is invalid: %w", i, err)
+			}
+		}
+	}
+
+	// Validate consensus threshold was met.
 	consensusThreshold := ch.getConsensusThreshold(ctx)
-	if sealTx.TotalPower > 0 {
-		requiredPower := requiredThresholdCount(sealTx.TotalPower, consensusThreshold)
-		if sealTx.AgreementPower < requiredPower {
-			return fmt.Errorf("insufficient validator power: got %d, need %d", sealTx.AgreementPower, requiredPower)
-		}
-	} else {
-		requiredVotes := requiredThresholdCount(sealTx.TotalVotes, consensusThreshold)
-		if sealTx.ValidatorCount < requiredVotes {
-			return fmt.Errorf("insufficient validator consensus: got %d, need %d", sealTx.ValidatorCount, requiredVotes)
-		}
+	requiredPower := requiredThresholdCount(sealTx.TotalPower, consensusThreshold)
+	if sealTx.AgreementPower < requiredPower {
+		return fmt.Errorf("insufficient validator power: got %d, need %d", sealTx.AgreementPower, requiredPower)
 	}
 
 	return nil
@@ -1252,16 +1593,29 @@ func (ch *ConsensusHandler) ProcessSealTransaction(ctx context.Context, txBytes 
 	if err := json.Unmarshal(txBytes, &sealTx); err != nil {
 		return fmt.Errorf("failed to unmarshal seal transaction: %w", err)
 	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := ch.ValidateSealTransaction(sdkCtx, txBytes); err != nil {
+		return fmt.Errorf("invalid seal transaction: %w", err)
+	}
 
 	// Convert validator results to verification results
 	var verificationResults []types.VerificationResult
 	for _, vr := range sealTx.ValidatorResults {
+		evidence, err := encodeVerificationEvidence(vr)
+		if err != nil {
+			return fmt.Errorf("encode validator %s evidence: %w", vr.ValidatorAddress, err)
+		}
+		teePlatform := ""
+		if vr.TEEAttestation != nil {
+			teePlatform = vr.TEEAttestation.Platform
+		}
 		verificationResults = append(verificationResults, types.VerificationResult{
 			ValidatorAddress: vr.ValidatorAddress,
 			OutputHash:       vr.OutputHash,
 			AttestationType:  vr.AttestationType,
-			TeePlatform:      vr.TEEPlatform,
-			AttestationData:  vr.AttestationQuote,
+			TeePlatform:      teePlatform,
+			AttestationData:  evidence,
+			Signature:        vr.ValidatorSignature,
 			ExecutionTimeMs:  vr.ExecutionTimeMs,
 			Timestamp:        timestamppb.New(vr.Timestamp),
 			Success:          true,
@@ -1272,9 +1626,6 @@ func (ch *ConsensusHandler) ProcessSealTransaction(ctx context.Context, txBytes 
 	if err := ch.keeper.CompleteJob(ctx, sealTx.JobID, sealTx.OutputHash, verificationResults); err != nil {
 		return fmt.Errorf("failed to complete job: %w", err)
 	}
-
-	// Mark job complete in scheduler
-	ch.scheduler.MarkJobComplete(sealTx.JobID)
 
 	ch.logger.Info("Seal transaction processed",
 		"job_id", sealTx.JobID,

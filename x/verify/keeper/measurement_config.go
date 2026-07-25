@@ -4,18 +4,22 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
+const maxTrustedMeasurementsFileSize int64 = 4 << 20
+
 // MeasurementConfigFile represents the shared TEE measurement configuration
 // format consumed by both the Go and Rust layers for registry synchronization.
 type MeasurementConfigFile struct {
-	Version             int                                `json:"version"`
-	Measurements        map[string]map[string][]string     `json:"measurements"`
-	MinQuoteAgeSeconds  int64                              `json:"min_quote_age_seconds"`
-	LastUpdated         time.Time                          `json:"last_updated"`
+	Version            int                            `json:"version"`
+	Measurements       map[string]map[string][]string `json:"measurements"`
+	MinQuoteAgeSeconds int64                          `json:"min_quote_age_seconds"`
+	LastUpdated        time.Time                      `json:"last_updated"`
 }
 
 // LoadTrustedMeasurementsFromFile reads a shared TEE measurement config JSON file
@@ -24,9 +28,41 @@ type MeasurementConfigFile struct {
 // The returned map uses keys of the form "platform:field" (e.g. "aws-nitro:pcr0",
 // "intel-sgx:mrenclave") mapped to slices of hex-decoded measurement values.
 func LoadTrustedMeasurementsFromFile(path string) (map[string][]string, error) {
-	data, err := os.ReadFile(path)
+	if strings.TrimSpace(path) == "" {
+		return nil, fmt.Errorf("measurement config path is required")
+	}
+	absolutePath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading measurement config: %w", err)
+		return nil, fmt.Errorf("resolve measurement config path: %w", err)
+	}
+
+	// #nosec G304 -- this is an operator-selected local config path, canonicalized
+	// to an absolute path and verified from the opened descriptor before reading.
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return nil, fmt.Errorf("open measurement config: %w", err)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	info, err := file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("stat measurement config: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("measurement config must be a regular file")
+	}
+	if info.Size() > maxTrustedMeasurementsFileSize {
+		return nil, fmt.Errorf("measurement config exceeds %d bytes", maxTrustedMeasurementsFileSize)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(file, maxTrustedMeasurementsFileSize+1))
+	if err != nil {
+		return nil, fmt.Errorf("read measurement config: %w", err)
+	}
+	if int64(len(data)) > maxTrustedMeasurementsFileSize {
+		return nil, fmt.Errorf("measurement config exceeds %d bytes", maxTrustedMeasurementsFileSize)
 	}
 	return ParseTrustedMeasurementsJSON(data)
 }

@@ -34,14 +34,16 @@ func (app *AethelredApp) assignedJobsForValidator(ctx sdk.Context, consAddr []by
 		return app.PouwKeeper.GetPendingJobs(ctx), "unknown", nil
 	}
 
-	if app.consensusHandler == nil || app.consensusHandler.Scheduler() == nil {
+	// Assignments are consensus state. Reading them directly from the keeper
+	// keeps ExtendVote correct immediately after restart or snapshot restore,
+	// without relying on a process-local scheduler warm-up.
+	jobs, err := app.PouwKeeper.GetAssignedProcessingJobs(ctx, validatorAccountAddr)
+	if err != nil {
 		if !app.allowSimulated(ctx) {
-			return nil, validatorAccountAddr, fmt.Errorf("scheduler not initialized")
+			return nil, validatorAccountAddr, fmt.Errorf("load chain-backed assignments: %w", err)
 		}
 		return app.PouwKeeper.GetPendingJobs(ctx), validatorAccountAddr, nil
 	}
-
-	jobs := app.consensusHandler.Scheduler().GetJobsForValidator(ctx, validatorAccountAddr)
 	return jobs, validatorAccountAddr, nil
 }
 
@@ -55,14 +57,14 @@ func (app *AethelredApp) isPoUWAllocationHalted(ctx sdk.Context) bool {
 // validatorAccountAddress derives the bech32 account address for a validator
 // from its consensus address.
 func (app *AethelredApp) validatorAccountAddress(ctx sdk.Context, consAddr []byte) (string, error) {
-	if app.StakingKeeper == nil {
+	if app.StakingKeeper == nil && app.consensusValidatorResolver == nil {
 		return "", fmt.Errorf("staking keeper not configured")
 	}
 	if len(consAddr) == 0 {
 		return "", fmt.Errorf("validator consensus address is empty")
 	}
 
-	validator, err := app.StakingKeeper.GetValidatorByConsAddr(ctx, sdk.ConsAddress(consAddr))
+	validator, err := app.validatorByConsensusAddress(ctx, sdk.ConsAddress(consAddr))
 	if err != nil {
 		return "", fmt.Errorf("validator not found for consensus address: %w", err)
 	}
@@ -71,7 +73,11 @@ func (app *AethelredApp) validatorAccountAddress(ctx sdk.Context, consAddr []byt
 		return "", fmt.Errorf("validator operator address missing")
 	}
 
-	return sdk.AccAddress(operatorAddr).String(), nil
+	validatorAddress, err := sdk.ValAddressFromBech32(operatorAddr)
+	if err != nil {
+		return "", fmt.Errorf("decode validator operator address: %w", err)
+	}
+	return sdk.AccAddress(validatorAddress).String(), nil
 }
 
 // executeAssignedVerification runs the verification pipeline for a scheduled job
@@ -112,6 +118,21 @@ func (app *AethelredApp) executeAssignedVerification(ctx sdk.Context, job *pouwt
 		return verification
 	}
 
+	if app.inputResolver == nil {
+		verification.ErrorCode = ErrorCodeInternalError
+		verification.ErrorMessage = "verification input resolver not configured"
+		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
+		return verification
+	}
+
+	inputData, err := app.inputResolver.Resolve(ctx, job.InputDataUri, job.InputHash)
+	if err != nil {
+		verification.ErrorCode = ErrorCodeInvalidInput
+		verification.ErrorMessage = "failed to resolve authenticated job input"
+		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
+		return verification
+	}
+
 	vType, err := mapProofType(job.ProofType)
 	if err != nil {
 		verification.ErrorCode = ErrorCodeInvalidInput
@@ -124,10 +145,13 @@ func (app *AethelredApp) executeAssignedVerification(ctx sdk.Context, job *pouwt
 		RequestID:        fmt.Sprintf("%s-%s", job.Id, validatorAddr),
 		ModelHash:        job.ModelHash,
 		InputHash:        job.InputHash,
+		InputData:        inputData,
 		VerificationType: vType,
 		CircuitHash:      model.CircuitHash,
 		VerifyingKeyHash: model.VerifyingKeyHash,
 		Priority:         int(job.Priority),
+		BlockHeight:      ctx.BlockHeight(),
+		ChainID:          ctx.ChainID(),
 		Metadata: map[string]string{
 			"job_id":         job.Id,
 			"validator":      validatorAddr,
@@ -152,6 +176,9 @@ func (app *AethelredApp) executeAssignedVerification(ctx sdk.Context, job *pouwt
 	verification.ExecutionTimeMs = resp.TotalTimeMs
 	if verification.ExecutionTimeMs <= 0 {
 		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
+		if verification.ExecutionTimeMs <= 0 {
+			verification.ExecutionTimeMs = 1
+		}
 	}
 
 	verification.OutputHash = resp.OutputHash
@@ -231,6 +258,9 @@ func mapTEEAttestation(result *verify.TEEVerificationResult) *TEEAttestationData
 		UserData:    doc.UserData,
 		Timestamp:   doc.Timestamp,
 		Nonce:       doc.Nonce,
+		Signature:   doc.Signature,
+		BlockHeight: doc.BlockHeight,
+		ChainID:     doc.ChainID,
 	}
 
 	if len(doc.Certificate) > 0 || len(doc.CABundle) > 0 {
@@ -296,15 +326,17 @@ type nitroQuotePCR struct {
 }
 
 type nitroQuote struct {
-	ModuleID    string          `json:"module_id"`
-	Timestamp   int64           `json:"timestamp_unix"`
-	Digest      string          `json:"digest"`
-	PCRs        []nitroQuotePCR `json:"pcrs"`
-	Certificate []byte          `json:"certificate,omitempty"`
-	CABundle    []byte          `json:"cabundle,omitempty"`
-	PublicKey   []byte          `json:"public_key,omitempty"`
-	UserData    []byte          `json:"user_data,omitempty"`
-	Nonce       []byte          `json:"nonce,omitempty"`
+	ModuleID            string          `json:"module_id"`
+	Timestamp           int64           `json:"timestamp_unix"`
+	Digest              string          `json:"digest"`
+	PCRs                []nitroQuotePCR `json:"pcrs"`
+	Certificate         []byte          `json:"certificate,omitempty"`
+	CABundle            []byte          `json:"cabundle,omitempty"`
+	PublicKey           []byte          `json:"public_key,omitempty"`
+	UserData            []byte          `json:"user_data,omitempty"`
+	Nonce               []byte          `json:"nonce,omitempty"`
+	Signature           []byte          `json:"signature,omitempty"`
+	SimulationSignature []byte          `json:"simulation_signature,omitempty"`
 }
 
 func marshalNitroQuote(doc *tee.NitroAttestationDocument) []byte {
@@ -324,15 +356,17 @@ func marshalNitroQuote(doc *tee.NitroAttestationDocument) []byte {
 	})
 
 	payload := nitroQuote{
-		ModuleID:    doc.ModuleID,
-		Timestamp:   doc.Timestamp.Unix(),
-		Digest:      doc.Digest,
-		PCRs:        pcrs,
-		Certificate: doc.Certificate,
-		CABundle:    doc.CABundle,
-		PublicKey:   doc.PublicKey,
-		UserData:    doc.UserData,
-		Nonce:       doc.Nonce,
+		ModuleID:            doc.ModuleID,
+		Timestamp:           doc.Timestamp.Unix(),
+		Digest:              doc.Digest,
+		PCRs:                pcrs,
+		Certificate:         doc.Certificate,
+		CABundle:            doc.CABundle,
+		PublicKey:           doc.PublicKey,
+		UserData:            doc.UserData,
+		Nonce:               doc.Nonce,
+		Signature:           doc.Signature,
+		SimulationSignature: doc.Signature,
 	}
 
 	quote, err := json.Marshal(payload)
@@ -353,6 +387,7 @@ func marshalZKPublicInputs(inputs *ezkl.PublicInputs) []byte {
 	writeLenPrefixed(buf, inputs.OutputCommitment)
 
 	instances := inputs.Instances
+	// #nosec G115 -- assignment public inputs are constrained by the 5 MiB vote-extension cap.
 	_ = binary.Write(buf, binary.BigEndian, uint32(len(instances)))
 	for _, inst := range instances {
 		writeLenPrefixed(buf, inst)
@@ -362,6 +397,7 @@ func marshalZKPublicInputs(inputs *ezkl.PublicInputs) []byte {
 }
 
 func writeLenPrefixed(buf *bytes.Buffer, data []byte) {
+	// #nosec G115 -- every caller serializes data constrained by the 5 MiB vote-extension cap.
 	_ = binary.Write(buf, binary.BigEndian, uint32(len(data)))
 	if len(data) > 0 {
 		_, _ = buf.Write(data)

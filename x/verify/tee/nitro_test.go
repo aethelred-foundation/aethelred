@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,45 @@ import (
 
 	"cosmossdk.io/log"
 )
+
+func TestNitroExecuteRejectsMalformedRequestsWithoutPanicking(t *testing.T) {
+	t.Parallel()
+
+	validHash := make([]byte, sha256.Size)
+	service := NewNitroEnclaveService(log.NewNopLogger(), DefaultNitroConfig())
+	testCases := []struct {
+		name string
+		req  *EnclaveExecutionRequest
+	}{
+		{name: "nil request", req: nil},
+		{
+			name: "short model hash",
+			req: &EnclaveExecutionRequest{
+				ModelHash: []byte{1},
+				InputHash: validHash,
+				InputData: []byte("input"),
+			},
+		},
+		{
+			name: "short input hash",
+			req: &EnclaveExecutionRequest{
+				ModelHash: validHash,
+				InputHash: []byte{1},
+				InputData: []byte("input"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if _, err := service.Execute(context.Background(), tc.req); err == nil {
+				t.Fatal("expected malformed enclave request to fail")
+			}
+		})
+	}
+}
 
 func TestVerifySimulatedNitroAttestationRejectsTampering(t *testing.T) {
 	key := []byte("0123456789abcdef0123456789abcdef")

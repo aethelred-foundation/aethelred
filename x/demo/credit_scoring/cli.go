@@ -318,7 +318,7 @@ func (c *CLI) ExportResults(filename string) error {
 		return err
 	}
 
-	return os.WriteFile(filename, data, 0644)
+	return os.WriteFile(filename, data, 0600)
 }
 
 // InteractiveMode runs an interactive demo session

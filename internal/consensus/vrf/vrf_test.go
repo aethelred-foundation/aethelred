@@ -260,6 +260,24 @@ func TestSelectCommittee(t *testing.T) {
 	}
 }
 
+func TestSelectCommitteeRejectsNonPositiveSize(t *testing.T) {
+	t.Parallel()
+
+	validators := []ValidatorInfo{{
+		Address:   []byte("validator"),
+		PublicKey: make(ed25519.PublicKey, ed25519.PublicKeySize),
+		Stake:     big.NewInt(100),
+	}}
+	kp, _ := GenerateKeyPair()
+	selector := NewValidatorSelector(validators, []byte("seed"), 1)
+
+	for _, size := range []int{0, -1} {
+		if _, _, err := selector.SelectCommittee(0, size, kp); err == nil {
+			t.Fatalf("expected committee size %d to be rejected", size)
+		}
+	}
+}
+
 func TestSelectCommittee_LargerThanValidators(t *testing.T) {
 	t.Parallel()
 	validators := []ValidatorInfo{

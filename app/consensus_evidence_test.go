@@ -60,8 +60,15 @@ func TestRequiredConsensusPower(t *testing.T) {
 		t.Fatalf("expected zero for non-positive power, got %d", got)
 	}
 	// Threshold must clamp to 67 in BFT-safe mode.
-	if got := requiredConsensusPower(100, 50); got != 68 {
-		t.Fatalf("expected clamped threshold result 68, got %d", got)
+	if got := requiredConsensusPower(100, 50); got != 67 {
+		t.Fatalf("expected clamped threshold result 67, got %d", got)
+	}
+	if got := requiredConsensusPower(67, 100); got != 67 {
+		t.Fatalf("expected reachable 100%% threshold, got %d", got)
+	}
+	const nearMax = int64(^uint64(0) >> 1)
+	if got := requiredConsensusPower(nearMax, 67); got <= 0 || got > nearMax {
+		t.Fatalf("overflow-safe threshold returned %d", got)
 	}
 }
 

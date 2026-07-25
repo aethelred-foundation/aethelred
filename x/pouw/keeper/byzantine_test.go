@@ -594,6 +594,7 @@ func TestByzantine_SplitBrainMultipleJobs(t *testing.T) {
 		ext := &keeper.VoteExtensionWire{
 			Version:          1,
 			Height:           100,
+			ChainID:          "aethelred-test-1",
 			ValidatorAddress: validatorAddr,
 			Verifications:    verifications,
 			Timestamp:        time.Now().UTC(),

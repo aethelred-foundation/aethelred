@@ -2,8 +2,10 @@ package types
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,12 +26,33 @@ func NewDigitalSeal(
 	requestedBy string,
 	purpose string,
 ) *DigitalSeal {
+	return NewDigitalSealAtBlockTime(
+		modelCommitment,
+		inputCommitment,
+		outputCommitment,
+		blockHeight,
+		requestedBy,
+		purpose,
+		time.Now().UTC(),
+	)
+}
+
+// NewDigitalSealAtBlockTime creates a seal with a consensus-supplied timestamp.
+// Consensus-critical callers must use this constructor so every validator
+// derives the same seal ID and application state.
+func NewDigitalSealAtBlockTime(
+	modelCommitment, inputCommitment, outputCommitment []byte,
+	blockHeight int64,
+	requestedBy string,
+	purpose string,
+	blockTime time.Time,
+) *DigitalSeal {
 	seal := &DigitalSeal{
 		ModelCommitment:  modelCommitment,
 		InputCommitment:  inputCommitment,
 		OutputCommitment: outputCommitment,
 		BlockHeight:      blockHeight,
-		Timestamp:        timestamppb.Now(),
+		Timestamp:        timestamppb.New(blockTime.UTC()),
 		RequestedBy:      requestedBy,
 		Purpose:          purpose,
 		Status:           SealStatusPending,
@@ -40,6 +63,34 @@ func NewDigitalSeal(
 	// Generate unique ID from components
 	seal.Id = seal.GenerateID()
 
+	return seal
+}
+
+// NewDigitalSealForJobAtBlockTime creates a consensus seal whose identifier is
+// also bound to the unique compute job. This prevents otherwise-identical jobs
+// completed in the same block from colliding.
+func NewDigitalSealForJobAtBlockTime(
+	jobID string,
+	modelCommitment, inputCommitment, outputCommitment []byte,
+	blockHeight int64,
+	requestedBy string,
+	purpose string,
+	blockTime time.Time,
+) *DigitalSeal {
+	seal := NewDigitalSealAtBlockTime(
+		modelCommitment,
+		inputCommitment,
+		outputCommitment,
+		blockHeight,
+		requestedBy,
+		purpose,
+		blockTime,
+	)
+	h := sha256.New()
+	h.Write([]byte("aethelred_seal_job_id_v1:"))
+	h.Write([]byte(jobID))
+	h.Write([]byte(seal.Id))
+	seal.Id = hex.EncodeToString(h.Sum(nil))
 	return seal
 }
 
@@ -71,16 +122,10 @@ func (s *DigitalSeal) GenerateID() string {
 	}
 
 	// Block height (fixed-width encoding for determinism)
-	heightBytes := make([]byte, 8)
-	heightBytes[0] = byte(s.BlockHeight >> 56)
-	heightBytes[1] = byte(s.BlockHeight >> 48)
-	heightBytes[2] = byte(s.BlockHeight >> 40)
-	heightBytes[3] = byte(s.BlockHeight >> 32)
-	heightBytes[4] = byte(s.BlockHeight >> 24)
-	heightBytes[5] = byte(s.BlockHeight >> 16)
-	heightBytes[6] = byte(s.BlockHeight >> 8)
-	heightBytes[7] = byte(s.BlockHeight)
-	h.Write(heightBytes)
+	var heightBytes [8]byte
+	// #nosec G115 -- two's-complement BE64 is the existing deterministic signed-height encoding.
+	binary.BigEndian.PutUint64(heightBytes[:], uint64(s.BlockHeight))
+	h.Write(heightBytes[:])
 
 	// Requester address
 	h.Write([]byte(s.RequestedBy))
@@ -88,17 +133,10 @@ func (s *DigitalSeal) GenerateID() string {
 	// Timestamp (nanosecond precision for uniqueness)
 	if s.Timestamp != nil {
 		ts := s.Timestamp.AsTime().UTC()
-		nsBytes := make([]byte, 8)
-		nanos := ts.UnixNano()
-		nsBytes[0] = byte(nanos >> 56)
-		nsBytes[1] = byte(nanos >> 48)
-		nsBytes[2] = byte(nanos >> 40)
-		nsBytes[3] = byte(nanos >> 32)
-		nsBytes[4] = byte(nanos >> 24)
-		nsBytes[5] = byte(nanos >> 16)
-		nsBytes[6] = byte(nanos >> 8)
-		nsBytes[7] = byte(nanos)
-		h.Write(nsBytes)
+		var nsBytes [8]byte
+		// #nosec G115 -- two's-complement BE64 preserves every UnixNano bit.
+		binary.BigEndian.PutUint64(nsBytes[:], uint64(ts.UnixNano()))
+		h.Write(nsBytes[:])
 	}
 
 	// Purpose (additional entropy)
@@ -159,7 +197,7 @@ func (s *DigitalSeal) Validate() error {
 
 // HasConsensus checks if the seal has sufficient validator attestations
 func (s *DigitalSeal) HasConsensus(totalValidators int) bool {
-	requiredVotes := (totalValidators*2/3) + 1
+	requiredVotes := (totalValidators * 2 / 3) + 1
 	return len(s.TeeAttestations) >= requiredVotes
 }
 

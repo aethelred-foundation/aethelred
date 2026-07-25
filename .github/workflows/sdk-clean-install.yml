@@ -92,7 +92,7 @@ jobs:
           source /tmp/aethelred-sdk-test/bin/activate
           pip show aethelred-sdk
           # Check py.typed marker is included
-          python -c "import importlib.resources; assert importlib.resources.is_resource('aethelred', 'py.typed') or True"
+          python -c "from importlib.resources import files; assert files('aethelred').joinpath('py.typed').is_file()"
       - name: Verify sdist contents
         run: |
           cd sdk/python
@@ -199,7 +199,7 @@ jobs:
           cargo check
 
   cli-smoke:
-    name: CLI smoke test (advisory)
+    name: CLI smoke test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -211,9 +211,4 @@ jobs:
         with:
           toolchain: "1.85.0"
       - name: Run CLI smoke test
-        run: |
-          if bash scripts/cli-smoke-test.sh; then
-            echo "CLI smoke passed"
-          else
-            echo "::warning::CLI smoke is currently advisory on this branch while the standalone CLI backlog is being modernized."
-          fi
+        run: bash scripts/cli-smoke-test.sh

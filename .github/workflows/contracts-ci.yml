@@ -7,7 +7,6 @@ on:
   push:
     branches: [main, develop, "release/**"]
   pull_request:
-    branches: [main, develop, "release/**"]
   workflow_dispatch:
 
 jobs:
@@ -77,11 +76,9 @@ jobs:
           --no-match-test '^(testFuzz_|test_Audit_|invariant_)'
 
   foundry-deep-checks:
-    name: Foundry Deep Checks (advisory)
+    name: Foundry Deep Checks
     needs: changes
-    if: ${{ needs.changes.outputs.contracts == 'true' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') }}
-    # Advisory: invariant + fuzz suites may be non-deterministic; not part of required gate.
-    continue-on-error: true
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.contracts == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -109,10 +106,15 @@ jobs:
       - changes
       - hardhat-checks
       - foundry-checks
+      - foundry-deep-checks
     steps:
       - name: Enforce required gate status
         run: |
+          echo "changes=${{ needs.changes.result }}"
           echo "hardhat-checks=${{ needs.hardhat-checks.result }}"
           echo "foundry-checks=${{ needs.foundry-checks.result }}"
+          echo "foundry-deep-checks=${{ needs.foundry-deep-checks.result }}"
+          test "${{ needs.changes.result }}" = "success"
           test "${{ needs.hardhat-checks.result }}" = "success" || test "${{ needs.hardhat-checks.result }}" = "skipped"
           test "${{ needs.foundry-checks.result }}" = "success" || test "${{ needs.foundry-checks.result }}" = "skipped"
+          test "${{ needs.foundry-deep-checks.result }}" = "success" || test "${{ needs.foundry-deep-checks.result }}" = "skipped"

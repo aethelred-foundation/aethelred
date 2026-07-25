@@ -1,8 +1,8 @@
-// Package app provides slashing integration initialization for Aethelred.
+// Package app provides PoUW-specific evidence integration helpers.
 //
-// AS-16: Downtime Slashing Integration
-// This file initializes the integrated evidence processor with full
-// Cosmos SDK slashing module connectivity.
+// Ordinary block-signing downtime is owned by the registered Cosmos SDK
+// x/slashing module. The optional processor in this file must only receive
+// distinct PoUW evidence so the same missed block cannot be penalized twice.
 package app
 
 import (
@@ -118,8 +118,9 @@ func (a *SlashingKeeperAdapter) IsTombstoned(ctx sdk.Context, consAddr sdk.ConsA
 // Integrated Slashing Initialization
 // =============================================================================
 
-// InitIntegratedSlashing initializes the integrated slashing system
-// This connects the PoUW evidence system to the Cosmos SDK slashing module
+// InitIntegratedSlashing initializes the optional PoUW-specific evidence
+// processor. It is deliberately not part of ordinary commit-liveness handling,
+// which is enforced by Cosmos SDK x/slashing.
 func (app *AethelredApp) InitIntegratedSlashing() {
 	logger := app.Logger()
 
@@ -160,7 +161,9 @@ func (app *AethelredApp) InitIntegratedSlashing() {
 		adapter.SetInsuranceEscrowKeeper(&app.InsuranceKeeper)
 	}
 
-	// Store for use in processEndBlockEvidence
+	// Retain this optional processor for explicit PoUW-specific evidence
+	// integrations. Ordinary block-signing downtime is enforced by the
+	// registered Cosmos SDK x/slashing module and must not be duplicated here.
 	app.integratedEvidenceProcessor = integratedProcessor
 
 	logger.Info("Integrated slashing system initialized",

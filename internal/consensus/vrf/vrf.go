@@ -278,10 +278,15 @@ func (vs *ValidatorSelector) selectByStake(hash []byte) int {
 
 // SelectCommittee selects a committee of validators using VRF sortition
 func (vs *ValidatorSelector) SelectCommittee(round uint64, committeeSize int, kp *VRFKeyPair) ([]int, *VRFOutput, error) {
+	if committeeSize <= 0 {
+		return nil, nil, fmt.Errorf("committee size must be positive")
+	}
+
 	// Create alpha for committee selection
 	alpha := make([]byte, len(vs.epochSeed)+8+8)
 	copy(alpha, vs.epochSeed)
 	binary.BigEndian.PutUint64(alpha[len(vs.epochSeed):], round)
+	// #nosec G115 -- committeeSize is checked positive above and every non-negative int is representable as uint64.
 	binary.BigEndian.PutUint64(alpha[len(vs.epochSeed)+8:], uint64(committeeSize))
 
 	// Generate VRF output
@@ -306,9 +311,11 @@ func (vs *ValidatorSelector) selectCommitteeByVRF(hash []byte, size int) []int {
 	committee := make([]int, 0, size)
 
 	// Use hash to generate multiple selections
-	for i := 0; len(committee) < size && i < 1000; i++ {
+	for counter := uint64(0); len(committee) < size && counter < 1000; counter++ {
 		// Generate selection hash
-		selHash := sha256.Sum256(append(hash, byte(i)))
+		var counterBytes [8]byte
+		binary.BigEndian.PutUint64(counterBytes[:], counter)
+		selHash := sha256.Sum256(append(hash, counterBytes[:]...))
 		idx := vs.selectByStake(selHash[:])
 
 		if !selected[idx] {
@@ -329,6 +336,10 @@ func (vs *ValidatorSelector) SelectComputeValidators(
 	requireGPU bool,
 	kp *VRFKeyPair,
 ) ([]int, *VRFOutput, error) {
+	if count <= 0 {
+		return nil, nil, fmt.Errorf("validator count must be positive")
+	}
+
 	// Filter validators by hardware requirements
 	eligible := make([]int, 0)
 	for i, v := range vs.validators {
@@ -370,8 +381,11 @@ func (vs *ValidatorSelector) SelectComputeValidators(
 	selected := make(map[int]bool)
 	result := make([]int, 0, count)
 
-	for i := 0; len(result) < count && i < 1000; i++ {
-		selHash := sha256.Sum256(append(output.Hash[:], byte(i)))
+	for counter := uint64(0); len(result) < count && counter < 1000; counter++ {
+		var counterBytes [8]byte
+		binary.BigEndian.PutUint64(counterBytes[:], counter)
+		selHash := sha256.Sum256(append(output.Hash[:], counterBytes[:]...))
+		// #nosec G115 -- eligible is non-empty here; modulo bounds the result below len(eligible), which is representable as int.
 		idx := int(binary.BigEndian.Uint64(selHash[:8]) % uint64(len(eligible)))
 
 		validatorIdx := eligible[idx]

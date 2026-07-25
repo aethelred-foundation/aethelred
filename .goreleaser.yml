@@ -1,5 +1,6 @@
+version: 2
+
 project_name: aethelred
-project_url: https://github.com/aethelred-foundation/aethelred
 
 before:
   hooks:
@@ -19,7 +20,7 @@ builds:
       - amd64
       - arm64
     flags:
-      - -tags=production
+      - -tags=production,pqc_circl
     ldflags:
       - -s -w
       - -X github.com/aethelred/aethelred/version.Version={{.Version}}
@@ -40,11 +41,13 @@ builds:
       - arm64
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - README.md
       - LICENSE
@@ -81,15 +84,7 @@ release:
 
   name_template: "{{.ProjectName}} {{.Tag}}"
 
-dockers:
-  - image_templates:
-      - "ghcr.io/aethelred-foundation/aethelred/aethelredd:{{ .Tag }}"
-      - "ghcr.io/aethelred-foundation/aethelred/aethelredd:latest"
-    dockerfile: Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/amd64,linux/arm64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
+# Container tags are published exclusively by docker-build.yml after each
+# platform digest passes its vulnerability scan. Keeping container publication
+# out of GoReleaser prevents tag races and ensures testnet tags cannot promote
+# an unverified image to the production `latest` channel.

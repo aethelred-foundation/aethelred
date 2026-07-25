@@ -1192,8 +1192,28 @@ contract InstitutionalStablecoinBridge is
             return;
         }
 
-        (, int256 reserveAnswer,, uint256 updatedAt,) =
-            IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
+        (
+            uint80 roundId,
+            int256 reserveAnswer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
+        if (
+            roundId == 0 || startedAt == 0 || updatedAt == 0
+                || startedAt > updatedAt || updatedAt > block.timestamp
+                || answeredInRound < roundId
+        ) {
+            _triggerCircuitBreaker(
+                assetId,
+                keccak256("POR_ROUND_INCOMPLETE"),
+                uint256(answeredInRound),
+                uint256(roundId)
+            );
+            emit ReserveCheckPerformed(assetId, 0, 0, BPS_DENOMINATOR, true);
+            return;
+        }
+
         if (reserveAnswer <= 0) {
             _triggerCircuitBreaker(assetId, keccak256("POR_NON_POSITIVE"), 0, 1);
             emit ReserveCheckPerformed(assetId, 0, 0, BPS_DENOMINATOR, true);
@@ -1207,8 +1227,8 @@ contract InstitutionalStablecoinBridge is
         uint256 liabilitiesRaw = IERC20Metadata(cfg.token).totalSupply() + pendingMintAmount;
         uint256 liabilities18 = _normalizeTo18(liabilitiesRaw, tokenDecimals);
 
-        bool stale =
-            cfg.porHeartbeatSeconds > 0 && block.timestamp > updatedAt + cfg.porHeartbeatSeconds;
+        bool stale = cfg.porHeartbeatSeconds > 0 && block.timestamp > updatedAt
+            && block.timestamp - updatedAt > cfg.porHeartbeatSeconds;
 
         uint256 deviationBps = 0;
         if (liabilities18 > reserveAmount18 && liabilities18 > 0) {
@@ -1293,7 +1313,11 @@ contract InstitutionalStablecoinBridge is
         {
             uint256 hourBucket = block.timestamp / HOUR_SECONDS;
             uint256 dayBucket = block.timestamp / EPOCH_SECONDS;
+            // These modulo operations select bounded ring-buffer slots; they
+            // are not a source of randomness or used for an unpredictable value.
+            // slither-disable-next-line weak-prng
             uint256 hourSlot = hourBucket % HOURLY_OUTFLOW_RING_SLOTS;
+            // slither-disable-next-line weak-prng
             uint256 daySlot = dayBucket % DAILY_OUTFLOW_RING_SLOTS;
 
             if (hourlyOutflowBucketTag[assetId][hourSlot] != hourBucket) {
@@ -1492,16 +1516,26 @@ contract InstitutionalStablecoinBridge is
             StablecoinConfig storage cfg = stablecoins[assetIds[i]];
             if (!cfg.enabled || cfg.proofOfReserveFeed == address(0)) continue;
 
-            (, int256 reserveAnswer,, uint256 updatedAt,) =
-                IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
+            (
+                uint80 roundId,
+                int256 reserveAnswer,
+                uint256 startedAt,
+                uint256 updatedAt,
+                uint80 answeredInRound
+            ) = IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
 
-            if (reserveAnswer <= 0) {
+            if (
+                roundId == 0 || startedAt == 0 || updatedAt == 0
+                    || startedAt > updatedAt || updatedAt > block.timestamp
+                    || answeredInRound < roundId
+                    || reserveAnswer <= 0
+            ) {
                 breached[count++] = assetIds[i];
                 continue;
             }
 
-            bool stale =
-                cfg.porHeartbeatSeconds > 0 && block.timestamp > updatedAt + cfg.porHeartbeatSeconds;
+            bool stale = cfg.porHeartbeatSeconds > 0 && block.timestamp > updatedAt
+                && block.timestamp - updatedAt > cfg.porHeartbeatSeconds;
 
             if (stale) {
                 breached[count++] = assetIds[i];

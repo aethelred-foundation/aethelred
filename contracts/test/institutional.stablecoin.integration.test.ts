@@ -1323,6 +1323,98 @@ describe("InstitutionalStablecoinBridge (TRD V2)", function () {
     expect(await usdu.balanceOf(user.address)).to.equal(amount);
   });
 
+  it("flags incomplete PoR rounds for upkeep and circuit-breaks on revalidation", async function () {
+    const { bridge, porFeed } = await buildFixture();
+    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    await porFeed.setRoundDataWithMetadata(
+      12,
+      units(1_000_000),
+      now,
+      now,
+      11,
+    );
+
+    const checkData = ethers.AbiCoder.defaultAbiCoder().encode(
+      ["bytes32[]"],
+      [[ASSET_USDU]],
+    );
+    const [upkeepNeeded, performData] = await bridge.checkUpkeep(checkData);
+    expect(upkeepNeeded).to.equal(true);
+    expect(
+      ethers.AbiCoder.defaultAbiCoder().decode(["bytes32[]"], performData)[0],
+    ).to.deep.equal([ASSET_USDU]);
+
+    await expect(bridge.performUpkeep(performData))
+      .to.emit(bridge, "CircuitBreakerTriggered")
+      .withArgs(
+        ASSET_USDU,
+        ethers.id("POR_ROUND_INCOMPLETE"),
+        11,
+        12,
+      );
+
+    const cfg = await bridge.stablecoins(ASSET_USDU);
+    expect(cfg.mintPaused).to.equal(true);
+    expect(await bridge.paused()).to.equal(true);
+  });
+
+  it("circuit-breaks when a PoR round has no update timestamp", async function () {
+    const { bridge, porFeed } = await buildFixture();
+    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    await porFeed.setRoundDataWithMetadata(
+      21,
+      units(1_000_000),
+      now,
+      0,
+      21,
+    );
+
+    await expect(bridge.monitorReserve(ASSET_USDU))
+      .to.emit(bridge, "CircuitBreakerTriggered")
+      .withArgs(
+        ASSET_USDU,
+        ethers.id("POR_ROUND_INCOMPLETE"),
+        21,
+        21,
+      );
+
+    const cfg = await bridge.stablecoins(ASSET_USDU);
+    expect(cfg.mintPaused).to.equal(true);
+    expect(await bridge.paused()).to.equal(true);
+  });
+
+  it("flags future-dated PoR rounds for upkeep and circuit-breaks on revalidation", async function () {
+    const { bridge, porFeed } = await buildFixture();
+    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    await porFeed.setRoundDataWithMetadata(
+      31,
+      units(1_000_000),
+      now,
+      now + 3600,
+      31,
+    );
+
+    const checkData = ethers.AbiCoder.defaultAbiCoder().encode(
+      ["bytes32[]"],
+      [[ASSET_USDU]],
+    );
+    const [upkeepNeeded, performData] = await bridge.checkUpkeep(checkData);
+    expect(upkeepNeeded).to.equal(true);
+
+    await expect(bridge.performUpkeep(performData))
+      .to.emit(bridge, "CircuitBreakerTriggered")
+      .withArgs(
+        ASSET_USDU,
+        ethers.id("POR_ROUND_INCOMPLETE"),
+        31,
+        31,
+      );
+
+    const cfg = await bridge.stablecoins(ASSET_USDU);
+    expect(cfg.mintPaused).to.equal(true);
+    expect(await bridge.paused()).to.equal(true);
+  });
+
   it("wires external circuit breaker module into USDU mint path", async function () {
     const {
       bridge,

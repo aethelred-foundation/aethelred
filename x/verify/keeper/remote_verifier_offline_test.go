@@ -22,8 +22,8 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 func withHTTPClientStub(t *testing.T, fn roundTripFunc) {
 	t.Helper()
 	old := secureHTTPClientProvider
-	secureHTTPClientProvider = func() *http.Client {
-		return &http.Client{Transport: fn}
+	secureHTTPClientProvider = func() (*http.Client, error) {
+		return &http.Client{Transport: fn}, nil
 	}
 	t.Cleanup(func() { secureHTTPClientProvider = old })
 }
@@ -41,7 +41,7 @@ func TestRemoteVerifierOffline_ZKPaths(t *testing.T) {
 	})
 
 	k := Keeper{}
-	ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+	ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 	require.NoError(t, err)
 	require.True(t, ok)
 }
@@ -60,7 +60,7 @@ func TestRemoteVerifierOffline_ZKErrorsAndBreaker(t *testing.T) {
 			zkVerifierBreaker: circuitbreaker.New("zk", 1, time.Hour),
 		}
 		k.zkVerifierBreaker.RecordFailure()
-		ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.ErrorContains(t, err, "circuit open")
 		require.False(t, ok)
 	})
@@ -75,7 +75,7 @@ func TestRemoteVerifierOffline_ZKErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.ErrorContains(t, err, "status 400")
 		require.False(t, ok)
 	})
@@ -90,7 +90,7 @@ func TestRemoteVerifierOffline_ZKErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.ErrorContains(t, err, "decode")
 		require.False(t, ok)
 	})
@@ -105,7 +105,7 @@ func TestRemoteVerifierOffline_ZKErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.ErrorContains(t, err, "verification failed")
 		require.False(t, ok)
 	})
@@ -116,7 +116,7 @@ func TestRemoteVerifierOffline_ZKErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.ErrorContains(t, err, "request failed")
 		require.False(t, ok)
 	})
@@ -135,7 +135,7 @@ func TestRemoteVerifierOffline_AttestationPaths(t *testing.T) {
 	})
 
 	k := Keeper{}
-	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 	require.NoError(t, err)
 	require.True(t, ok)
 }
@@ -161,7 +161,7 @@ func TestRemoteVerifierOffline_TEEAttestationSuccess(t *testing.T) {
 	k := Keeper{
 		attestationVerifierBreaker: circuitbreaker.New("attestation", 5, time.Hour),
 	}
-	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 	require.NoError(t, err)
 	require.True(t, ok)
 }
@@ -176,7 +176,7 @@ func TestRemoteVerifierOffline_TEEAttestationFailure(t *testing.T) {
 	})
 
 	k := Keeper{}
-	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 	require.Error(t, err)
 	require.False(t, ok)
 	require.ErrorContains(t, err, "attestation verification failed")
@@ -203,7 +203,7 @@ func TestRemoteVerifierOffline_TEEBreakerIntegration(t *testing.T) {
 
 	// First `threshold` calls should hit the transport and record failures.
 	for i := 0; i < threshold; i++ {
-		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 		require.Error(t, err)
 		require.False(t, ok)
 		require.ErrorContains(t, err, "request failed")
@@ -212,7 +212,7 @@ func TestRemoteVerifierOffline_TEEBreakerIntegration(t *testing.T) {
 
 	// After threshold failures the breaker should be open — the next call
 	// must be rejected without making an HTTP request.
-	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+	ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 	require.Error(t, err)
 	require.False(t, ok)
 	require.ErrorContains(t, err, "circuit open")
@@ -238,7 +238,7 @@ func TestRemoteVerifierOffline_ZKResponseTooLarge(t *testing.T) {
 	})
 
 	k := Keeper{}
-	ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+	ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 	require.Error(t, err)
 	require.False(t, ok)
 	// The truncated body produces a decode error.
@@ -268,7 +268,7 @@ func TestRemoteVerifierOffline_ZKMalformedJSON(t *testing.T) {
 			})
 
 			k := Keeper{}
-			ok, err := k.callRemoteZKVerifier(context.Background(), "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+			ok, err := k.callRemoteZKVerifier(context.Background(), "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 			require.Error(t, err)
 			require.False(t, ok)
 			require.ErrorContains(t, err, "decode")
@@ -290,7 +290,7 @@ func TestRemoteVerifierOffline_ZKTimeout(t *testing.T) {
 		cancel() // cancel immediately
 
 		k := Keeper{}
-		ok, err := k.callRemoteZKVerifier(ctx, "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(ctx, "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.Error(t, err)
 		require.False(t, ok)
 	})
@@ -305,7 +305,7 @@ func TestRemoteVerifierOffline_ZKTimeout(t *testing.T) {
 		defer cancel()
 
 		k := Keeper{}
-		ok, err := k.callRemoteZKVerifier(ctx, "https://verifier.example", sampleZKProof(), sampleVerifyingKey())
+		ok, err := k.callRemoteZKVerifier(ctx, "https://93.184.216.34", sampleZKProof(), sampleVerifyingKey())
 		require.Error(t, err)
 		require.False(t, ok)
 		require.ErrorContains(t, err, "request failed")
@@ -384,7 +384,7 @@ func TestRemoteVerifierOffline_AttestationErrorsAndBreaker(t *testing.T) {
 			attestationVerifierBreaker: circuitbreaker.New("attestation", 1, time.Hour),
 		}
 		k.attestationVerifierBreaker.RecordFailure()
-		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 		require.ErrorContains(t, err, "circuit open")
 		require.False(t, ok)
 	})
@@ -399,7 +399,7 @@ func TestRemoteVerifierOffline_AttestationErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 		require.ErrorContains(t, err, "status 401")
 		require.False(t, ok)
 	})
@@ -414,7 +414,7 @@ func TestRemoteVerifierOffline_AttestationErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 		require.ErrorContains(t, err, "decode")
 		require.False(t, ok)
 	})
@@ -429,7 +429,7 @@ func TestRemoteVerifierOffline_AttestationErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 		require.ErrorContains(t, err, "verification failed")
 		require.False(t, ok)
 	})
@@ -440,9 +440,8 @@ func TestRemoteVerifierOffline_AttestationErrorsAndBreaker(t *testing.T) {
 		})
 
 		k := Keeper{}
-		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://attestation.example", sampleTEEAttestation())
+		ok, err := k.callRemoteAttestationVerifier(context.Background(), "https://93.184.216.34", sampleTEEAttestation())
 		require.ErrorContains(t, err, "request failed")
 		require.False(t, ok)
 	})
 }
-

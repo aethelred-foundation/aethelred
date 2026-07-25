@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -161,13 +162,20 @@ func newApp(
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
-	return app.New(
+	aethelredApp := app.New(
 		logger,
 		db,
 		traceStore,
 		true,
 		appOpts,
 	)
+	if err := configureLocalValidatorSigningKey(aethelredApp, appOpts); err != nil {
+		_ = aethelredApp.Close()
+		// servertypes.AppCreator has no error return. Panic is the Cosmos SDK's
+		// fail-fast path for an application that cannot be constructed safely.
+		panic(fmt.Errorf("initialize compact verification signer: %w", err))
+	}
+	return aethelredApp
 }
 
 // appExport exports app state
@@ -181,6 +189,8 @@ func appExport(
 	appOpts servertypes.AppOptions,
 	modulesToExport []string,
 ) (servertypes.ExportedApp, error) {
+	// Export is an offline/read-only operation. It must never load validator
+	// private-key material into the application process.
 	aethelredApp := app.New(
 		logger,
 		db,

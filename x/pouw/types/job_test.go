@@ -35,6 +35,7 @@ func makeTestJob(status types.JobStatus) *types.ComputeJob {
 		100,       // blockHeight
 		blockTime, // deterministic block time
 	)
+	job.InputDataUri = "https://inputs.example.com/test-input.bin"
 	// Force the desired status for testing transitions.
 	job.Status = status
 	return job

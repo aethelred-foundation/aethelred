@@ -27,6 +27,7 @@ func (app *AethelredApp) lastBlockTime(ctx sdk.Context) (time.Time, bool) {
 		return time.Time{}, false
 	}
 
+	// #nosec G115 -- this decodes the two's-complement bit pattern written by putBoundedTime.
 	nanos := int64(binary.BigEndian.Uint64(bz))
 	if nanos <= 0 {
 		return time.Time{}, false

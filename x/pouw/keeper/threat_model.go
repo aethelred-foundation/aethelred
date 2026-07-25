@@ -300,13 +300,13 @@ var AttackSurfaces = []AttackSurface{
 
 	// --- Incomplete / Open Items ---
 	{
-		ID: "AS-16", Name: "Downtime Slashing Enforcement Drift",
-		Module: "pouw/evidence", Attacker: "ATK-01", Boundary: "TB-01",
-		Vector:       "Validator goes offline indefinitely, hoping missed vote extensions are not fed into the live end-block evidence and slashing path.",
+		ID: "AS-16", Name: "Downtime Slashing Enforcement",
+		Module: "cosmos/slashing", Attacker: "ATK-01", Boundary: "TB-01",
+		Vector:       "Validator goes offline indefinitely and stops signing committed blocks.",
 		Impact:       "medium",
-		Mitigation:   "ConsensusHandler records validator misses into the BlockMissTracker, AethelredApp.processEndBlockEvidence prefers the IntegratedEvidenceProcessor, and the integrated slashing path applies downtime slash and jail actions through the live slashing adapter. Remaining residual risk is threshold tuning and operator response time, not missing enforcement.",
+		Mitigation:   "The registered Cosmos SDK x/slashing module consumes deterministic last-commit VoteInfos in its BeginBlocker, persists missed-block counters, and applies the configured downtime slash and jail policy through the live staking keeper. The obsolete parallel app evidence wrapper is intentionally not wired, preventing duplicate penalties. Remaining residual risk is parameter tuning and operator response time.",
 		Status:       "mitigated",
-		TestCoverage: "TestBlockMissTrackerAndPenalties, TestSlashingModuleAdapter_SlashForDowntime, TestThreatModel_RuntimeEnforcementNarratives",
+		TestCoverage: "Cosmos SDK x/slashing keeper and module tests; TestThreatModel_RuntimeEnforcementNarratives",
 	},
 	{
 		ID: "AS-17", Name: "Vote Extension Signing Rollout Drift",

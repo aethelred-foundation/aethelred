@@ -40,6 +40,7 @@ func makeProductionExtension(t *testing.T, mutate func(*keeper.VoteExtensionWire
 	ext := &keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           100,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage(`"cosmosvaloper1production"`),
 		Verifications:    []keeper.VerificationWire{},
 		Timestamp:        time.Now().UTC(),

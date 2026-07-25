@@ -2,12 +2,18 @@ package app
 
 import (
 	"bytes"
+	"context"
+	"crypto/ed25519"
 	cryptoRand "crypto/rand"
 	"fmt"
+	"math"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	pouwkeeper "github.com/aethelred/aethelred/x/pouw/keeper"
+	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 )
 
 // NOTE: All vote extension types (VoteExtension, ComputeVerification,
@@ -74,6 +80,13 @@ func (app *AethelredApp) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			blockTime = ctx.BlockTime()
 		}
 		voteExt := NewVoteExtensionAtBlockTime(req.Height, validatorAddr, blockTime)
+		voteExt.ChainID = ctx.ChainID()
+		extensionNonce, nonceErr := generateNonce()
+		if nonceErr != nil {
+			app.Logger().Error("Failed to generate vote extension nonce", "error", nonceErr)
+			return &abci.ResponseExtendVote{VoteExtension: nil}, nil
+		}
+		voteExt.Nonce = extensionNonce
 
 		// ── EV-05/EV-06: Bounded verification loop ──
 		// Cap both count (MaxVerificationsPerExtension) and wall-clock time
@@ -98,7 +111,36 @@ func (app *AethelredApp) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				)
 				break
 			}
-			verification := app.executeAssignedVerification(ctx, job, validatorAccountAddr)
+			verificationContext, cancelVerification := context.WithDeadline(
+				ctx.Context(),
+				extendDeadline,
+			)
+			verification := app.executeAssignedVerification(
+				ctx.WithContext(verificationContext),
+				job,
+				validatorAccountAddr,
+			)
+			cancelVerification()
+			verification.ValidatorSignatureVersion = ComputeVerificationSignatureVersion
+			verification.VoteBlockHash = append([]byte(nil), req.Hash...)
+			verification.ExtensionNonce = append([]byte(nil), voteExt.Nonce...)
+			if app.validatorPrivKey != nil {
+				if signErr := signComputeVerification(
+					&verification,
+					req.Height,
+					ctx.ChainID(),
+					validatorAddr,
+					voteExt.Timestamp,
+					ed25519.PrivateKey(app.validatorPrivKey),
+				); signErr != nil {
+					app.Logger().Error(
+						"Failed to sign compute verification",
+						"job_id", job.Id,
+						"error", signErr,
+					)
+					return &abci.ResponseExtendVote{VoteExtension: nil}, nil
+				}
+			}
 			voteExt.AddVerification(verification)
 		}
 
@@ -180,6 +222,13 @@ func (app *AethelredApp) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			"num_verifications", len(voteExt.Verifications),
 			"extension_size", len(extBytes),
 		)
+
+		// CometBFT does not invoke VerifyVoteExtension for the local
+		// validator's own vote. Cache the final post-trimming bytes here so
+		// ProcessProposal can reconstruct the complete verified quorum.
+		if app.voteExtensionCache != nil {
+			app.voteExtensionCache.Store(req.Height, validatorAddr, extBytes)
+		}
 
 		return &abci.ResponseExtendVote{
 			VoteExtension: extBytes,
@@ -271,6 +320,23 @@ func (app *AethelredApp) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHan
 			)
 			return reject(), nil
 		}
+		if voteExt.ChainID != ctx.ChainID() || voteExt.ChainID == "" {
+			app.Logger().Error("Vote extension chain ID mismatch",
+				"request_chain_id", ctx.ChainID(),
+				"extension_chain_id", voteExt.ChainID,
+			)
+			return reject(), nil
+		}
+		if validationMode == ValidationModeStrict {
+			if len(req.Hash) != 32 {
+				app.Logger().Error("Vote-extension request has an invalid proposal hash length")
+				return reject(), nil
+			}
+			if len(voteExt.Nonce) != 32 {
+				app.Logger().Error("Vote extension has an invalid extension nonce length")
+				return reject(), nil
+			}
+		}
 
 		if !bytes.Equal(voteExt.ValidatorAddress, req.ValidatorAddress) {
 			app.Logger().Error("Vote extension validator identity mismatch",
@@ -282,13 +348,12 @@ func (app *AethelredApp) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHan
 
 		// Validate the vote extension using mode-appropriate validation.
 		// Strict mode rejects unsigned extensions, simulated TEE, missing hashes.
-		now, ok := app.lastBlockTime(ctx)
-		if !ok && validationMode == ValidationModeStrict {
-			app.Logger().Error("Missing last block time for deterministic vote extension validation",
-				"height", req.Height,
-			)
-			return reject(), nil
-		}
+		// RequestVerifyVoteExtension does not expose the current proposal time.
+		// Validating against the prior persisted block time creates a permanent
+		// liveness failure after downtime. Height/hash/chain are authenticated
+		// here; freshness is checked deterministically against the committed
+		// block time when the compact evidence is proposed as a seal.
+		now := time.Time{}
 		maxPastSkew, maxFutureSkew := app.voteExtensionTimeBounds(ctx)
 		if validationMode == ValidationModeStrict {
 			if err := voteExt.validateAtWithWindow(validationMode, now, maxPastSkew, maxFutureSkew); err != nil {
@@ -296,6 +361,10 @@ func (app *AethelredApp) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHan
 					"error", err,
 					"mode", "production",
 				)
+				return reject(), nil
+			}
+			if err := voteExt.validateAttestationDomain(ctx.ChainID()); err != nil {
+				app.Logger().Error("Vote extension attestation domain validation failed", "error", err)
 				return reject(), nil
 			}
 		} else {
@@ -313,13 +382,100 @@ func (app *AethelredApp) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHan
 			}
 		}
 
+		seenJobs := make(map[string]struct{}, len(voteExt.Verifications))
+		validatorAccountAddress := ""
+		for i := range voteExt.Verifications {
+			verification := &voteExt.Verifications[i]
+			if _, duplicate := seenJobs[verification.JobID]; duplicate {
+				app.Logger().Error("Duplicate job in vote extension", "job_id", verification.JobID)
+				return reject(), nil
+			}
+			seenJobs[verification.JobID] = struct{}{}
+			if !verification.Success {
+				continue
+			}
+			if verification.ValidatorSignatureVersion != ComputeVerificationSignatureVersion {
+				app.Logger().Error(
+					"Vote verification has an unsupported compact signature version",
+					"index", i,
+					"version", verification.ValidatorSignatureVersion,
+				)
+				return reject(), nil
+			}
+			if !bytes.Equal(verification.VoteBlockHash, req.Hash) {
+				app.Logger().Error(
+					"Vote verification proposal hash mismatch",
+					"index", i,
+					"job_id", verification.JobID,
+				)
+				return reject(), nil
+			}
+			if !bytes.Equal(verification.ExtensionNonce, voteExt.Nonce) {
+				app.Logger().Error(
+					"Vote verification extension nonce mismatch",
+					"index", i,
+					"job_id", verification.JobID,
+				)
+				return reject(), nil
+			}
+
+			job, err := app.PouwKeeper.GetJob(ctx, verification.JobID)
+			if err != nil {
+				app.Logger().Error("Vote extension references unknown job",
+					"index", i,
+					"job_id", verification.JobID,
+				)
+				return reject(), nil
+			}
+			if job.Status != pouwtypes.JobStatusProcessing {
+				app.Logger().Error("Vote extension references ineligible job",
+					"index", i,
+					"job_id", verification.JobID,
+					"status", job.Status.String(),
+				)
+				return reject(), nil
+			}
+			if validatorAccountAddress == "" {
+				validatorAccountAddress, err = app.validatorAccountAddress(
+					ctx,
+					voteExt.ValidatorAddress,
+				)
+				if err != nil {
+					app.Logger().Error(
+						"Cannot map vote-extension signer to validator account",
+						"error", err,
+					)
+					return reject(), nil
+				}
+			}
+			assigned, err := pouwkeeper.IsValidatorAssigned(job, validatorAccountAddress)
+			if err != nil || !assigned {
+				app.Logger().Error(
+					"Validator is not assigned to vote-extension job",
+					"index", i,
+					"job_id", verification.JobID,
+					"validator", validatorAccountAddress,
+					"error", err,
+				)
+				return reject(), nil
+			}
+			if !bytes.Equal(job.ModelHash, verification.ModelHash) ||
+				!bytes.Equal(job.InputHash, verification.InputHash) {
+				app.Logger().Error("Vote extension hashes do not match canonical job",
+					"index", i,
+					"job_id", verification.JobID,
+				)
+				return reject(), nil
+			}
+		}
+
 		// Verify signature on vote extension using validator's ed25519 public key.
 		// In strict mode, the signature is guaranteed present by ValidateStrict().
 		// In permissive mode, we still verify if a signature IS provided.
 		if len(voteExt.Signature) > 0 {
 			// Look up validator public key from staking keeper via consensus address
 			consAddr := sdk.ConsAddress(voteExt.ValidatorAddress)
-			validator, err := app.StakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
+			validator, err := app.validatorByConsensusAddress(ctx, consAddr)
 			if err != nil {
 				app.Logger().Error("Unknown validator in vote extension",
 					"cons_addr", consAddr.String(),
@@ -340,6 +496,38 @@ func (app *AethelredApp) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHan
 					"validator", consAddr.String(),
 				)
 				return reject(), nil
+			}
+			for i := range voteExt.Verifications {
+				verification := voteExt.Verifications[i]
+				if !verification.Success {
+					continue
+				}
+				if len(verification.ValidatorSignature) == 0 {
+					if validationMode == ValidationModeStrict {
+						app.Logger().Error(
+							"Successful verification is missing its compact validator signature",
+							"index", i,
+							"job_id", verification.JobID,
+						)
+						return reject(), nil
+					}
+					continue
+				}
+				if !verifyComputeVerificationSignature(
+					verification,
+					voteExt.Height,
+					voteExt.ChainID,
+					voteExt.ValidatorAddress,
+					voteExt.Timestamp,
+					ed25519.PublicKey(pubKey.Bytes()),
+				) {
+					app.Logger().Error(
+						"Compute verification signature verification failed",
+						"index", i,
+						"job_id", verification.JobID,
+					)
+					return reject(), nil
+				}
 			}
 		} else if validationMode == ValidationModeStrict {
 			app.Logger().Error("SECURITY: unsigned vote extension rejected in strict mode")
@@ -390,18 +578,48 @@ func (app *AethelredApp) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			mempoolTxs = app.encryptedMempoolBridge.ProcessProposalTxs(ctx, req)
 		}
 
-		// Start with the processed (decrypted) transactions
-		proposalTxs := mempoolTxs
+		sealTxs := make([][]byte, 0)
 
 		if app.consensusHandler != nil {
-			// PP-08: Canonical consensus pipeline uses req.LocalLastCommit.Votes
-			// (the consensus-provided input), NOT the local vote extension cache.
-			// This ensures the proposal is deterministic and independent of local
-			// cache state, preventing non-determinism across proposers.
-			results := app.consensusHandler.AggregateVoteExtensions(ctx, req.LocalLastCommit.Votes)
-			sealTxs := app.consensusHandler.CreateSealTransactions(ctx, results)
-			if len(sealTxs) > 0 {
-				proposalTxs = append(sealTxs, proposalTxs...)
+			expectedVoteBlockHash, bindingFound, bindingErr :=
+				app.previousFinalizedBlockHash(ctx, req.Height)
+			if bindingErr != nil {
+				return nil, fmt.Errorf(
+					"load prior finalized block binding at height %d: %w",
+					req.Height,
+					bindingErr,
+				)
+			}
+			if !bindingFound {
+				// Seal certificates are optional. On the first height after
+				// this state binding is introduced there is no prior record
+				// yet, so omit seals and let FinalizeBlock bootstrap it.
+				app.Logger().Info(
+					"Skipping seal transactions while bootstrapping finalized block binding",
+					"height", req.Height,
+				)
+			} else {
+				// PP-08: Canonical consensus pipeline uses
+				// req.LocalLastCommit.Votes (the consensus-provided input), NOT
+				// the local vote extension cache.
+				results := app.consensusHandler.AggregateVoteExtensions(
+					ctx,
+					req.LocalLastCommit.Votes,
+				)
+				for jobID, result := range results {
+					if !aggregatedResultBindsToFinalizedBlock(
+						result,
+						expectedVoteBlockHash,
+					) {
+						app.Logger().Warn(
+							"Skipping seal evidence not bound to the finalized block",
+							"height", req.Height,
+							"job_id", jobID,
+						)
+						delete(results, jobID)
+					}
+				}
+				sealTxs = app.consensusHandler.CreateSealTransactions(ctx, results)
 			}
 		} else {
 			// Legacy fallback (dev/test only).
@@ -434,14 +652,52 @@ func (app *AethelredApp) PrepareProposalHandler() sdk.PrepareProposalHandler {
 					app.Logger().Error("Failed to marshal injected tx", "error", err)
 					continue
 				}
-				proposalTxs = append([][]byte{txBytes}, proposalTxs...)
+				sealTxs = append(sealTxs, txBytes)
 			}
 		}
 
 		return &abci.ResponsePrepareProposal{
-			Txs: proposalTxs,
+			Txs: packProposalTransactions(sealTxs, mempoolTxs, req.MaxTxBytes),
 		}, nil
 	}
+}
+
+// packProposalTransactions deterministically prioritizes canonical consensus
+// seals, then preserves mempool order within both the ABCI MaxTxBytes limit and
+// the application proof/count limits. Seals that do not fit are deferred to a
+// later height; a proposer must never construct a block its own validator
+// rejects.
+func packProposalTransactions(sealTxs, mempoolTxs [][]byte, maxTxBytes int64) [][]byte {
+	totalLimit := int64(math.MaxInt64)
+	if maxTxBytes >= 0 {
+		totalLimit = maxTxBytes
+	}
+	proposal := make([][]byte, 0, len(sealTxs)+len(mempoolTxs))
+	totalBytes := int64(0)
+	injectedBytes := int64(0)
+	injectedCount := 0
+
+	for _, txBytes := range sealTxs {
+		txSize := int64(len(txBytes))
+		if injectedCount >= maxInjectedSealTxsPerBlock ||
+			injectedBytes+txSize > int64(maxInjectedProofBytes) ||
+			totalBytes+txSize > totalLimit {
+			continue
+		}
+		proposal = append(proposal, txBytes)
+		totalBytes += txSize
+		injectedBytes += txSize
+		injectedCount++
+	}
+	for _, txBytes := range mempoolTxs {
+		txSize := int64(len(txBytes))
+		if totalBytes+txSize > totalLimit {
+			continue
+		}
+		proposal = append(proposal, txBytes)
+		totalBytes += txSize
+	}
+	return proposal
 }
 
 // ProcessProposalHandler returns the ABCI++ ProcessProposal handler.
@@ -468,9 +724,6 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			}
 		}()
 
-		// Record validator participation/misses from the last commit.
-		app.recordLivenessFromLastCommit(ctx, req.ProposedLastCommit)
-
 		app.Logger().Info("ProcessProposal called",
 			"height", req.Height,
 			"num_txs", len(req.Txs),
@@ -483,12 +736,6 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		if isProductionCtx {
 			if app.consensusHandler == nil {
 				app.Logger().Error("SECURITY: consensus handler not configured in production mode")
-				return &abci.ResponseProcessProposal{
-					Status: abci.ResponseProcessProposal_REJECT,
-				}, nil
-			}
-			if app.voteExtensionCache == nil {
-				app.Logger().Error("SECURITY: vote extension cache not configured in production mode")
 				return &abci.ResponseProcessProposal{
 					Status: abci.ResponseProcessProposal_REJECT,
 				}, nil
@@ -507,28 +754,46 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// Enforce per-block quotas on injected transactions and total proof bytes
 		// to prevent a malicious proposer from flooding ProcessProposal with
 		// expensive-to-verify payloads.
-		const (
-			maxInjectedTxsPerBlock = 50              // PR-17: bound O(n) verification work
-			maxTotalProofBytes     = 5 * 1024 * 1024 // H-4: 5MB total proof budget per block
-		)
 		injectedCount := 0
-		totalProofBytes := 0
+		injectedProofBytes := 0
 		for _, txBytes := range req.Txs {
 			if IsInjectedVoteExtensionTx(txBytes) {
 				injectedCount++
+				injectedProofBytes += len(txBytes)
 			}
-			totalProofBytes += len(txBytes)
 		}
-		if injectedCount > maxInjectedTxsPerBlock {
+		if injectedCount > maxInjectedSealTxsPerBlock {
 			app.Logger().Error("Block exceeds max injected tx quota (H-4/PR-17)",
-				"injected", injectedCount, "max", maxInjectedTxsPerBlock)
+				"injected", injectedCount, "max", maxInjectedSealTxsPerBlock)
 			return &abci.ResponseProcessProposal{
 				Status: abci.ResponseProcessProposal_REJECT,
 			}, nil
 		}
-		if totalProofBytes > maxTotalProofBytes {
+		if injectedProofBytes > maxInjectedProofBytes {
 			app.Logger().Error("Block exceeds max total proof bytes (H-4/PR-02)",
-				"bytes", totalProofBytes, "max", maxTotalProofBytes)
+				"bytes", injectedProofBytes, "max", maxInjectedProofBytes)
+			return &abci.ResponseProcessProposal{
+				Status: abci.ResponseProcessProposal_REJECT,
+			}, nil
+		}
+
+		expectedVoteBlockHash, bindingFound, bindingErr :=
+			app.previousFinalizedBlockHash(ctx, req.Height)
+		if bindingErr != nil {
+			app.Logger().Error(
+				"Invalid prior finalized block binding",
+				"height", req.Height,
+				"error", bindingErr,
+			)
+			return &abci.ResponseProcessProposal{
+				Status: abci.ResponseProcessProposal_REJECT,
+			}, nil
+		}
+		if injectedCount > 0 && !bindingFound {
+			app.Logger().Error(
+				"Injected seal lacks a prior finalized block binding",
+				"height", req.Height,
+			)
 			return &abci.ResponseProcessProposal{
 				Status: abci.ResponseProcessProposal_REJECT,
 			}, nil
@@ -542,6 +807,20 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 				if app.consensusHandler != nil {
 					if err := app.consensusHandler.ValidateSealTransaction(ctx, txBytes); err != nil {
 						app.Logger().Error("Injected tx validation failed", "error", err)
+						return &abci.ResponseProcessProposal{
+							Status: abci.ResponseProcessProposal_REJECT,
+						}, nil
+					}
+					if err := app.validateSelfContainedSealEvidence(
+						ctx,
+						txBytes,
+						req.ProposedLastCommit,
+						expectedVoteBlockHash,
+					); err != nil {
+						app.Logger().Error(
+							"Self-contained seal evidence validation failed",
+							"error", err,
+						)
 						return &abci.ResponseProcessProposal{
 							Status: abci.ResponseProcessProposal_REJECT,
 						}, nil
@@ -566,87 +845,10 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			}
 		}
 
-		// Enforce computation finality in production: ensure consensus results
-		// are reflected in the proposal's injected transactions.
-		//
-		// ── PR-04 / VC-01 / VC-02: Cache-safe finality enforcement ──
-		// The vote extension cache is ADVISORY ONLY. ProcessProposal correctness
-		// must NOT depend on cache presence. After a node restart, the cache is
-		// empty, so we gracefully degrade:
-		//   - If the cache has entries for this height, we use them for
-		//     cross-validation (additional safety check).
-		//   - If the cache is empty, we rely solely on the deterministic
-		//     consensus evidence audit (AuditProposalConsensusEvidence) and
-		//     the per-tx validation (validateInjectedTx / ValidateSealTransaction)
-		//     which both use on-chain state only.
-		// This ensures H-1 (cache-dependent split) cannot occur.
-		if isProductionCtx {
-			lastHeight := req.Height - 1
-			extendedVotes, found := app.voteExtensionCache.BuildExtendedVotes(lastHeight, req.ProposedLastCommit.Votes)
-			injectedTxCount := 0
-			for _, txBytes := range req.Txs {
-				if IsInjectedVoteExtensionTx(txBytes) {
-					injectedTxCount++
-				}
-			}
-
-			// ── PR-04: Do NOT reject when cache is empty ──
-			// When found == 0 (cache miss, e.g. after restart), we log a warning
-			// but still ACCEPT/REJECT based on deterministic on-chain validation
-			// (the AuditProposalConsensusEvidence check above already passed).
-			if found == 0 && len(req.ProposedLastCommit.Votes) > 0 && injectedTxCount > 0 {
-				app.Logger().Warn("Vote extension cache empty for finality check - "+
-					"relying on on-chain consensus evidence audit only (PR-04/VC-01)",
-					"height", lastHeight,
-					"injected_tx_count", injectedTxCount,
-				)
-				// Graceful degradation: skip cache-based power checks.
-				// The AuditProposalConsensusEvidence check above already validated
-				// the injected transactions against the commit evidence.
-			}
-
-			// ── VC-02: When cache IS populated, use it as an additional safety net ──
-			if found > 0 && injectedTxCount > 0 {
-				evidencePower, totalPower := voteExtensionEvidencePower(extendedVotes)
-				requiredEvidencePower := requiredConsensusPower(totalPower, consensusThreshold)
-				if totalPower <= 0 || evidencePower < requiredEvidencePower {
-					app.Logger().Error("Insufficient vote-extension evidence power for injected consensus txs",
-						"evidence_power", evidencePower,
-						"total_power", totalPower,
-						"required_power", requiredEvidencePower,
-						"threshold_pct", consensusThreshold,
-					)
-					return &abci.ResponseProcessProposal{
-						Status: abci.ResponseProcessProposal_REJECT,
-					}, nil
-				}
-			}
-
-			if found > 0 {
-				results := app.consensusHandler.AggregateVoteExtensions(ctx, extendedVotes)
-				if err := app.validateComputationFinality(results, req.Txs, consensusThreshold); err != nil {
-					app.Logger().Error("Computation finality check failed", "error", err)
-					return &abci.ResponseProcessProposal{
-						Status: abci.ResponseProcessProposal_REJECT,
-					}, nil
-				}
-			}
-		}
-
 		return &abci.ResponseProcessProposal{
 			Status: abci.ResponseProcessProposal_ACCEPT,
 		}, nil
 	}
-}
-
-func voteExtensionEvidencePower(votes []abci.ExtendedVoteInfo) (evidencePower int64, totalPower int64) {
-	for _, v := range votes {
-		totalPower += v.Validator.Power
-		if len(v.VoteExtension) > 0 {
-			evidencePower += v.Validator.Power
-		}
-	}
-	return evidencePower, totalPower
 }
 
 // validateInjectedTx validates an injected vote extension transaction

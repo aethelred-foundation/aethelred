@@ -206,6 +206,7 @@ contract VestingHandler is Test {
 
     /// @dev Beneficiaries used.
     address[] public beneficiaries;
+    mapping(address => bool) public isBeneficiary;
 
     /// @dev Category index rotation for schedule creation.
     uint256 private _categoryRotation;
@@ -230,6 +231,10 @@ contract VestingHandler is Test {
 
     function revokedCount() external view returns (uint256) {
         return revokedScheduleIds.length;
+    }
+
+    function beneficiaryCount() external view returns (uint256) {
+        return beneficiaries.length;
     }
 
     // -- fuzz entry points --
@@ -257,7 +262,7 @@ contract VestingHandler is Test {
         bytes32 id = vesting.createCoreContributorSchedule(beneficiary, amount);
 
         scheduleIds.push(id);
-        beneficiaries.push(beneficiary);
+        _addBeneficiary(beneficiary);
 
         // Record initial vested amount
         lastVested[id] = vesting.getVested(id);
@@ -283,7 +288,7 @@ contract VestingHandler is Test {
         bytes32 id = vesting.createPublicSalesSchedule(beneficiary, amount);
 
         scheduleIds.push(id);
-        beneficiaries.push(beneficiary);
+        _addBeneficiary(beneficiary);
 
         lastVested[id] = vesting.getVested(id);
     }
@@ -349,6 +354,13 @@ contract VestingHandler is Test {
     }
 
     // -- internal --
+
+    function _addBeneficiary(address beneficiary) internal {
+        if (!isBeneficiary[beneficiary]) {
+            isBeneficiary[beneficiary] = true;
+            beneficiaries.push(beneficiary);
+        }
+    }
 
     function _deriveBeneficiary(uint256 seed) internal pure returns (address) {
         return address(
@@ -473,6 +485,20 @@ contract TokenVestingInvariantTest is Test {
         }
         if (!tokenHandler.isActor(initialRecipient)) {
             balanceSum += token.balanceOf(initialRecipient);
+        }
+
+        // Vesting releases transfer tokens to schedule beneficiaries that are
+        // intentionally outside TokenHandler's actor set. Include each unique
+        // beneficiary exactly once to preserve the conservation invariant.
+        uint256 beneficiaryCount = vestingHandler.beneficiaryCount();
+        for (uint256 i = 0; i < beneficiaryCount; i++) {
+            address beneficiary = vestingHandler.beneficiaries(i);
+            if (
+                !tokenHandler.isActor(beneficiary) && beneficiary != address(vesting)
+                    && beneficiary != initialRecipient
+            ) {
+                balanceSum += token.balanceOf(beneficiary);
+            }
         }
 
         assertEq(

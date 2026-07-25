@@ -88,7 +88,7 @@ func (k msgServer) RegisterModel(goCtx context.Context, msg *types.MsgRegisterMo
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	model := types.NewRegisteredModel(
+	model := types.NewRegisteredModelAt(
 		msg.ModelHash,
 		msg.ModelId,
 		msg.Name,
@@ -96,6 +96,7 @@ func (k msgServer) RegisterModel(goCtx context.Context, msg *types.MsgRegisterMo
 		msg.Version,
 		msg.Architecture,
 		msg.Owner,
+		ctx.BlockTime(),
 	)
 
 	model.InputSchema = msg.InputSchema
@@ -132,7 +133,7 @@ func (k msgServer) CancelJob(goCtx context.Context, msg *types.MsgCancelJob) (*t
 		return nil, fmt.Errorf("job is not pending: %s", job.Status)
 	}
 
-	if err := job.MarkFailed(); err != nil {
+	if err := job.MarkFailedAt(ctx.BlockTime()); err != nil {
 		return nil, fmt.Errorf("failed to cancel job: %w", err)
 	}
 	if job.Metadata == nil {

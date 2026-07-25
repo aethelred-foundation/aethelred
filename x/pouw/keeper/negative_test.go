@@ -212,15 +212,17 @@ func TestNegative_TEE_ZeroTimestamp(t *testing.T) {
 	assertErrorContains(t, err, "missing timestamp")
 }
 
-func TestNegative_TEE_StaleTimestamp(t *testing.T) {
+func TestPositive_TEE_HistoricalTimestampAcceptedStructurally(t *testing.T) {
 	v := validSuccessfulVerification()
 	v.AttestationType = "tee"
 	v.TEEAttestation = makeTEEAttestation(func(a *teeAttestationBuilder) {
-		a.Timestamp = time.Now().Add(-15 * time.Minute) // >10 minute threshold
+		a.Timestamp = time.Now().Add(-15 * time.Minute)
 	}, v.OutputHash)
 
 	err := validateVerificationWireViaExtension(t, v)
-	assertErrorContains(t, err, "stale")
+	if err != nil {
+		t.Fatalf("historical TEE timestamp should remain structurally valid: %v", err)
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -418,6 +420,7 @@ func TestPositive_FailedVerification_Accepted(t *testing.T) {
 	ext := &keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           100,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage(`"cosmosvaloper1test"`),
 		Verifications:    []keeper.VerificationWire{v},
 		Timestamp:        time.Now().UTC(),
@@ -524,6 +527,7 @@ func validExtension() *keeper.VoteExtensionWire {
 	return &keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           100,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage(`"cosmosvaloper1test"`),
 		Verifications:    []keeper.VerificationWire{}, // empty is fine
 		Timestamp:        time.Now().UTC(),
@@ -540,6 +544,7 @@ func validateVerificationWireViaExtension(t *testing.T, v keeper.VerificationWir
 	ext := &keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           100,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage(`"cosmosvaloper1test"`),
 		Verifications:    []keeper.VerificationWire{v},
 		Timestamp:        time.Now().UTC(),

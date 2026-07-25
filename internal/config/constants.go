@@ -119,12 +119,12 @@ type ProofLimits struct {
 func DefaultProofLimits() ProofLimits {
 	return ProofLimits{
 		// Minimum proof sizes based on proof system mathematics
-		Groth16MinSize:  192,  // 3 BN254 points
-		EZKLMinSize:     256,  // EZKL header + minimal proof
-		Halo2MinSize:    384,  // KZG commitments minimum
-		Plonky2MinSize:  256,  // FRI minimum structure
-		RISC0MinSize:    512,  // zkVM receipt minimum
-		STARKMinSize:    1024, // FRI layers minimum
+		Groth16MinSize: 192,  // 3 BN254 points
+		EZKLMinSize:    256,  // EZKL header + minimal proof
+		Halo2MinSize:   384,  // KZG commitments minimum
+		Plonky2MinSize: 256,  // FRI minimum structure
+		RISC0MinSize:   512,  // zkVM receipt minimum
+		STARKMinSize:   1024, // FRI layers minimum
 
 		// Maximum sizes to prevent abuse
 		MaxVerifyingKeySize: 10 * 1024 * 1024, // 10 MB
@@ -191,13 +191,13 @@ type TEEConfig struct {
 // DefaultTEEConfig returns the default TEE configuration.
 func DefaultTEEConfig() TEEConfig {
 	return TEEConfig{
-		SGXMinQuoteSize:     432,               // Header + report body
-		TDXMinQuoteSize:     584,               // Larger than SGX
-		SEVMinReportSize:    672,               // SEV-SNP report structure
-		NitroMinDocSize:     1000,              // CBOR overhead
-		MaxQuoteAge:         5 * time.Minute,   // Allow 5 min clock skew
-		DefaultMREnclaveLen: 32,                // SHA-256
-		DefaultMRSignerLen:  32,                // SHA-256
+		SGXMinQuoteSize:     432,             // Header + report body
+		TDXMinQuoteSize:     584,             // Larger than SGX
+		SEVMinReportSize:    672,             // SEV-SNP report structure
+		NitroMinDocSize:     1000,            // CBOR overhead
+		MaxQuoteAge:         5 * time.Minute, // Allow 5 min clock skew
+		DefaultMREnclaveLen: 32,              // SHA-256
+		DefaultMRSignerLen:  32,              // SHA-256
 	}
 }
 
@@ -322,20 +322,20 @@ func DefaultJobLimits() JobLimits {
 
 // CryptoParams contains cryptographic algorithm parameters.
 type CryptoParams struct {
-	// Dilithium3PubKeySize is the public key size for Dilithium3.
-	// Derivation: NIST FIPS 204 specification.
+	// Dilithium3PubKeySize is the public key size for final ML-DSA-65.
+	// The field name is retained for configuration compatibility.
 	Dilithium3PubKeySize int
 
-	// Dilithium3SigSize is the signature size for Dilithium3.
-	// Derivation: NIST FIPS 204 specification.
+	// Dilithium3SigSize is the signature size for final ML-DSA-65.
+	// The field name is retained for configuration compatibility.
 	Dilithium3SigSize int
 
-	// Dilithium5PubKeySize is the public key size for Dilithium5.
-	// Derivation: NIST FIPS 204 specification.
+	// Dilithium5PubKeySize is the public key size for final ML-DSA-87.
+	// The field name is retained for configuration compatibility.
 	Dilithium5PubKeySize int
 
-	// Dilithium5SigSize is the signature size for Dilithium5.
-	// Derivation: NIST FIPS 204 specification.
+	// Dilithium5SigSize is the signature size for final ML-DSA-87.
+	// The field name is retained for configuration compatibility.
 	Dilithium5SigSize int
 
 	// Kyber768PubKeySize is the public key size for Kyber768.
@@ -367,11 +367,12 @@ type CryptoParams struct {
 // DefaultCryptoParams returns the default cryptographic parameters.
 func DefaultCryptoParams() CryptoParams {
 	return CryptoParams{
-		// Dilithium (ML-DSA) - NIST FIPS 204
+		// Final ML-DSA encodings from NIST FIPS 204, as implemented by
+		// CIRCL's mldsa65 and mldsa87 packages.
 		Dilithium3PubKeySize: 1952,
-		Dilithium3SigSize:    3293,
+		Dilithium3SigSize:    3309,
 		Dilithium5PubKeySize: 2592,
-		Dilithium5SigSize:    4595,
+		Dilithium5SigSize:    4627,
 
 		// Kyber (ML-KEM) - NIST FIPS 203
 		Kyber768PubKeySize:     1184,
@@ -423,14 +424,14 @@ func DefaultNetworkConfig() NetworkConfig {
 
 // Config aggregates all configuration sections.
 type Config struct {
-	HTTP            HTTPConfig
-	Proof           ProofLimits
-	TEE             TEEConfig
-	CircuitBreaker  CircuitBreakerConfig
-	Verification    VerificationTimeouts
-	Jobs            JobLimits
-	Crypto          CryptoParams
-	Network         NetworkConfig
+	HTTP           HTTPConfig
+	Proof          ProofLimits
+	TEE            TEEConfig
+	CircuitBreaker CircuitBreakerConfig
+	Verification   VerificationTimeouts
+	Jobs           JobLimits
+	Crypto         CryptoParams
+	Network        NetworkConfig
 }
 
 // DefaultConfig returns the complete default configuration.

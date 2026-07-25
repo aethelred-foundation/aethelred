@@ -16,14 +16,15 @@ Workflows are now split by concern:
 
 Configure GitHub branch protection with these required checks:
 
-1. `Contracts Required Gate`
-2. `Docker Required Gate`
-3. `E2E Required Gate`
-4. `Fuzzing Required Gate`
-5. `Load Test Required Gate`
-6. `Rust Required Gate`
-7. `Sandbox Required Gate`
-8. `Security Required Gate`
+1. `PQC Production Gate`
+2. `Contracts Required Gate`
+3. `Docker Required Gate`
+4. `E2E Required Gate`
+5. `Fuzzing Required Gate`
+6. `Load Test Required Gate`
+7. `Rust Required Gate`
+8. `Sandbox Required Gate`
+9. `Security Required Gate`
 
 You can apply these branch protections with:
 

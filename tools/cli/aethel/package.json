@@ -52,6 +52,7 @@
     "brace-expansion": "^2.0.3",
     "@tootallnate/once": "^3.0.1",
     "esbuild": "^0.25.0",
+    "fast-uri": "3.1.4",
     "postcss": "^8.4.31",
     "minimatch": "^9.0.7"
   }

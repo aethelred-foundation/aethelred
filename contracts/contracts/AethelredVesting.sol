@@ -83,6 +83,12 @@ contract AethelredVesting is
     /// @notice Maximum schedules per beneficiary
     uint256 public constant MAX_SCHEDULES_PER_BENEFICIARY = 10;
 
+    /// @notice Maximum milestones per schedule, bounding release-time gas usage.
+    uint256 public constant MAX_MILESTONES_PER_SCHEDULE = 32;
+
+    /// @notice Maximum UTF-8 byte length stored for a milestone label.
+    uint256 public constant MAX_MILESTONE_NAME_BYTES = 128;
+
     // =========================================================================
     // ENUMS
     // =========================================================================
@@ -248,6 +254,7 @@ contract AethelredVesting is
         address indexed attestor,
         string milestoneName
     );
+    event MilestonesConfigured(bytes32 indexed scheduleId, uint256 milestoneCount);
 
     event TGEExecuted(uint256 timestamp);
     event ScheduleActivated(bytes32 indexed scheduleId, uint256 startTime);
@@ -278,6 +285,9 @@ contract AethelredVesting is
     error CategoryCapBelowAllocated();
     error ScheduleAlreadyActive();
     error MilestoneIndexOutOfBounds();
+    error InvalidMilestoneConfiguration();
+    error MilestonesAlreadyConfigured();
+    error NotMilestoneSchedule();
     error UpgraderTimelockDelayTooShort();
     error ProductionInitializationRequiresTimelock();
 
@@ -521,6 +531,11 @@ contract AethelredVesting is
         onlyRole(VESTING_ADMIN_ROLE)
         returns (bytes32)
     {
+        // Milestone economics must be configured atomically. Allowing an empty
+        // milestone schedule previously made the type vest linearly and left
+        // achieveMilestone permanently unusable.
+        if (vestingType == VestingType.MILESTONE) revert InvalidMilestoneConfiguration();
+
         return _createSchedule(
             beneficiary,
             amount,
@@ -533,6 +548,111 @@ contract AethelredVesting is
             revocable,
             transferable
         );
+    }
+
+    /**
+     * @notice Create a milestone-driven schedule with its complete unlock policy.
+     * @dev Unlock basis points must be positive and sum to exactly 100%.
+     *      The bounded array makes release and view operations predictably priced.
+     */
+    function createMilestoneSchedule(
+        address beneficiary,
+        uint256 amount,
+        AllocationCategory category,
+        string[] calldata milestoneNames,
+        uint256[] calldata milestoneUnlockBps,
+        bool revocable,
+        bool transferable
+    )
+        external
+        onlyRole(VESTING_ADMIN_ROLE)
+        returns (bytes32 scheduleId)
+    {
+        _validateMilestones(milestoneNames, milestoneUnlockBps);
+
+        scheduleId = _createSchedule(
+            beneficiary,
+            amount,
+            category,
+            VestingType.MILESTONE,
+            0,
+            0,
+            0,
+            0,
+            revocable,
+            transferable
+        );
+        _storeMilestones(scheduleId, milestoneNames, milestoneUnlockBps);
+    }
+
+    /**
+     * @notice One-time configuration path for milestone schedules created by an
+     *         earlier implementation before atomic configuration was available.
+     * @dev Configuration is forbidden after any release or prior configuration.
+     */
+    function configureMilestones(
+        bytes32 scheduleId,
+        string[] calldata milestoneNames,
+        uint256[] calldata milestoneUnlockBps
+    )
+        external
+        onlyRole(VESTING_ADMIN_ROLE)
+        scheduleExists(scheduleId)
+    {
+        VestingSchedule storage schedule = schedules[scheduleId];
+        if (schedule.vestingType != VestingType.MILESTONE) revert NotMilestoneSchedule();
+        if (schedule.releasedAmount != 0 || scheduleMilestones[scheduleId].length != 0) {
+            revert MilestonesAlreadyConfigured();
+        }
+
+        _validateMilestones(milestoneNames, milestoneUnlockBps);
+        _storeMilestones(scheduleId, milestoneNames, milestoneUnlockBps);
+    }
+
+    function _validateMilestones(
+        string[] calldata milestoneNames,
+        uint256[] calldata milestoneUnlockBps
+    )
+        internal
+        pure
+    {
+        uint256 count = milestoneNames.length;
+        if (count == 0 || count > MAX_MILESTONES_PER_SCHEDULE || count != milestoneUnlockBps.length)
+        {
+            revert InvalidMilestoneConfiguration();
+        }
+
+        uint256 totalBps;
+        for (uint256 i = 0; i < count; i++) {
+            uint256 unlockBps = milestoneUnlockBps[i];
+            uint256 nameLength = bytes(milestoneNames[i]).length;
+            if (nameLength == 0 || nameLength > MAX_MILESTONE_NAME_BYTES || unlockBps == 0) {
+                revert InvalidMilestoneConfiguration();
+            }
+            totalBps += unlockBps;
+        }
+        if (totalBps != BPS_DENOMINATOR) revert InvalidMilestoneConfiguration();
+    }
+
+    function _storeMilestones(
+        bytes32 scheduleId,
+        string[] calldata milestoneNames,
+        uint256[] calldata milestoneUnlockBps
+    )
+        internal
+    {
+        uint256 count = milestoneNames.length;
+        for (uint256 i = 0; i < count; i++) {
+            scheduleMilestones[scheduleId].push(
+                Milestone({
+                    name: milestoneNames[i],
+                    unlockBps: milestoneUnlockBps[i],
+                    achieved: false,
+                    achievedAt: 0
+                })
+            );
+        }
+        emit MilestonesConfigured(scheduleId, count);
     }
 
     /**
@@ -713,6 +833,18 @@ contract AethelredVesting is
     function _computeVested(VestingSchedule storage schedule) internal view returns (uint256) {
         if (!tgeOccurred) return 0;
 
+        if (schedule.vestingType == VestingType.MILESTONE) {
+            Milestone[] storage milestones = scheduleMilestones[schedule.scheduleId];
+            uint256 achievedBps;
+            uint256 count = milestones.length;
+            for (uint256 i = 0; i < count; i++) {
+                if (milestones[i].achieved) {
+                    achievedBps += milestones[i].unlockBps;
+                }
+            }
+            return (schedule.totalAmount * achievedBps) / BPS_DENOMINATOR;
+        }
+
         uint256 startTime = schedule.startTime > 0 ? schedule.startTime : tgeTime;
         uint256 endTime = schedule.revoked ? schedule.revokedTime : block.timestamp;
 
@@ -775,6 +907,16 @@ contract AethelredVesting is
         VestingSchedule storage schedule = schedules[scheduleId];
         if (schedule.beneficiary == address(0)) return 0;
         return _computeVested(schedule);
+    }
+
+    /// @notice Return the complete milestone policy and achievement state.
+    function getMilestones(bytes32 scheduleId)
+        external
+        view
+        scheduleExists(scheduleId)
+        returns (Milestone[] memory)
+    {
+        return scheduleMilestones[scheduleId];
     }
 
     /**
@@ -987,11 +1129,16 @@ contract AethelredVesting is
     )
         external
         onlyRole(VESTING_ADMIN_ROLE)
+        onlyAfterTGE
         scheduleExists(scheduleId)
         notRevoked(scheduleId)
     {
         // Require MILESTONE_ATTESTOR_ROLE as well (dual-attestation)
         _checkRole(MILESTONE_ATTESTOR_ROLE, msg.sender);
+
+        if (schedules[scheduleId].vestingType != VestingType.MILESTONE) {
+            revert NotMilestoneSchedule();
+        }
 
         Milestone[] storage milestones = scheduleMilestones[scheduleId];
         if (milestoneIndex >= milestones.length) revert MilestoneIndexOutOfBounds();

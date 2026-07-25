@@ -86,6 +86,26 @@ func TestBuildFullOrchestratorConfig_UsesSimulatedNitroConfig(t *testing.T) {
 	}
 }
 
+func TestBuildFullOrchestratorConfig_EnablesSimulatedProverOnlyForDev(t *testing.T) {
+	t.Setenv("AETHELRED_PROVER_ENDPOINT", "")
+	t.Setenv("AETHELRED_ALLOW_SIMULATED", "true")
+	t.Setenv("AETHELRED_TEE_MODE", "nitro-simulated")
+	t.Setenv("TEE_MODE", "")
+
+	app := &AethelredApp{}
+	cfg := app.buildFullOrchestratorConfig()
+	if cfg.ProverConfig == nil || !cfg.ProverConfig.AllowSimulated {
+		t.Fatal("explicit development startup did not enable the simulated prover")
+	}
+
+	t.Setenv("AETHELRED_ALLOW_SIMULATED", "false")
+	t.Setenv("AETHELRED_TEE_MODE", "")
+	cfg = app.buildFullOrchestratorConfig()
+	if cfg.ProverConfig != nil {
+		t.Fatal("production startup enabled a simulated prover without an endpoint")
+	}
+}
+
 func TestRemoteTEEClient_RejectsInvalidEndpointAtConstruction(t *testing.T) {
 	t.Parallel()
 

@@ -3380,6 +3380,17 @@ func BenchmarkPauseUnpause(b *testing.B) {
 	}
 }
 
+func TestCheckedSecondsDuration(t *testing.T) {
+	maxSeconds := uint64(math.MaxInt64 / int64(time.Second))
+
+	duration, err := checkedSecondsDuration(maxSeconds, "test duration")
+	require.NoError(t, err)
+	require.Equal(t, time.Duration(maxSeconds)*time.Second, duration)
+
+	_, err = checkedSecondsDuration(maxSeconds+1, "test duration")
+	require.ErrorContains(t, err, "exceeds time.Duration range")
+}
+
 func BenchmarkGetExchangeRate(b *testing.B) {
 	k, ctx := setupBenchKeeper(b)
 

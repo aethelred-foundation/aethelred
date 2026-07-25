@@ -935,7 +935,7 @@ func calculateGrade(report *Report) (string, string) {
 
 // saveReport saves the report to a file
 func (r *Runner) saveReport(report *Report) error {
-	if err := os.MkdirAll(r.config.OutputDir, 0755); err != nil {
+	if err := os.MkdirAll(r.config.OutputDir, 0750); err != nil {
 		return err
 	}
 
@@ -947,7 +947,7 @@ func (r *Runner) saveReport(report *Report) error {
 		return err
 	}
 
-	return os.WriteFile(filename, data, 0644)
+	return os.WriteFile(filename, data, 0600)
 }
 
 // ============================================================================

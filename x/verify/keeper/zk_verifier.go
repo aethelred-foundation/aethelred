@@ -11,6 +11,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -361,6 +362,7 @@ func computeDomainBindingDigest(jobID, chainID string, height int64) [32]byte {
 	h.Write([]byte(jobID))
 	h.Write([]byte(chainID))
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the binding schema encodes signed consensus heights as two's-complement BE64.
 	binary.BigEndian.PutUint64(heightBytes, uint64(height))
 	h.Write(heightBytes)
 
@@ -736,6 +738,7 @@ func (inputs *EZKLPublicInputs) ValidateDomainBinding(jobID, chainID string, hei
 	h.Write([]byte(jobID))
 	h.Write([]byte(chainID))
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the binding schema encodes signed consensus heights as two's-complement BE64.
 	binary.BigEndian.PutUint64(heightBytes, uint64(height))
 	h.Write(heightBytes)
 
@@ -851,69 +854,84 @@ func (p *ZKVerifierPrecompile) parsePrecompileInput(input []byte) (*ZKProof, err
 	// Parse circuit hash (bytes 64-96)
 	copy(proof.CircuitHash[:], input[64:96])
 
-	// Parse proof length and data
-	if len(input) < 100 {
-		return nil, errors.New("missing proof length")
+	// Parse proof and public inputs using subtraction-based bounds checks.
+	// Keeping offsets as int avoids uint32 addition wraparound on hostile
+	// length prefixes before they are used as slice indexes.
+	offset := 96
+	proofBytes, err := consumeUint32LengthPrefixed(input, &offset, "proof")
+	if err != nil {
+		return nil, err
 	}
-	proofLen := binary.BigEndian.Uint32(input[96:100])
-	if uint32(len(input)) < 100+proofLen {
-		return nil, errors.New("proof data truncated")
-	}
-	proof.Proof = input[100 : 100+proofLen]
-	proof.ProofSize = uint64(proofLen)
+	proof.Proof = proofBytes
+	proof.ProofSize = uint64(len(proofBytes))
 
-	// Parse public inputs
-	offset := 100 + proofLen
-	if uint32(len(input)) < offset+4 {
-		return nil, errors.New("missing public inputs length")
+	publicInputs, err := consumeUint32LengthPrefixed(input, &offset, "public inputs")
+	if err != nil {
+		return nil, err
 	}
-	inputsLen := binary.BigEndian.Uint32(input[offset : offset+4])
-	if uint32(len(input)) < offset+4+inputsLen {
-		return nil, errors.New("public inputs data truncated")
-	}
-	proof.PublicInputs = input[offset+4 : offset+4+inputsLen]
-	offset += 4 + inputsLen
+	proof.PublicInputs = publicInputs
 
 	// Optional domain-binding trailer for production verification:
 	// [jobIDLen:4][jobID][chainIDLen:4][chainID][height:8]
 	// Legacy callers can omit this trailer and will continue to parse.
-	if uint32(len(input)) == offset {
+	if len(input) == offset {
 		return proof, nil
 	}
 
-	if uint32(len(input)) < offset+4 {
-		return nil, errors.New("missing job id length")
+	jobID, err := consumeUint32LengthPrefixed(input, &offset, "job id")
+	if err != nil {
+		return nil, err
 	}
-	jobIDLen := binary.BigEndian.Uint32(input[offset : offset+4])
-	offset += 4
-	if uint32(len(input)) < offset+jobIDLen {
-		return nil, errors.New("job id truncated")
-	}
-	proof.JobID = string(input[offset : offset+jobIDLen])
-	offset += jobIDLen
+	proof.JobID = string(jobID)
 
-	if uint32(len(input)) < offset+4 {
-		return nil, errors.New("missing chain id length")
+	chainID, err := consumeUint32LengthPrefixed(input, &offset, "chain id")
+	if err != nil {
+		return nil, err
 	}
-	chainIDLen := binary.BigEndian.Uint32(input[offset : offset+4])
-	offset += 4
-	if uint32(len(input)) < offset+chainIDLen {
-		return nil, errors.New("chain id truncated")
-	}
-	proof.ChainID = string(input[offset : offset+chainIDLen])
-	offset += chainIDLen
+	proof.ChainID = string(chainID)
 
-	if uint32(len(input)) < offset+8 {
+	if len(input)-offset < 8 {
 		return nil, errors.New("missing bound height")
 	}
-	proof.Height = int64(binary.BigEndian.Uint64(input[offset : offset+8]))
+	encodedHeight := binary.BigEndian.Uint64(input[offset : offset+8])
+	if encodedHeight > math.MaxInt64 {
+		return nil, errors.New("bound height exceeds int64 range")
+	}
+	// #nosec G115 -- the explicit MaxInt64 check above proves this conversion is representable.
+	proof.Height = int64(encodedHeight)
 	offset += 8
 
-	if uint32(len(input)) != offset {
+	if len(input) != offset {
 		return nil, errors.New("unexpected trailing bytes after domain binding")
 	}
 
 	return proof, nil
+}
+
+func consumeUint32LengthPrefixed(input []byte, offset *int, field string) ([]byte, error) {
+	if offset == nil || *offset < 0 || *offset > len(input) {
+		return nil, fmt.Errorf("invalid %s offset", field)
+	}
+	if len(input)-*offset < 4 {
+		return nil, fmt.Errorf("missing %s length", field)
+	}
+
+	encodedLength := binary.BigEndian.Uint32(input[*offset : *offset+4])
+	*offset += 4
+	// #nosec G115 -- uint32 widens losslessly to uint64.
+	length := uint64(encodedLength)
+	// #nosec G115 -- the non-negative remaining slice length widens losslessly to uint64.
+	if length > uint64(len(input)-*offset) {
+		return nil, fmt.Errorf("%s data truncated", field)
+	}
+
+	// encodedLength is bounded by the remaining Go slice length, which is
+	// itself representable as int on this process.
+	fieldLength := int(encodedLength) // #nosec G115 -- checked against len(input)-offset above.
+	end := *offset + fieldLength
+	value := input[*offset:end]
+	*offset = end
+	return value, nil
 }
 
 // encodeResult encodes the verification result for return

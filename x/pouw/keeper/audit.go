@@ -130,14 +130,17 @@ func sortedKeys(m map[string]string) []string {
 // AuditLogger
 // ---------------------------------------------------------------------------
 
-// AuditLogger maintains a hash-chained sequence of audit records and emits
-// them to both the SDK event system and the structured logger.
+// AuditLogger maintains a process-local operator audit buffer. Consensus
+// events deliberately exclude its process-local sequence/hash-chain fields:
+// CheckTx, proposal retries, replay, and snapshot restore can legitimately
+// produce different local buffer histories.
 type AuditLogger struct {
 	mu           sync.Mutex
 	sequence     uint64
 	lastHash     string
 	records      []AuditRecord // in-memory buffer (bounded)
 	bufferCap    int
+	nextSlot     int
 	totalEmitted uint64
 }
 
@@ -184,7 +187,11 @@ func (al *AuditLogger) Record(ctx sdk.Context, category AuditCategory, severity 
 	if len(al.records) < al.bufferCap {
 		al.records = append(al.records, record)
 	} else {
-		al.records[int(al.totalEmitted)%al.bufferCap] = record
+		al.records[al.nextSlot] = record
+		al.nextSlot++
+		if al.nextSlot == al.bufferCap {
+			al.nextSlot = 0
+		}
 	}
 	al.totalEmitted++
 
@@ -200,9 +207,6 @@ func (al *AuditLogger) Record(ctx sdk.Context, category AuditCategory, severity 
 // emitAuditEvent emits the audit record as a structured SDK event.
 func (al *AuditLogger) emitAuditEvent(ctx sdk.Context, r *AuditRecord) {
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute("sequence", strconv.FormatUint(r.Sequence, 10)),
-		sdk.NewAttribute("record_hash", r.RecordHash),
-		sdk.NewAttribute("previous_hash", r.PreviousHash),
 		sdk.NewAttribute("category", string(r.Category)),
 		sdk.NewAttribute("severity", string(r.Severity)),
 		sdk.NewAttribute("action", r.Action),
@@ -258,9 +262,7 @@ func (al *AuditLogger) GetRecords() []AuditRecord {
 	al.mu.Lock()
 	defer al.mu.Unlock()
 
-	out := make([]AuditRecord, len(al.records))
-	copy(out, al.records)
-	return out
+	return al.chronologicalRecordsLocked()
 }
 
 // GetRecordsSince returns all buffered audit records at or after the given
@@ -270,7 +272,7 @@ func (al *AuditLogger) GetRecordsSince(height int64) []AuditRecord {
 	defer al.mu.Unlock()
 
 	var out []AuditRecord
-	for _, r := range al.records {
+	for _, r := range al.chronologicalRecordsLocked() {
 		if r.BlockHeight >= height {
 			out = append(out, r)
 		}
@@ -285,7 +287,7 @@ func (al *AuditLogger) GetRecordsByCategory(cat AuditCategory) []AuditRecord {
 	defer al.mu.Unlock()
 
 	var out []AuditRecord
-	for _, r := range al.records {
+	for _, r := range al.chronologicalRecordsLocked() {
 		if r.Category == cat {
 			out = append(out, r)
 		}
@@ -301,7 +303,7 @@ func (al *AuditLogger) GetRecordsBySeverity(minSeverity AuditSeverity) []AuditRe
 
 	minOrd := severityOrdinal(minSeverity)
 	var out []AuditRecord
-	for _, r := range al.records {
+	for _, r := range al.chronologicalRecordsLocked() {
 		if severityOrdinal(r.Severity) >= minOrd {
 			out = append(out, r)
 		}
@@ -357,7 +359,8 @@ func (al *AuditLogger) VerifyChain() error {
 	al.mu.Lock()
 	defer al.mu.Unlock()
 
-	for i, r := range al.records {
+	records := al.chronologicalRecordsLocked()
+	for i, r := range records {
 		// Recompute hash.
 		expected := r.computeHash()
 		if expected != r.RecordHash {
@@ -367,13 +370,26 @@ func (al *AuditLogger) VerifyChain() error {
 
 		// Check chain linkage.
 		if i > 0 {
-			if r.PreviousHash != al.records[i-1].RecordHash {
+			if r.PreviousHash != records[i-1].RecordHash {
 				return fmt.Errorf("audit chain broken at sequence %d: previous hash mismatch", r.Sequence)
 			}
 		}
 	}
 
 	return nil
+}
+
+// chronologicalRecordsLocked returns a copy of the ring buffer ordered from
+// oldest to newest. al.mu must be held by the caller.
+func (al *AuditLogger) chronologicalRecordsLocked() []AuditRecord {
+	out := make([]AuditRecord, 0, len(al.records))
+	if len(al.records) < al.bufferCap || al.nextSlot == 0 {
+		return append(out, al.records...)
+	}
+
+	out = append(out, al.records[al.nextSlot:]...)
+	out = append(out, al.records[:al.nextSlot]...)
+	return out
 }
 
 // ---------------------------------------------------------------------------
@@ -466,7 +482,7 @@ func (al *AuditLogger) AuditFeeDistributed(ctx sdk.Context, jobID, totalFee, val
 	al.Record(ctx, AuditCategoryEconomics, AuditSeverityInfo, "fee_distributed", "system", map[string]string{
 		"job_id":           jobID,
 		"total_fee":        totalFee,
-		"validator_reward":  validatorReward,
+		"validator_reward": validatorReward,
 		"treasury":         treasury,
 		"burned":           burned,
 		"insurance":        insurance,

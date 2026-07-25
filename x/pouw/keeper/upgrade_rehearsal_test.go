@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -138,6 +139,36 @@ func TestStateSnapshot_CompareWithChanges(t *testing.T) {
 	require.True(t, diff.HasChanges)
 	require.Equal(t, int64(3), diff.JobsDelta)
 	require.Equal(t, 3, diff.PendingDelta)
+}
+
+func TestStateSnapshot_CompareJobsDeltaOverflow(t *testing.T) {
+	increase := keeper.CompareSnapshots(
+		keeper.StateSnapshot{TotalJobs: 0},
+		keeper.StateSnapshot{TotalJobs: math.MaxUint64},
+	)
+	require.True(t, increase.HasChanges)
+	require.True(t, increase.JobsDeltaOverflow)
+	require.Equal(t, int64(math.MaxInt64), increase.JobsDelta)
+	require.Contains(
+		t,
+		keeper.RenderRehearsalReport(&keeper.UpgradeRehearsalResult{StateDiff: increase}),
+		"overflow; saturated",
+	)
+
+	decrease := keeper.CompareSnapshots(
+		keeper.StateSnapshot{TotalJobs: math.MaxUint64},
+		keeper.StateSnapshot{TotalJobs: 0},
+	)
+	require.True(t, decrease.HasChanges)
+	require.True(t, decrease.JobsDeltaOverflow)
+	require.Equal(t, int64(math.MinInt64), decrease.JobsDelta)
+
+	minimum := keeper.CompareSnapshots(
+		keeper.StateSnapshot{TotalJobs: uint64(math.MaxInt64) + 1},
+		keeper.StateSnapshot{TotalJobs: 0},
+	)
+	require.False(t, minimum.JobsDeltaOverflow)
+	require.Equal(t, int64(math.MinInt64), minimum.JobsDelta)
 }
 
 func TestStateSnapshot_InvariantStatus(t *testing.T) {

@@ -79,13 +79,18 @@ func NewHTTPDrandPulseProvider(endpoint string, timeout time.Duration) *HTTPDran
 		chainHash = nil
 	}
 
-	endpointErr := httputil.ValidateEndpointURL(trimmed)
+	// Validate only stable configuration properties here. The secure transport
+	// repeats full DNS/IP validation at request and dial time, so a transient
+	// startup DNS outage cannot disable this provider until process restart.
+	endpointErr := httputil.ValidateEndpointURLStructure(trimmed)
+	secureClient, secureClientErr := httputil.NewSecureClient(&nethttp.Client{Timeout: timeout})
+	if secureClientErr != nil {
+		endpointErr = fmt.Errorf("create secure drand HTTP client: %w", secureClientErr)
+	}
 
 	return &HTTPDrandPulseProvider{
-		endpoint: strings.TrimRight(trimmed, "/"),
-		client: &nethttp.Client{
-			Timeout: timeout,
-		},
+		endpoint:             strings.TrimRight(trimmed, "/"),
+		client:               secureClient,
 		scheme:               drandBeaconSchemeV1,
 		source:               "drand-public",
 		chainHash:            chainHash,
@@ -113,7 +118,7 @@ func (p *HTTPDrandPulseProvider) latestPulseVerified(ctx context.Context) (Drand
 		return DrandPulse{}, fmt.Errorf("drand chain hash root-of-trust is not configured")
 	}
 
-	httpClient, err := drandhttp.New(p.endpoint, p.chainHash, nil)
+	httpClient, err := drandhttp.New(p.endpoint, p.chainHash, p.client.Transport)
 	if err != nil {
 		return DrandPulse{}, fmt.Errorf("build drand http client: %w", err)
 	}

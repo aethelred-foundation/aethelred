@@ -2,7 +2,7 @@
 # Multi-stage build for optimized image size
 
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25.12-alpine@sha256:56961d79ea8129efddcc0b8643fd8a5416b4e6228cfd477e3fd61deb2672c587 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \

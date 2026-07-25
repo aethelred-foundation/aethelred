@@ -998,6 +998,7 @@ contract Cruzible is
         uint256 protocolFee
     )
         external
+        nonReentrant
         onlyRole(ORACLE_ROLE)
         whenNotPaused
     {
@@ -1572,6 +1573,7 @@ contract Cruzible is
         uint256 stakerCount
     )
         external
+        nonReentrant
         onlyRole(KEEPER_ROLE)
     {
         // When quorum mode is enabled, the single-keeper direct-commit path
@@ -1622,6 +1624,7 @@ contract Cruzible is
         uint256 stakerCount
     )
         external
+        nonReentrant
         onlyRole(DELEGATION_ATTESTOR_ROLE)
     {
         if (epoch != currentEpoch) revert InvalidEpoch(epoch, currentEpoch);
@@ -1861,7 +1864,6 @@ contract Cruzible is
         if (epochSnapshots[epoch].delegationRegistryRoot == bytes32(0)) {
             revert DelegationNotCommitted(epoch);
         }
-        if (epochSnapshots[epoch].finalized) revert InvalidEpoch(epoch, currentEpoch);
 
         // Challenge must be during the challenge period (between commitment
         // and commitment + DELEGATION_CHALLENGE_PERIOD).
@@ -1876,13 +1878,15 @@ contract Cruzible is
             revert AlreadyChallenged(epoch, msg.sender);
         }
 
-        // Transfer the challenger bond into the vault.
-        aethelToken.safeTransferFrom(msg.sender, address(this), CHALLENGE_BOND);
+        // Checks-effects-interactions: reserve this caller's challenge before
+        // invoking the token contract. A failed transfer rolls every write
+        // back, while a callback cannot submit the same challenge twice.
         challengerBonds[epoch][msg.sender] = CHALLENGE_BOND;
         totalChallengerBonds += CHALLENGE_BOND;
-
         delegationChallengers[epoch][msg.sender] = true;
         uint256 challenges = ++delegationChallengeCount[epoch];
+
+        aethelToken.safeTransferFrom(msg.sender, address(this), CHALLENGE_BOND);
         emit DelegationChallenged(epoch, msg.sender, challenges);
 
         // Auto-revoke if threshold reached (circuit-breaker, NOT fraud confirmation).

@@ -304,6 +304,7 @@ func (w *DualKeyWallet) serializePlaintext() ([]byte, error) {
 
 	// Format: ecdsaLen(4) + ecdsaPriv + dilithiumBytes
 	data := make([]byte, 4+len(ecdsaPrivBytes)+len(dilithiumBytes))
+	// #nosec G115 -- an ECDSA scalar is at most the fixed curve size (32 bytes here).
 	binary.BigEndian.PutUint32(data[:4], uint32(len(ecdsaPrivBytes)))
 	copy(data[4:4+len(ecdsaPrivBytes)], ecdsaPrivBytes)
 	copy(data[4+len(ecdsaPrivBytes):], dilithiumBytes)

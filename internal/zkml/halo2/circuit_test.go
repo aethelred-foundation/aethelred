@@ -1,6 +1,7 @@
 package halo2
 
 import (
+	"math"
 	"testing"
 )
 
@@ -155,6 +156,43 @@ func TestCircuitBuilder_Build_TreeEnsemble(t *testing.T) {
 	}
 }
 
+func TestCircuitBuilderRejectsInvalidOrOverflowingDimensions(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		circuitType CircuitType
+		config      *CircuitConfig
+	}{
+		{
+			name:        "negative linear dimension",
+			circuitType: LinearLayerCircuit,
+			config:      &CircuitConfig{InputSize: -1, OutputSize: 2},
+		},
+		{
+			name:        "linear row overflow",
+			circuitType: LinearLayerCircuit,
+			config:      &CircuitConfig{InputSize: math.MaxInt32, OutputSize: math.MaxInt32},
+		},
+		{
+			name:        "tree depth overflow",
+			circuitType: TreeEnsembleCircuit,
+			config:      &CircuitConfig{NumTrees: 1, MaxDepth: 32},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := NewCircuitBuilder(tc.circuitType).WithConfig(tc.config).Build()
+			if err == nil {
+				t.Fatal("expected invalid circuit dimensions to be rejected")
+			}
+		})
+	}
+}
+
 func TestCeilLog2(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -170,6 +208,7 @@ func TestCeilLog2(t *testing.T) {
 		{8, 3},
 		{9, 4},
 		{1024, 10},
+		{math.MaxUint32, 32},
 	}
 	for _, tt := range tests {
 		got := ceilLog2(tt.n)

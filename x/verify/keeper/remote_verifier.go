@@ -54,7 +54,13 @@ func (k Keeper) callRemoteZKVerifier(ctx context.Context, endpoint string, proof
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Aethelred-Verifier/1.0")
 
-	client := secureHTTPClientProvider()
+	client, err := secureHTTPClientProvider()
+	if err != nil {
+		if k.zkVerifierBreaker != nil {
+			k.zkVerifierBreaker.RecordFailure()
+		}
+		return false, fmt.Errorf("failed to create secure verifier client: %w", err)
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		if k.zkVerifierBreaker != nil {
@@ -132,7 +138,13 @@ func (k Keeper) callRemoteAttestationVerifier(ctx context.Context, endpoint stri
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Aethelred-Verifier/1.0")
 
-	client := secureHTTPClientProvider()
+	client, err := secureHTTPClientProvider()
+	if err != nil {
+		if k.attestationVerifierBreaker != nil {
+			k.attestationVerifierBreaker.RecordFailure()
+		}
+		return false, fmt.Errorf("failed to create secure attestation verifier client: %w", err)
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		if k.attestationVerifierBreaker != nil {

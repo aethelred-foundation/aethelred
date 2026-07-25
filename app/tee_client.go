@@ -158,17 +158,22 @@ func NewRemoteTEEClient(logger log.Logger, endpoint string) (*RemoteTEEClient, e
 	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
 		return nil, fmt.Errorf("invalid remote TEE endpoint: %w", err)
 	}
+	pooledClient := httpclient.NewPooledClient(httpclient.PoolConfig{
+		Timeout:             60 * time.Second,
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		IdleConnTimeout:     90 * time.Second,
+	})
+	secureClient, err := httputil.NewSecureClient(pooledClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create secure remote TEE client: %w", err)
+	}
 	return &RemoteTEEClient{
 		logger:   logger,
 		endpoint: endpoint,
 		breaker:  circuitbreaker.NewDefault("tee_remote_execute"),
 		apiToken: strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN")),
-		client: httpclient.NewPooledClient(httpclient.PoolConfig{
-			Timeout:             60 * time.Second,
-			MaxIdleConns:        100,
-			MaxIdleConnsPerHost: 20,
-			IdleConnTimeout:     90 * time.Second,
-		}),
+		client:   secureClient,
 	}, nil
 }
 
@@ -312,6 +317,7 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 		return false
 	}
 
+	// #nosec G704 -- the URL is validated above and the secure transport pins a validated IP before dialing.
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
 	if err != nil {
 		if c.breaker != nil {
@@ -320,6 +326,7 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 		return false
 	}
 	c.applyAuth(httpReq)
+	// #nosec G704 -- the request can only use the validated, redirect-disabled secure transport.
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
 		if c.breaker != nil {
@@ -633,10 +640,12 @@ func generateEnclaveID() string {
 func simulatedNitroQuotePayload(quote *nitroQuoteSchema) []byte {
 	var buf bytes.Buffer
 	writeString := func(v string) {
+		// #nosec G115 -- simulated quote fields are locally generated and request-size bounded.
 		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
 		buf.WriteString(v)
 	}
 	writeBytes := func(v []byte) {
+		// #nosec G115 -- simulated quote fields are locally generated and request-size bounded.
 		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
 		buf.Write(v)
 	}
@@ -644,8 +653,10 @@ func simulatedNitroQuotePayload(quote *nitroQuoteSchema) []byte {
 	writeString(quote.ModuleID)
 	_ = binary.Write(&buf, binary.BigEndian, quote.Timestamp)
 	writeString(quote.Digest)
+	// #nosec G115 -- Nitro documents contain a protocol-bounded PCR collection.
 	_ = binary.Write(&buf, binary.BigEndian, uint32(len(quote.PCRs)))
 	for _, pcr := range quote.PCRs {
+		// #nosec G115 -- Nitro PCR indices are canonical small non-negative register numbers.
 		_ = binary.Write(&buf, binary.BigEndian, int32(pcr.Index))
 		writeBytes(pcr.Value)
 	}

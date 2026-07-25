@@ -18,6 +18,7 @@ package groth16
 
 import (
 	"errors"
+	"math"
 	"math/big"
 )
 
@@ -33,7 +34,6 @@ var (
 
 	// BN254 scalar field modulus (r) - same as curveOrder
 	bn254R = curveOrder
-
 )
 
 // =============================================================================
@@ -133,14 +133,14 @@ func preparePairingInput(proof *Proof, vk *VerifyingKey, vkX *G1Affine) *Pairing
 
 	return &PairingInput{
 		G1Points: []*G1Affine{
-			{X: negA.X, Y: negA.Y},                 // -A
-			{X: vk.Alpha.X, Y: vk.Alpha.Y},         // α
-			{X: vkX.X, Y: vkX.Y},                   // vk_x
-			{X: proof.C.X, Y: proof.C.Y},           // C
+			{X: negA.X, Y: negA.Y},         // -A
+			{X: vk.Alpha.X, Y: vk.Alpha.Y}, // α
+			{X: vkX.X, Y: vkX.Y},           // vk_x
+			{X: proof.C.X, Y: proof.C.Y},   // C
 		},
 		G2Points: []*G2Affine{
-			{X0: proof.B.X[0], X1: proof.B.X[1], Y0: proof.B.Y[0], Y1: proof.B.Y[1]}, // B
-			{X0: vk.Beta.X[0], X1: vk.Beta.X[1], Y0: vk.Beta.Y[0], Y1: vk.Beta.Y[1]}, // β
+			{X0: proof.B.X[0], X1: proof.B.X[1], Y0: proof.B.Y[0], Y1: proof.B.Y[1]},     // B
+			{X0: vk.Beta.X[0], X1: vk.Beta.X[1], Y0: vk.Beta.Y[0], Y1: vk.Beta.Y[1]},     // β
 			{X0: vk.Gamma.X[0], X1: vk.Gamma.X[1], Y0: vk.Gamma.Y[0], Y1: vk.Gamma.Y[1]}, // γ
 			{X0: vk.Delta.X[0], X1: vk.Delta.X[1], Y0: vk.Delta.Y[0], Y1: vk.Delta.Y[1]}, // δ
 		},
@@ -361,7 +361,6 @@ func validateVerifyingKey(vk *VerifyingKey) error {
 	return nil
 }
 
-
 // =============================================================================
 // Gas Cost Estimation
 // =============================================================================
@@ -384,11 +383,18 @@ func EstimateGroth16GasCost(numInputs int) uint64 {
 	pairingBaseCost := uint64(45000)
 	pairingPerPairCost := uint64(34000)
 
-	// vk_x computation: n multiplications + (n-1) additions
-	vkXCost := uint64(numInputs)*ecMulCost + uint64(numInputs)*ecAddCost
-
 	// Pairing check: 4 pairs (A*B, α*β, vk_x*γ, C*δ)
 	pairingCost := pairingBaseCost + 4*pairingPerPairCost
+	if numInputs <= 0 {
+		return pairingCost
+	}
 
-	return vkXCost + pairingCost
+	// #nosec G115 -- numInputs is positive, and Go slice-derived counts fit uint64.
+	inputCount := uint64(numInputs)
+	perInputCost := ecMulCost + ecAddCost
+	if inputCount > (math.MaxUint64-pairingCost)/perInputCost {
+		return math.MaxUint64
+	}
+
+	return inputCount*perInputCost + pairingCost
 }

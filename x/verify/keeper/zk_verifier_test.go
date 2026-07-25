@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -399,6 +400,31 @@ func TestZKVerifierPrecompileParseErrors(t *testing.T) {
 	input = append(input, bytes.Repeat([]byte{0x03}, 4)...)
 	if _, err := p.parsePrecompileInput(input); err == nil {
 		t.Fatalf("expected error for missing public inputs length")
+	}
+
+	// A maximal hostile length must return an error rather than wrap uint32
+	// offset arithmetic and panic while slicing.
+	overflowing := make([]byte, 132)
+	binary.BigEndian.PutUint32(overflowing[96:100], math.MaxUint32)
+	if _, err := p.parsePrecompileInput(overflowing); err == nil {
+		t.Fatalf("expected error for overflowing proof length")
+	}
+
+	// Domain-bound heights are represented as int64 throughout consensus.
+	// Reject an unsigned encoding that cannot be represented.
+	invalidHeight := buildPrecompileInputWithDomainBinding(
+		ProofSystemEZKL,
+		[32]byte{0x01},
+		[32]byte{0x02},
+		bytes.Repeat([]byte{0x03}, 20),
+		bytes.Repeat([]byte{0x04}, 96),
+		"job-1",
+		"chain-1",
+		1,
+	)
+	binary.BigEndian.PutUint64(invalidHeight[len(invalidHeight)-8:], math.MaxUint64)
+	if _, err := p.parsePrecompileInput(invalidHeight); err == nil {
+		t.Fatalf("expected error for height outside int64 range")
 	}
 }
 

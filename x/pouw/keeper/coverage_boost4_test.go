@@ -435,13 +435,14 @@ func TestCB4_SubmitJob_Success(t *testing.T) {
 	})
 
 	job := &types.ComputeJob{
-		Id:          "submit-test-1",
-		ModelHash:   modelHash[:],
-		InputHash:   inputHash[:],
-		RequestedBy: testBech32Addr(),
-		ProofType:   types.ProofTypeTEE,
-		Purpose:     "test",
-		Status:      types.JobStatusPending,
+		Id:           "submit-test-1",
+		ModelHash:    modelHash[:],
+		InputHash:    inputHash[:],
+		InputDataUri: "https://inputs.example.com/submit-input.bin",
+		RequestedBy:  testBech32Addr(),
+		ProofType:    types.ProofTypeTEE,
+		Purpose:      "test",
+		Status:       types.JobStatusPending,
 	}
 
 	err := k.SubmitJob(ctx, job)
@@ -459,13 +460,14 @@ func TestCB4_SubmitJob_UnregisteredModel(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("unregistered-model"))
 	inputHash := sha256.Sum256([]byte("input"))
 	job := &types.ComputeJob{
-		Id:          "submit-unregistered",
-		ModelHash:   modelHash[:],
-		InputHash:   inputHash[:],
-		RequestedBy: testBech32Addr(),
-		ProofType:   types.ProofTypeTEE,
-		Purpose:     "test",
-		Status:      types.JobStatusPending,
+		Id:           "submit-unregistered",
+		ModelHash:    modelHash[:],
+		InputHash:    inputHash[:],
+		InputDataUri: "https://inputs.example.com/unregistered-input.bin",
+		RequestedBy:  testBech32Addr(),
+		ProofType:    types.ProofTypeTEE,
+		Purpose:      "test",
+		Status:       types.JobStatusPending,
 	}
 
 	err := k.SubmitJob(ctx, job)
@@ -915,7 +917,7 @@ func TestCB4_ValidateFeeDistribution_SumExceedsBPS(t *testing.T) {
 	config := keeper.FeeDistributionConfig{
 		ValidatorRewardBps: 5000,
 		TreasuryBps:        5000,
-		BurnBps:            5000,        // total > 10000
+		BurnBps:            5000, // total > 10000
 		InsuranceFundBps:   0,
 	}
 	err := keeper.ValidateFeeDistribution(config)

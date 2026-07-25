@@ -1,0 +1,43 @@
+# Version-control and local agent metadata
+.git
+.git/**
+.github
+.agents
+.codex
+.gitignore
+.gitattributes
+
+# Local configuration and credentials must never enter the build context
+.env
+.env.*
+**/.env
+**/.env.*
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/id_ed25519*
+
+# Dependency, compiler, test, and framework outputs
+**/node_modules
+**/target
+**/build
+**/dist
+**/artifacts
+**/cache
+**/coverage
+**/.cache
+**/.next
+**/.turbo
+**/typechain-types
+
+# Local logs, archives, and editor/OS state
+**/*.log
+**/*.tmp
+**/*.swp
+**/.DS_Store
+*.tar
+*.tar.gz
+*.tgz
+*.zip

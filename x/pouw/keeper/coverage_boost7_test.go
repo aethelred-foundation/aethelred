@@ -300,6 +300,7 @@ func TestCB7_SubmitJob_ModelNotRegistered(t *testing.T) {
 		Id: "submit-unregistered", ModelHash: cb7ModelHash("unregistered"),
 		InputHash: cb7ModelHash("input"), RequestedBy: cb7Bech32("req"),
 		ProofType: types.ProofTypeTEE, Purpose: "test", Status: types.JobStatusPending,
+		InputDataUri: "https://inputs.example.com/unregistered-input.bin",
 	}
 	err := k.SubmitJob(ctx, job)
 	require.Error(t, err)
@@ -317,6 +318,7 @@ func TestCB7_SubmitJob_Success(t *testing.T) {
 	job := &types.ComputeJob{
 		Id: "submit-ok", ModelHash: modelHash, InputHash: cb7ModelHash("submit-input"),
 		RequestedBy: cb7Bech32("req"), ProofType: types.ProofTypeTEE, Purpose: "test", Status: types.JobStatusPending,
+		InputDataUri: "https://inputs.example.com/submit-input.bin",
 	}
 	require.NoError(t, k.SubmitJob(ctx, job))
 
@@ -376,6 +378,7 @@ func TestCB7_PrepareVoteExtension_WithAssignedJobs(t *testing.T) {
 	job := &types.ComputeJob{
 		Id: "ve-job", ModelHash: modelHash, InputHash: cb7ModelHash("ve-input"),
 		RequestedBy: cb7Bech32("req"), ProofType: types.ProofTypeTEE, Purpose: "test", Status: types.JobStatusPending,
+		InputDataUri: "https://inputs.example.com/ve-input.bin",
 	}
 	require.NoError(t, k.SubmitJob(ctx, job))
 	require.NoError(t, sched.EnqueueJob(ctx, job))
@@ -427,7 +430,12 @@ func TestCB7_VerifyVoteExtension_FutureTimestamp(t *testing.T) {
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
 	futureTime := ctx.BlockTime().Add(10 * time.Minute)
-	data, _ := json.Marshal(map[string]interface{}{"version": 1, "height": ctx.BlockHeight(), "timestamp": futureTime})
+	data, _ := json.Marshal(map[string]interface{}{
+		"version":   1,
+		"height":    ctx.BlockHeight(),
+		"chain_id":  ctx.ChainID(),
+		"timestamp": futureTime,
+	})
 	err := ch.VerifyVoteExtension(ctx, data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "future")

@@ -1,0 +1,48 @@
+title = "Aethelred secret-scanning policy"
+minVersion = "v8.30.1"
+
+[extend]
+useDefault = true
+
+# A full, redacted v8.30.1 history scan reviewed 188 findings in these
+# immutable commits. Every finding is a public test key, documentation
+# placeholder, generated evidence hash, or synthetic fixture; none is a live
+# credential. Restricting the exception to exact commit IDs keeps all future
+# commits fail-closed, including edits that repeat the same fixture pattern.
+[[allowlists]]
+description = "Reviewed historical synthetic fixtures and public test values"
+commits = [
+  "017ffe1090749cbe282ffc4769b00a518c2ed4ef",
+  "031d2e9ee689489ebc9e4482babaaac491cab4e6",
+  "0409b0a048abcf5e0341cb8dc381492328bf6778",
+  "0791a0e623bd264de8c0747ad03c4d2d8f2807ad",
+  "09f38fcb2ac500f7b49ec0c52f802493ef3ba36f",
+  "0e5fdb468da5f988aacb7cb891732da5f0435568",
+  "12f7c93e00254f7731bd3af6825fcf33436029c2",
+  "1405683a29bd3cb6f4730e907a201b9e795c8eee",
+  "1e8f3e2f9900b9e29f4b3c731bd68c617f619ed8",
+  "24d843813af84346fe40733fb52ece42baab70a4",
+  "2964345d5bee06a4c2a5dca703f49728bdb40c2d",
+  "3fa775201aea347a2f44632f56b03673f25f2de5",
+  "41634bfc084f20b34d0eaf042032723d87d0b82d",
+  "461b7747ff8b17a443134cf4f521d301bafa341c",
+  "4769a2554be8533d49b09bad67786672d4a4756f",
+  "5dc1b1b76bcbba2eab54906062aadf31026774d8",
+  "87d3d8de808a40b363fc460f5c1195b2c5b61c5c",
+  "93cdb909a2b14db338ae71db86ce57bcff5ca52f",
+  "9597381200ae29d451adee41116a0525f359aa64",
+  "9901b5391bec6e2f708361c703c1962a9ee670bc",
+  "b2ef6914b7d26ac5927e8db025487d5b54b61139",
+  "b4d30d3abc504ff85f391c2b7a14b991a6a00dbb",
+  "b9f168b892c6fe45d539168fc16a519cf0d0f843",
+  "bfc7066b1f0049405bce249cecb2ac3715f59245",
+  "c096402c4b4b5050fc6929f56648cd751e40ac63",
+  "c97f081e19f121af237bd5a94b199fd794d00fff",
+  "cc88126ca338f8706d42c23fb8db1bda020c5fad",
+  "d9cba14e0be7c2d4f505d112300b822b81fabac8",
+  "e09eb1d9f6dfaaf0e4d263bf4d910102c86bc1ff",
+  "e677ca80e817c4950c1d6a295f425e2848c1fe76",
+  "e93a0f5b4bf48dbe9929de9ec90676bcb561dc8e",
+  "f1f89359c318cb93b3d02842f637fe4fb28a3644",
+  "fc391c762f0e02b62d6741558b99f4d2be7b56f6",
+]

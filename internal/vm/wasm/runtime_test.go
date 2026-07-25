@@ -3,6 +3,7 @@ package wasm
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 	"time"
 )
@@ -292,6 +293,27 @@ func TestExecutionContext_GrowMemory(t *testing.T) {
 	}
 }
 
+func TestExecutionContextGrowMemoryRejectsPageCountOverflow(t *testing.T) {
+	t.Parallel()
+
+	ctx := &ExecutionContext{
+		memory:      make([]byte, 65536),
+		memoryPages: 1,
+		memoryMax:   256,
+	}
+	if ctx.GrowMemory(math.MaxUint32) {
+		t.Fatal("expected overflowing page count to be rejected")
+	}
+	if ctx.memoryPages != 1 || len(ctx.memory) != 65536 {
+		t.Fatal("rejected growth must leave memory unchanged")
+	}
+
+	ctx = &ExecutionContext{memoryMax: math.MaxUint32}
+	if ctx.GrowMemory(65537) {
+		t.Fatal("expected growth beyond the WASM32 page limit to be rejected")
+	}
+}
+
 func TestExecutionContext_ReadWriteMemory(t *testing.T) {
 	t.Parallel()
 	ctx := &ExecutionContext{
@@ -458,6 +480,63 @@ func TestStandardHostFunction_EnvGasRemaining(t *testing.T) {
 	}
 	if result[0].Data.(int64) != 5000 {
 		t.Errorf("expected 5000, got %v", result[0].Data)
+	}
+
+	ctx.gasRemaining = math.MaxUint64
+	if _, err := gasFn(ctx, nil); err == nil {
+		t.Fatal("expected gas value outside i64 range to be rejected")
+	}
+}
+
+func TestStandardHostFunctionsRejectNegativeMemoryArguments(t *testing.T) {
+	t.Parallel()
+
+	fns := StandardHostFunctions()
+	ctx := &ExecutionContext{
+		memory:       make([]byte, 64),
+		stateChanges: make([]StateChange, 0),
+		logs:         make([]string, 0),
+	}
+
+	testCases := []struct {
+		name string
+		fn   HostFunction
+		args []Value
+	}{
+		{
+			name: "log pointer",
+			fn:   fns["env.log"],
+			args: []Value{{Type: I32, Data: int32(-1)}, {Type: I32, Data: int32(1)}},
+		},
+		{
+			name: "state key length",
+			fn:   fns["env.state_set"],
+			args: []Value{
+				{Type: I32, Data: int32(0)},
+				{Type: I32, Data: int32(-1)},
+				{Type: I32, Data: int32(0)},
+				{Type: I32, Data: int32(1)},
+			},
+		},
+		{
+			name: "sha output pointer",
+			fn:   fns["env.sha256"],
+			args: []Value{
+				{Type: I32, Data: int32(0)},
+				{Type: I32, Data: int32(1)},
+				{Type: I32, Data: int32(-1)},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if _, err := tc.fn(ctx, tc.args); err == nil {
+				t.Fatal("expected negative memory argument to be rejected")
+			}
+		})
 	}
 }
 
