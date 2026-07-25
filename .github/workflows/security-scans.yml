@@ -56,6 +56,8 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
       - name: Install cargo-audit
+        # cargo-audit 0.22.2 requires rustc 1.88. Keep the scanner compatible
+        # with the repository's explicitly supported Rust 1.85 toolchain.
         run: cargo install cargo-audit --version 0.22.1 --locked
       - name: Rust advisory audit
         continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}

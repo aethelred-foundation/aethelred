@@ -111,17 +111,32 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+          cache-dependency-path: sdk/go/go.sum
       - name: Verify Go SDK module integrity
+        env:
+          # The root module requires a newer Go release. Keep this SDK
+          # compatibility matrix on the version selected above.
+          GOTOOLCHAIN: local
         run: |
           set -euo pipefail
           cd sdk/go
+          go version
           # Verify module is well-formed and dependencies are correct
           go mod verify
           # Verify all exported symbols compile
           go vet ./...
           # Run short tests to catch packaging issues
-          go test -short ./...
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            # macOS 26 requires LC_UUID in executables. Go added it to the
+            # internal linker in 1.24, so use Apple's linker for the 1.21/1.22
+            # compatibility lanes.
+            go test -short -ldflags="-linkmode=external" ./...
+          else
+            go test -short ./...
+          fi
       - name: Verify Go SDK is consumable
+        env:
+          GOTOOLCHAIN: local
         run: |
           set -euo pipefail
           # NOTE: True clean-install testing requires a published module version.
