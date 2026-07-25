@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { fromHex, sha256Hex, toHex } from "./index";
+import {
+  configurePQCProvider,
+  fromHex,
+  hasConfiguredPQCProvider,
+  sha256Hex,
+  toHex,
+} from "./index";
 
 describe("crypto", () => {
+  it("exports the PQC provider configuration API", () => {
+    expect(configurePQCProvider).toBeTypeOf("function");
+    expect(hasConfiguredPQCProvider).toBeTypeOf("function");
+  });
+
   it("computes deterministic sha256 hex digests", () => {
     expect(sha256Hex("abc")).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
