@@ -12,7 +12,8 @@
 # param through a gov v1 `MsgUpdateParams` for the evm module.
 #
 # It is idempotent-safe to read: it first checks whether the precompiles are
-# already active and exits early if so.
+# already active and exits early if so. It also refuses to submit while a
+# matching activation proposal is already in deposit/voting period.
 #
 # CONSENSUS SAFETY (why this is a safe rolling upgrade):
 #   1. The new binary changes NO behaviour until the param includes the two
@@ -32,12 +33,15 @@
 #
 # Usage:
 #   NODE=tcp://<rpc> CHAIN_ID=<id> FROM=<key> HOME_DIR=<home> \
-#     KEYRING=<backend> scripts/activate-precompiles-gov.sh [--vote-all]
+#     KEYRING=<backend> scripts/activate-precompiles-gov.sh [--wait] [--vote-all]
 #
+#   --wait       monitor until the proposal reaches a terminal state, then
+#                verify the live EVM params. Public-testnet submission omits
+#                this because its voting period can span days.
 #   --vote-all   also cast YES from every local validator key val0..valN
-#                (rehearsal / single-operator networks). On the public testnet,
-#                each validator operator votes independently — omit this flag and
-#                distribute the printed proposal id.
+#                and wait for execution (rehearsal / single-operator networks).
+#                On the public testnet, each validator operator votes
+#                independently — omit this flag and distribute the proposal id.
 #
 # Env (devnet-rehearsal defaults shown):
 #   BIN         aethelredd binary (default: from PATH or ./build)
@@ -47,6 +51,8 @@
 #   HOME_DIR    node home holding the keyring (default: ~/.aethelredd)
 #   KEYRING     keyring backend (default: test)
 #   DEPOSIT     proposal deposit (default: 10000000uaethel)
+#   POLL_INTERVAL_SECONDS  monitor cadence with --wait (default: 4)
+#   WAIT_TIMEOUT_SECONDS   optional --wait deadline; 0 means none (default: 0)
 set -uo pipefail
 
 BIN="${BIN:-aethelredd}"
@@ -57,7 +63,23 @@ FROM="${FROM:-validator}"
 HOME_DIR="${HOME_DIR:-$HOME/.aethelredd}"
 KEYRING="${KEYRING:-test}"
 DEPOSIT="${DEPOSIT:-10000000uaethel}"
-VOTE_ALL=0; [ "${1:-}" = "--vote-all" ] && VOTE_ALL=1
+POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-4}"
+WAIT_TIMEOUT_SECONDS="${WAIT_TIMEOUT_SECONDS:-0}"
+VOTE_ALL=0
+WAIT_FOR_EXECUTION=0
+for arg in "$@"; do
+  case "$arg" in
+    --wait) WAIT_FOR_EXECUTION=1 ;;
+    --vote-all)
+      VOTE_ALL=1
+      WAIT_FOR_EXECUTION=1
+      ;;
+    *)
+      printf 'FAIL unknown argument: %s\n' "$arg"
+      exit 2
+      ;;
+  esac
+done
 
 STAKING_PC="0x0000000000000000000000000000000000000800"
 DIST_PC="0x0000000000000000000000000000000000000801"
@@ -65,6 +87,13 @@ DIST_PC="0x0000000000000000000000000000000000000801"
 log(){ printf '\033[1;36m>>> %s\033[0m\n' "$*"; }
 ok(){ printf '  \033[1;32mPASS\033[0m %s\n' "$1"; }
 die(){ printf '  \033[1;31mFAIL\033[0m %s\n' "$1"; exit 1; }
+case "$POLL_INTERVAL_SECONDS" in
+  ''|*[!0-9]*) die "POLL_INTERVAL_SECONDS must be a positive integer" ;;
+esac
+[ "$POLL_INTERVAL_SECONDS" -gt 0 ] || die "POLL_INTERVAL_SECONDS must be greater than zero"
+case "$WAIT_TIMEOUT_SECONDS" in
+  ''|*[!0-9]*) die "WAIT_TIMEOUT_SECONDS must be a non-negative integer" ;;
+esac
 # The CLI prints query output on stderr, so capture BOTH streams and only accept
 # a result once it parses as JSON — this also rides out the "not ready" seconds
 # right after startup.
@@ -83,6 +112,38 @@ if printf '%s' "$CUR" | grep -qi "$STAKING_PC" && printf '%s' "$CUR" | grep -qi 
   ok "0x0800 + 0x0801 already active — nothing to do"
   exit 0
 fi
+
+# Refuse duplicate submissions while an earlier activation proposal is still
+# live. The active precompile param remains unchanged throughout voting, so an
+# active-param-only idempotency check is not sufficient.
+log "check for an existing activation proposal"
+PROPOSALS="$(q gov proposals)" || die "cannot query governance proposals"
+OPEN_ACTIVATION="$(PROPOSALS_JSON="$PROPOSALS" python3 <<'PY'
+import json, os
+
+open_statuses = {
+    "PROPOSAL_STATUS_DEPOSIT_PERIOD",
+    "PROPOSAL_STATUS_VOTING_PERIOD",
+}
+for proposal in json.loads(os.environ["PROPOSALS_JSON"]).get("proposals", []):
+    status = proposal.get("status", "")
+    title = proposal.get("title", "").lower()
+    metadata = proposal.get("metadata", "")
+    is_activation = (
+        metadata == "activate-staking-distribution-precompiles"
+        or ("activate staking" in title and "distribution" in title)
+    )
+    if status in open_statuses and is_activation:
+        print(f"{proposal.get('id', '?')}|{status}")
+        break
+PY
+)"
+if [ -n "$OPEN_ACTIVATION" ]; then
+  OPEN_PID="${OPEN_ACTIVATION%%|*}"
+  OPEN_STATUS="${OPEN_ACTIVATION#*|}"
+  die "activation proposal #$OPEN_PID is already open ($OPEN_STATUS); monitor it instead of submitting a duplicate"
+fi
+ok "no matching activation proposal is open"
 
 GOV_ADDR="$(q auth module-account gov | python3 -c "import sys,json; print(json.load(sys.stdin)['account']['value']['address'])")"
 [ -n "$GOV_ADDR" ] || die "could not resolve the gov module authority"
@@ -148,17 +209,34 @@ else
   echo "  $BIN tx gov vote $PID yes --from <valkey> --chain-id $CHAIN_ID --node $NODE ..."
 fi
 
+if [ "$WAIT_FOR_EXECUTION" != "1" ]; then
+  log "submission complete — not waiting through the governed voting period"
+  echo "  monitor: $BIN query gov proposal $PID --node $NODE --output json"
+  echo "  after PASSED: rerun this script to verify 0x0800 + 0x0801 are active"
+  echo
+  echo "PROPOSAL SUBMITTED — proposal #$PID remains governed on-chain."
+  exit 0
+fi
+
 log "waiting for the voting period to end + execution"
-for _ in $(seq 1 30); do
+WAIT_STARTED_AT="$(date +%s)"
+while :; do
   ST="$(q gov proposal "$PID" | python3 -c "import sys,json; print(json.load(sys.stdin)['proposal']['status'])" 2>/dev/null)"
   echo "  status: $ST"
   case "$ST" in
     PROPOSAL_STATUS_PASSED) break ;;
     PROPOSAL_STATUS_REJECTED|PROPOSAL_STATUS_FAILED) die "proposal $ST" ;;
+    PROPOSAL_STATUS_DEPOSIT_PERIOD|PROPOSAL_STATUS_VOTING_PERIOD) ;;
+    *) die "proposal returned unexpected status: $ST" ;;
   esac
-  sleep 4
+  if [ "$WAIT_TIMEOUT_SECONDS" -gt 0 ]; then
+    WAIT_ELAPSED="$(( $(date +%s) - WAIT_STARTED_AT ))"
+    if [ "$WAIT_ELAPSED" -ge "$WAIT_TIMEOUT_SECONDS" ]; then
+      die "monitoring deadline reached while proposal remains $ST; the proposal is still on-chain and must not be resubmitted"
+    fi
+  fi
+  sleep "$POLL_INTERVAL_SECONDS"
 done
-[ "$ST" = "PROPOSAL_STATUS_PASSED" ] || die "proposal did not pass in time (status $ST)"
 ok "proposal #$PID PASSED"
 
 log "verify the precompiles are now active (no restart)"
