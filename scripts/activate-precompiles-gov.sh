@@ -53,6 +53,8 @@
 #   DEPOSIT     proposal deposit (default: 10000000uaethel)
 #   POLL_INTERVAL_SECONDS  monitor cadence with --wait (default: 4)
 #   WAIT_TIMEOUT_SECONDS   optional --wait deadline; 0 means none (default: 0)
+#   VALIDATOR_SET_ATTESTED  must be 1 on aethelred-testnet-1 after every bonded
+#                           validator confirms the approved binary checksum
 set -uo pipefail
 
 BIN="${BIN:-aethelredd}"
@@ -65,6 +67,7 @@ KEYRING="${KEYRING:-test}"
 DEPOSIT="${DEPOSIT:-10000000uaethel}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-4}"
 WAIT_TIMEOUT_SECONDS="${WAIT_TIMEOUT_SECONDS:-0}"
+VALIDATOR_SET_ATTESTED="${VALIDATOR_SET_ATTESTED:-0}"
 VOTE_ALL=0
 WAIT_FOR_EXECUTION=0
 for arg in "$@"; do
@@ -94,6 +97,9 @@ esac
 case "$WAIT_TIMEOUT_SECONDS" in
   ''|*[!0-9]*) die "WAIT_TIMEOUT_SECONDS must be a non-negative integer" ;;
 esac
+if [ "$CHAIN_ID" = "aethelred-testnet-1" ] && [ "$VOTE_ALL" = "1" ]; then
+  die "--vote-all is disabled on the public testnet; each validator operator must vote independently"
+fi
 # The CLI prints query output on stderr, so capture BOTH streams and only accept
 # a result once it parses as JSON — this also rides out the "not ready" seconds
 # right after startup.
@@ -144,6 +150,10 @@ if [ -n "$OPEN_ACTIVATION" ]; then
   die "activation proposal #$OPEN_PID is already open ($OPEN_STATUS); monitor it instead of submitting a duplicate"
 fi
 ok "no matching activation proposal is open"
+
+if [ "$CHAIN_ID" = "aethelred-testnet-1" ] && [ "$VALIDATOR_SET_ATTESTED" != "1" ]; then
+  die "public-testnet submission requires VALIDATOR_SET_ATTESTED=1 after all bonded validators confirm the approved binary checksum"
+fi
 
 GOV_ADDR="$(q auth module-account gov | python3 -c "import sys,json; print(json.load(sys.stdin)['account']['value']['address'])")"
 [ -n "$GOV_ADDR" ] || die "could not resolve the gov module authority"
