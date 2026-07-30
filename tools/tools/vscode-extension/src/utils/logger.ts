@@ -57,7 +57,7 @@ export class Logger {
 
     private constructor() {
         this.outputChannel = vscode.window.createOutputChannel(
-            'Aethelred Sovereign Copilot',
+            'Aethelred Sovereign Developer Console',
             { log: true }
         );
     }

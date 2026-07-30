@@ -1364,10 +1364,10 @@ class TestVerifiedTransformersPipeline:
     def test_getattr_delegates(self) -> None:
         class FakePipeline:
             task = "ner"
-            model_name = "bert-base"
+            model_name = "approved-text-encoder"
 
         pipe = VerifiedTransformersPipeline(FakePipeline())
-        assert pipe.model_name == "bert-base"
+        assert pipe.model_name == "approved-text-encoder"
 
 
 class TestWrapTransformersPipeline:
@@ -1389,7 +1389,7 @@ class TestWrapTransformersPipeline:
             lambda x: x,
             recorder=recorder,
             component_name="test-pipe",
-            extra_metadata={"model": "gpt2"},
+            extra_metadata={"model": "compact-transformer"},
         )
         assert wrapped._component_name == "test-pipe"
 

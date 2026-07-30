@@ -451,7 +451,7 @@ An on-chain vector storage system provides HNSW-indexed (Hierarchical Navigable 
 
 - **Capacity:** Up to 10,000,000 vectors per namespace.
 - **Index Types:** Flat (exact), IVF (approximate), HNSW (default, m=16, ef_construction=200), PQ (100x compression), SQ (4-8x compression).
-- **Embedding Models:** Support for OpenAI Ada-002, OpenAI 3-Small/Large, Cohere v3, Sentence Transformers, CLIP, BioMedLM, FinBERT, and custom models.
+- **Embedding Models:** Support for approved commercial, open-source, and custom embedding encoders.
 - **Search:** Cosine similarity with epsilon-safe denominator, filterable by tags, content type, date range, and owner.
 - **Access Control:** Per-namespace owner, reader list, public/private flag, optional encryption.
 - **Document Processing:** Automatic chunking (fixed, semantic, sentence, recursive) with configurable chunk size (default 512 tokens) and overlap (default 50 tokens).
@@ -935,7 +935,7 @@ Comprehensive fuzz testing with `cargo-fuzz`, `go-fuzz`, and Foundry across thre
 
 **Docker Compose devnet** with 10 services: 3 validators (heterogeneous TEE platforms), zkML prover with GPU passthrough, PostgreSQL 16, Redis 7, API gateway with WebSocket, block explorer, token faucet, Prometheus + Grafana monitoring.
 
-**VSCode Extension** ("Aethelred Sovereign Copilot") with real-time compliance linting, cost estimation hovers, multi-regulation support (GDPR, HIPAA, UAE-DPL, CCPA, PIPL), Helix DSL syntax highlighting, and in-editor TEE simulation.
+**VSCode Extension** ("Aethelred Sovereign Developer Console") with real-time compliance linting, cost estimation hovers, multi-regulation support (GDPR, HIPAA, UAE-DPL, CCPA, PIPL), Helix DSL syntax highlighting, and in-editor TEE simulation.
 
 ### 17.4 Load Testing
 
@@ -959,7 +959,7 @@ BFT-aware grading system with letter grades (A+ through D) for attack resilience
 | Finality | Instant | < 2 seconds (no reorgs) |
 | TPS (Transfers) | 10,000 | 12,500 |
 | TPS (Compute Jobs) | 500 | 650 |
-| Inference Latency | < 100ms | 80–150ms p50 (Llama-3 8B, batch 1) |
+| Inference Latency | < 100ms | 80–150ms p50 (representative 8B-parameter workload, batch 1) |
 | TEE Attestation | < 5s | 2.3s |
 | ZK Proof (EZKL) | < 30s | 18s (small models) |
 

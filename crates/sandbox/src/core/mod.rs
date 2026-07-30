@@ -574,8 +574,8 @@ pub struct SandboxConfig {
     pub auto_export_audit: bool,
     /// Maximum execution time
     pub max_execution_time: Duration,
-    /// Enable AI copilot
-    pub ai_copilot_enabled: bool,
+    /// Enable the integrated developer console
+    pub developer_console_enabled: bool,
     /// Enable visual effects (attestation animations)
     pub visual_effects: bool,
     /// Record session for replay
@@ -590,7 +590,7 @@ impl Default for SandboxConfig {
             strict_mode: true,
             auto_export_audit: true,
             max_execution_time: Duration::from_secs(300),
-            ai_copilot_enabled: true,
+            developer_console_enabled: true,
             visual_effects: true,
             record_session: true,
             ctf_mode: false,

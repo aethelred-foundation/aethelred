@@ -26,9 +26,9 @@
 //!
 //! ## Tremendous Value
 //!
-//! Aethelred becomes the **De-Facto Database for LLMs**. Enterprises can store
-//! their "Corporate Brain" on Aethelred for 1/100th the cost of AWS or Filecoin,
-//! ready for instant AI querying.
+//! Aethelred becomes the **De-Facto Database for Language Models**. Enterprises
+//! can store their "Corporate Brain" on Aethelred for 1/100th the cost of AWS or
+//! Filecoin, ready for instant AI querying.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -68,10 +68,10 @@ pub enum EmbeddingModel {
     Compact1536 { dimensions: usize },
     /// High-capacity external embedding profile
     Expanded3072 { dimensions: usize },
-    /// Cohere Embed v3
-    CohereV3 { dimensions: usize },
-    /// Sentence Transformers
-    SentenceTransformers {
+    /// Versioned text-embedding profile
+    TextProfileV3 { dimensions: usize },
+    /// Named text encoder
+    TextEncoder {
         model_name: String,
         dimensions: usize,
     },
@@ -80,12 +80,12 @@ pub enum EmbeddingModel {
         model_hash: [u8; 32],
         dimensions: usize,
     },
-    /// CLIP (for images)
-    CLIP { variant: String, dimensions: usize },
-    /// BioMedLM (for medical)
-    BioMedLM { dimensions: usize },
-    /// FinBERT (for finance)
-    FinBERT { dimensions: usize },
+    /// Multimodal encoder (for images and text)
+    MultimodalEncoder { variant: String, dimensions: usize },
+    /// Clinical-domain encoder
+    ClinicalEncoder { dimensions: usize },
+    /// Financial-domain encoder
+    FinancialEncoder { dimensions: usize },
 }
 
 impl EmbeddingModel {
@@ -94,12 +94,12 @@ impl EmbeddingModel {
             EmbeddingModel::Legacy1536 { dimensions } => *dimensions,
             EmbeddingModel::Compact1536 { dimensions } => *dimensions,
             EmbeddingModel::Expanded3072 { dimensions } => *dimensions,
-            EmbeddingModel::CohereV3 { dimensions } => *dimensions,
-            EmbeddingModel::SentenceTransformers { dimensions, .. } => *dimensions,
+            EmbeddingModel::TextProfileV3 { dimensions } => *dimensions,
+            EmbeddingModel::TextEncoder { dimensions, .. } => *dimensions,
             EmbeddingModel::Custom { dimensions, .. } => *dimensions,
-            EmbeddingModel::CLIP { dimensions, .. } => *dimensions,
-            EmbeddingModel::BioMedLM { dimensions } => *dimensions,
-            EmbeddingModel::FinBERT { dimensions } => *dimensions,
+            EmbeddingModel::MultimodalEncoder { dimensions, .. } => *dimensions,
+            EmbeddingModel::ClinicalEncoder { dimensions } => *dimensions,
+            EmbeddingModel::FinancialEncoder { dimensions } => *dimensions,
         }
     }
 
@@ -955,7 +955,7 @@ impl VectorVault {
 ║  │     → Works even without exact keyword match                            │ ║
 ║  │                                                                          │ ║
 ║  │  2. AI-READY (RAG)                                                       │ ║
-║  │     Store company knowledge → Ask GPT questions about it                │ ║
+║  │     Store company knowledge → Ask natural-language questions            │ ║
 ║  │     No downloading, no processing, instant retrieval                    │ ║
 ║  │                                                                          │ ║
 ║  │  3. CROSS-LINGUAL                                                        │ ║
