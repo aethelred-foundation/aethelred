@@ -656,7 +656,7 @@ cd examples
 # ├── healthcare-ml/ # HIPAA-compliant medical AI
 # ├── fraud-detection/ # Real-time transaction analysis
 # ├── kyc-verification/ # Identity verification
-# └── llm-inference/ # Large language model hosting
+# └── language-model-inference/ # Large language model hosting
 ```
 
 ### 8.3 Get Help

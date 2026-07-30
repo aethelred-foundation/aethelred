@@ -31,7 +31,7 @@
 //! │   │   │   ┌───────────────────────────────────────────────────────────────────┐ │   │   │
 //! │   │   │   │                    INFERENCE LAYER                                 │ │   │   │
 //! │   │   │   │                                                                    │ │   │   │
-//! │   │   │   │   Med42 LLM ──► [GPU TEE Processing] ──► Efficacy Prediction      │ │   │   │
+//! │   │   │   │ Clinical Model ─► [GPU TEE Processing] ─► Efficacy Prediction      │ │   │   │
 //! │   │   │   │                                                                    │ │   │   │
 //! │   │   │   │   ⚠️ NO DISK ACCESS: All data in RAM only                         │ │   │   │
 //! │   │   │   │   ⚠️ NO NETWORK ACCESS: Isolated from outside                     │ │   │   │
@@ -218,7 +218,7 @@ impl EnclaveEngine {
         };
 
         // Register default models
-        engine.register_model(ModelConfig::med42_clinical());
+        engine.register_model(ModelConfig::clinical_research_model());
 
         engine
     }
@@ -453,7 +453,7 @@ impl EnclaveEngine {
         tracing::info!(
             enclave_id = %enclave_id,
             model = %job.model_config.model_id,
-            "Running Med42 inference..."
+            "Running clinical-model inference..."
         );
 
         // Simulate inference time based on job type
@@ -864,7 +864,7 @@ mod tests {
                     expires_at: Utc::now() + chrono::Duration::hours(24),
                 },
                 drug_candidate_id: Uuid::new_v4(),
-                model_config: ModelConfig::med42_clinical(),
+                model_config: ModelConfig::clinical_research_model(),
                 sla: ServiceLevelAgreement::genomic_analysis(),
                 tee_requirements: TeeRequirements::strict_genomic(),
                 created_at: Utc::now(),

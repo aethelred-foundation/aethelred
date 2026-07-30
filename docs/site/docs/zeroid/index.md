@@ -24,7 +24,7 @@ ZeroID is a full-stack self-sovereign identity platform built on [Aethelred](/gu
 - AI agent identity registry and verification
 - Behavioral biometrics for fraud detection
 - Real-time risk scoring engine
-- Compliance copilot for regulatory guidance
+- Compliance guidance for regulatory workflows
 
 ### Enterprise & Government
 - Multi-jurisdiction regulatory compliance
