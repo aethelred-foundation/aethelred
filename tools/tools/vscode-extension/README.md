@@ -1,4 +1,4 @@
-# Aethelred Sovereign Copilot
+# Aethelred Sovereign Developer Console
 
 <p align="center">
   <img src="assets/icons/shield.svg" alt="Aethelred Shield" width="120"/>
@@ -6,7 +6,7 @@
 
 **Enterprise-grade compliance linting and sovereignty enforcement for AI development.**
 
-The Aethelred Sovereign Copilot moves compliance checks left, allowing developers to see regulatory violations as they type, not after deployment.
+The Aethelred Sovereign Developer Console moves compliance checks left, allowing developers to see regulatory violations as they type, not after deployment.
 
 ## Features
 
@@ -65,13 +65,13 @@ Reference docs:
 
 1. Open VS Code
 2. Press `Ctrl+Shift+X` (or `Cmd+Shift+X` on Mac)
-3. Search for "Aethelred Sovereign Copilot"
+3. Search for "Aethelred Sovereign Developer Console"
 4. Click Install
 
 ### From VSIX
 
 ```bash
-code --install-extension aethelred-sovereign-copilot-2.0.0.vsix
+code --install-extension aethelred-sovereign-developer-console-2.0.0.vsix
 ```
 
 ### Prerequisites

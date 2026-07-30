@@ -977,7 +977,7 @@ Different categories of AI inference jobs have different computational complexit
 | Healthcare & Biotech | 1.8x | High-complexity medical AI models |
 | Scientific Research | 1.6x | Physics simulations, climate modeling |
 | Finance & Risk | 1.4x | Fraud detection, risk assessment |
-| General Inference | 1.0x | Standard LLM and general-purpose models |
+| General Inference | 1.0x | Standard language and general-purpose models |
 
 Aethelred provides native EVM precompiles for AI computation at addresses `0x1000`–`0x1FFF`, with logarithmic gas scaling:
 

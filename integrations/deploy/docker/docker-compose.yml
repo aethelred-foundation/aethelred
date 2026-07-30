@@ -371,7 +371,7 @@ services:
 
       # Model Registry
       - MODEL_CACHE_DIR=/models
-      - PRELOAD_MODELS=credit-score-v2,tumor-detection-resnet50
+      - PRELOAD_MODELS=credit-score-v2,tumor-detection-vision-v1
 
       # Network
       - P2P_PORT=30303

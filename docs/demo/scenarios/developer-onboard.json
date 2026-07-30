@@ -17,7 +17,7 @@
       "section": "VS Code Extension Demo",
       "duration_seconds": 180,
       "actions": [
-        "Install the Aethelred VS Code extension",
+        "Install Aethelred Sovereign Developer Console extension",
         "Show compliance linting in real-time",
         "Demonstrate cost estimation hover",
         "Use code snippets for job submission"

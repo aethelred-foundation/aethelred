@@ -152,10 +152,12 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── Local Tooling Scratch Space ─────────────────────────────────────
-.local-tools/
-.local-agents/
-*.local-instructions.md
+# ── Local Development Tooling ────────────────────────────────────────
+.local-tooling/
+LOCAL_NOTES.md
+
+# ── Generated SDK Build Cache ────────────────────────────────────────
+/sdk/go/.cache/
 
 # ── Audit Evidence ───────────────────────────────────────────────────
 # The canonical load and test evidence pack is committed in-repo.

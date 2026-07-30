@@ -194,7 +194,7 @@ export default function DiagnosePage() {
 
  // Submit HIPAA-compliant job
  const job = await client.submitJob({
- modelId: 'tumor-detection-resnet50',
+ modelId: 'tumor-detection-vision-v1',
  inputFile: image,
  config: {
  verification: 'TEE',
@@ -299,7 +299,7 @@ async def diagnose_xray(
 
  # 2. Submit job with full audit trail
  job = await client.submit_job(
- model_id="tumor-detection-resnet50",
+ model_id="tumor-detection-vision-v1",
  input_data={
  "image": await image.read(),
  "format": image.content_type,

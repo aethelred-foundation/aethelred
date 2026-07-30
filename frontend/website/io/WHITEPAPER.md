@@ -935,7 +935,7 @@ Comprehensive fuzz testing with `cargo-fuzz`, `go-fuzz`, and Foundry across thre
 
 **Docker Compose devnet** with 10 services: 3 validators (heterogeneous TEE platforms), zkML prover with GPU passthrough, PostgreSQL 16, Redis 7, API gateway with WebSocket, block explorer, token faucet, Prometheus + Grafana monitoring.
 
-**VSCode Extension** ("Aethelred Sovereign Copilot") with real-time compliance linting, cost estimation hovers, multi-regulation support (GDPR, HIPAA, UAE-DPL, CCPA, PIPL), Helix DSL syntax highlighting, and in-editor TEE simulation.
+**VSCode Extension** ("Aethelred Sovereign Developer Console") with real-time compliance linting, cost estimation hovers, multi-regulation support (GDPR, HIPAA, UAE-DPL, CCPA, PIPL), Helix DSL syntax highlighting, and in-editor TEE simulation.
 
 ### 17.4 Load Testing
 
