@@ -23,3 +23,5 @@ export function fromHex(hex: string): Uint8Array {
 }
 
 export { bytesToHex, hexToBytes };
+
+export * from './pqc';

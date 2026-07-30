@@ -1567,7 +1567,7 @@ impl GovernanceModule {
 │  │     • Scales with adoption                                            │  │
 │  │                                                                        │  │
 │  │  2. Data Storage Fees                                                 │  │
-│  │     • Vector Vault for LLM embeddings                                 │  │
+│  │     • Vector Vault for language-model embeddings                      │  │
 │  │     • Model weight storage                                            │  │
 │  │     • Recurring revenue stream                                        │  │
 │  │                                                                        │  │

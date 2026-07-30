@@ -921,7 +921,7 @@ impl PerformanceComparison {
 ║                                                                                ║
 ║  PRACTICAL IMPACT:                                                             ║
 ║                                                                                ║
-║  • GPT-4 Scale Verification: ~$0.10 on Aethelred vs. IMPOSSIBLE on Ethereum   ║
+║  • 8B Model Verification: ~$0.10 on Aethelred vs. IMPOSSIBLE on Ethereum      ║
 ║  • Credit Scoring Model: ~$0.001 on Aethelred vs. ~$1,000 on Ethereum         ║
 ║  • Real-time Inference: <100ms on Aethelred vs. hours on EVM                  ║
 ║                                                                                ║

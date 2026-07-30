@@ -186,9 +186,9 @@ impl ModelSpec {
     }
 
     /// Create a large language model spec
-    pub fn llm_inference() -> Self {
+    pub fn language_model_inference() -> Self {
         ModelSpec {
-            name: "LLM-7B Inference".to_string(),
+            name: "7B Language-Model Inference".to_string(),
             model_type: ModelType::Transformer,
             parameters: 7_000_000_000,
             input_dims: vec![2048],
@@ -861,7 +861,7 @@ impl AIGasProfiler {
         let model = match model_type {
             "credit_scoring" => ModelSpec::credit_scoring(),
             "fraud_detection" => ModelSpec::fraud_detection(),
-            "llm" => ModelSpec::llm_inference(),
+            "language-model" => ModelSpec::language_model_inference(),
             _ => ModelSpec::credit_scoring(),
         };
 

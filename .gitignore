@@ -137,14 +137,12 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI & Dev Tooling (local only) ────────────────────────────────────
-.ai-tools/
-.claude/
-.cursor/
-.codex/
-.serena/
-.aider*
-CLAUDE.md
+# ── Local Development Tooling ────────────────────────────────────────
+.local-tooling/
+LOCAL_NOTES.md
+
+# ── Generated SDK Build Cache ────────────────────────────────────────
+/sdk/go/.cache/
 
 # ── Local Test Outputs ───────────────────────────────────────────────
 loadtest-results/
