@@ -134,7 +134,7 @@ case "$MODEL" in
     EXPECTED_CONSTRAINTS="~50K"
     ;;
   radiology-triage)
-    MODEL_DESC="SQ12 Radiology Triage (EfficientNet-B0)"
+    MODEL_DESC="SQ12 Radiology Triage (Reference Vision Network)"
     ONNX_PATH="models/radiology-triage/model.onnx"
     INPUT_SHAPE="[1,3,224,224]"
     EXPECTED_CONSTRAINTS="~10M+"

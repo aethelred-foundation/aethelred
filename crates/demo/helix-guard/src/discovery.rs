@@ -25,7 +25,7 @@
 //! │                                       │         │            │          │  │ Certificate  │  │   │
 //! │    ┌──────────────────┐              │         ▼            │          │  │              │  │   │
 //! │    │     M42 NODE     │              │  ┌────────────────┐  │          │  │ Process      │  │   │
-//! │    │  (Abu Dhabi)     │              │  │ Med42 LLM      │  │          │  │ Royalty      │  │   │
+//! │    │  (Abu Dhabi)     │              │  │ Clinical Model │  │          │  │ Royalty      │  │   │
 //! │    │                  │              │  │ Inference      │  │          │  │ Payment      │  │   │
 //! │    │  Genome Cohort   │ ─pointer──►  │  │                │  │          │  └──────────────┘  │   │
 //! │    │  Data Reference  │              │  │ Efficacy Score │  │ ─proof─► │         │          │   │
@@ -880,7 +880,7 @@ impl BlindDiscoveryProtocol {
             status: JobStatus::Queued,
             genome_reference: reference,
             drug_candidate_id: candidate.id,
-            model_config: ModelConfig::med42_clinical(),
+            model_config: ModelConfig::clinical_research_model(),
             sla: ServiceLevelAgreement::genomic_analysis(),
             tee_requirements: TeeRequirements::strict_genomic(),
             created_at: Utc::now(),

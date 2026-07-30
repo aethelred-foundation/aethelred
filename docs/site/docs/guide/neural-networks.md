@@ -215,16 +215,19 @@ let model = Classifier::new(784, 256, 10);
 nn::load(&model, "/models/classifier-v1.ckpt")?;
 ```
 
-## Pre-Built Models
+## Approved Model Profiles
 
-Aethelred ships common architectures via the model zoo:
+Register approved implementations by content hash and neutral architecture metadata:
 
 ```go
-import "github.com/aethelred/sdk-go/nn/models"
+import "github.com/aethelred/sdk-go/models"
 
-resnet := models.ResNet50(models.ResNet50Config{NumClasses: 1000})
-vit := models.ViTBase(models.ViTBaseConfig{NumClasses: 1000, ImageSize: 224})
-bert := models.BertBase(models.BertConfig{VocabSize: 30522})
+profile := models.RegisterRequest{
+    ModelHash:    "<sha256-model-hash>",
+    Name:         "approved-image-classifier",
+    Architecture: "custom-vision-network",
+    Version:      "1.0.0",
+}
 ```
 
 ## Related Pages

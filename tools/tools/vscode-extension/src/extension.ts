@@ -1,7 +1,7 @@
 /**
  * Aethelred VS Code Extension - Entry Point
  *
- * The Aethelred Sovereign Copilot - Enterprise-grade compliance linting
+ * The Aethelred Sovereign Developer Console - Enterprise-grade compliance linting
  * and sovereignty enforcement for AI development.
  *
  * This extension moves compliance checks left, allowing developers to see
@@ -53,7 +53,7 @@ let codeLensProvider: AethelredCodeLensProvider;
  * Activate the extension.
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    logger.info('Activating Aethelred Sovereign Copilot...');
+    logger.info('Activating Aethelred Sovereign Developer Console...');
 
     // Set log level from configuration
     logger.setLevel(configManager.getLogLevel());
@@ -97,14 +97,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         // Show activation message
         const jurisdictionInfo = configManager.getJurisdictionInfo(configManager.getJurisdiction());
-        logger.info(`Aethelred Sovereign Copilot activated (${jurisdictionInfo.flag} ${jurisdictionInfo.name})`);
+        logger.info(`Aethelred Sovereign Developer Console activated (${jurisdictionInfo.flag} ${jurisdictionInfo.name})`);
 
         // Check for project configuration
         checkProjectConfiguration();
 
     } catch (error) {
         logger.error('Failed to activate extension', error);
-        vscode.window.showErrorMessage('Failed to activate Aethelred Sovereign Copilot. Check the output panel for details.');
+        vscode.window.showErrorMessage('Failed to activate Aethelred Sovereign Developer Console. Check the output panel for details.');
     }
 }
 
@@ -112,7 +112,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
  * Deactivate the extension.
  */
 export function deactivate(): void {
-    logger.info('Deactivating Aethelred Sovereign Copilot...');
+    logger.info('Deactivating Aethelred Sovereign Developer Console...');
 
     // Cancel any running CLI commands
     aethelCli.cancelAll();
@@ -122,7 +122,7 @@ export function deactivate(): void {
     Logger.getInstance().dispose();
     ConfigManager.getInstance().dispose();
 
-    logger.info('Aethelred Sovereign Copilot deactivated');
+    logger.info('Aethelred Sovereign Developer Console deactivated');
 }
 
 /**

@@ -41,7 +41,7 @@
 //! │   │                        AETHELRED TEE ENCLAVE (NVIDIA H100)                               │  │
 //! │   │                                                                                          │  │
 //! │   │   ┌────────────────────────────────────────────────────────────────────────────────────┐│  │
-//! │   │   │                              Med42 LLM Inference                                    ││  │
+//! │   │   │                         Clinical Model Inference                                    ││  │
 //! │   │   │                                                                                    ││  │
 //! │   │   │   • Load genome markers (RAM only, never disk)                                    ││  │
 //! │   │   │   • Decrypt drug formula (TEE-sealed keys)                                        ││  │

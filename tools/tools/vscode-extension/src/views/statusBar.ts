@@ -156,7 +156,7 @@ export class StatusBarManager {
 
             case 'loading':
                 this.mainItem.text = '$(loading~spin) Aethelred';
-                this.mainItem.tooltip = 'Initializing Aethelred Sovereign Copilot...';
+                this.mainItem.tooltip = 'Initializing Aethelred Sovereign Developer Console...';
                 this.mainItem.backgroundColor = undefined;
                 break;
 
@@ -181,7 +181,7 @@ export class StatusBarManager {
         const jurisdictionInfo = configManager.getJurisdictionInfo(this.status.jurisdiction);
         const regulations = configManager.getRegulations();
 
-        let tooltip = `### 🛡️ Aethelred Sovereign Copilot\n\n`;
+        let tooltip = `### 🛡️ Aethelred Sovereign Developer Console\n\n`;
         tooltip += `**Status:** ${this.status.state === 'active' ? '$(check) Active' : '$(x) Inactive'}\n\n`;
         tooltip += `**Jurisdiction:** ${jurisdictionInfo.flag} ${jurisdictionInfo.name}\n\n`;
         tooltip += `**Regulations:** ${regulations.join(', ') || 'None'}\n\n`;

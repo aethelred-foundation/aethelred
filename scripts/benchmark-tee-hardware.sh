@@ -27,7 +27,7 @@ WARMUP=100
 OUTPUT_DIR=""
 AETHELRED_BIN="./build/aethelredd"
 TEE_WORKER_BIN="./build/tee-worker"
-REFERENCE_MODEL="./testdata/models/resnet50.onnx"
+REFERENCE_MODEL="./testdata/models/reference-vision-model.onnx"
 COMMIT_HASH=""
 VERBOSE=false
 DRY_RUN=false
@@ -62,7 +62,7 @@ OPTIONS:
   --warmup <N>        Number of warmup iterations to discard (default: 100)
   --aethelred <path>  Path to aethelredd binary (default: ./build/aethelredd)
   --tee-worker <path> Path to tee-worker binary (default: ./build/tee-worker)
-  --model <path>      Path to reference ONNX model (default: ./testdata/models/resnet50.onnx)
+  --model <path>      Path to reference ONNX model (default: ./testdata/models/reference-vision-model.onnx)
   --verbose           Enable verbose output
   --dry-run           Print what would be executed without running
   --help              Show this help
