@@ -3,7 +3,7 @@
 //! NOT a boring block explorer showing "From: 0x... To: 0x..."
 //! This is a dashboard that proves AI work, not crypto transactions.
 //!
-//! Visual: "Block #1002: Cured Cancer Candidate (Med42 Model) | Verified by Intel SGX"
+//! Visual: "Block #1002: Cured Cancer Candidate (Clinical Model) | Verified by Intel SGX"
 //! Visual: "This block consumed 500 Watts and produced 5000 AI Inferences"
 //!
 //! Features:
@@ -982,7 +982,7 @@ impl VerifiableBlock {
             },
             ModelInfo {
                 hash: "0xdef456...".to_string(),
-                name: "Med42-Diagnosis".to_string(),
+                name: "Clinical-Diagnosis".to_string(),
                 model_type: ModelType::MedicalDiagnosis,
                 publisher: "HealthAI Research".to_string(),
                 badges: vec![

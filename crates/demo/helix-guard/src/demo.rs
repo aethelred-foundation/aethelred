@@ -225,7 +225,7 @@ impl DemoStep {
             Self::DrugSubmission => "Submitting encrypted drug candidates for analysis",
             Self::SessionCreation => "Creating blind discovery session",
             Self::ApprovalFlow => "Processing ethics, DoH, custodian, and partner approvals",
-            Self::BlindCompute => "Executing Med42 inference in TEE enclave",
+            Self::BlindCompute => "Executing clinical-model inference in TEE enclave",
             Self::Settlement => "Processing royalty payment in AETHEL tokens",
             Self::Verification => "Verifying proofs and generating audit report",
             Self::Complete => "Demo completed successfully",
@@ -766,7 +766,7 @@ impl HelixGuardDemo {
             }
 
             if self.config.verbose {
-                println!("    ├─ Running Med42 LLM inference...");
+                println!("    ├─ Running clinical language-model inference...");
             }
 
             if self.config.simulate_delays {
