@@ -322,7 +322,7 @@ impl WorkChallenge {
                 difficulty: Difficulty::Easy,
                 model: ModelInfo {
                     id: "sentiment_tiny".to_string(),
-                    name: "TinyBERT Sentiment".to_string(),
+                    name: "Compact Sentiment Classifier".to_string(),
                     hash: "0x5678...".to_string(),
                     onnx_url: "https://models.aethelred.ai/sentiment_tiny.onnx".to_string(),
                     size_bytes: 500_000,
