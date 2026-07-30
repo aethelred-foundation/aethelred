@@ -959,7 +959,7 @@ BFT-aware grading system with letter grades (A+ through D) for attack resilience
 | Finality | Instant | < 2 seconds (no reorgs) |
 | TPS (Transfers) | 10,000 | 12,500 |
 | TPS (Compute Jobs) | 500 | 650 |
-| Inference Latency | < 100ms | 80–150ms p50 (Llama-3 8B, batch 1) |
+| Inference Latency | < 100ms | 80–150ms p50 (representative 8B-parameter workload, batch 1) |
 | TEE Attestation | < 5s | 2.3s |
 | ZK Proof (EZKL) | < 30s | 18s (small models) |
 
