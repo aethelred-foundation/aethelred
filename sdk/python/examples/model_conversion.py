@@ -47,7 +47,7 @@ def pytorch_conversion_example():
     # Basic conversion
     print("\nBasic conversion:")
     print("  converter.from_pytorch(")
-    print("      model_path='resnet50.pt',")
+    print("      model_path='reference-vision-model.pt',")
     print("      input_shape=(1, 3, 224, 224)")
     print("  )")
 
@@ -55,7 +55,7 @@ def pytorch_conversion_example():
     print("\nAdvanced conversion with options:")
     print("""
     circuit = converter.from_pytorch(
-        model_path='resnet50.pt',
+        model_path='reference-vision-model.pt',
         input_shape=(1, 3, 224, 224),
         optimization_level=3,      # Aggressive optimization
         quantization_bits=8,       # 8-bit quantization
@@ -200,12 +200,12 @@ def advanced_configuration_example():
         output_dir='./circuits',
         save_intermediate=True,
         validate_output=True,
-        name='resnet50-imagenet',
+        name='reference-vision-benchmark',
         version='1.0.0'
     )
 
     circuit = converter.from_config(
-        model_path='resnet50.pt',
+        model_path='reference-vision-model.pt',
         config=config,
         framework=FrameworkType.PYTORCH
     )

@@ -122,7 +122,7 @@ nn.Save(finalModel, "/models/classifier-v1-qat-int8.ckpt")
 
 ## Accuracy Comparison
 
-Typical accuracy impact on ImageNet (ResNet-50):
+Typical accuracy impact on a standard image-classification benchmark:
 
 | Method | Top-1 Accuracy | Model Size | Inference Speedup |
 |---|---|---|---|

@@ -26,7 +26,7 @@
 //!
 //! ### 📊 Verifiable Truth Dashboard
 //! Inference-centric explorer that shows AI operations, not boring hashes.
-//! "Block #1002: Cancer Screening (Med42 Model) | Verified by Intel SGX"
+//! "Block #1002: Cancer Screening (Clinical Model) | Verified by Intel SGX"
 //!
 //! ### 🔍 TEE Remote Attestation Debugger
 //! Demystifies the "Black Box" of Trusted Execution Environments.

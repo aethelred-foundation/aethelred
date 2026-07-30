@@ -29,7 +29,7 @@ Transaction Finality      2.8-second blocks     Cross-chain         INCONSISTENT
                                                 irreversible after 
                                                 Ethereum finality
 
-Latency (Inference)       < 100ms target        45ms (Llama-3 8B,   BETTER IN
+Latency (Inference)       < 100ms target        45ms (8B network,   BETTER IN
                           based on spec         batch 1) observed   PDF
 
 Validators (Phase 1)      100 validators        Phase 1 → Phase 2   CONSISTENT

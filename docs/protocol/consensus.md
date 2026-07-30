@@ -1435,7 +1435,7 @@ func (k ComputeKeeper) CompleteJob(
 │ ├──────────────────────┼─────────────┼─────────────────────────────────┤ │
 │ │ Block Time │ 2.8s │ Below 3s target │ │
 │ │ Standard TPS │ 12,500 │ With parallel execution │ │
-│ │ Compute Jobs/sec │ 650 │ Llama-3 8B inference │ │
+│ │ Compute Jobs/sec │ 650 │ 8B transformer inference │ │
 │ │ Finality │ 2.8s │ Instant (no confirmations) │ │
 │ │ Attestation Verify │ 10ms │ Per job │ │
 │ │ ZK Proof Verify │ 50ms │ Per proof (optional) │ │
@@ -1462,7 +1462,7 @@ func (k ComputeKeeper) CompleteJob(
 │ │ 5. TEE setup + attestation │ 100ms │ 320ms │ │
 │ │ 6. Input decryption │ 10ms │ 330ms │ │
 │ │ 7. Model loading (cached) │ 50ms │ 380ms │ │
-│ │ 8. AI Inference (Llama-3 8B) │ 200ms │ 580ms │ │
+│ │ 8. AI Inference (8B transformer) │ 200ms │ 580ms │ │
 │ │ 9. Output encryption │ 10ms │ 590ms │ │
 │ │ 10. Proof generation │ 20ms │ 610ms │ │
 │ │ 11. Vote extension │ 10ms │ 620ms │ │
