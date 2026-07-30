@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 )
@@ -74,8 +75,8 @@ type ModuleInstance struct {
 
 // FunctionInfo describes a WASM function
 type FunctionInfo struct {
-	Name       string
-	ParamTypes []ValueType
+	Name        string
+	ParamTypes  []ValueType
 	ResultTypes []ValueType
 }
 
@@ -168,7 +169,7 @@ type ExecutionContext struct {
 	gasRemaining uint64
 
 	// Memory instance
-	memory []byte
+	memory      []byte
 	memoryPages uint32
 	memoryMax   uint32
 
@@ -248,10 +249,10 @@ func (r *Runtime) LoadModule(bytecode []byte) (*ModuleInstance, error) {
 
 	// Parse module (simplified - in production, use actual WASM parser)
 	module := &ModuleInstance{
-		Hash:     hash,
-		Bytecode: bytecode,
-		Exports:  make(map[string]FunctionInfo),
-		Imports:  make(map[string]FunctionInfo),
+		Hash:      hash,
+		Bytecode:  bytecode,
+		Exports:   make(map[string]FunctionInfo),
+		Imports:   make(map[string]FunctionInfo),
 		MemoryMin: 1,
 		MemoryMax: 256, // 16MB max
 	}
@@ -392,12 +393,24 @@ func (ctx *ExecutionContext) GetState(key []byte) ([]byte, error) {
 
 // GrowMemory grows memory by the specified number of pages
 func (ctx *ExecutionContext) GrowMemory(pages uint32) bool {
+	if ctx.memoryPages > ctx.memoryMax || pages > ctx.memoryMax-ctx.memoryPages {
+		return false
+	}
 	newPages := ctx.memoryPages + pages
-	if newPages > ctx.memoryMax {
+	const (
+		wasmPageSize   = uint64(65536)
+		wasm32MaxPages = uint32(65536)
+	)
+	if ctx.memoryMax > wasm32MaxPages || newPages > wasm32MaxPages {
+		return false
+	}
+	newByteLength := uint64(newPages) * wasmPageSize
+	if newByteLength > uint64(math.MaxInt) {
 		return false
 	}
 
-	newMemory := make([]byte, newPages*65536)
+	// #nosec G115 -- newByteLength is explicitly bounded by math.MaxInt above.
+	newMemory := make([]byte, int(newByteLength))
 	copy(newMemory, ctx.memory)
 	ctx.memory = newMemory
 	ctx.memoryPages = newPages
@@ -423,6 +436,30 @@ func (ctx *ExecutionContext) WriteMemory(offset uint32, data []byte) error {
 	return nil
 }
 
+func checkedWASMI32(value int32, field string) (uint32, error) {
+	if value < 0 {
+		return 0, fmt.Errorf("%s cannot be negative", field)
+	}
+	// #nosec G115 -- non-negative int32 values are exactly representable as uint32.
+	return uint32(value), nil
+}
+
+func checkedWASMLengthResult(value int) (int32, error) {
+	if value < 0 || value > math.MaxInt32 {
+		return 0, fmt.Errorf("WASM result length %d exceeds i32 range", value)
+	}
+	// #nosec G115 -- the explicit MaxInt32 check above proves representability.
+	return int32(value), nil
+}
+
+func checkedWASMGasResult(value uint64) (int64, error) {
+	if value > math.MaxInt64 {
+		return 0, fmt.Errorf("remaining gas %d exceeds WASM i64 range", value)
+	}
+	// #nosec G115 -- the explicit MaxInt64 check above proves representability.
+	return int64(value), nil
+}
+
 // StandardHostFunctions returns the standard Aethelred host functions
 func StandardHostFunctions() map[string]HostFunction {
 	return map[string]HostFunction{
@@ -433,7 +470,15 @@ func StandardHostFunctions() map[string]HostFunction {
 			}
 			ptr := args[0].Data.(int32)
 			length := args[1].Data.(int32)
-			data, err := ctx.ReadMemory(uint32(ptr), uint32(length))
+			memoryPtr, err := checkedWASMI32(ptr, "log pointer")
+			if err != nil {
+				return nil, err
+			}
+			memoryLength, err := checkedWASMI32(length, "log length")
+			if err != nil {
+				return nil, err
+			}
+			data, err := ctx.ReadMemory(memoryPtr, memoryLength)
 			if err != nil {
 				return nil, err
 			}
@@ -451,7 +496,24 @@ func StandardHostFunctions() map[string]HostFunction {
 			valPtr := args[2].Data.(int32)
 			valLen := args[3].Data.(int32)
 
-			key, err := ctx.ReadMemory(uint32(keyPtr), uint32(keyLen))
+			keyOffset, err := checkedWASMI32(keyPtr, "state key pointer")
+			if err != nil {
+				return nil, err
+			}
+			keyLength, err := checkedWASMI32(keyLen, "state key length")
+			if err != nil {
+				return nil, err
+			}
+			valueOffset, err := checkedWASMI32(valPtr, "state value pointer")
+			if err != nil {
+				return nil, err
+			}
+			valueCapacity, err := checkedWASMI32(valLen, "state value capacity")
+			if err != nil {
+				return nil, err
+			}
+
+			key, err := ctx.ReadMemory(keyOffset, keyLength)
 			if err != nil {
 				return nil, err
 			}
@@ -461,15 +523,19 @@ func StandardHostFunctions() map[string]HostFunction {
 				return []Value{{Type: I32, Data: int32(-1)}}, nil
 			}
 
-			if len(value) > int(valLen) {
+			if uint64(len(value)) > uint64(valueCapacity) {
 				return []Value{{Type: I32, Data: int32(-2)}}, nil // Buffer too small
 			}
 
-			if err := ctx.WriteMemory(uint32(valPtr), value); err != nil {
+			if err := ctx.WriteMemory(valueOffset, value); err != nil {
 				return nil, err
 			}
 
-			return []Value{{Type: I32, Data: int32(len(value))}}, nil
+			resultLength, err := checkedWASMLengthResult(len(value))
+			if err != nil {
+				return nil, err
+			}
+			return []Value{{Type: I32, Data: resultLength}}, nil
 		},
 
 		"env.state_set": func(ctx *ExecutionContext, args []Value) ([]Value, error) {
@@ -481,12 +547,29 @@ func StandardHostFunctions() map[string]HostFunction {
 			valPtr := args[2].Data.(int32)
 			valLen := args[3].Data.(int32)
 
-			key, err := ctx.ReadMemory(uint32(keyPtr), uint32(keyLen))
+			keyOffset, err := checkedWASMI32(keyPtr, "state key pointer")
+			if err != nil {
+				return nil, err
+			}
+			keyLength, err := checkedWASMI32(keyLen, "state key length")
+			if err != nil {
+				return nil, err
+			}
+			valueOffset, err := checkedWASMI32(valPtr, "state value pointer")
+			if err != nil {
+				return nil, err
+			}
+			valueLength, err := checkedWASMI32(valLen, "state value length")
 			if err != nil {
 				return nil, err
 			}
 
-			value, err := ctx.ReadMemory(uint32(valPtr), uint32(valLen))
+			key, err := ctx.ReadMemory(keyOffset, keyLength)
+			if err != nil {
+				return nil, err
+			}
+
+			value, err := ctx.ReadMemory(valueOffset, valueLength)
 			if err != nil {
 				return nil, err
 			}
@@ -507,13 +590,26 @@ func StandardHostFunctions() map[string]HostFunction {
 			inputLen := args[1].Data.(int32)
 			outputPtr := args[2].Data.(int32)
 
-			input, err := ctx.ReadMemory(uint32(inputPtr), uint32(inputLen))
+			inputOffset, err := checkedWASMI32(inputPtr, "sha256 input pointer")
+			if err != nil {
+				return nil, err
+			}
+			inputLength, err := checkedWASMI32(inputLen, "sha256 input length")
+			if err != nil {
+				return nil, err
+			}
+			outputOffset, err := checkedWASMI32(outputPtr, "sha256 output pointer")
+			if err != nil {
+				return nil, err
+			}
+
+			input, err := ctx.ReadMemory(inputOffset, inputLength)
 			if err != nil {
 				return nil, err
 			}
 
 			hash := sha256.Sum256(input)
-			if err := ctx.WriteMemory(uint32(outputPtr), hash[:]); err != nil {
+			if err := ctx.WriteMemory(outputOffset, hash[:]); err != nil {
 				return nil, err
 			}
 
@@ -522,7 +618,11 @@ func StandardHostFunctions() map[string]HostFunction {
 
 		// Gas tracking
 		"env.gas_remaining": func(ctx *ExecutionContext, args []Value) ([]Value, error) {
-			return []Value{{Type: I64, Data: int64(ctx.gasRemaining)}}, nil
+			remaining, err := checkedWASMGasResult(ctx.gasRemaining)
+			if err != nil {
+				return nil, err
+			}
+			return []Value{{Type: I64, Data: remaining}}, nil
 		},
 	}
 }

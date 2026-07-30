@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/binary"
 	"errors"
 	"fmt"
 )
@@ -323,8 +324,8 @@ func Decapsulate(level int, privateKey []byte, ciphertext *KyberCiphertext) ([]b
 func (kp *KyberKeyPair) Serialize() []byte {
 	// Level (2 bytes) + PublicKey + PrivateKey
 	data := make([]byte, 2+len(kp.PublicKey)+len(kp.PrivateKey))
-	data[0] = byte(kp.Level >> 8)
-	data[1] = byte(kp.Level)
+	// #nosec G115 -- supported Kyber levels (512, 768, 1024) fit exactly in uint16.
+	binary.BigEndian.PutUint16(data[:2], uint16(kp.Level))
 	copy(data[2:2+len(kp.PublicKey)], kp.PublicKey)
 	copy(data[2+len(kp.PublicKey):], kp.PrivateKey)
 	return data
@@ -357,8 +358,8 @@ func DeserializeKyberKeyPair(data []byte) (*KyberKeyPair, error) {
 // SerializeCiphertext serializes a Kyber ciphertext
 func (ct *KyberCiphertext) Serialize() []byte {
 	data := make([]byte, 2+len(ct.Ciphertext))
-	data[0] = byte(ct.Level >> 8)
-	data[1] = byte(ct.Level)
+	// #nosec G115 -- supported Kyber levels (512, 768, 1024) fit exactly in uint16.
+	binary.BigEndian.PutUint16(data[:2], uint16(ct.Level))
 	copy(data[2:], ct.Ciphertext)
 	return data
 }

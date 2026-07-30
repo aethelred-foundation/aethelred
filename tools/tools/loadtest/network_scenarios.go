@@ -35,6 +35,7 @@ func scenarioSeed() int64 {
 	// Fall back to crypto/rand for non-deterministic runs.
 	var buf [8]byte
 	_, _ = rand.Read(buf[:])
+	// #nosec G115 -- math/rand accepts the complete signed bit pattern as a seed.
 	return int64(binary.LittleEndian.Uint64(buf[:]))
 }
 
@@ -86,13 +87,13 @@ func DefaultPartitionConfig() *PartitionConfig {
 
 // NetworkPartition represents a network partition state
 type NetworkPartition struct {
-	ID           int
-	Validators   []*SimulatedValidator
-	Leader       *SimulatedValidator
-	IsIsolated   bool
-	BlockHeight  int64
-	VotingPower  int64
-	CanPropose   bool // Has 2/3+ voting power
+	ID          int
+	Validators  []*SimulatedValidator
+	Leader      *SimulatedValidator
+	IsIsolated  bool
+	BlockHeight int64
+	VotingPower int64
+	CanPropose  bool // Has 2/3+ voting power
 }
 
 // PartitionSimulator manages network partition simulation
@@ -124,9 +125,9 @@ type PartitionMetrics struct {
 	TotalPartitionTime int64 // in blocks
 
 	// Block production during partition
-	BlocksInPartition  map[int]int64 // partition ID -> blocks produced
-	OrphanedBlocks     int64
-	ConflictingBlocks  int64
+	BlocksInPartition map[int]int64 // partition ID -> blocks produced
+	OrphanedBlocks    int64
+	ConflictingBlocks int64
 
 	// Consensus metrics
 	ConsensusFailures  int64
@@ -135,12 +136,12 @@ type PartitionMetrics struct {
 
 	// Safety-preserving halts: partitions that correctly refused to propose
 	// because they lacked supermajority. This is desired BFT behavior, not a failure.
-	SafetyHalts        int64
+	SafetyHalts int64
 
 	// Message metrics
-	CrossPartitionMsgs      int64
-	DroppedCrossPartMsgs    int64
-	DelayedCrossPartMsgs    int64
+	CrossPartitionMsgs   int64
+	DroppedCrossPartMsgs int64
+	DelayedCrossPartMsgs int64
 }
 
 // NewPartitionSimulator creates a new partition simulator
@@ -150,7 +151,7 @@ func NewPartitionSimulator(config *PartitionConfig, validators []*SimulatedValid
 		config:     config,
 		validators: validators,
 		partitions: make([]*NetworkPartition, 0),
-		rng:        mrand.New(mrand.NewSource(seed)),
+		rng:        mrand.New(mrand.NewSource(seed)), // #nosec G404 -- deterministic load-test PRNG; never used for secrets.
 		metrics: &PartitionMetrics{
 			BlocksInPartition: make(map[int]int64),
 		},
@@ -492,24 +493,24 @@ type EclipseMetrics struct {
 	TotalEclipseTime int64 // in blocks
 
 	// Message manipulation
-	BlockedMessages   int64
-	DelayedMessages   int64
-	PoisonedMessages  int64
-	AllowedMessages   int64
+	BlockedMessages  int64
+	DelayedMessages  int64
+	PoisonedMessages int64
+	AllowedMessages  int64
 
 	// Target validator behavior
-	TargetBlocksMissed      int64
-	TargetIncorrectVotes    int64
-	TargetSlashingEvents    int64
+	TargetBlocksMissed   int64
+	TargetIncorrectVotes int64
+	TargetSlashingEvents int64
 
 	// Attack effectiveness
-	SuccessfulIsolations    int64
-	PartialIsolations       int64
-	FailedIsolations        int64
+	SuccessfulIsolations int64
+	PartialIsolations    int64
+	FailedIsolations     int64
 
 	// Network response
-	PeersDetectedAttack     int64
-	NetworkRecoveryTime     int64 // blocks to recover
+	PeersDetectedAttack int64
+	NetworkRecoveryTime int64 // blocks to recover
 }
 
 // NewEclipseSimulator creates a new eclipse simulator
@@ -518,7 +519,7 @@ func NewEclipseSimulator(config *EclipseConfig, validators []*SimulatedValidator
 	return &EclipseSimulator{
 		config:          config,
 		validators:      validators,
-		rng:             mrand.New(mrand.NewSource(seed + 1)), // offset from partition seed
+		rng:             mrand.New(mrand.NewSource(seed + 1)), // #nosec G404 -- deterministic load-test PRNG; never used for secrets.
 		metrics:         &EclipseMetrics{},
 		eclipsedTargets: make(map[int]bool),
 	}
@@ -690,8 +691,8 @@ type NetworkScenarioConfig struct {
 	EclipseConfig *EclipseConfig
 
 	// Timing
-	StartAtBlock      int64
-	DurationBlocks    int64
+	StartAtBlock   int64
+	DurationBlocks int64
 
 	// Success criteria
 	ExpectedConsensusFailures int64
@@ -700,33 +701,33 @@ type NetworkScenarioConfig struct {
 
 // NetworkScenarioRunner runs network attack scenarios
 type NetworkScenarioRunner struct {
-	scenario     *NetworkScenarioConfig
-	partition    *PartitionSimulator
-	eclipse      *EclipseSimulator
-	validators   []*SimulatedValidator
-	baseRunner   *Runner
+	scenario   *NetworkScenarioConfig
+	partition  *PartitionSimulator
+	eclipse    *EclipseSimulator
+	validators []*SimulatedValidator
+	baseRunner *Runner
 
-	results      *NetworkScenarioResult
+	results *NetworkScenarioResult
 }
 
 // NetworkScenarioResult contains results from a network scenario
 type NetworkScenarioResult struct {
-	ScenarioName          string
-	StartBlock            int64
-	EndBlock              int64
-	Duration              time.Duration
+	ScenarioName string
+	StartBlock   int64
+	EndBlock     int64
+	Duration     time.Duration
 
 	// Partition results
-	PartitionMetrics      *PartitionMetrics
+	PartitionMetrics *PartitionMetrics
 
 	// Eclipse results
-	EclipseMetrics        *EclipseMetrics
+	EclipseMetrics *EclipseMetrics
 
 	// Overall results
-	ConsensusFailures     int64
-	RecoveryBlocks        int64
-	SplitBrainEvents      int64
-	DataLoss              int64
+	ConsensusFailures int64
+	RecoveryBlocks    int64
+	SplitBrainEvents  int64
+	DataLoss          int64
 
 	// Grading
 	AttackResilienceGrade string

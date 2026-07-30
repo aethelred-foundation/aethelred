@@ -13,11 +13,11 @@ import (
 //
 // PRODUCTION SAFETY RULES (VC-01 through VC-05):
 //
-//   - VC-01: This cache is ADVISORY ONLY. ProcessProposal correctness must NOT
-//     depend on cache presence. After a restart, the cache is empty and the chain
-//     must continue without it.
-//   - VC-02: When enforcement is needed, ProcessProposal must use req.VoteExtensions
-//     (the consensus input), not this cache.
+//   - VC-01: This cache is consensus evidence for ProcessProposal because
+//     CommitInfo omits vote-extension bytes. Injected transactions fail closed
+//     when a commit vote's verified cache entry is unavailable.
+//   - VC-02: Every entry is keyed to the exact consensus validator and height;
+//     ProcessProposal reconstructs the canonical injected payload from it.
 //   - VC-03: Cache keys include chainID + height to prevent cross-chain replay artifacts.
 //   - VC-04: Fixed-size LRU by height window; bounded memory usage.
 //   - VC-05: Only validated extensions are stored (caller must verify before Store).
@@ -74,7 +74,8 @@ func (c *VoteExtensionCache) Store(height int64, validatorAddr []byte, extension
 //
 // Returns the extended votes and the count of found cached extensions.
 // When the cache is nil or empty (e.g. after restart), all extensions are nil
-// and found == 0. Callers MUST handle found == 0 gracefully (VC-01).
+// and found == 0. Callers must reject injected transactions until evidence is
+// available; ordinary proposals without injected data remain valid.
 func (c *VoteExtensionCache) BuildExtendedVotes(height int64, votes []abci.VoteInfo) ([]abci.ExtendedVoteInfo, int) {
 	extended := make([]abci.ExtendedVoteInfo, 0, len(votes))
 	if c == nil {

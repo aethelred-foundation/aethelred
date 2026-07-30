@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -12,6 +13,11 @@ import (
 	"github.com/aethelred/aethelred/x/verify/httputil"
 	"github.com/aethelred/aethelred/x/verify/tee"
 	"github.com/aethelred/aethelred/x/verify/types"
+)
+
+const (
+	readinessTEEAPITokenEnv  = "AETHELRED_TEE_API_TOKEN"
+	readinessZKMLAPITokenEnv = "AETHELRED_ZKML_API_TOKEN"
 )
 
 // ReadinessCheck describes a single readiness verification.
@@ -258,20 +264,28 @@ func ValidateEndpointReachability(orchConfig *OrchestratorConfig) []string {
 
 	// Check EZKL prover
 	if orchConfig.ProverConfig != nil && orchConfig.ProverConfig.ProverEndpoint != "" {
-		if !isEndpointReachable(orchConfig.ProverConfig.ProverEndpoint) {
+		proverToken := readinessAPIToken(
+			orchConfig.ProverConfig.APIToken,
+			readinessZKMLAPITokenEnv,
+		)
+		if !isEndpointReachable(orchConfig.ProverConfig.ProverEndpoint, proverToken) {
 			unreachable = append(unreachable, "ezkl-prover: "+orchConfig.ProverConfig.ProverEndpoint)
 		}
 	}
 
 	// Check Nitro executor
 	if orchConfig.NitroConfig != nil {
+		teeToken := readinessAPIToken(
+			orchConfig.NitroConfig.APIToken,
+			readinessTEEAPITokenEnv,
+		)
 		if orchConfig.NitroConfig.ExecutorEndpoint != "" {
-			if !isEndpointReachable(orchConfig.NitroConfig.ExecutorEndpoint) {
+			if !isEndpointReachable(orchConfig.NitroConfig.ExecutorEndpoint, teeToken) {
 				unreachable = append(unreachable, "nitro-executor: "+orchConfig.NitroConfig.ExecutorEndpoint)
 			}
 		}
 		if orchConfig.NitroConfig.AttestationVerifierEndpoint != "" {
-			if !isEndpointReachable(orchConfig.NitroConfig.AttestationVerifierEndpoint) {
+			if !isEndpointReachable(orchConfig.NitroConfig.AttestationVerifierEndpoint, teeToken) {
 				unreachable = append(unreachable, "attestation-verifier: "+orchConfig.NitroConfig.AttestationVerifierEndpoint)
 			}
 		}
@@ -281,15 +295,20 @@ func ValidateEndpointReachability(orchConfig *OrchestratorConfig) []string {
 }
 
 // isEndpointReachable performs a bounded HTTP health check against the endpoint.
-// It treats any HTTP response as reachable (including 4xx), while network/timeouts
-// are considered unreachable.
-func isEndpointReachable(endpoint string) bool {
+// Only successful 2xx responses are considered reachable. When apiToken is
+// configured, it is presented as a bearer token on every probe.
+func isEndpointReachable(endpoint, apiToken string) bool {
 	probes := endpointProbeURLs(endpoint)
 	if len(probes) == 0 {
 		return false
 	}
 
-	client := &http.Client{Timeout: 3 * time.Second}
+	client, err := httputil.NewSecureClient(&http.Client{Timeout: 3 * time.Second})
+	if err != nil {
+		return false
+	}
+	defer client.CloseIdleConnections()
+	apiToken = strings.TrimSpace(apiToken)
 	for _, probe := range probes {
 		if err := httputil.ValidateEndpointURL(probe); err != nil {
 			continue
@@ -298,6 +317,9 @@ func isEndpointReachable(endpoint string) bool {
 		if err != nil {
 			continue
 		}
+		if apiToken != "" {
+			req.Header.Set("Authorization", "Bearer "+apiToken)
+		}
 		resp, err := client.Do(req)
 		if err != nil {
 			continue
@@ -305,11 +327,18 @@ func isEndpointReachable(endpoint string) bool {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1024))
 		_ = resp.Body.Close()
 
-		if resp.StatusCode >= 200 && resp.StatusCode < 500 {
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			return true
 		}
 	}
 	return false
+}
+
+func readinessAPIToken(configuredToken, envName string) string {
+	if token := strings.TrimSpace(configuredToken); token != "" {
+		return token
+	}
+	return strings.TrimSpace(os.Getenv(envName))
 }
 
 func endpointProbeURLs(endpoint string) []string {
@@ -326,35 +355,14 @@ func endpointProbeURLs(endpoint string) []string {
 		return nil
 	}
 
-	normalized := strings.TrimRight(parsed.String(), "/")
-	if normalized == "" {
-		return nil
-	}
-
-	var probes []string
-	if parsed.Path != "" && parsed.Path != "/" {
-		probes = append(probes, normalized)
-	}
-
-	if !strings.HasSuffix(normalized, "/health") {
-		root := *parsed
-		root.Path = "/health"
-		root.RawQuery = ""
-		root.Fragment = ""
-		probes = append(probes, root.String())
-	}
-	probes = append(probes, normalized)
-
-	seen := make(map[string]struct{}, len(probes))
-	unique := make([]string, 0, len(probes))
-	for _, p := range probes {
-		if _, ok := seen[p]; ok {
-			continue
-		}
-		seen[p] = struct{}{}
-		unique = append(unique, p)
-	}
-	return unique
+	// Verification workers expose their readiness contract at the root
+	// /health route. Do not fall back to the service root or an operation path:
+	// a generic 2xx response there must not mask a failed health check.
+	parsed.Path = "/health"
+	parsed.RawPath = ""
+	parsed.RawQuery = ""
+	parsed.Fragment = ""
+	return []string{parsed.String()}
 }
 
 // EnterpriseReadinessCheck validates that all enterprise-grade verification
@@ -411,6 +419,14 @@ func (erc *EnterpriseReadinessCheck) Validate() (EnterpriseReadinessResult, erro
 	}
 
 	cfg := erc.OrchestratorConfig
+	var teeToken string
+	if cfg.NitroConfig != nil {
+		teeToken = readinessAPIToken(cfg.NitroConfig.APIToken, readinessTEEAPITokenEnv)
+	}
+	var proverToken string
+	if cfg.ProverConfig != nil {
+		proverToken = readinessAPIToken(cfg.ProverConfig.APIToken, readinessZKMLAPITokenEnv)
+	}
 
 	// 1. Validate enterprise config constraints (hybrid, require-both, no mocks).
 	if err := cfg.ValidateEnterpriseConfig(); err != nil {
@@ -436,7 +452,7 @@ func (erc *EnterpriseReadinessCheck) Validate() (EnterpriseReadinessResult, erro
 			Passed:  false,
 			Message: "TEE executor endpoint not configured",
 		})
-	} else if !isEndpointReachable(cfg.NitroConfig.ExecutorEndpoint) {
+	} else if !isEndpointReachable(cfg.NitroConfig.ExecutorEndpoint, teeToken) {
 		result.Ready = false
 		result.Checks = append(result.Checks, ReadinessCheck{
 			Name:    "enterprise_tee_endpoint",
@@ -459,7 +475,7 @@ func (erc *EnterpriseReadinessCheck) Validate() (EnterpriseReadinessResult, erro
 			Passed:  false,
 			Message: "attestation verifier endpoint not configured",
 		})
-	} else if !isEndpointReachable(cfg.NitroConfig.AttestationVerifierEndpoint) {
+	} else if !isEndpointReachable(cfg.NitroConfig.AttestationVerifierEndpoint, teeToken) {
 		result.Ready = false
 		result.Checks = append(result.Checks, ReadinessCheck{
 			Name:    "enterprise_attestation_endpoint",
@@ -482,7 +498,7 @@ func (erc *EnterpriseReadinessCheck) Validate() (EnterpriseReadinessResult, erro
 			Passed:  false,
 			Message: "prover endpoint not configured",
 		})
-	} else if !isEndpointReachable(cfg.ProverConfig.ProverEndpoint) {
+	} else if !isEndpointReachable(cfg.ProverConfig.ProverEndpoint, proverToken) {
 		result.Ready = false
 		result.Checks = append(result.Checks, ReadinessCheck{
 			Name:    "enterprise_prover_endpoint",

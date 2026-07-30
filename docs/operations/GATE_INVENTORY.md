@@ -11,6 +11,7 @@ Purpose: Enumerate every gate that must pass before testnet and mainnet launch.
 | Gate ID | Gate Name | Validation Method | Automated | CI Workflow | Owner Squad | Evidence Artifact |
 |---------|-----------|-------------------|-----------|-------------|-------------|-------------------|
 | G-BUILD | Build gate | `go build ./cmd/aethelredd` succeeds | Yes | `CI` (`.github/workflows/ci.yml`) | Core Protocol | Binary at `./build/aethelredd` |
+| G-PQC | Production PQC gate | CIRCL-backed PQC tests and production node build pass | Yes | `CI` (`.github/workflows/ci.yml`) | Core Protocol | `PQC Production Gate` CI logs |
 | G-UNIT | Unit test gate | `make test-unit` passes | Yes | `CI` (`.github/workflows/ci.yml`) | Core Protocol | Test output in CI logs |
 | G-INT | Integration test gate | `make test-integration` passes | Yes | `CI` (`.github/workflows/ci.yml`) | Core Protocol | Test output in CI logs |
 | G-CONS | Consensus test gate | `make test-consensus` passes | Yes | `CI` (`.github/workflows/ci.yml`) | Core Protocol | Test output in CI logs |
@@ -39,6 +40,14 @@ Purpose: Enumerate every gate that must pass before testnet and mainnet launch.
 - **Failure mode**: Compilation error blocks all downstream gates
 - **CI workflow**: `CI` -- runs on every push and PR
 - **Branch protection**: Part of core CI required check
+
+### G-PQC: Production PQC Gate
+
+- **Command**: `make test-pqc-production`
+- **Scope**: CIRCL-backed PQC tests, production defaults, FIPS 204 sizes, and production node compilation
+- **Failure mode**: Any test or production build failure blocks merge
+- **CI workflow**: `CI`
+- **Branch protection**: `PQC Production Gate`
 
 ### G-UNIT: Unit Test Gate
 
@@ -152,10 +161,10 @@ Required checks per branch are defined in `.github/branch-protection/required-ch
 
 | Branch | Required Gates |
 |--------|---------------|
-| `main` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E |
-| `develop` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing |
-| `release/*` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E |
-| Default (all other) | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing |
+| `main` | Production PQC, Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E |
+| `develop` | Production PQC, Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing |
+| `release/*` | Production PQC, Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E |
+| Default (all other) | Production PQC, Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing |
 
 ---
 
@@ -164,6 +173,7 @@ Required checks per branch are defined in `.github/branch-protection/required-ch
 All gates below must show `PASS` before mainnet tag is cut:
 
 - [ ] G-BUILD: Binary builds cleanly
+- [ ] G-PQC: CIRCL-backed production PQC gate passes
 - [ ] G-UNIT: All unit tests pass
 - [ ] G-INT: All integration tests pass
 - [ ] G-CONS: All consensus tests pass

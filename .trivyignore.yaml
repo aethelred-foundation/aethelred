@@ -1,0 +1,11 @@
+vulnerabilities:
+  - id: GO-2026-5932
+    paths:
+      - go.mod
+      - usr/bin/aethelredd
+    expired_at: 2026-10-31
+    statement: >-
+      The deprecated openpgp package is reachable only through the pinned
+      Cosmos/cloud dependency graph and has no upstream fixed release.
+      Replacement is tracked under the same time-bounded exception documented
+      in docs/security/govulncheck-exceptions.md.

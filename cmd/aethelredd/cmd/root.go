@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"cosmossdk.io/log"
 
+	cmtcfg "github.com/cometbft/cometbft/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -75,7 +77,12 @@ Learn more at https://aethelred.io`,
 				return err
 			}
 			customAppTemplate, customAppConfig := initAppConfig()
-			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, nil); err != nil {
+			if err := server.InterceptConfigsPreRunHandler(
+				cmd,
+				customAppTemplate,
+				customAppConfig,
+				cmtcfg.DefaultConfig(),
+			); err != nil {
 				return err
 			}
 			return validateAppConfig(cmd)
@@ -99,8 +106,8 @@ func initConfig() {
 
 // AppConfig defines custom app configuration for Aethelred.
 type AppConfig struct {
-	serverconfig.Config
-	TEE TEEConfig `mapstructure:"tee"`
+	serverconfig.Config `mapstructure:",squash"`
+	TEE                 TEEConfig `mapstructure:"tee"`
 }
 
 // TEEConfig defines configuration for the TEE worker integration.
@@ -161,13 +168,20 @@ func newApp(
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
-	return app.New(
+	aethelredApp := app.New(
 		logger,
 		db,
 		traceStore,
 		true,
 		appOpts,
 	)
+	if err := configureLocalValidatorSigningKey(aethelredApp, appOpts); err != nil {
+		_ = aethelredApp.Close()
+		// servertypes.AppCreator has no error return. Panic is the Cosmos SDK's
+		// fail-fast path for an application that cannot be constructed safely.
+		panic(fmt.Errorf("initialize compact verification signer: %w", err))
+	}
+	return aethelredApp
 }
 
 // appExport exports app state
@@ -181,6 +195,8 @@ func appExport(
 	appOpts servertypes.AppOptions,
 	modulesToExport []string,
 ) (servertypes.ExportedApp, error) {
+	// Export is an offline/read-only operation. It must never load validator
+	// private-key material into the application process.
 	aethelredApp := app.New(
 		logger,
 		db,

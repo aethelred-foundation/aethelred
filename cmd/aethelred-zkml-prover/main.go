@@ -4,35 +4,61 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/aethelred/aethelred/x/verify/ezkl"
+	"github.com/aethelred/aethelred/x/verify/httputil"
 )
 
 const (
-	defaultListenAddr = ":8546"
+	defaultListenAddr               = "127.0.0.1:8546"
+	apiTokenEnv                     = "AETHELRED_ZKML_API_TOKEN"
+	backendAPITokenEnv              = "AETHELRED_ZKML_BACKEND_API_TOKEN"
+	defaultMinRequestInterval       = 200 * time.Millisecond
+	maxRequestBodyBytes       int64 = 8 << 20
+	backendHealthProbeTimeout       = 3 * time.Second
+	serverReadHeaderTimeout         = 5 * time.Second
+	serverReadTimeout               = 30 * time.Second
+	serverWriteTimeoutGrace         = 5 * time.Second
+	serverIdleTimeout               = 60 * time.Second
+	serverMaxHeaderBytes            = 64 << 10
+	rateLimitEntryRetention         = 10 * time.Minute
+	rateLimitCleanupInterval        = time.Minute
 )
 
 type config struct {
-	ListenAddr     string
-	BackendURL     string
-	AllowSimulated bool
-	Timeout        time.Duration
+	ListenAddr         string
+	BackendURL         string
+	AllowSimulated     bool
+	ProductionMode     bool
+	APIToken           string
+	BackendAPIToken    string
+	MinRequestInterval time.Duration
+	Timeout            time.Duration
 }
 
 type server struct {
 	cfg    config
 	client *http.Client
+
+	rateMu          sync.Mutex
+	lastRequestByK  map[string]time.Time
+	lastRateCleanup time.Time
 }
 
 type simulatedProof struct {
@@ -53,11 +79,16 @@ type verifyRequest struct {
 
 func main() {
 	cfg := loadConfig()
+	if err := validateConfig(cfg); err != nil {
+		log.Fatalf("invalid zkML prover configuration: %v", err)
+	}
+	client, err := httputil.NewSecureClient(&http.Client{Timeout: cfg.Timeout})
+	if err != nil {
+		log.Fatalf("failed to create secure backend HTTP client: %v", err)
+	}
 	srv := &server{
-		cfg: cfg,
-		client: &http.Client{
-			Timeout: cfg.Timeout,
-		},
+		cfg:    cfg,
+		client: client,
 	}
 
 	mux := http.NewServeMux()
@@ -65,11 +96,7 @@ func main() {
 	mux.HandleFunc("/prove", srv.handleProve)
 	mux.HandleFunc("/verify", srv.handleVerify)
 
-	httpServer := &http.Server{
-		Addr:              cfg.ListenAddr,
-		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	httpServer := newHTTPServer(cfg, mux)
 
 	log.Printf("starting zkML prover service on %s (simulated=%t backend=%q)", cfg.ListenAddr, cfg.AllowSimulated, cfg.BackendURL)
 
@@ -91,9 +118,9 @@ func main() {
 }
 
 func loadConfig() config {
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv("PROVER_MODE")))
 	allowSimulated := envBool("AETHELRED_ALLOW_SIMULATED")
 	if !allowSimulated {
-		mode := strings.ToLower(strings.TrimSpace(os.Getenv("PROVER_MODE")))
 		if mode == "development" || mode == "dev" || mode == "simulated" {
 			allowSimulated = true
 		}
@@ -106,10 +133,14 @@ func loadConfig() config {
 	}
 
 	return config{
-		ListenAddr:     envOrDefault("AETHELRED_ZKML_LISTEN_ADDR", defaultListenAddr),
-		BackendURL:     strings.TrimRight(strings.TrimSpace(os.Getenv("AETHELRED_ZKML_BACKEND_URL")), "/"),
-		AllowSimulated: allowSimulated,
-		Timeout:        timeout,
+		ListenAddr:         envOrDefault("AETHELRED_ZKML_LISTEN_ADDR", defaultListenAddr),
+		BackendURL:         strings.TrimRight(strings.TrimSpace(os.Getenv("AETHELRED_ZKML_BACKEND_URL")), "/"),
+		AllowSimulated:     allowSimulated,
+		ProductionMode:     mode == "production" || mode == "prod",
+		APIToken:           strings.TrimSpace(os.Getenv(apiTokenEnv)),
+		BackendAPIToken:    strings.TrimSpace(os.Getenv(backendAPITokenEnv)),
+		MinRequestInterval: envDurationOrDefault("AETHELRED_ZKML_MIN_REQUEST_INTERVAL", defaultMinRequestInterval),
+		Timeout:            timeout,
 	}
 }
 
@@ -129,9 +160,278 @@ func envBool(key string) bool {
 	}
 }
 
+func envDurationOrDefault(key string, fallback time.Duration) time.Duration {
+	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+		if parsed, err := time.ParseDuration(v); err == nil && parsed >= 0 {
+			return parsed
+		}
+	}
+	return fallback
+}
+
+func validateConfig(cfg config) error {
+	if cfg.ProductionMode && cfg.AllowSimulated {
+		return errors.New("simulated proofs are not allowed in production mode")
+	}
+	if (cfg.ProductionMode || !cfg.AllowSimulated) && cfg.BackendURL == "" {
+		return errors.New("AETHELRED_ZKML_BACKEND_URL is required when simulation is disabled or production mode is enabled")
+	}
+	if cfg.BackendURL != "" {
+		if err := httputil.ValidateEndpointURL(cfg.BackendURL); err != nil {
+			return fmt.Errorf("invalid zkML prover backend URL: %w", err)
+		}
+		if !cfg.AllowSimulated && strings.TrimSpace(cfg.BackendAPIToken) == "" {
+			return fmt.Errorf("%s is required for a real zkML backend", backendAPITokenEnv)
+		}
+	}
+	if err := validateListenAddrSecurity(cfg.ListenAddr, cfg.APIToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func newHTTPServer(cfg config, handler http.Handler) *http.Server {
+	backendTimeout := cfg.Timeout
+	if backendTimeout <= 0 {
+		backendTimeout = 15 * time.Second
+	}
+	writeTimeout := addDurationSaturating(serverReadTimeout, backendTimeout)
+	writeTimeout = addDurationSaturating(writeTimeout, serverWriteTimeoutGrace)
+
+	return &http.Server{
+		Addr:              cfg.ListenAddr,
+		Handler:           handler,
+		ReadHeaderTimeout: serverReadHeaderTimeout,
+		ReadTimeout:       serverReadTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       serverIdleTimeout,
+		MaxHeaderBytes:    serverMaxHeaderBytes,
+	}
+}
+
+func addDurationSaturating(base, delta time.Duration) time.Duration {
+	const maxDuration = time.Duration(1<<63 - 1)
+	if delta > 0 && base > maxDuration-delta {
+		return maxDuration
+	}
+	return base + delta
+}
+
+func validateListenAddrSecurity(listenAddr, apiToken string) error {
+	if isLoopbackListenAddr(listenAddr) {
+		return nil
+	}
+	if strings.TrimSpace(apiToken) == "" {
+		return fmt.Errorf("%s is required when the zkML prover listens beyond explicit loopback addresses", apiTokenEnv)
+	}
+	return nil
+}
+
+func isLoopbackListenAddr(listenAddr string) bool {
+	listenAddr = strings.TrimSpace(listenAddr)
+	if listenAddr == "" || strings.HasPrefix(listenAddr, ":") {
+		return false
+	}
+
+	host := listenAddr
+	if parsedHost, _, err := net.SplitHostPort(listenAddr); err == nil {
+		host = parsedHost
+	}
+	host = strings.Trim(host, "[]")
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return false
+	}
+	return addr.IsLoopback()
+}
+
+func (s *server) authorizeRequest(r *http.Request) error {
+	if isDirectLoopbackRequest(r) {
+		return nil
+	}
+
+	expectedToken := strings.TrimSpace(s.cfg.APIToken)
+	if expectedToken == "" {
+		return errors.New("authorization required")
+	}
+
+	providedToken, ok := parseBearerToken(r.Header.Get("Authorization"))
+	if !ok || subtle.ConstantTimeCompare([]byte(providedToken), []byte(expectedToken)) != 1 {
+		return errors.New("authorization required")
+	}
+	return nil
+}
+
+func isDirectLoopbackRequest(r *http.Request) bool {
+	if r == nil || !isLoopbackRemoteAddr(r.RemoteAddr) {
+		return false
+	}
+	return !hasForwardingHeaders(r.Header)
+}
+
+func isLoopbackRemoteAddr(remoteAddr string) bool {
+	remoteAddr = strings.TrimSpace(remoteAddr)
+	if remoteAddr == "" {
+		return false
+	}
+
+	host := remoteAddr
+	if parsedHost, _, err := net.SplitHostPort(remoteAddr); err == nil {
+		host = parsedHost
+	}
+	host = strings.Trim(host, "[]")
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return false
+	}
+	return addr.IsLoopback()
+}
+
+func hasForwardingHeaders(header http.Header) bool {
+	if header == nil {
+		return false
+	}
+	for _, key := range []string{"Forwarded", "X-Forwarded-For", "X-Real-IP"} {
+		if strings.TrimSpace(header.Get(key)) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func parseBearerToken(header string) (string, bool) {
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return "", false
+	}
+	parts := strings.SplitN(header, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return "", false
+	}
+	token := strings.TrimSpace(parts[1])
+	if token == "" {
+		return "", false
+	}
+	return token, true
+}
+
+func (s *server) rateLimitKey(r *http.Request, endpoint string) string {
+	principal := "unauthenticated"
+	if isDirectLoopbackRequest(r) {
+		principal = "local-loopback"
+	} else if r != nil {
+		if token, ok := parseBearerToken(r.Header.Get("Authorization")); ok {
+			digest := sha256.Sum256([]byte(token))
+			principal = fmt.Sprintf("bearer:%x", digest[:])
+		}
+	}
+
+	remoteHost := "unknown"
+	if r != nil {
+		remoteHost = normalizedRemoteHost(r.RemoteAddr)
+	}
+	return endpoint + "|" + principal + "|" + remoteHost
+}
+
+func normalizedRemoteHost(remoteAddr string) string {
+	remoteAddr = strings.TrimSpace(remoteAddr)
+	if remoteAddr == "" {
+		return "unknown"
+	}
+
+	host := remoteAddr
+	if parsedHost, _, err := net.SplitHostPort(remoteAddr); err == nil {
+		host = parsedHost
+	}
+	host = strings.Trim(host, "[]")
+	if addr, err := netip.ParseAddr(host); err == nil {
+		return addr.Unmap().String()
+	}
+	if host == "" {
+		return "unknown"
+	}
+	return strings.ToLower(host)
+}
+
+func (s *server) allowRequest(r *http.Request, endpoint string) (bool, time.Duration) {
+	if s == nil || s.cfg.MinRequestInterval <= 0 {
+		return true, 0
+	}
+
+	now := time.Now()
+	key := s.rateLimitKey(r, endpoint)
+
+	s.rateMu.Lock()
+	defer s.rateMu.Unlock()
+
+	if s.lastRequestByK == nil {
+		s.lastRequestByK = make(map[string]time.Time)
+	}
+	if s.lastRateCleanup.IsZero() || now.Sub(s.lastRateCleanup) >= rateLimitCleanupInterval {
+		retention := rateLimitEntryRetention
+		if s.cfg.MinRequestInterval > retention {
+			retention = s.cfg.MinRequestInterval
+		}
+		for existingKey, lastSeen := range s.lastRequestByK {
+			if now.Sub(lastSeen) >= retention {
+				delete(s.lastRequestByK, existingKey)
+			}
+		}
+		s.lastRateCleanup = now
+	}
+
+	if last, ok := s.lastRequestByK[key]; ok {
+		elapsed := now.Sub(last)
+		if elapsed < s.cfg.MinRequestInterval {
+			return false, s.cfg.MinRequestInterval - elapsed
+		}
+	}
+	s.lastRequestByK[key] = now
+	return true, 0
+}
+
+func writeRateLimitError(w http.ResponseWriter, retryAfter time.Duration) {
+	if retryAfter > 0 {
+		retryAfterSeconds := retryAfter / time.Second
+		if retryAfter%time.Second != 0 {
+			retryAfterSeconds++
+		}
+		if retryAfterSeconds < 1 {
+			retryAfterSeconds = 1
+		}
+		w.Header().Set("Retry-After", strconv.FormatInt(int64(retryAfterSeconds), 10))
+	}
+	writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
+}
+
+func readRequestBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
+	return io.ReadAll(r.Body)
+}
+
 func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if err := s.checkBackendHealth(r.Context()); err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]any{
+			"service":       "aethelred-zkml-prover",
+			"status":        "unavailable",
+			"backend_ready": false,
+		})
 		return
 	}
 
@@ -140,8 +440,57 @@ func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		"status":          "ok",
 		"allow_simulated": s.cfg.AllowSimulated,
 		"backend_url":     s.cfg.BackendURL != "",
+		"backend_ready":   true,
 	}
 	writeJSON(w, http.StatusOK, status)
+}
+
+func (s *server) checkBackendHealth(parent context.Context) error {
+	if s == nil {
+		return errors.New("zkML prover is not initialized")
+	}
+	if s.cfg.BackendURL == "" {
+		if s.cfg.AllowSimulated {
+			return nil
+		}
+		return errors.New("zkML backend is not configured")
+	}
+	if s.client == nil {
+		return errors.New("zkML backend client is not configured")
+	}
+
+	target := s.cfg.BackendURL + "/health"
+	if err := httputil.ValidateEndpointURL(target); err != nil {
+		return fmt.Errorf("zkML backend health endpoint is not allowed: %w", err)
+	}
+
+	timeout := backendHealthProbeTimeout
+	if s.cfg.Timeout > 0 && s.cfg.Timeout < timeout {
+		timeout = s.cfg.Timeout
+	}
+	ctx, cancel := context.WithTimeout(parent, timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return fmt.Errorf("build zkML backend health request: %w", err)
+	}
+	setBackendAuthorization(req, s.cfg.BackendAPIToken)
+
+	// #nosec G704 -- the URL is validated above and production uses the SSRF-safe client.
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("probe zkML backend health: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, httputil.MaxErrorBodySize))
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("zkML backend health returned HTTP %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func (s *server) handleProve(w http.ResponseWriter, r *http.Request) {
@@ -149,9 +498,22 @@ func (s *server) handleProve(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if allowed, retryAfter := s.allowRequest(r, "/prove"); !allowed {
+		writeRateLimitError(w, retryAfter)
+		return
+	}
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 8<<20))
+	body, err := readRequestBody(w, r)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			writeError(w, http.StatusRequestEntityTooLarge, "request body too large")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "failed to read request body")
 		return
 	}
@@ -191,9 +553,22 @@ func (s *server) handleVerify(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if allowed, retryAfter := s.allowRequest(r, "/verify"); !allowed {
+		writeRateLimitError(w, retryAfter)
+		return
+	}
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 8<<20))
+	body, err := readRequestBody(w, r)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			writeError(w, http.StatusRequestEntityTooLarge, "request body too large")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "failed to read request body")
 		return
 	}
@@ -293,13 +668,19 @@ func verifyProof(proof []byte, publicInputs *ezkl.PublicInputs, verifyingKey []b
 
 func (s *server) proxy(w http.ResponseWriter, r *http.Request, path string, body []byte) {
 	target := s.cfg.BackendURL + path
+	if err := httputil.ValidateEndpointURL(target); err != nil {
+		writeError(w, http.StatusBadGateway, "backend endpoint not allowed")
+		return
+	}
 	req, err := http.NewRequestWithContext(r.Context(), r.Method, target, bytes.NewReader(body))
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "failed to build backend request")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	setBackendAuthorization(req, s.cfg.BackendAPIToken)
 
+	// #nosec G704 -- the URL is validated above and the secure transport pins a validated public IP before dialing.
 	resp, err := s.client.Do(req)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "backend request failed")
@@ -316,6 +697,15 @@ func (s *server) proxy(w http.ResponseWriter, r *http.Request, path string, body
 	}
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
+}
+
+func setBackendAuthorization(req *http.Request, token string) {
+	if req == nil {
+		return
+	}
+	if token = strings.TrimSpace(token); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {

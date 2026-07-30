@@ -354,6 +354,7 @@ func (d *DoubleVotingDetector) computeEvidenceHash(e *EquivocationEvidence) [32]
 	h.Write([]byte(e.ValidatorAddress))
 
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the evidence hash schema encodes signed block heights as two's-complement BE64.
 	binary.BigEndian.PutUint64(heightBytes, uint64(e.BlockHeight))
 	h.Write(heightBytes)
 
@@ -962,6 +963,7 @@ func computeEvidenceHashStatic(e *EquivocationEvidence) [32]byte {
 	h.Write([]byte(e.ValidatorAddress))
 
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the evidence hash schema encodes signed block heights as two's-complement BE64.
 	binary.BigEndian.PutUint64(heightBytes, uint64(e.BlockHeight))
 	h.Write(heightBytes)
 

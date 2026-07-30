@@ -299,14 +299,10 @@ func (al *AuditLogger) exportAndRotate() {
 	al.entries = make([]*AuditEntry, 0, al.maxEntries)
 	al.mu.Unlock()
 
-	filename := filepath.Join(al.exportPath,
-		fmt.Sprintf("audit-%s.json", time.Now().Format("20060102-150405")))
-
-	if err := os.MkdirAll(al.exportPath, 0755); err != nil {
-		return
-	}
-
-	file, err := os.Create(filename)
+	file, filename, err := createPrivateOutputFile(
+		al.exportPath,
+		fmt.Sprintf("audit-%s.json", time.Now().Format("20060102-150405.000000000")),
+	)
 	if err != nil {
 		return
 	}
@@ -1012,12 +1008,7 @@ func NewExporter(logger *AuditLogger, outputDir string) *Exporter {
 func (e *Exporter) ExportJSON(ctx context.Context, filter AuditFilter, filename string) error {
 	entries := e.logger.Query(filter)
 
-	filepath := filepath.Join(e.outputDir, filename)
-	if err := os.MkdirAll(e.outputDir, 0755); err != nil {
-		return err
-	}
-
-	file, err := os.Create(filepath)
+	file, _, err := createPrivateOutputFile(e.outputDir, filename)
 	if err != nil {
 		return err
 	}
@@ -1035,12 +1026,7 @@ func (e *Exporter) ExportJSON(ctx context.Context, filter AuditFilter, filename 
 func (e *Exporter) ExportCSV(ctx context.Context, filter AuditFilter, filename string) error {
 	entries := e.logger.Query(filter)
 
-	filepath := filepath.Join(e.outputDir, filename)
-	if err := os.MkdirAll(e.outputDir, 0755); err != nil {
-		return err
-	}
-
-	file, err := os.Create(filepath)
+	file, _, err := createPrivateOutputFile(e.outputDir, filename)
 	if err != nil {
 		return err
 	}
@@ -1086,12 +1072,7 @@ func (e *Exporter) ExportCSV(ctx context.Context, filter AuditFilter, filename s
 
 // ExportZipBundle exports a complete compliance bundle
 func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, filename string) error {
-	filepath := filepath.Join(e.outputDir, filename)
-	if err := os.MkdirAll(e.outputDir, 0755); err != nil {
-		return err
-	}
-
-	file, err := os.Create(filepath)
+	file, _, err := createPrivateOutputFile(e.outputDir, filename)
 	if err != nil {
 		return err
 	}
@@ -1162,6 +1143,30 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 		return err
 	}
 	return file.Close()
+}
+
+func createPrivateOutputFile(outputDir, filename string) (*os.File, string, error) {
+	cleanName := filepath.Clean(strings.TrimSpace(filename))
+	if cleanName == "." || cleanName == ".." || filepath.IsAbs(cleanName) || filepath.Base(cleanName) != cleanName {
+		return nil, "", fmt.Errorf("output filename must be a single relative path component")
+	}
+
+	root, err := filepath.Abs(outputDir)
+	if err != nil {
+		return nil, "", fmt.Errorf("resolve output directory: %w", err)
+	}
+	if err := os.MkdirAll(root, 0750); err != nil {
+		return nil, "", fmt.Errorf("create output directory: %w", err)
+	}
+
+	fullPath := filepath.Join(root, cleanName)
+	// #nosec G304 -- fullPath is confined to the canonical output root and the
+	// leaf is validated above; O_EXCL also prevents symlink overwrite attacks.
+	file, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return nil, "", fmt.Errorf("create output file: %w", err)
+	}
+	return file, fullPath, nil
 }
 
 // ============================================================================

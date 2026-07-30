@@ -1,6 +1,8 @@
 package verify
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -209,6 +211,52 @@ func TestValidateEndpointReachability(t *testing.T) {
 	}
 }
 
+func TestValidateEndpointReachability_UsesConfiguredBearerTokens(t *testing.T) {
+	t.Setenv(readinessTEEAPITokenEnv, "wrong-tee-environment-token")
+	t.Setenv(readinessZKMLAPITokenEnv, "wrong-zkml-environment-token")
+
+	prover := newBearerProtectedReadinessServer(t, "zkml-config-token", http.StatusNoContent)
+	teeWorker := newBearerProtectedReadinessServer(t, "tee-config-token", http.StatusOK)
+
+	unreachable := ValidateEndpointReachability(&OrchestratorConfig{
+		ProverConfig: &ezkl.ProverConfig{
+			ProverEndpoint: prover.URL,
+			APIToken:       "  zkml-config-token  ",
+		},
+		NitroConfig: &tee.NitroConfig{
+			ExecutorEndpoint:            teeWorker.URL,
+			AttestationVerifierEndpoint: teeWorker.URL,
+			APIToken:                    "  tee-config-token  ",
+		},
+	})
+
+	if len(unreachable) != 0 {
+		t.Fatalf("expected authenticated endpoints to be reachable, got %v", unreachable)
+	}
+}
+
+func TestValidateEndpointReachability_UsesEnvironmentBearerTokens(t *testing.T) {
+	t.Setenv(readinessTEEAPITokenEnv, "tee-environment-token")
+	t.Setenv(readinessZKMLAPITokenEnv, "zkml-environment-token")
+
+	prover := newBearerProtectedReadinessServer(t, "zkml-environment-token", http.StatusOK)
+	teeWorker := newBearerProtectedReadinessServer(t, "tee-environment-token", http.StatusOK)
+
+	unreachable := ValidateEndpointReachability(&OrchestratorConfig{
+		ProverConfig: &ezkl.ProverConfig{
+			ProverEndpoint: prover.URL,
+		},
+		NitroConfig: &tee.NitroConfig{
+			ExecutorEndpoint:            teeWorker.URL,
+			AttestationVerifierEndpoint: teeWorker.URL,
+		},
+	})
+
+	if len(unreachable) != 0 {
+		t.Fatalf("expected environment-authenticated endpoints to be reachable, got %v", unreachable)
+	}
+}
+
 func containsAny(values []string, part string) bool {
 	for _, v := range values {
 		if strings.Contains(v, part) {
@@ -227,12 +275,12 @@ func TestEndpointProbeURLs(t *testing.T) {
 		{
 			name:     "host only",
 			endpoint: "localhost:8546",
-			want:     []string{"http://localhost:8546/health", "http://localhost:8546"},
+			want:     []string{"http://localhost:8546/health"},
 		},
 		{
 			name:     "path endpoint",
 			endpoint: "https://example.com/prove",
-			want:     []string{"https://example.com/prove", "https://example.com/health"},
+			want:     []string{"https://example.com/health"},
 		},
 		{
 			name:     "health endpoint",
@@ -267,14 +315,119 @@ func TestEndpointProbeURLs(t *testing.T) {
 }
 
 func TestIsEndpointReachable_BlankEndpoint(t *testing.T) {
-	if isEndpointReachable(" ") {
+	if isEndpointReachable(" ", "") {
 		t.Fatalf("blank endpoint must not be considered reachable")
 	}
 }
 
 func TestIsEndpointReachable_RejectsBlockedEndpoint(t *testing.T) {
-	if isEndpointReachable("https://169.254.169.254") {
+	if isEndpointReachable("https://169.254.169.254", "") {
 		t.Fatalf("blocked metadata endpoint must not be probed or considered reachable")
+	}
+}
+
+func TestIsEndpointReachable_RequiresBearerTokenAnd2xx(t *testing.T) {
+	tests := []struct {
+		name                string
+		requiredToken       string
+		providedToken       string
+		authenticatedStatus int
+		want                bool
+	}{
+		{
+			name:                "authorized 200",
+			requiredToken:       "worker-secret",
+			providedToken:       "worker-secret",
+			authenticatedStatus: http.StatusOK,
+			want:                true,
+		},
+		{
+			name:                "authorized 204",
+			requiredToken:       "worker-secret",
+			providedToken:       " worker-secret ",
+			authenticatedStatus: http.StatusNoContent,
+			want:                true,
+		},
+		{
+			name:                "missing token rejected",
+			requiredToken:       "worker-secret",
+			authenticatedStatus: http.StatusOK,
+			want:                false,
+		},
+		{
+			name:                "wrong token rejected",
+			requiredToken:       "worker-secret",
+			providedToken:       "wrong-secret",
+			authenticatedStatus: http.StatusOK,
+			want:                false,
+		},
+		{
+			name:                "authenticated 404 rejected",
+			requiredToken:       "worker-secret",
+			providedToken:       "worker-secret",
+			authenticatedStatus: http.StatusNotFound,
+			want:                false,
+		},
+		{
+			name:                "authenticated 403 rejected",
+			requiredToken:       "worker-secret",
+			providedToken:       "worker-secret",
+			authenticatedStatus: http.StatusForbidden,
+			want:                false,
+		},
+		{
+			name:                "authenticated 429 rejected",
+			requiredToken:       "worker-secret",
+			providedToken:       "worker-secret",
+			authenticatedStatus: http.StatusTooManyRequests,
+			want:                false,
+		},
+		{
+			name:                "authenticated 500 rejected",
+			requiredToken:       "worker-secret",
+			providedToken:       "worker-secret",
+			authenticatedStatus: http.StatusInternalServerError,
+			want:                false,
+		},
+		{
+			name:                "authenticated 503 rejected",
+			requiredToken:       "worker-secret",
+			providedToken:       "worker-secret",
+			authenticatedStatus: http.StatusServiceUnavailable,
+			want:                false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			server := newBearerProtectedReadinessServer(
+				t,
+				tc.requiredToken,
+				tc.authenticatedStatus,
+			)
+			if got := isEndpointReachable(server.URL, tc.providedToken); got != tc.want {
+				t.Fatalf("expected reachable=%t, got %t", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestIsEndpointReachable_DoesNotMaskFailedHealthWithBaseResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.Header.Get("Authorization"), "Bearer worker-secret"; got != want {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if r.URL.Path == "/health" {
+			http.Error(w, "unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(server.Close)
+
+	if isEndpointReachable(server.URL, "worker-secret") {
+		t.Fatal("base endpoint 200 must not mask an authenticated /health 503")
 	}
 }
 
@@ -558,6 +711,52 @@ func TestEnterprise_ReadinessPassesWithAllEndpoints(t *testing.T) {
 	if !containsAnyReadinessCheck(result.Checks, "enterprise_config", true) {
 		t.Fatalf("expected enterprise_config check to pass, got %+v", result.Checks)
 	}
+}
+
+func TestEnterprise_ReadinessUsesConfiguredBearerTokens(t *testing.T) {
+	prover := newBearerProtectedReadinessServer(t, "zkml-enterprise-token", http.StatusOK)
+	teeWorker := newBearerProtectedReadinessServer(t, "tee-enterprise-token", http.StatusOK)
+
+	check := &EnterpriseReadinessCheck{
+		OrchestratorConfig: &OrchestratorConfig{
+			EnterpriseMode:          true,
+			DefaultVerificationType: types.VerificationTypeHybrid,
+			RequireBothForHybrid:    true,
+			ProverConfig: &ezkl.ProverConfig{
+				AllowSimulated: false,
+				ProverEndpoint: prover.URL,
+				APIToken:       "zkml-enterprise-token",
+			},
+			NitroConfig: &tee.NitroConfig{
+				AllowSimulated:              false,
+				ExecutorEndpoint:            teeWorker.URL,
+				AttestationVerifierEndpoint: teeWorker.URL,
+				APIToken:                    "tee-enterprise-token",
+			},
+		},
+	}
+
+	result, err := check.Validate()
+	if err != nil {
+		t.Fatalf("expected authenticated enterprise endpoints to pass: %v", err)
+	}
+	if !result.Ready {
+		t.Fatalf("expected enterprise readiness, got %+v", result.Checks)
+	}
+}
+
+func newBearerProtectedReadinessServer(t *testing.T, token string, status int) *httptest.Server {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.Header.Get("Authorization"), "Bearer "+token; got != want {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(status)
+	}))
+	t.Cleanup(server.Close)
+	return server
 }
 
 func containsAnyReadinessCheck(checks []ReadinessCheck, name string, passed bool) bool {

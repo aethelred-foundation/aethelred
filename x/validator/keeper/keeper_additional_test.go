@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -78,6 +79,8 @@ func TestKeeperStatusHeartbeatAndErrors(t *testing.T) {
 	require.True(t, minimal.Status.Online)
 
 	require.Error(t, k.UpdateValidatorStatus(ctx, "missing-validator", true, 1))
+	require.Error(t, k.UpdateValidatorStatus(ctx, capability.ValidatorAddress, true, -1))
+	require.Error(t, k.UpdateValidatorStatus(ctx, capability.ValidatorAddress, true, int(math.MaxInt32)+1))
 	require.Error(t, k.RecordJobCompletion(ctx, "missing-validator", true, 10))
 	require.Error(t, k.MarkValidatorOffline(ctx, "missing-validator"))
 	_, err = k.GetValidatorStats(ctx, "missing-validator")

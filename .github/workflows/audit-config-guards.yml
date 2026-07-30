@@ -69,10 +69,37 @@ jobs:
           bash ./scripts/validate-low-findings-guards.sh .
 
       - name: Render integrations compose files
+        env:
+          AETHELRED_NODE_HOME: /tmp/aethelred-prod-node
+          AETHELRED_CHAIN_ID: aethelred-ci-1
+          AETHELRED_MONIKER: ci-validator
+          AETHELRED_TEE_ENDPOINT: https://tee.ci.example
+          AETHELRED_ATTESTATION_VERIFIER_ENDPOINT: https://tee.ci.example
+          AETHELRED_PROVER_ENDPOINT: https://prover.ci.example
+          AETHELRED_TEE_BACKEND_URL: https://tee-backend.ci.example
+          AETHELRED_ZKML_BACKEND_URL: https://zkml-backend.ci.example
+          AETHELRED_TEE_API_TOKEN: ci-only-tee-token
+          AETHELRED_ZKML_API_TOKEN: ci-only-zkml-token
+          AETHELRED_TEE_BACKEND_API_TOKEN: ci-only-tee-backend-token
+          AETHELRED_ZKML_BACKEND_API_TOKEN: ci-only-zkml-backend-token
+          AETHELRED_DEV_NODE_HOME: /tmp/aethelred-dev-node
         run: |
-          mkdir -p integrations/docker/secrets
-          printf 'change-me-in-ci\n' > integrations/docker/secrets/grafana_admin_password.txt
           docker compose -f integrations/docker/docker-compose.yml config >/tmp/integrations-prod-compose.yaml
           docker compose -f integrations/docker/docker-compose.dev.yml config >/tmp/integrations-dev-compose.yaml
           test -s /tmp/integrations-prod-compose.yaml
           test -s /tmp/integrations-dev-compose.yaml
+
+      - name: Build integration runtime images from the rendered contexts
+        run: |
+          docker build \
+            --file integrations/docker/Dockerfile.node \
+            --tag aethelredd:integration-ci \
+            .
+          docker build \
+            --file integrations/docker/Dockerfile.tee-worker \
+            --tag aethelred-tee-worker:integration-ci \
+            .
+          docker build \
+            --file integrations/docker/Dockerfile.zkml \
+            --tag aethelred-zkml-prover:integration-ci \
+            .

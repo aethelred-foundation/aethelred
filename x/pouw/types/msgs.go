@@ -80,6 +80,9 @@ func (msg *MsgSubmitJob) ValidateBasic() error {
 	if len(msg.InputHash) != 32 {
 		return fmt.Errorf("input hash must be 32 bytes")
 	}
+	if err := ValidateInputDataURI(msg.InputDataUri); err != nil {
+		return fmt.Errorf("invalid input data URI: %w", err)
+	}
 	if msg.ProofType != ProofTypeTEE && msg.ProofType != ProofTypeZKML && msg.ProofType != ProofTypeHybrid {
 		return fmt.Errorf("invalid proof type: %s", msg.ProofType.String())
 	}

@@ -67,10 +67,10 @@ println!("Estimated prover RAM: {} GB", circuit.estimated_memory_gb());
 
 | Model | Parameters | Groth16 Constraints | Estimated Prover Time |
 |---|---|---|---|
-| Small MLP | 10K | ~100K | < 1s |
-| ResNet-18 | 11M | ~500M | ~5 min |
-| ViT-Base | 86M | ~2B | ~30 min |
-| GPT-2 Small | 124M | ~5B | ~2 hours |
+| Small neural network | 10K | ~100K | < 1s |
+| Medium vision network | 11M | ~500M | ~5 min |
+| Large vision transformer | 86M | ~2B | ~30 min |
+| Large language transformer | 124M | ~5B | ~2 hours |
 
 ::: tip
 Use [quantization](/guide/quantization) to reduce model precision to INT8 before circuit generation. This typically reduces constraint count by 4-8x with minimal accuracy loss.

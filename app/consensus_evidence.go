@@ -102,7 +102,27 @@ func requiredConsensusPower(totalPower int64, consensusThreshold int) int64 {
 	if totalPower <= 0 {
 		return 0
 	}
-	return (totalPower*int64(consensusThreshold))/100 + 1
+	if consensusThreshold >= 100 {
+		return totalPower
+	}
+	whole := (totalPower / 100) * int64(consensusThreshold)
+	remainder := totalPower % 100
+	return whole + (remainder*int64(consensusThreshold)+99)/100
+}
+
+func requiredConsensusCount(total int, consensusThreshold int) int {
+	if consensusThreshold < 67 {
+		consensusThreshold = 67
+	}
+	if total <= 0 {
+		return 0
+	}
+	if consensusThreshold >= 100 {
+		return total
+	}
+	whole := (total / 100) * consensusThreshold
+	remainder := total % 100
+	return whole + (remainder*consensusThreshold+99)/100
 }
 
 func parseInjectedConsensusTx(txBytes []byte) (*InjectedVoteExtensionTx, error) {
@@ -161,7 +181,7 @@ func validateConsensusEvidenceThreshold(
 	//   (totalVotes * consensusThreshold / 100) + 1
 	// could under-count when both operands are small.
 	// Ceiling division: ceil(a/b) = (a + b - 1) / b
-	requiredVotes := (totalVotes*consensusThreshold + 99) / 100
+	requiredVotes := requiredConsensusCount(totalVotes, consensusThreshold)
 	if validatorCount < requiredVotes {
 		return fmt.Errorf("insufficient validator consensus: got %d, need %d", validatorCount, requiredVotes)
 	}

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -14,13 +15,13 @@ func NewHardwareCapability(validatorAddr, operatorAddr string) *HardwareCapabili
 		ValidatorAddress: validatorAddr,
 		OperatorAddress:  operatorAddr,
 		Tee: &TEECapabilities{
-			Platforms:  make([]*TEEPlatform, 0),
+			Platforms:   make([]*TEEPlatform, 0),
 			EnclaveInfo: make([]*EnclaveInfo, 0),
-			Active:     false,
+			Active:      false,
 		},
 		Zkml: &ZKMLCapabilities{
-			ProofSystems:  make([]*ProofSystem, 0),
-			Active:        false,
+			ProofSystems:   make([]*ProofSystem, 0),
+			Active:         false,
 			GpuAccelerated: false,
 		},
 		Compute: &ComputeResources{
@@ -138,17 +139,22 @@ func (hc *HardwareCapability) AddProofSystem(system *ProofSystem) {
 }
 
 // UpdateStatus updates the validator's status
-func (hc *HardwareCapability) UpdateStatus(online bool, currentJobs int) {
+func (hc *HardwareCapability) UpdateStatus(online bool, currentJobs int) error {
 	if hc == nil {
-		return
+		return fmt.Errorf("hardware capability is required")
+	}
+	if currentJobs < 0 || currentJobs > math.MaxInt32 {
+		return fmt.Errorf("current jobs %d is outside int32 range", currentJobs)
 	}
 	if hc.Status == nil {
 		hc.Status = &CapabilityStatus{}
 	}
 	hc.Status.Online = online
+	// #nosec G115 -- currentJobs is range-checked above.
 	hc.Status.CurrentJobs = int32(currentJobs)
 	hc.Status.LastHeartbeat = timestamppb.Now()
 	hc.UpdatedAt = timestamppb.Now()
+	return nil
 }
 
 // RecordJobCompletion updates stats after a job completion

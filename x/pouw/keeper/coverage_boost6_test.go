@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"bytes"
 	"container/heap"
 	"crypto/sha256"
 	"encoding/binary"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/aethelred/aethelred/x/pouw/keeper"
 	"github.com/aethelred/aethelred/x/pouw/types"
+	verifytee "github.com/aethelred/aethelred/x/verify/tee"
 )
 
 // ---------------------------------------------------------------------------
@@ -35,6 +37,73 @@ func cb6Ctx() sdk.Context {
 
 func cb6Bech32(seed string) string {
 	return sdk.AccAddress([]byte(seed)).String()
+}
+
+func cb6ValidSealFixture(
+	t *testing.T,
+	k keeper.Keeper,
+	ctx sdk.Context,
+	jobID string,
+) keeper.SealCreationTx {
+	t.Helper()
+
+	job, err := k.GetJob(ctx, jobID)
+	require.NoError(t, err)
+
+	validatorAddress := sdk.AccAddress(bytes.Repeat([]byte{0x31}, 20)).String()
+	assignment, err := json.Marshal([]string{validatorAddress})
+	require.NoError(t, err)
+	job.Status = types.JobStatusProcessing
+	job.Metadata = map[string]string{
+		"scheduler.assigned_to": string(assignment),
+	}
+	require.NoError(t, k.Jobs.Set(ctx, job.Id, *job))
+	require.NoError(t, k.PendingJobs.Set(ctx, job.Id, *job))
+
+	outputHash := sha256.Sum256([]byte("cb6-authenticated-output"))
+	verificationHeight := ctx.BlockHeight() - 1
+	verificationNonce := bytes.Repeat([]byte{0x41}, 32)
+	extensionNonce := bytes.Repeat([]byte{0x42}, 32)
+
+	return keeper.SealCreationTx{
+		Type:           "create_seal_from_consensus",
+		JobID:          job.Id,
+		ModelHash:      append([]byte(nil), job.ModelHash...),
+		InputHash:      append([]byte(nil), job.InputHash...),
+		OutputHash:     outputHash[:],
+		ValidatorCount: 1,
+		TotalVotes:     1,
+		AgreementPower: 100,
+		TotalPower:     100,
+		ValidatorResults: []keeper.ValidatorResult{
+			{
+				ValidatorAddress:          validatorAddress,
+				ValidatorConsensusAddress: bytes.Repeat([]byte{0x51}, 20),
+				OutputHash:                outputHash[:],
+				AttestationType:           "tee",
+				TEEAttestation: &keeper.TEEAttestationWire{
+					Platform:    "arm-trustzone",
+					EnclaveID:   "cb6-enclave",
+					Measurement: bytes.Repeat([]byte{0x61}, 32),
+					Quote:       bytes.Repeat([]byte{0x62}, 64),
+					UserData:    verifytee.ComputeAttestationUserData(outputHash[:], verificationHeight, ctx.ChainID()),
+					Timestamp:   ctx.BlockTime().Add(-time.Second),
+					Nonce:       verificationNonce,
+					BlockHeight: verificationHeight,
+					ChainID:     ctx.ChainID(),
+				},
+				Nonce:                     verificationNonce,
+				ExecutionTimeMs:           1,
+				Timestamp:                 ctx.BlockTime().Add(-time.Second),
+				ValidatorSignatureVersion: 1,
+				VoteBlockHash:             bytes.Repeat([]byte{0x71}, sha256.Size),
+				ExtensionNonce:            extensionNonce,
+				ValidatorSignature:        bytes.Repeat([]byte{0x72}, 64),
+			},
+		},
+		BlockHeight: ctx.BlockHeight(),
+		Timestamp:   ctx.BlockTime().UTC(),
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -93,15 +162,13 @@ func TestCB6_ValidateSealTransaction_InvalidOutputHash(t *testing.T) {
 
 func TestCB6_ValidateSealTransaction_JobNotFound(t *testing.T) {
 	k, ctx := newTestKeeper(t)
+	seedJobs(t, ctx, k, 1)
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), &k, keeper.DefaultSchedulerConfig())
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
-	outputHash := sha256.Sum256([]byte("test"))
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":        "create_seal_from_consensus",
-		"job_id":      "nonexistent-job",
-		"output_hash": outputHash[:],
-	})
+	sealTx := cb6ValidSealFixture(t, k, ctx, "job-0")
+	sealTx.JobID = "nonexistent-job"
+	data, _ := json.Marshal(sealTx)
 	err := ch.ValidateSealTransaction(ctx, data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "job not found")
@@ -113,15 +180,11 @@ func TestCB6_ValidateSealTransaction_ModelHashMismatch(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), &k, keeper.DefaultSchedulerConfig())
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
-	outputHash := sha256.Sum256([]byte("test"))
 	wrongModel := sha256.Sum256([]byte("wrong-model"))
 
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":        "create_seal_from_consensus",
-		"job_id":      "job-0",
-		"output_hash": outputHash[:],
-		"model_hash":  wrongModel[:],
-	})
+	sealTx := cb6ValidSealFixture(t, k, ctx, "job-0")
+	sealTx.ModelHash = wrongModel[:]
+	data, _ := json.Marshal(sealTx)
 	err := ch.ValidateSealTransaction(ctx, data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "model hash mismatch")
@@ -133,17 +196,11 @@ func TestCB6_ValidateSealTransaction_InputHashMismatch(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), &k, keeper.DefaultSchedulerConfig())
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
-	outputHash := sha256.Sum256([]byte("test"))
-	modelHash := sha256.Sum256([]byte("model-0"))
 	wrongInput := sha256.Sum256([]byte("wrong-input"))
 
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":        "create_seal_from_consensus",
-		"job_id":      "job-0",
-		"output_hash": outputHash[:],
-		"model_hash":  modelHash[:],
-		"input_hash":  wrongInput[:],
-	})
+	sealTx := cb6ValidSealFixture(t, k, ctx, "job-0")
+	sealTx.InputHash = wrongInput[:]
+	data, _ := json.Marshal(sealTx)
 	err := ch.ValidateSealTransaction(ctx, data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "input hash mismatch")
@@ -155,49 +212,27 @@ func TestCB6_ValidateSealTransaction_InsufficientVotePower(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), &k, keeper.DefaultSchedulerConfig())
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
-	job, err := k.GetJob(ctx, "job-0")
-	require.NoError(t, err)
-
-	outputHash := sha256.Sum256([]byte("test"))
-
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":            "create_seal_from_consensus",
-		"job_id":          "job-0",
-		"output_hash":     outputHash[:],
-		"model_hash":      job.ModelHash,
-		"input_hash":      job.InputHash,
-		"total_power":     int64(100),
-		"agreement_power": int64(10), // too low
-	})
-	err = ch.ValidateSealTransaction(ctx, data)
+	sealTx := cb6ValidSealFixture(t, k, ctx, "job-0")
+	sealTx.AgreementPower = 10
+	data, _ := json.Marshal(sealTx)
+	err := ch.ValidateSealTransaction(ctx, data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "insufficient validator power")
 }
 
-func TestCB6_ValidateSealTransaction_InsufficientVoteCount(t *testing.T) {
+func TestCB6_ValidateSealTransaction_MissingVotePower(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	seedJobs(t, ctx, k, 1)
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), &k, keeper.DefaultSchedulerConfig())
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
-	job, err := k.GetJob(ctx, "job-0")
-	require.NoError(t, err)
-
-	outputHash := sha256.Sum256([]byte("test"))
-
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":            "create_seal_from_consensus",
-		"job_id":          "job-0",
-		"output_hash":     outputHash[:],
-		"model_hash":      job.ModelHash,
-		"input_hash":      job.InputHash,
-		"total_power":     int64(0), // force vote count path
-		"total_votes":     10,
-		"validator_count": 2, // too low
-	})
-	err = ch.ValidateSealTransaction(ctx, data)
+	sealTx := cb6ValidSealFixture(t, k, ctx, "job-0")
+	sealTx.TotalPower = 0
+	sealTx.AgreementPower = 0
+	data, _ := json.Marshal(sealTx)
+	err := ch.ValidateSealTransaction(ctx, data)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "insufficient validator consensus")
+	require.Contains(t, err.Error(), "total voting power must be positive")
 }
 
 func TestCB6_ValidateSealTransaction_Success(t *testing.T) {
@@ -206,21 +241,9 @@ func TestCB6_ValidateSealTransaction_Success(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), &k, keeper.DefaultSchedulerConfig())
 	ch := keeper.NewConsensusHandler(log.NewNopLogger(), &k, sched)
 
-	job, err := k.GetJob(ctx, "job-0")
-	require.NoError(t, err)
-
-	outputHash := sha256.Sum256([]byte("test"))
-
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":            "create_seal_from_consensus",
-		"job_id":          "job-0",
-		"output_hash":     outputHash[:],
-		"model_hash":      job.ModelHash,
-		"input_hash":      job.InputHash,
-		"total_power":     int64(100),
-		"agreement_power": int64(90), // enough
-	})
-	err = ch.ValidateSealTransaction(ctx, data)
+	sealTx := cb6ValidSealFixture(t, k, ctx, "job-0")
+	data, _ := json.Marshal(sealTx)
+	err := ch.ValidateSealTransaction(ctx, data)
 	require.NoError(t, err)
 }
 
@@ -389,6 +412,7 @@ func TestCB6_VerifyVoteExtension_FutureTimestamp(t *testing.T) {
 	ext := map[string]interface{}{
 		"version":   1,
 		"height":    ctx.BlockHeight(),
+		"chain_id":  ctx.ChainID(),
 		"timestamp": ctx.BlockTime().Add(10 * time.Minute).Format(time.RFC3339Nano),
 	}
 	data, _ := json.Marshal(ext)
@@ -405,6 +429,7 @@ func TestCB6_VerifyVoteExtension_ProductionNoSignature(t *testing.T) {
 	ext := map[string]interface{}{
 		"version":   1,
 		"height":    ctx.BlockHeight(),
+		"chain_id":  ctx.ChainID(),
 		"timestamp": ctx.BlockTime().Format(time.RFC3339Nano),
 	}
 	data, _ := json.Marshal(ext)
@@ -422,6 +447,7 @@ func TestCB6_VerifyVoteExtension_ProductionNoHash(t *testing.T) {
 	ext := map[string]interface{}{
 		"version":   1,
 		"height":    ctx.BlockHeight(),
+		"chain_id":  ctx.ChainID(),
 		"timestamp": ctx.BlockTime().Format(time.RFC3339Nano),
 		"signature": sig[:],
 	}
@@ -443,6 +469,7 @@ func TestCB6_VerifyVoteExtension_InvalidVerification(t *testing.T) {
 	ext := map[string]interface{}{
 		"version":   1,
 		"height":    ctx.BlockHeight(),
+		"chain_id":  ctx.ChainID(),
 		"timestamp": ctx.BlockTime().Format(time.RFC3339Nano),
 		"verifications": []map[string]interface{}{
 			{"job_id": ""}, // empty job ID
@@ -677,12 +704,13 @@ func TestCB6_SubmitJob_ModelNotRegistered(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("unregistered-model"))
 	inputHash := sha256.Sum256([]byte("input"))
 	job := &types.ComputeJob{
-		Id:          "job-submit-1",
-		ModelHash:   modelHash[:],
-		InputHash:   inputHash[:],
-		RequestedBy: cb6Bech32("test-submit-requester"),
-		ProofType:   types.ProofTypeTEE,
-		Purpose:     "test",
+		Id:           "job-submit-1",
+		ModelHash:    modelHash[:],
+		InputHash:    inputHash[:],
+		InputDataUri: "https://inputs.example.com/input.bin",
+		RequestedBy:  cb6Bech32("test-submit-requester"),
+		ProofType:    types.ProofTypeTEE,
+		Purpose:      "test",
 	}
 	err := k.SubmitJob(ctx, job)
 	require.Error(t, err)
@@ -703,12 +731,13 @@ func TestCB6_SubmitJob_Success(t *testing.T) {
 	}))
 
 	job := &types.ComputeJob{
-		Id:          "job-submit-success",
-		ModelHash:   modelHash[:],
-		InputHash:   inputHash[:],
-		RequestedBy: cb6Bech32("test-submit-requester"),
-		ProofType:   types.ProofTypeTEE,
-		Purpose:     "testing-submit",
+		Id:           "job-submit-success",
+		ModelHash:    modelHash[:],
+		InputHash:    inputHash[:],
+		InputDataUri: "https://inputs.example.com/input-submit.bin",
+		RequestedBy:  cb6Bech32("test-submit-requester"),
+		ProofType:    types.ProofTypeTEE,
+		Purpose:      "testing-submit",
 	}
 	err := k.SubmitJob(ctx, job)
 	require.NoError(t, err)

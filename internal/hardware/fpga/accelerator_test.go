@@ -2,6 +2,7 @@ package fpga
 
 import (
 	"context"
+	"encoding/binary"
 	"testing"
 )
 
@@ -180,6 +181,15 @@ func TestExecuteNTT(t *testing.T) {
 	}
 	if !result.Success {
 		t.Error("expected success")
+	}
+	if got, want := len(result.Data), len(coefficients)*8; got != want {
+		t.Fatalf("expected %d bytes, got %d", want, got)
+	}
+	for i, want := range coefficients {
+		got := binary.LittleEndian.Uint64(result.Data[i*8 : (i+1)*8])
+		if got != want {
+			t.Fatalf("coefficient %d: got %d, want %d", i, got, want)
+		}
 	}
 }
 

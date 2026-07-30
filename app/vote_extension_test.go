@@ -5,13 +5,13 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/json"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/aethelred/aethelred/app"
+	verifytee "github.com/aethelred/aethelred/x/verify/tee"
 )
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -49,17 +49,9 @@ func makeValidTEEAttestation() *app.TEEAttestationData {
 
 func makeValidTEEAttestationWithUserData(userData []byte) *app.TEEAttestationData {
 	nonce := bytes.Repeat([]byte{0x11}, 32)
-	// Recompute UserData to include BlockHeight and ChainID for strict mode:
-	// SHA-256(outputHash || LE64(blockHeight) || chainID)
 	blockHeight := int64(100)
 	chainID := "aethelred-testnet-1"
-	heightBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(heightBytes, uint64(blockHeight))
-	h := sha256.New()
-	h.Write(userData)
-	h.Write(heightBytes)
-	h.Write([]byte(chainID))
-	boundUserData := h.Sum(nil)
+	boundUserData := verifytee.ComputeAttestationUserData(userData, blockHeight, chainID)
 	quote := makeValidNitroQuote(boundUserData, nonce)
 	return &app.TEEAttestationData{
 		Platform:    "aws-nitro",
@@ -69,6 +61,7 @@ func makeValidTEEAttestationWithUserData(userData []byte) *app.TEEAttestationDat
 		UserData:    boundUserData,
 		Nonce:       nonce,
 		Timestamp:   time.Now().UTC(),
+		Signature:   make([]byte, ed25519.SignatureSize),
 		BlockHeight: blockHeight,
 		ChainID:     chainID,
 	}
@@ -125,22 +118,33 @@ func makeSuccessfulVerification(t *testing.T) app.ComputeVerification {
 	outputHash := make32Bytes()
 	tee := makeValidTEEAttestationWithUserData(outputHash)
 	return app.ComputeVerification{
-		JobID:           "job-001",
-		ModelHash:       make32Bytes(),
-		InputHash:       make32Bytes(),
-		OutputHash:      outputHash,
-		AttestationType: app.AttestationTypeTEE,
-		TEEAttestation:  tee,
-		ExecutionTimeMs: 150,
-		Success:         true,
-		Nonce:           makeNonce(t),
+		JobID:                     "job-001",
+		ModelHash:                 make32Bytes(),
+		InputHash:                 make32Bytes(),
+		OutputHash:                outputHash,
+		AttestationType:           app.AttestationTypeTEE,
+		TEEAttestation:            tee,
+		ExecutionTimeMs:           150,
+		Success:                   true,
+		Nonce:                     makeNonce(t),
+		ValidatorSignatureVersion: app.ComputeVerificationSignatureVersion,
+		VoteBlockHash:             bytes.Repeat([]byte{0x22}, 32),
+		ExtensionNonce:            bytes.Repeat([]byte{0x33}, 32),
+		ValidatorSignature:        make([]byte, ed25519.SignatureSize),
 	}
 }
 
 func makeValidVoteExtension(t *testing.T) *app.VoteExtension {
 	t.Helper()
-	ve := app.NewVoteExtension(100, []byte("validator-address-001"))
-	ve.AddVerification(makeSuccessfulVerification(t))
+	ve := app.NewVoteExtensionAtBlockTime(
+		100,
+		[]byte("validator-address-001"),
+		time.Unix(1_700_000_000, 0).UTC(),
+	)
+	ve.ChainID = "aethelred-testnet-1"
+	verification := makeSuccessfulVerification(t)
+	ve.Nonce = append([]byte(nil), verification.ExtensionNonce...)
+	ve.AddVerification(verification)
 	ve.ExtensionHash = ve.ComputeHash()
 	return ve
 }
@@ -251,6 +255,7 @@ func TestVoteExtension_Validate_EmptyHashPermissive(t *testing.T) {
 
 func TestVoteExtension_Validate_NoVerifications(t *testing.T) {
 	ve := app.NewVoteExtension(100, []byte("val-addr"))
+	ve.Timestamp = time.Unix(1_700_000_000, 0).UTC()
 	// Extension with zero verifications should still be valid
 	if err := ve.Validate(); err != nil {
 		t.Fatalf("empty verification list should be valid, got: %v", err)
@@ -1210,19 +1215,28 @@ func TestVoteExtension_ValidateStrict_HybridWithSimulatedTEE(t *testing.T) {
 }
 
 func TestVoteExtension_ZKML_ValidInStrict(t *testing.T) {
-	ve := app.NewVoteExtension(100, []byte("validator-addr"))
+	ve := app.NewVoteExtensionAtBlockTime(
+		100,
+		[]byte("validator-addr"),
+		time.Unix(1_700_000_000, 0).UTC(),
+	)
 	outputHash := make32Bytes()
 	v := app.ComputeVerification{
-		JobID:           "job-zkml",
-		ModelHash:       make32Bytes(),
-		InputHash:       make32Bytes(),
-		OutputHash:      outputHash,
-		AttestationType: app.AttestationTypeZKML,
-		ZKProof:         makeValidZKProof(),
-		ExecutionTimeMs: 200,
-		Success:         true,
-		Nonce:           make([]byte, 32),
+		JobID:                     "job-zkml",
+		ModelHash:                 make32Bytes(),
+		InputHash:                 make32Bytes(),
+		OutputHash:                outputHash,
+		AttestationType:           app.AttestationTypeZKML,
+		ZKProof:                   makeValidZKProof(),
+		ExecutionTimeMs:           200,
+		Success:                   true,
+		Nonce:                     make([]byte, 32),
+		ValidatorSignatureVersion: app.ComputeVerificationSignatureVersion,
+		VoteBlockHash:             bytes.Repeat([]byte{0x44}, 32),
+		ExtensionNonce:            bytes.Repeat([]byte{0x55}, 32),
+		ValidatorSignature:        make([]byte, ed25519.SignatureSize),
 	}
+	ve.Nonce = append([]byte(nil), v.ExtensionNonce...)
 	ve.AddVerification(v)
 	ve.ExtensionHash = ve.ComputeHash()
 

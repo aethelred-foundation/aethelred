@@ -1,5 +1,6 @@
 {
   "default": [
+    "PQC Production Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
@@ -9,6 +10,7 @@
     "Fuzzing Required Gate"
   ],
   "main": [
+    "PQC Production Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
@@ -19,6 +21,7 @@
     "E2E Required Gate"
   ],
   "develop": [
+    "PQC Production Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
@@ -28,6 +31,7 @@
     "Fuzzing Required Gate"
   ],
   "release/*": [
+    "PQC Production Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",

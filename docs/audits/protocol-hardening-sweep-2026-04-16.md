@@ -805,7 +805,8 @@ already merged.
 
 ### 3zr. Worker API loopback-or-bearer hardening
 
-- Tightened `services/tee-worker/executor/main.go`, where the TEE worker
+- Tightened both `services/tee-worker/executor/main.go` and the
+  Docker-deployed `cmd/aethelred-tee-worker/main.go`, where the TEE worker
   control plane still relied on ambient network placement instead of
   code-enforced caller authentication for `/health`, `/capabilities`,
   `/execute`, and `/verify`.
@@ -818,10 +819,11 @@ already merged.
   capabilities, and execution requests when remote exposure is intentionally
   enabled.
 - Added focused regressions in
-  `services/tee-worker/executor/main_test.go` and `app/tee_client_test.go`
-  covering remote request rejection without a bearer token, remote acceptance
-  with the configured bearer token, and token-aware remote client health
-  probing.
+  `services/tee-worker/executor/main_test.go`,
+  `cmd/aethelred-tee-worker/main_test.go`, and `app/tee_client_test.go`
+  covering fail-closed bind validation, forwarded-loopback rejection, remote
+  request rejection without a bearer token, remote acceptance with the
+  configured bearer token, and token-aware remote client health probing.
 
 ### 3zs. SGX TCB fail-closed hardening
 
@@ -1098,10 +1100,12 @@ already merged.
   claim-vs-control mismatch around consensus threshold policy, one-way
   simulation gating, and app-layer vote-extension signing.
 - The formal threat model and closeout surfaces no longer claim downtime
-  slashing is unimplemented. `AS-16` now reflects the live
-  `BlockMissTracker -> IntegratedEvidenceProcessor -> slashing adapter` path,
-  while the remaining open item is narrowed to operational rollout consistency
-  in `AS-17` instead of outdated “not implemented” narratives.
+  slashing is unimplemented. `AS-16` now reflects the registered Cosmos SDK
+  `x/slashing` BeginBlock path that consumes deterministic last-commit vote
+  information and applies configured downtime slash/jail policy. The obsolete
+  parallel app evidence wrapper remains unwired to prevent duplicate penalties;
+  the remaining open item is narrowed to operational rollout consistency in
+  `AS-17` instead of outdated “not implemented” narratives.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

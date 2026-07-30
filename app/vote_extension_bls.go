@@ -100,6 +100,7 @@ func buildBLSExtensionMessage(chainID string, height int64, extHash []byte) []by
 	h.Write([]byte(blsVoteExtensionDomain))
 	h.Write([]byte(chainID))
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the BLS domain schema intentionally encodes signed consensus height as LE64.
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 	h.Write(heightBytes)
 	h.Write(extHash)
@@ -113,8 +114,8 @@ func buildBLSExtensionMessage(chainID string, height int64, extHash []byte) []by
 // BLSSignedVoteExtension wraps a vote extension with both ed25519 and BLS signatures.
 type BLSSignedVoteExtension struct {
 	Extension    *VoteExtension `json:"extension"`
-	BLSSignature []byte         `json:"bls_signature"`  // 96 bytes
-	BLSPubKey    []byte         `json:"bls_pub_key"`    // 48 bytes
+	BLSSignature []byte         `json:"bls_signature"` // 96 bytes
+	BLSPubKey    []byte         `json:"bls_pub_key"`   // 48 bytes
 }
 
 // =============================================================================
@@ -159,8 +160,8 @@ func AggregateBLSVoteExtensions(
 	}
 
 	var (
-		sigs           []*bls.Signature
-		pubKeyBytes    [][]byte
+		sigs            []*bls.Signature
+		pubKeyBytes     [][]byte
 		extensionHashes [][]byte
 	)
 
@@ -289,6 +290,7 @@ func buildBLSAggregateMessage(chainID string, height int64, extHashes [][]byte) 
 	h.Write([]byte(blsVoteExtensionDomain))
 	h.Write([]byte(chainID))
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the BLS domain schema intentionally encodes signed consensus height as LE64.
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 	h.Write(heightBytes)
 

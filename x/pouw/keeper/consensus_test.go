@@ -11,6 +11,7 @@ import (
 
 	"cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -50,6 +51,7 @@ func testVoteExtensionCreationAndValidation(t *testing.T) {
 	extension := keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           100,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage("\"cosmosvaloper1test\""),
 		Verifications:    []keeper.VerificationWire{verification},
 		Timestamp:        time.Now().UTC(),
@@ -294,8 +296,10 @@ func testSealTransactionCreation(t *testing.T) {
 				ValidatorAddress: "validator1",
 				OutputHash:       randomHash(),
 				AttestationType:  "tee",
-				TEEPlatform:      "aws-nitro",
-				ExecutionTimeMs:  100,
+				TEEAttestation: &keeper.TEEAttestationWire{
+					Platform: "aws-nitro",
+				},
+				ExecutionTimeMs: 100,
 			},
 		},
 	}
@@ -584,6 +588,7 @@ func createTestVoteExtension(validator string, height int64, jobID string, model
 	return &keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           height,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage(fmt.Sprintf("\"%s\"", validator)),
 		Verifications:    []keeper.VerificationWire{verification},
 		Timestamp:        time.Now().UTC(),
@@ -605,6 +610,7 @@ func makePowerVoteWithExtensionAddr(t *testing.T, voteAddr, extensionAddr []byte
 	extension := keeper.VoteExtensionWire{
 		Version:          1,
 		Height:           100,
+		ChainID:          "aethelred-test-1",
 		ValidatorAddress: json.RawMessage(addrJSON),
 		Verifications: []keeper.VerificationWire{
 			{
@@ -641,6 +647,7 @@ func makePowerVoteWithExtensionAddr(t *testing.T, voteAddr, extensionAddr []byte
 	return abci.ExtendedVoteInfo{
 		Validator:     abci.Validator{Address: voteAddr, Power: power},
 		VoteExtension: data,
+		BlockIdFlag:   cmtproto.BlockIDFlagCommit,
 	}
 }
 
@@ -701,10 +708,20 @@ func aggregateTestVotes(votes []abci.ExtendedVoteInfo, threshold int) map[string
 				ValidatorAddress: validatorAddr,
 				OutputHash:       v.OutputHash,
 				AttestationType:  v.AttestationType,
-				AttestationQuote: v.TEEAttestation,
-				ZKProof:          v.ZKProof,
 				ExecutionTimeMs:  v.ExecutionTimeMs,
 				Timestamp:        extension.Timestamp,
+			}
+			if len(v.TEEAttestation) > 0 {
+				var attestation keeper.TEEAttestationWire
+				if err := json.Unmarshal(v.TEEAttestation, &attestation); err == nil {
+					valResult.TEEAttestation = &attestation
+				}
+			}
+			if len(v.ZKProof) > 0 {
+				var proof keeper.ZKProofWire
+				if err := json.Unmarshal(v.ZKProof, &proof); err == nil {
+					valResult.ZKProof = &proof
+				}
 			}
 
 			outputVotes[v.JobID][outputHashHex] = append(outputVotes[v.JobID][outputHashHex], valResult)
@@ -752,17 +769,18 @@ func createTestScheduler() *keeper.JobScheduler {
 func createTestJob(id string, proofType types.ProofType, priority int64) *types.ComputeJob {
 	now := time.Now().UTC()
 	return &types.ComputeJob{
-		Id:          id,
-		ModelHash:   randomHash(),
-		InputHash:   randomHash(),
-		RequestedBy: "cosmos1test",
-		ProofType:   proofType,
-		Purpose:     "testing",
-		Status:      types.JobStatusPending,
-		CreatedAt:   timestamppb.New(now),
-		UpdatedAt:   timestamppb.New(now),
-		ExpiresAt:   timestamppb.New(now.Add(24 * time.Hour)),
-		Priority:    priority,
-		BlockHeight: 100,
+		Id:           id,
+		ModelHash:    randomHash(),
+		InputHash:    randomHash(),
+		InputDataUri: "https://inputs.example.com/test-input.bin",
+		RequestedBy:  "cosmos1test",
+		ProofType:    proofType,
+		Purpose:      "testing",
+		Status:       types.JobStatusPending,
+		CreatedAt:    timestamppb.New(now),
+		UpdatedAt:    timestamppb.New(now),
+		ExpiresAt:    timestamppb.New(now.Add(24 * time.Hour)),
+		Priority:     priority,
+		BlockHeight:  100,
 	}
 }

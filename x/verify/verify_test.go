@@ -62,6 +62,8 @@ func testProofGeneration(t *testing.T) {
 
 	if result.PublicInputs == nil {
 		t.Error("Public inputs are nil")
+	} else if !bytesEqual(result.PublicInputs.OutputCommitment, req.OutputHash) {
+		t.Error("public output commitment must contain OutputHash directly")
 	}
 
 	if result.ProofSize == 0 {

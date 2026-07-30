@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 )
 
 // CircuitType defines supported zkML circuit types
@@ -94,27 +95,27 @@ type Circuit struct {
 // CircuitConfig contains circuit-specific configuration
 type CircuitConfig struct {
 	// For neural network layers
-	InputSize    int `json:"input_size,omitempty"`
-	OutputSize   int `json:"output_size,omitempty"`
-	HiddenSize   int `json:"hidden_size,omitempty"`
-	NumLayers    int `json:"num_layers,omitempty"`
+	InputSize  int `json:"input_size,omitempty"`
+	OutputSize int `json:"output_size,omitempty"`
+	HiddenSize int `json:"hidden_size,omitempty"`
+	NumLayers  int `json:"num_layers,omitempty"`
 
 	// For convolution
-	KernelSize   int `json:"kernel_size,omitempty"`
-	Stride       int `json:"stride,omitempty"`
-	Padding      int `json:"padding,omitempty"`
-	InChannels   int `json:"in_channels,omitempty"`
-	OutChannels  int `json:"out_channels,omitempty"`
+	KernelSize  int `json:"kernel_size,omitempty"`
+	Stride      int `json:"stride,omitempty"`
+	Padding     int `json:"padding,omitempty"`
+	InChannels  int `json:"in_channels,omitempty"`
+	OutChannels int `json:"out_channels,omitempty"`
 
 	// For tree ensembles
-	NumTrees     int `json:"num_trees,omitempty"`
-	MaxDepth     int `json:"max_depth,omitempty"`
-	NumFeatures  int `json:"num_features,omitempty"`
+	NumTrees    int `json:"num_trees,omitempty"`
+	MaxDepth    int `json:"max_depth,omitempty"`
+	NumFeatures int `json:"num_features,omitempty"`
 
 	// Quantization parameters
-	ScaleFactor  int64   `json:"scale_factor,omitempty"`
-	ZeroPoint    int64   `json:"zero_point,omitempty"`
-	NumBits      int     `json:"num_bits,omitempty"`
+	ScaleFactor int64 `json:"scale_factor,omitempty"`
+	ZeroPoint   int64 `json:"zero_point,omitempty"`
+	NumBits     int   `json:"num_bits,omitempty"`
 }
 
 // Proof represents a Halo2 proof with KZG commitments
@@ -213,7 +214,10 @@ func (b *CircuitBuilder) WithConfig(config *CircuitConfig) *CircuitBuilder {
 // Build compiles the circuit
 func (b *CircuitBuilder) Build() (*Circuit, error) {
 	// Calculate circuit size
-	k := b.calculateK()
+	k, err := b.calculateK()
+	if err != nil {
+		return nil, err
+	}
 
 	// Generate circuit ID
 	id := b.generateCircuitID()
@@ -241,22 +245,70 @@ func (b *CircuitBuilder) Build() (*Circuit, error) {
 }
 
 // calculateK determines the circuit size parameter
-func (b *CircuitBuilder) calculateK() uint32 {
+func (b *CircuitBuilder) calculateK() (uint32, error) {
 	// Estimate based on circuit type and configuration
 	switch b.circuitType {
 	case LinearLayerCircuit:
 		// For linear layer: need rows for matrix multiplication
-		rows := b.config.InputSize * b.config.OutputSize
-		return ceilLog2(uint32(rows))
+		rows, err := checkedCircuitRows(b.config.InputSize, b.config.OutputSize)
+		if err != nil {
+			return 0, fmt.Errorf("invalid linear circuit dimensions: %w", err)
+		}
+		return ceilLog2(rows), nil
 	case Conv2DCircuit:
-		rows := b.config.InChannels * b.config.OutChannels * b.config.KernelSize * b.config.KernelSize
-		return ceilLog2(uint32(rows))
+		rows, err := checkedCircuitRows(
+			b.config.InChannels,
+			b.config.OutChannels,
+			b.config.KernelSize,
+			b.config.KernelSize,
+		)
+		if err != nil {
+			return 0, fmt.Errorf("invalid convolution circuit dimensions: %w", err)
+		}
+		return ceilLog2(rows), nil
 	case TreeEnsembleCircuit:
-		rows := b.config.NumTrees * (1 << b.config.MaxDepth)
-		return ceilLog2(uint32(rows))
+		if b.config.MaxDepth < 0 || b.config.MaxDepth > 31 {
+			return 0, fmt.Errorf("tree max depth %d is outside supported range [0, 31]", b.config.MaxDepth)
+		}
+		trees, err := checkedPositiveIntToUint32(b.config.NumTrees)
+		if err != nil {
+			return 0, fmt.Errorf("invalid tree count: %w", err)
+		}
+		if trees > math.MaxUint32>>b.config.MaxDepth {
+			return 0, fmt.Errorf("tree circuit row count exceeds uint32 range")
+		}
+		return ceilLog2(trees << b.config.MaxDepth), nil
 	default:
-		return 10 // Default 2^10 = 1024 rows
+		return 10, nil // Default 2^10 = 1024 rows
 	}
+}
+
+func checkedCircuitRows(dimensions ...int) (uint32, error) {
+	rows := uint32(1)
+	for _, dimension := range dimensions {
+		value, err := checkedPositiveIntToUint32(dimension)
+		if err != nil {
+			return 0, err
+		}
+		if rows > math.MaxUint32/value {
+			return 0, fmt.Errorf("circuit row count exceeds uint32 range")
+		}
+		rows *= value
+	}
+	return rows, nil
+}
+
+func checkedPositiveIntToUint32(value int) (uint32, error) {
+	if value <= 0 {
+		return 0, fmt.Errorf("dimension must be positive, got %d", value)
+	}
+	// #nosec G115 -- value is positive, so widening it to uint64 cannot wrap.
+	unsigned := uint64(value)
+	if unsigned > math.MaxUint32 {
+		return 0, fmt.Errorf("dimension %d exceeds uint32 range", value)
+	}
+	// #nosec G115 -- the MaxUint32 check above proves representability.
+	return uint32(unsigned), nil
 }
 
 // ceilLog2 returns ceiling of log2
@@ -264,11 +316,19 @@ func ceilLog2(n uint32) uint32 {
 	if n <= 1 {
 		return 1
 	}
-	k := uint32(0)
-	for (1 << k) < n {
-		k++
+
+	var (
+		exponent uint32
+		power    = uint32(1)
+	)
+	for power < n {
+		exponent++
+		if exponent == 32 {
+			return exponent
+		}
+		power <<= 1
 	}
-	return k
+	return exponent
 }
 
 func (b *CircuitBuilder) calculateAdviceCols() int {

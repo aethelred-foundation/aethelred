@@ -7,6 +7,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -264,6 +265,9 @@ func (p VaultParams) Validate() error {
 	if p.UnbondingPeriod == 0 {
 		return fmt.Errorf("unbonding_period must be > 0")
 	}
+	if p.UnbondingPeriod > uint64(math.MaxInt64/int64(time.Second)) {
+		return fmt.Errorf("unbonding_period exceeds time.Duration range")
+	}
 	if p.EpochDuration == 0 {
 		return fmt.Errorf("epoch_duration must be > 0")
 	}
@@ -281,6 +285,9 @@ func (p VaultParams) Validate() error {
 	}
 	if p.MinTelemetryQuorumPct > 100 {
 		return fmt.Errorf("min_telemetry_quorum_pct must be <= 100")
+	}
+	if p.TelemetryMaxAgeSec > uint64(math.MaxInt64/int64(time.Second)) {
+		return fmt.Errorf("telemetry_max_age_sec exceeds time.Duration range")
 	}
 	return nil
 }

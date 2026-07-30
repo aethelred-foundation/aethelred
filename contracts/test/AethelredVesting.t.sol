@@ -95,6 +95,7 @@ contract AethelredVestingTest is Test {
         // Grant roles
         vesting.grantRole(vesting.VESTING_ADMIN_ROLE(), vestingAdmin);
         vesting.grantRole(vesting.REVOKER_ROLE(), revoker);
+        vesting.grantRole(vesting.MILESTONE_ATTESTOR_ROLE(), vestingAdmin);
 
         // Transfer tokens to vesting contract
         token.transfer(address(vesting), 5_000_000_000 * 1e18);
@@ -1167,10 +1168,77 @@ contract AethelredVestingTest is Test {
     // VESTING TYPE TESTS (8)
     // =========================================================================
 
-    function test_Vested_MilestoneType_CreationOnly() public {
-        // Milestone schedules can be created; vesting is unlock-based via achieveMilestone
+    function test_Vested_MilestoneType_UnlocksOnlyAchievedMilestones() public {
+        string[] memory names = new string[](2);
+        names[0] = "Protocol launch";
+        names[1] = "Mainnet adoption";
+        uint256[] memory unlockBps = new uint256[](2);
+        unlockBps[0] = 2500;
+        unlockBps[1] = 7500;
+
         vm.prank(vestingAdmin);
-        bytes32 id = vesting.createCustomSchedule(
+        bytes32 id = vesting.createMilestoneSchedule(
+            alice,
+            1000 ether,
+            AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
+            names,
+            unlockBps,
+            true,
+            false
+        );
+
+        AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
+        assertEq(uint8(s.vestingType), uint8(AethelredVesting.VestingType.MILESTONE));
+
+        vm.prank(vestingAdmin);
+        vesting.executeTGE();
+        assertEq(vesting.getVested(id), 0);
+
+        vm.prank(vestingAdmin);
+        vesting.achieveMilestone(id, 0);
+        assertEq(vesting.getVested(id), 250 ether);
+
+        vm.prank(alice);
+        assertEq(vesting.release(id), 250 ether);
+
+        vm.prank(vestingAdmin);
+        vesting.achieveMilestone(id, 1);
+        assertEq(vesting.getVested(id), 1000 ether);
+
+        vm.prank(alice);
+        assertEq(vesting.release(id), 750 ether);
+
+        AethelredVesting.Milestone[] memory milestones = vesting.getMilestones(id);
+        assertEq(milestones.length, 2);
+        assertTrue(milestones[0].achieved);
+        assertTrue(milestones[1].achieved);
+    }
+
+    function test_Revert_MilestoneConfigurationMustSumToFullAllocation() public {
+        string[] memory names = new string[](2);
+        names[0] = "First";
+        names[1] = "Second";
+        uint256[] memory unlockBps = new uint256[](2);
+        unlockBps[0] = 4000;
+        unlockBps[1] = 5000;
+
+        vm.prank(vestingAdmin);
+        vm.expectRevert(AethelredVesting.InvalidMilestoneConfiguration.selector);
+        vesting.createMilestoneSchedule(
+            alice,
+            1000 ether,
+            AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
+            names,
+            unlockBps,
+            true,
+            false
+        );
+    }
+
+    function test_Revert_CustomScheduleCannotCreateUnconfiguredMilestones() public {
+        vm.prank(vestingAdmin);
+        vm.expectRevert(AethelredVesting.InvalidMilestoneConfiguration.selector);
+        vesting.createCustomSchedule(
             alice,
             1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
@@ -1182,8 +1250,6 @@ contract AethelredVestingTest is Test {
             true,
             false
         );
-        AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
-        assertEq(uint8(s.vestingType), uint8(AethelredVesting.VestingType.MILESTONE));
     }
 
     function test_Vested_ImmediateFullUnlock_ReleaseAll() public {

@@ -105,7 +105,7 @@ contract MockReserveOracle {
             uint80 answeredInRound
         )
     {
-        return (1, reserveBalance, block.timestamp, updatedAt, 1);
+        return (1, reserveBalance, updatedAt, updatedAt, 1);
     }
 }
 
@@ -774,8 +774,9 @@ contract GovernanceInvariantTest is StdInvariant, Test {
         // Mint amount that would create > 5% deviation
         // deviation = (projectedSupply - reserve) / reserve > 5%
         // projectedSupply = 1M + mintAmount > 1.05M
-        // mintAmount > 50_000 ether
-        mintAmount = bound(mintAmount, 50_001 ether, 10_000_000 ether);
+        // Integer BPS arithmetic floors fractional basis points, so the
+        // smallest amount that observes 501 bps is 50_100 ether.
+        mintAmount = bound(mintAmount, 50_100 ether, 10_000_000 ether);
 
         freshBreaker.checkReserveAnomaly(mintAmount);
         assertTrue(freshBreaker.isPaused(), "Should pause when deviation exceeds threshold");
@@ -843,6 +844,7 @@ contract GovernanceInvariantTest is StdInvariant, Test {
         freshCoin.mint(address(1), 1_000_000 ether);
 
         // Make oracle stale
+        vm.warp(staleness + 1);
         freshOracle.setUpdatedAt(block.timestamp - staleness);
 
         freshBreaker.checkReserveAnomaly(1 ether);

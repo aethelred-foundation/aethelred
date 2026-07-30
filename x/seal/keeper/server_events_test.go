@@ -89,9 +89,23 @@ func TestMsgAndQueryServers(t *testing.T) {
 		},
 	}
 
-	createResp, err := msgServer.CreateSeal(wrappedCtx, msg)
-	require.NoError(t, err)
-	require.NotEmpty(t, createResp.SealId)
+	_, err := msgServer.CreateSeal(wrappedCtx, msg)
+	require.ErrorContains(t, err, "direct seal creation is disabled")
+
+	// Consensus-derived seal creation enters through the keeper, not the
+	// externally signed MsgCreateSeal route.
+	seal := types.NewDigitalSeal(
+		msg.ModelCommitment,
+		msg.InputCommitment,
+		msg.OutputCommitment,
+		ctx.BlockHeight(),
+		msg.Creator,
+		msg.Purpose,
+	)
+	seal.AddAttestation(msg.TeeAttestations[0])
+	seal.Activate()
+	require.NoError(t, k.CreateSeal(wrappedCtx, seal))
+	createResp := &types.MsgCreateSealResponse{SealId: seal.Id}
 
 	_, err = queryServer.Seal(wrappedCtx, &types.QuerySealRequest{})
 	require.ErrorContains(t, err, "seal_id is required")
@@ -153,6 +167,31 @@ func TestMsgAndQueryServers(t *testing.T) {
 		Reason:    "policy",
 	})
 	require.NoError(t, err)
+}
+
+func TestMsgServerCreateSealRejectsUntrustedEvidence(t *testing.T) {
+	k, ctx := createSealKeeperWithStore(t)
+	msgServer := NewMsgServerImpl(k)
+	creator := sdk.AccAddress(bytes.Repeat([]byte{0xBC}, 20)).String()
+
+	_, err := msgServer.CreateSeal(ctx, &types.MsgCreateSeal{
+		Creator:          creator,
+		JobId:            "attacker-controlled-job",
+		ModelCommitment:  bytes.Repeat([]byte{0x11}, 32),
+		InputCommitment:  bytes.Repeat([]byte{0x22}, 32),
+		OutputCommitment: bytes.Repeat([]byte{0x33}, 32),
+		Purpose:          "fake_verified_result",
+		TeeAttestations: []*types.TEEAttestation{
+			{ValidatorAddress: creator, Quote: []byte("not-an-attestation")},
+			{ValidatorAddress: creator, Quote: []byte("duplicate-validator")},
+		},
+		ZkProof: &types.ZKMLProof{},
+	})
+	require.ErrorContains(t, err, "direct seal creation is disabled")
+
+	seals, listErr := k.ListSeals(ctx, 10, 0)
+	require.NoError(t, listErr)
+	require.Empty(t, seals, "untrusted evidence must never create a seal")
 }
 
 func TestEventEmittersAndHelpers(t *testing.T) {

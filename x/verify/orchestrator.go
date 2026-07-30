@@ -5,6 +5,7 @@ import (
 	cryptoRand "crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
@@ -40,7 +41,9 @@ type OrchestratorConfig struct {
 	// DefaultVerificationType when not specified
 	DefaultVerificationType types.VerificationType
 
-	// ParallelVerification enables parallel zkML and TEE
+	// ParallelVerification is retained for configuration compatibility.
+	// Hybrid execution is forced sequential until zkML can consume an
+	// authenticated TEE output commitment safely in parallel.
 	ParallelVerification bool
 
 	// CacheEnabled enables verification caching
@@ -52,7 +55,9 @@ type OrchestratorConfig struct {
 	// CacheSize limits the number of cached results (LRU)
 	CacheSize int
 
-	// RequireBothForHybrid requires both zkML and TEE to succeed for hybrid
+	// RequireBothForHybrid is retained for configuration compatibility.
+	// Hybrid results always require both authenticated mechanisms; permitting
+	// one-sided success would create evidence that the chain cannot validate.
 	RequireBothForHybrid bool
 
 	// MaxRetries for failed verifications
@@ -79,7 +84,7 @@ type OrchestratorConfig struct {
 func DefaultOrchestratorConfig() OrchestratorConfig {
 	return OrchestratorConfig{
 		DefaultVerificationType: types.VerificationTypeHybrid, // SQ01: enterprise default
-		ParallelVerification:    true,
+		ParallelVerification:    false,
 		CacheEnabled:            true,
 		CacheTTL:                5 * time.Minute,
 		CacheSize:               1024,
@@ -166,6 +171,11 @@ type VerificationRequest struct {
 	// Priority for processing order
 	Priority int
 
+	// BlockHeight and ChainID bind hardware attestations to the consensus
+	// domain that requested the computation.
+	BlockHeight int64
+	ChainID     string
+
 	// Metadata for additional context
 	Metadata map[string]string
 }
@@ -220,6 +230,7 @@ type ZKMLVerificationResult struct {
 	ProofSystem      string             `json:"proof_system"`
 	Proof            []byte             `json:"proof,omitempty"`
 	PublicInputs     *ezkl.PublicInputs `json:"public_inputs,omitempty"`
+	OutputHash       []byte             `json:"output_hash,omitempty"`
 	ProofSizeBytes   int64              `json:"proof_size_bytes"`
 	GenerationTimeMs int64              `json:"generation_time_ms"`
 	VerifiedOnChain  bool               `json:"verified_on_chain"`
@@ -294,6 +305,10 @@ func (vo *VerificationOrchestrator) Verify(ctx context.Context, req *Verificatio
 	// Check cache first
 	if vo.config.CacheEnabled {
 		if cached := vo.checkCache(req); cached != nil {
+			// RequestID is correlation metadata, not part of the verification
+			// domain. A cache hit must therefore retain the current caller's ID
+			// instead of leaking the ID of the request that populated the cache.
+			cached.RequestID = req.RequestID
 			cached.FromCache = true
 			vo.metrics.mutex.Lock()
 			vo.metrics.CacheHits++
@@ -326,17 +341,15 @@ func (vo *VerificationOrchestrator) Verify(ctx context.Context, req *Verificatio
 	case types.VerificationTypeZKML:
 		resp.ZKMLResult = vo.verifyWithZKML(ctx, req)
 		resp.Success = resp.ZKMLResult.Success
-		if !resp.Success {
+		if resp.Success {
+			resp.OutputHash = append([]byte(nil), resp.ZKMLResult.OutputHash...)
+		} else {
 			resp.Error = resp.ZKMLResult.Error
 		}
 
 	case types.VerificationTypeHybrid:
 		resp.TEEResult, resp.ZKMLResult = vo.verifyHybrid(ctx, req)
-		if vo.config.RequireBothForHybrid {
-			resp.Success = resp.TEEResult.Success && resp.ZKMLResult.Success
-		} else {
-			resp.Success = resp.TEEResult.Success || resp.ZKMLResult.Success
-		}
+		resp.Success = resp.TEEResult.Success && resp.ZKMLResult.Success
 		if resp.TEEResult.Success {
 			resp.OutputHash = resp.TEEResult.OutputHash
 		}
@@ -390,6 +403,8 @@ func (vo *VerificationOrchestrator) verifyWithTEE(ctx context.Context, req *Veri
 		InputHash:           req.InputHash,
 		GenerateAttestation: true,
 		Nonce:               generateNonce(),
+		BlockHeight:         req.BlockHeight,
+		ChainID:             req.ChainID,
 	}
 
 	// Execute in enclave
@@ -481,6 +496,20 @@ func (vo *VerificationOrchestrator) verifyWithZKML(ctx context.Context, req *Ver
 		return result
 	}
 
+	outputHash, err := ezkl.OutputHashFromPublicInputs(proofResult.PublicInputs)
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Sprintf("invalid verified output commitment: %v", err)
+		return result
+	}
+	if len(req.ExpectedOutputHash) > 0 &&
+		!bytesEqual(outputHash, req.ExpectedOutputHash) {
+		result.Success = false
+		result.Error = "verified proof output hash mismatch"
+		return result
+	}
+
+	result.OutputHash = outputHash
 	result.Success = true
 	result.VerifiedOnChain = true
 	return result
@@ -488,78 +517,40 @@ func (vo *VerificationOrchestrator) verifyWithZKML(ctx context.Context, req *Ver
 
 // verifyHybrid performs both TEE and zkML verification
 func (vo *VerificationOrchestrator) verifyHybrid(ctx context.Context, req *VerificationRequest) (*TEEVerificationResult, *ZKMLVerificationResult) {
-	var teeResult *TEEVerificationResult
-	var zkmlResult *ZKMLVerificationResult
-
-	if vo.config.ParallelVerification {
-		// Run both in parallel
-		var wg sync.WaitGroup
-		wg.Add(2)
-
-		go func() {
-			defer wg.Done()
-			teeResult = vo.verifyWithTEE(ctx, req)
-		}()
-
-		go func() {
-			defer wg.Done()
-			zkmlResult = vo.verifyWithZKML(ctx, req)
-		}()
-
-		wg.Wait()
-	} else {
-		// Run sequentially: TEE first, then zkML bound to TEE output
-		teeResult = vo.verifyWithTEE(ctx, req)
-		if teeResult.Success {
-			// Bind zkML verification to the TEE output so
-			// the proof covers the exact same computation
-			req.ExpectedOutputHash = teeResult.OutputHash
-		}
-		zkmlResult = vo.verifyWithZKML(ctx, req)
-
-		// If both succeed, cross-validate (the binding above should
-		// guarantee match, but defence-in-depth applies)
-		if teeResult.Success && zkmlResult.Success && zkmlResult.PublicInputs != nil {
-			if !bytesEqual(teeResult.OutputHash, zkmlResult.PublicInputs.OutputCommitment) {
-				vo.logger.Error("CRITICAL: Sequential TEE/zkML mismatch despite binding",
-					"request_id", req.RequestID,
-				)
-				teeResult.Success = false
-				teeResult.Error = "hybrid output mismatch after binding"
-				zkmlResult.Success = false
-				zkmlResult.Error = "hybrid output mismatch after binding"
-			}
+	// TEE must complete first because its authenticated OutputHash is the value
+	// the zkML proof must bind. The legacy parallel path launched independent
+	// computations without that value and also let child-goroutine panics escape
+	// the caller's recovery boundary.
+	teeResult := vo.verifyWithTEE(ctx, req)
+	if !teeResult.Success {
+		return teeResult, &ZKMLVerificationResult{
+			ProofSystem: "ezkl",
+			Error:       "skipped because TEE verification failed",
 		}
 	}
 
-	// Cross-validate outputs: TEE and zkML MUST agree when both succeed.
-	// A mismatch indicates either a hardware fault, a compromised enclave,
-	// or an incorrect proof - in all cases, the result is invalid.
-	if teeResult.Success && zkmlResult.Success {
-		if zkmlResult.PublicInputs == nil || len(zkmlResult.PublicInputs.OutputCommitment) == 0 {
-			vo.logger.Error("CRITICAL: zkML public inputs missing for hybrid output binding",
-				"request_id", req.RequestID,
-			)
-			teeResult.Success = false
-			teeResult.Error = "hybrid output binding missing (no zkML public inputs)"
-			zkmlResult.Success = false
-			zkmlResult.Error = "hybrid output binding missing (no zkML public inputs)"
-		} else if !bytesEqual(teeResult.OutputHash, zkmlResult.PublicInputs.OutputCommitment) {
-			vo.logger.Error("CRITICAL: TEE and zkML output mismatch - marking both as failed",
-				"request_id", req.RequestID,
-				"tee_output", fmt.Sprintf("%x", teeResult.OutputHash),
-				"zkml_output", fmt.Sprintf("%x", zkmlResult.PublicInputs.OutputCommitment),
-			)
-			teeResult.Success = false
-			teeResult.Error = "hybrid output mismatch: TEE and zkML produced different results"
-			zkmlResult.Success = false
-			zkmlResult.Error = "hybrid output mismatch: TEE and zkML produced different results"
-		}
+	// Do not mutate the caller's request: it is also the cache-key input and may
+	// be reused by upstream code. Bind a private copy to the TEE commitment.
+	zkmlRequest := *req
+	zkmlRequest.ExpectedOutputHash = append([]byte(nil), teeResult.OutputHash...)
+	zkmlResult := vo.verifyWithZKML(ctx, &zkmlRequest)
+	if !zkmlResult.Success {
+		return teeResult, zkmlResult
 	}
 
-	// In sequential mode, bind zkML verification to the TEE output so
-	// the prover proves the SAME computation the enclave executed.
-	// (Parallel mode can't do this since they run concurrently.)
+	// Cross-validate the independently verified public commitment. A mismatch
+	// indicates a hardware fault, compromised enclave, or invalid proof.
+	if !bytesEqual(teeResult.OutputHash, zkmlResult.OutputHash) {
+		vo.logger.Error("CRITICAL: TEE and zkML output mismatch - marking both as failed",
+			"request_id", req.RequestID,
+			"tee_output", fmt.Sprintf("%x", teeResult.OutputHash),
+			"zkml_output", fmt.Sprintf("%x", zkmlResult.OutputHash),
+		)
+		teeResult.Success = false
+		teeResult.Error = "hybrid output mismatch: TEE and zkML produced different results"
+		zkmlResult.Success = false
+		zkmlResult.Error = "hybrid output mismatch: TEE and zkML produced different results"
+	}
 
 	return teeResult, zkmlResult
 }
@@ -582,10 +573,24 @@ func (vo *VerificationOrchestrator) cacheResult(req *VerificationRequest, resp *
 // getCacheKey generates a cache key for a request
 func (vo *VerificationOrchestrator) getCacheKey(req *VerificationRequest) string {
 	h := sha256.New()
-	h.Write(req.ModelHash)
-	h.Write(req.InputHash)
-	h.Write(req.ExpectedOutputHash)
-	h.Write([]byte(req.VerificationType.String()))
+	_, _ = h.Write([]byte("aethelred/verification-cache/v2"))
+	writeField := func(value []byte) {
+		var length [8]byte
+		binary.BigEndian.PutUint64(length[:], uint64(len(value)))
+		_, _ = h.Write(length[:])
+		_, _ = h.Write(value)
+	}
+	writeField(req.ModelHash)
+	writeField(req.InputHash)
+	writeField(req.ExpectedOutputHash)
+	writeField(req.CircuitHash)
+	writeField(req.VerifyingKeyHash)
+	var height [8]byte
+	// #nosec G115 -- cache domain uses the canonical signed-height representation.
+	binary.BigEndian.PutUint64(height[:], uint64(req.BlockHeight))
+	_, _ = h.Write(height[:])
+	writeField([]byte(req.ChainID))
+	writeField([]byte(req.VerificationType.String()))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
@@ -714,7 +719,10 @@ func (vc *VerificationCache) Get(key string) (*VerificationResponse, bool) {
 		return nil, false
 	}
 
-	return entry.response, true
+	// Cache entries are immutable snapshots. Returning a deep copy prevents a
+	// caller from mutating the cached result (and avoids data races between
+	// concurrent cache hits).
+	return cloneVerificationResponse(entry.response), true
 }
 
 // Set stores in cache
@@ -723,7 +731,9 @@ func (vc *VerificationCache) Set(key string, response *VerificationResponse) {
 	defer vc.mutex.Unlock()
 
 	entry := &cacheEntry{
-		response: response,
+		// Snapshot the response at insertion time so later mutations by the
+		// original caller cannot change the cached verification result.
+		response: cloneVerificationResponse(response),
 	}
 	if vc.ttl > 0 {
 		entry.expiry = time.Now().Add(vc.ttl)
@@ -758,6 +768,83 @@ func (vc *VerificationCache) isExpired(entry *cacheEntry) bool {
 		return false
 	}
 	return time.Now().After(entry.expiry)
+}
+
+func cloneVerificationResponse(response *VerificationResponse) *VerificationResponse {
+	if response == nil {
+		return nil
+	}
+
+	cloned := *response
+	cloned.OutputHash = append([]byte(nil), response.OutputHash...)
+	cloned.TEEResult = cloneTEEVerificationResult(response.TEEResult)
+	cloned.ZKMLResult = cloneZKMLVerificationResult(response.ZKMLResult)
+	return &cloned
+}
+
+func cloneTEEVerificationResult(result *TEEVerificationResult) *TEEVerificationResult {
+	if result == nil {
+		return nil
+	}
+
+	cloned := *result
+	cloned.OutputHash = append([]byte(nil), result.OutputHash...)
+	cloned.AttestationDoc = cloneNitroAttestationDocument(result.AttestationDoc)
+	return &cloned
+}
+
+func cloneNitroAttestationDocument(
+	document *tee.NitroAttestationDocument,
+) *tee.NitroAttestationDocument {
+	if document == nil {
+		return nil
+	}
+
+	cloned := *document
+	cloned.Certificate = append([]byte(nil), document.Certificate...)
+	cloned.CABundle = append([]byte(nil), document.CABundle...)
+	cloned.PublicKey = append([]byte(nil), document.PublicKey...)
+	cloned.UserData = append([]byte(nil), document.UserData...)
+	cloned.Nonce = append([]byte(nil), document.Nonce...)
+	cloned.Signature = append([]byte(nil), document.Signature...)
+	if document.PCRs != nil {
+		cloned.PCRs = make(map[int][]byte, len(document.PCRs))
+		for index, value := range document.PCRs {
+			cloned.PCRs[index] = append([]byte(nil), value...)
+		}
+	}
+	return &cloned
+}
+
+func cloneZKMLVerificationResult(result *ZKMLVerificationResult) *ZKMLVerificationResult {
+	if result == nil {
+		return nil
+	}
+
+	cloned := *result
+	cloned.Proof = append([]byte(nil), result.Proof...)
+	cloned.OutputHash = append([]byte(nil), result.OutputHash...)
+	cloned.PublicInputs = clonePublicInputs(result.PublicInputs)
+	return &cloned
+}
+
+func clonePublicInputs(inputs *ezkl.PublicInputs) *ezkl.PublicInputs {
+	if inputs == nil {
+		return nil
+	}
+
+	cloned := *inputs
+	cloned.ModelCommitment = append([]byte(nil), inputs.ModelCommitment...)
+	cloned.InputCommitment = append([]byte(nil), inputs.InputCommitment...)
+	cloned.OutputCommitment = append([]byte(nil), inputs.OutputCommitment...)
+	cloned.ScaleFactors = append([]float64(nil), inputs.ScaleFactors...)
+	if inputs.Instances != nil {
+		cloned.Instances = make([][]byte, len(inputs.Instances))
+		for index, instance := range inputs.Instances {
+			cloned.Instances[index] = append([]byte(nil), instance...)
+		}
+	}
+	return &cloned
 }
 
 // Helper functions

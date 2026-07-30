@@ -309,7 +309,9 @@ func (k Keeper) UpdateValidatorStatus(ctx context.Context, validatorAddr string,
 		return err
 	}
 
-	capability.UpdateStatus(online, currentJobs)
+	if err := capability.UpdateStatus(online, currentJobs); err != nil {
+		return err
+	}
 
 	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 }

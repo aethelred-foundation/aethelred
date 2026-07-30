@@ -109,6 +109,14 @@ func (app *AethelredApp) buildFullOrchestratorConfig() verify.OrchestratorConfig
 			ProverEndpoint: proverEndpoint,
 			AllowSimulated: false,
 		}
+	} else if startupAllowsVerificationInitFailure() {
+		// Explicit development/simulated startup modes must configure both
+		// halves of the default hybrid pipeline. Leaving the prover at its
+		// fail-closed production default makes every otherwise valid local
+		// hybrid verification fail after the simulated TEE succeeds.
+		cfg.ProverConfig = &ezkl.ProverConfig{
+			AllowSimulated: true,
+		}
 	}
 
 	return cfg

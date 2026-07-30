@@ -100,4 +100,100 @@ describe("SovereignCircuitBreakerModule", function () {
     await module.checkReserveAnomaly(0);
     expect(await module.isPaused()).to.equal(true);
   });
+
+  it("auto-pauses when the reserve feed reports an incomplete round", async function () {
+    const [owner, multisig] = await ethers.getSigners();
+
+    const TokenFactory = await ethers.getContractFactory("MockMintableBurnableERC20");
+    const token = await TokenFactory.connect(owner).deploy("USDC", "USDC", 6);
+    await token.waitForDeployment();
+    await token.mint(owner.address, units(1000));
+
+    const FeedFactory = await ethers.getContractFactory("MockAggregatorV3");
+    const feed = await FeedFactory.connect(owner).deploy(6);
+    await feed.waitForDeployment();
+    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    await feed.setRoundDataWithMetadata(42, units(1000), now, now, 41);
+
+    const ModuleFactory = await ethers.getContractFactory("SovereignCircuitBreakerModule");
+    const module = await ModuleFactory.connect(owner).deploy(
+      owner.address,
+      await token.getAddress(),
+      await feed.getAddress(),
+      multisig.address,
+      50
+    );
+    await module.waitForDeployment();
+
+    await module.checkReserveAnomaly(0);
+    expect(await module.isPaused()).to.equal(true);
+  });
+
+  it("auto-pauses when the reserve feed has no update timestamp", async function () {
+    const [owner, multisig] = await ethers.getSigners();
+
+    const TokenFactory = await ethers.getContractFactory("MockMintableBurnableERC20");
+    const token = await TokenFactory.connect(owner).deploy("USDX", "USDX", 6);
+    await token.waitForDeployment();
+    await token.mint(owner.address, units(1000));
+
+    const FeedFactory = await ethers.getContractFactory("MockAggregatorV3");
+    const feed = await FeedFactory.connect(owner).deploy(6);
+    await feed.waitForDeployment();
+    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    await feed.setRoundDataWithMetadata(7, units(1000), now, 0, 7);
+
+    const ModuleFactory = await ethers.getContractFactory("SovereignCircuitBreakerModule");
+    const module = await ModuleFactory.connect(owner).deploy(
+      owner.address,
+      await token.getAddress(),
+      await feed.getAddress(),
+      multisig.address,
+      50
+    );
+    await module.waitForDeployment();
+
+    await module.checkReserveAnomaly(0);
+    expect(await module.isPaused()).to.equal(true);
+  });
+
+  it("auto-pauses on a zero round id or a future update timestamp", async function () {
+    const [owner, multisig] = await ethers.getSigners();
+
+    const TokenFactory = await ethers.getContractFactory("MockMintableBurnableERC20");
+    const token = await TokenFactory.connect(owner).deploy("USDP", "USDP", 6);
+    await token.waitForDeployment();
+    await token.mint(owner.address, units(1000));
+
+    const FeedFactory = await ethers.getContractFactory("MockAggregatorV3");
+    const feed = await FeedFactory.connect(owner).deploy(6);
+    await feed.waitForDeployment();
+    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    await feed.setRoundDataWithMetadata(0, units(1000), now, now, 0);
+
+    const ModuleFactory = await ethers.getContractFactory("SovereignCircuitBreakerModule");
+    const module = await ModuleFactory.connect(owner).deploy(
+      owner.address,
+      await token.getAddress(),
+      await feed.getAddress(),
+      multisig.address,
+      50
+    );
+    await module.waitForDeployment();
+
+    await module.checkReserveAnomaly(0);
+    expect(await module.isPaused()).to.equal(true);
+
+    await module.connect(multisig).unpauseMinting();
+    await feed.setRoundDataWithMetadata(
+      8,
+      units(1000),
+      now,
+      now + 3600,
+      8
+    );
+
+    await module.checkReserveAnomaly(0);
+    expect(await module.isPaused()).to.equal(true);
+  });
 });

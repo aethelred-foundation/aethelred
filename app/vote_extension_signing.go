@@ -170,7 +170,10 @@ func (s *VoteExtensionSigner) SignVoteExtension(
 	}
 
 	// Serialize for signing
-	signBytes := serializeSignatureData(sigData)
+	signBytes, err := serializeSignatureData(sigData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize vote extension signature data: %w", err)
+	}
 
 	// Sign with ed25519
 	signature := ed25519.Sign(s.signingKey.PrivateKey, signBytes)
@@ -230,7 +233,10 @@ func (s *VoteExtensionSigner) VerifyVoteExtensionSignature(
 	}
 
 	// Serialize for verification
-	signBytes := serializeSignatureData(sigData)
+	signBytes, err := serializeSignatureData(sigData)
+	if err != nil {
+		return fmt.Errorf("failed to serialize vote extension signature data: %w", err)
+	}
 
 	// Verify ed25519 signature
 	if !ed25519.Verify(sig.PublicKey, signBytes, sig.Signature) {
@@ -298,8 +304,10 @@ func (e *EnhancedVoteExtension) MarshalWithSignature() ([]byte, error) {
 	}
 
 	result := make([]byte, totalLen)
+	// #nosec G115 -- checkedEnhancedVoteExtensionSize proves baseBytes is <= MaxUint32.
 	binary.BigEndian.PutUint32(result[0:4], uint32(len(baseBytes)))
 	copy(result[4:4+len(baseBytes)], baseBytes)
+	// #nosec G115 -- checkedEnhancedVoteExtensionSize proves sigBytes is <= MaxUint32.
 	binary.BigEndian.PutUint32(result[4+len(baseBytes):8+len(baseBytes)], uint32(len(sigBytes)))
 	copy(result[8+len(baseBytes):], sigBytes)
 
@@ -594,7 +602,11 @@ func computeAddress(pubKey []byte) []byte {
 }
 
 // serializeSignatureData serializes the signature data for signing
-func serializeSignatureData(data *VoteExtensionSignatureData) []byte {
+func serializeSignatureData(data *VoteExtensionSignatureData) ([]byte, error) {
+	if data == nil {
+		return nil, errors.New("vote extension signature data is required")
+	}
+
 	// Domain separator
 	domainSep := []byte("aethelred_vote_extension_v1:")
 
@@ -606,8 +618,9 @@ func serializeSignatureData(data *VoteExtensionSignatureData) []byte {
 
 	// ChainID (length-prefixed)
 	chainBytes := []byte(data.ChainID)
-	_ = binary.Write(&buf, binary.BigEndian, uint16(len(chainBytes)))
-	buf.Write(chainBytes)
+	if err := writeUint16LengthPrefixed(&buf, chainBytes, "chain ID"); err != nil {
+		return nil, err
+	}
 
 	// Height
 	_ = binary.Write(&buf, binary.BigEndian, data.Height)
@@ -616,8 +629,9 @@ func serializeSignatureData(data *VoteExtensionSignatureData) []byte {
 	_ = binary.Write(&buf, binary.BigEndian, data.Round)
 
 	// ValidatorAddress (length-prefixed)
-	_ = binary.Write(&buf, binary.BigEndian, uint16(len(data.ValidatorAddress)))
-	buf.Write(data.ValidatorAddress)
+	if err := writeUint16LengthPrefixed(&buf, data.ValidatorAddress, "validator address"); err != nil {
+		return nil, err
+	}
 
 	// Timestamp (Unix nano)
 	_ = binary.Write(&buf, binary.BigEndian, data.Timestamp.UnixNano())
@@ -629,10 +643,11 @@ func serializeSignatureData(data *VoteExtensionSignatureData) []byte {
 	buf.Write(data.VerificationsMerkleRoot[:])
 
 	// Nonce (length-prefixed)
-	_ = binary.Write(&buf, binary.BigEndian, uint16(len(data.Nonce)))
-	buf.Write(data.Nonce)
+	if err := writeUint16LengthPrefixed(&buf, data.Nonce, "nonce"); err != nil {
+		return nil, err
+	}
 
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
 // computeVerificationsMerkleRoot computes the Merkle root of verifications.
@@ -708,22 +723,44 @@ func marshalSignature(sig *VoteExtensionSignature) ([]byte, error) {
 	buf.WriteByte(sig.Version)
 
 	// Signature
-	_ = binary.Write(&buf, binary.BigEndian, uint16(len(sig.Signature)))
-	buf.Write(sig.Signature)
+	if err := writeUint16LengthPrefixed(&buf, sig.Signature, "signature"); err != nil {
+		return nil, err
+	}
 
 	// PublicKey
-	_ = binary.Write(&buf, binary.BigEndian, uint16(len(sig.PublicKey)))
-	buf.Write(sig.PublicKey)
+	if err := writeUint16LengthPrefixed(&buf, sig.PublicKey, "public key"); err != nil {
+		return nil, err
+	}
 
 	// KeyID
 	keyIDBytes := []byte(sig.KeyID)
-	_ = binary.Write(&buf, binary.BigEndian, uint16(len(keyIDBytes)))
-	buf.Write(keyIDBytes)
+	if err := writeUint16LengthPrefixed(&buf, keyIDBytes, "key ID"); err != nil {
+		return nil, err
+	}
 
 	// Timestamp
 	_ = binary.Write(&buf, binary.BigEndian, sig.Timestamp.UnixNano())
 
 	return buf.Bytes(), nil
+}
+
+func writeUint16LengthPrefixed(buf *bytes.Buffer, value []byte, field string) error {
+	if buf == nil {
+		return errors.New("destination buffer is required")
+	}
+	if len(value) > math.MaxUint16 {
+		return fmt.Errorf("%s exceeds uint16 encoding limit: %d bytes", field, len(value))
+	}
+
+	// #nosec G115 -- the explicit MaxUint16 check above proves representability.
+	length := uint16(len(value))
+	if err := binary.Write(buf, binary.BigEndian, length); err != nil {
+		return fmt.Errorf("write %s length: %w", field, err)
+	}
+	if _, err := buf.Write(value); err != nil {
+		return fmt.Errorf("write %s: %w", field, err)
+	}
+	return nil
 }
 
 // unmarshalSignature unmarshals a vote extension signature

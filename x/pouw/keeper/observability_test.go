@@ -722,6 +722,32 @@ func TestAudit_TotalEmitted(t *testing.T) {
 	require.Len(t, records, 5, "buffer should be capped at 5")
 }
 
+func TestAudit_RingBufferPreservesChronologicalChain(t *testing.T) {
+	al := keeper.NewAuditLogger(3)
+	ctx := sdkTestContext()
+	sdkCtx := unwrapSDKContext(ctx)
+
+	for i := 1; i <= 4; i++ {
+		al.Record(
+			sdkCtx,
+			keeper.AuditCategoryJob,
+			keeper.AuditSeverityInfo,
+			fmt.Sprintf("action-%d", i),
+			"actor",
+			nil,
+		)
+	}
+
+	records := al.GetRecords()
+	require.Len(t, records, 3)
+	require.Equal(t, []uint64{2, 3, 4}, []uint64{
+		records[0].Sequence,
+		records[1].Sequence,
+		records[2].Sequence,
+	})
+	require.NoError(t, al.VerifyChain())
+}
+
 func TestAudit_ExportJSON(t *testing.T) {
 	al := keeper.NewAuditLogger(100)
 	ctx := sdkTestContext()
@@ -1046,6 +1072,8 @@ func BenchmarkValidateParams(b *testing.B) {
 
 // unwrapSDKContext converts a context.Context from sdkTestContext() into an
 // sdk.Context for use with audit and metrics methods that need SDK context.
-func unwrapSDKContext(ctx interface{ Value(key interface{}) interface{} }) sdk.Context {
+func unwrapSDKContext(ctx interface {
+	Value(key interface{}) interface{}
+}) sdk.Context {
 	return sdk.UnwrapSDKContext(ctx.(context.Context))
 }

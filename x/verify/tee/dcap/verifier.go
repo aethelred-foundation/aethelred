@@ -258,17 +258,23 @@ type CacheEntry struct {
 
 // NewDCAPVerifier creates a new DCAP verifier
 func NewDCAPVerifier(config DCAPConfig, logger log.Logger) (*DCAPVerifier, error) {
+	baseClient := httpclient.NewPooledClient(httpclient.PoolConfig{
+		Timeout:             config.RequestTimeout,
+		MaxIdleConns:        50,
+		MaxIdleConnsPerHost: 10,
+		MaxConnsPerHost:     50,
+		IdleConnTimeout:     90 * time.Second,
+	})
+	secureClient, err := httputil.NewSecureClient(baseClient)
+	if err != nil {
+		return nil, fmt.Errorf("create secure PCCS HTTP client: %w", err)
+	}
+
 	verifier := &DCAPVerifier{
-		logger:  logger,
-		config:  config,
-		breaker: circuitbreaker.NewDefault("dcap_collateral_fetch"),
-		pccsClient: httpclient.NewPooledClient(httpclient.PoolConfig{
-			Timeout:             config.RequestTimeout,
-			MaxIdleConns:        50,
-			MaxIdleConnsPerHost: 10,
-			MaxConnsPerHost:     50,
-			IdleConnTimeout:     90 * time.Second,
-		}),
+		logger:     logger,
+		config:     config,
+		breaker:    circuitbreaker.NewDefault("dcap_collateral_fetch"),
+		pccsClient: secureClient,
 		certCache: &CertificateCache{
 			entries: make(map[string]*CacheEntry),
 		},

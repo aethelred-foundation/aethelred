@@ -56,7 +56,9 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | `app/consensus_finality.go` | Consensus finality tracking | `ed40b6ee` |
 | `app/consensus_evidence.go` | Consensus evidence collection | `ed40b6ee` |
 | `app/consensus_evidence_handler.go` | Consensus evidence ABCI handler | `ed40b6ee` |
-| `app/abci_liveness.go` | Liveness detection and recovery | `ed40b6ee` |
+| `app/finalized_block.go` | Persisted finalized-block hash and replay binding | Current PR |
+| `app/preblock.go` | PreBlock upgrade and finalized-seal enforcement | Current PR |
+| `app/seal_evidence.go` | Finalized seal-evidence validation | Current PR |
 | `app/abci_recovery.go` | ABCI recovery procedures | `ed40b6ee` |
 | `app/encrypted_mempool_bridge.go` | Encrypted mempool bridge integration | `ed40b6ee` |
 | `app/pqc.go` | Post-quantum cryptography integration | `ed40b6ee` |
@@ -392,7 +394,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Nitro parser fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence nitro` | `services/tee-worker/nitro-sdk/src/attestation/aws_nitro.rs` |
 | ARM attestation fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence arm` | `services/tee-worker/nitro-sdk/src/attestation/arm_trustzone.rs` |
 | Shared endpoint literal-IP regression | `go test ./x/verify/httputil` | `x/verify/httputil/httputil_test.go` |
-| Worker API auth boundary regression | `go test ./services/tee-worker/executor` | `services/tee-worker/executor/main_test.go` |
+| Worker API auth boundary regression | `go test ./services/tee-worker/executor ./cmd/aethelred-tee-worker` | `services/tee-worker/executor/main_test.go`, `cmd/aethelred-tee-worker/main_test.go` |
 | Remote TEE client auth regression | `go test ./app` | `app/tee_client_test.go` |
 | SGX TCB fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence sgx` | `services/tee-worker/nitro-sdk/src/attestation/intel_sgx.rs` |
 | Nitro remote auth alignment regression | `go test ./x/verify/tee` and `go test ./services/tee-worker/l1-verifier/...` | `x/verify/tee/nitro_test.go`, `services/tee-worker/l1-verifier/nitro_test.go` |

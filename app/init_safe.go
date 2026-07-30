@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"cosmossdk.io/log"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -107,27 +108,62 @@ func SafeGetDefaultNodeHome() (string, error) {
 	return filepath.Join(userHomeDir, ".aethelred"), nil
 }
 
-// SafeInitPQCMode initializes PQC mode with graceful fallback.
-// If PQC initialization fails, the app continues with classical cryptography.
+// resolvePQCEnabled returns the explicit operator setting when present and the
+// build-specific secure default otherwise.
+func resolvePQCEnabled(appOpts servertypes.AppOptions) bool {
+	raw := appOpts.Get("aethelred.pqc.enabled")
+	if raw == nil || strings.TrimSpace(cast.ToString(raw)) == "" {
+		return defaultPQCEnabled
+	}
+	return cast.ToBool(raw)
+}
+
+// SafeInitPQCMode initializes PQC mode. Non-production binaries preserve the
+// historical graceful fallback, while production binaries return an error so
+// the constructor can fail startup instead of silently using classical crypto.
 func SafeInitPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
-	pqcEnabled := cast.ToBool(appOpts.Get("aethelred.pqc.enabled"))
+	pqcEnabled := resolvePQCEnabled(appOpts)
 	if !pqcEnabled {
+		if requirePQCInitialization {
+			return fmt.Errorf("production builds require PQC; aethelred.pqc.enabled cannot be false")
+		}
 		logger.Info("PQC mode disabled by configuration")
 		return nil
+	}
+
+	if requirePQCInitialization {
+		switch resolvePQCMode(appOpts) {
+		case "enabled", "production", "prod", "true", "1", "hybrid":
+		default:
+			return fmt.Errorf(
+				"production builds require a CIRCL-backed PQC mode; got %q",
+				resolvePQCMode(appOpts),
+			)
+		}
 	}
 
 	// Check if PQC libraries are available
 	pqcAvailable := checkPQCAvailability(appOpts)
 	if !pqcAvailable {
+		err := fmt.Errorf(
+			"PQC mode %q requires the CIRCL backend; build with -tags=production,pqc_circl",
+			resolvePQCMode(appOpts),
+		)
+		if requirePQCInitialization {
+			return err
+		}
 		logger.Warn("Requested PQC backend not available, falling back to classical cryptography",
 			"component", "pqc",
 			"fallback", "classical_crypto",
 			"requested_mode", resolvePQCMode(appOpts),
 		)
-		return nil // Graceful degradation - don't fail
+		return nil
 	}
 
 	if err := initPQCMode(logger, appOpts); err != nil {
+		if requirePQCInitialization {
+			return fmt.Errorf("required production PQC initialization failed: %w", err)
+		}
 		logger.Error("PQC initialization failed, falling back to classical cryptography",
 			"error", err,
 			"component", "pqc",
@@ -139,6 +175,12 @@ func SafeInitPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
 
 	logger.Info("PQC mode enabled successfully")
 	return nil
+}
+
+func initializePQCModeOrPanic(logger log.Logger, appOpts servertypes.AppOptions) {
+	if err := SafeInitPQCMode(logger, appOpts); err != nil {
+		panic(fmt.Sprintf("FATAL: required production PQC initialization failed: %v", err))
+	}
 }
 
 // checkPQCAvailability checks whether the requested PQC mode has the required

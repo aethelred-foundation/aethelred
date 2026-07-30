@@ -2,7 +2,9 @@ package groth16
 
 import (
 	"errors"
+	"math"
 	"math/big"
+	"strconv"
 	"testing"
 )
 
@@ -61,5 +63,23 @@ func TestVerifyGroth16WithPairingFailsClosedWithoutBackend(t *testing.T) {
 	}
 	if !errors.Is(err, ErrPairingBackendUnavailable) {
 		t.Fatalf("expected ErrPairingBackendUnavailable, got %v", err)
+	}
+}
+
+func TestEstimateGroth16GasCostBounds(t *testing.T) {
+	const pairingCost = uint64(45000 + 4*34000)
+
+	if got := EstimateGroth16GasCost(-1); got != pairingCost {
+		t.Fatalf("negative input count: got %d, want %d", got, pairingCost)
+	}
+	if got, want := EstimateGroth16GasCost(1), pairingCost+6150; got != want {
+		t.Fatalf("one input: got %d, want %d", got, want)
+	}
+
+	if strconv.IntSize == 64 {
+		maxSafe := int((math.MaxUint64 - pairingCost) / 6150)
+		if got := EstimateGroth16GasCost(maxSafe + 1); got != math.MaxUint64 {
+			t.Fatalf("overflowing input count: got %d, want saturation", got)
+		}
 	}
 }

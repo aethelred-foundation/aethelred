@@ -311,7 +311,7 @@ class ModelConverter:
         Example:
             >>> # Optimize for FPGA (lower cost, specialized acceleration)
             >>> circuit = converter.from_pytorch(
-            ...     model_path="resnet50.pt",
+            ...     model_path="reference-vision-model.pt",
             ...     input_shape=(1, 3, 224, 224),
             ...     target_hardware=HardwareTarget.XILINX_U280,
             ...     optimization_level=2,

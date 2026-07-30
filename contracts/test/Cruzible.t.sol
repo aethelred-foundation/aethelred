@@ -24,6 +24,13 @@ contract MockAETHEL {
     mapping(address => mapping(address => uint256)) public allowance;
     uint256 public totalSupply;
 
+    address public callbackTarget;
+    bytes public callbackData;
+    bool public callbackOnTransferFrom;
+    bool public callbackAttempted;
+    bool public callbackSucceeded;
+    bytes public callbackReturnData;
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
@@ -39,6 +46,15 @@ contract MockAETHEL {
         return true;
     }
 
+    function configureTransferFromCallback(address target, bytes calldata data) external {
+        callbackTarget = target;
+        callbackData = data;
+        callbackOnTransferFrom = true;
+        callbackAttempted = false;
+        callbackSucceeded = false;
+        delete callbackReturnData;
+    }
+
     function transfer(address to, uint256 amount) external returns (bool) {
         require(balanceOf[msg.sender] >= amount, "Insufficient balance");
         balanceOf[msg.sender] -= amount;
@@ -48,6 +64,11 @@ contract MockAETHEL {
     }
 
     function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+        if (callbackOnTransferFrom) {
+            callbackOnTransferFrom = false;
+            callbackAttempted = true;
+            (callbackSucceeded, callbackReturnData) = callbackTarget.call(callbackData);
+        }
         require(balanceOf[from] >= amount, "Insufficient balance");
         require(allowance[from][msg.sender] >= amount, "Insufficient allowance");
         allowance[from][msg.sender] -= amount;

@@ -84,7 +84,9 @@ This document maps every subsystem under audit to exact directory paths in the r
 | `consensus_evidence_handler.go` | ~200 | Evidence ABCI handler | Unit tests |
 | `consensus_evidence_api.go` | ~150 | Evidence query API | Unit tests |
 | `encrypted_mempool_bridge.go` | ~200 | Encrypted mempool integration | Pending |
-| `abci_liveness.go` | ~150 | Liveness detection | Pending |
+| `finalized_block.go` | ~110 | Finalized-block persistence and replay binding | Current PR |
+| `preblock.go` | ~150 | Upgrade and finalized-seal PreBlock enforcement | Current PR |
+| `seal_evidence.go` | ~320 | Finalized seal-evidence validation | Current PR |
 | `abci_recovery.go` | ~150 | Recovery procedures | Pending |
 | `pqc.go` | ~100 | Post-quantum crypto integration | Pending |
 | `tee_attestation_schema.go` | ~100 | TEE attestation data structures | N/A (types) |

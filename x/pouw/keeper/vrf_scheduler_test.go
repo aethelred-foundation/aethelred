@@ -50,6 +50,7 @@ func TestScheduler_PersistsVRFAssignmentMetadataChainBacked(t *testing.T) {
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
+	job.InputDataUri = "https://inputs.example.com/vrf-input.bin"
 	// Keep Fee nil in tests to avoid proto v2/gogoproto math.Int marshal panics.
 	job.Fee = nil
 	require.NoError(t, k.SubmitJob(ctx, job))
@@ -113,6 +114,7 @@ func TestScheduler_ProductionModeBlocksLegacyEntropyFallback(t *testing.T) {
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
+	job.InputDataUri = "https://inputs.example.com/prod-entropy-input.bin"
 	job.Fee = nil
 	require.NoError(t, k.SubmitJob(ctx, job))
 
@@ -163,6 +165,7 @@ func TestScheduler_UsesDKGBeaconEntropyAndPersistsBeaconMetadata(t *testing.T) {
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
+	job.InputDataUri = "https://inputs.example.com/dkg-input.bin"
 	job.Fee = nil
 	require.NoError(t, k.SubmitJob(ctx, job))
 
@@ -229,6 +232,7 @@ func TestScheduler_StrictDKGModeRejectsMissingBeaconEntropy(t *testing.T) {
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
+	job.InputDataUri = "https://inputs.example.com/strict-dkg-input.bin"
 	job.Fee = nil
 	require.NoError(t, k.SubmitJob(ctx, job))
 

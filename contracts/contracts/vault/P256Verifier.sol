@@ -148,11 +148,10 @@ library P256Verifier {
 
             // Call MODEXP precompile at address 0x05
             let success := staticcall(gas(), 0x05, ptr, 0xc0, ptr, 0x20)
-            if iszero(success) {
-                // Should never happen for valid inputs
-                result := 0
+            if success {
+                result := mload(ptr)
             }
-            result := mload(ptr)
+            // On failure, leave the zero-initialized return value unchanged.
         }
     }
 

@@ -1,6 +1,6 @@
 {
-  "name": "aethelred-sovereign-copilot",
-  "displayName": "Aethelred Sovereign Copilot",
+  "name": "aethelred-sovereign-developer-console",
+  "displayName": "Aethelred Sovereign Developer Console",
   "description": "Enterprise-grade compliance linting and sovereignty enforcement for AI development. Catch regulatory violations as you type, not after deployment.",
   "version": "2.0.0",
   "publisher": "aethelred-protocol",
@@ -206,7 +206,7 @@
       }
     ],
     "configuration": {
-      "title": "Aethelred Sovereign Copilot",
+      "title": "Aethelred Sovereign Developer Console",
       "properties": {
         "aethelred.jurisdiction": {
           "type": "string",

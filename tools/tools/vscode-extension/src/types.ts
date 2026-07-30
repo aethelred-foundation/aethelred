@@ -1,7 +1,7 @@
 /**
  * Aethelred VS Code Extension - Core Types
  *
- * Enterprise-grade type definitions for the Sovereign Copilot.
+ * Enterprise-grade type definitions for the Sovereign Developer Console.
  * These types mirror the Rust CLI output and provide strong typing
  * throughout the extension.
  */

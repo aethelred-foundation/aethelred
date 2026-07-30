@@ -209,6 +209,12 @@ contract SovereignGovernanceTimelock is TimelockController {
                 (operation.newIssuerRecoveryKey, operation.newGuardianKey)
             );
 
+        // Checks-effects-interactions: reserve the wrapper operation before
+        // executing the timelocked bridge call. If execution reverts, Solidity
+        // rolls this write back; if the target reenters, the wrapper fails
+        // closed with OperationAlreadyExecuted.
+        operation.executed = true;
+
         this.execute(
             operation.bridge,
             0,
@@ -217,7 +223,6 @@ contract SovereignGovernanceTimelock is TimelockController {
             operation.salt
         );
 
-        operation.executed = true;
         emit KeyRotationExecuted(
             operationId,
             operation.bridge,

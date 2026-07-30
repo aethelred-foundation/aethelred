@@ -23,41 +23,14 @@ var _ types.MsgServer = msgServer{}
 
 // CreateSeal handles MsgCreateSeal
 func (k msgServer) CreateSeal(goCtx context.Context, msg *types.MsgCreateSeal) (*types.MsgCreateSealResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	// Create the seal object
-	seal := types.NewDigitalSeal(
-		msg.ModelCommitment,
-		msg.InputCommitment,
-		msg.OutputCommitment,
-		ctx.BlockHeight(),
-		msg.Creator,
-		msg.Purpose,
-	)
-
-	// Add TEE attestations if provided
-	for _, attestation := range msg.TeeAttestations {
-		seal.AddAttestation(attestation)
-	}
-
-	// Set ZK proof if provided
-	if msg.ZkProof != nil {
-		seal.SetZKProof(msg.ZkProof)
-	}
-
-	// Activate if verification is present
-	if seal.IsVerified() {
-		seal.Activate()
-	}
-
-	// Store the seal
-	if err := k.Keeper.CreateSeal(ctx, seal); err != nil {
-		return nil, err
-	}
-
-	return &types.MsgCreateSealResponse{
-		SealId: seal.Id,
-	}, nil
+	// Digital Seals are consensus-derived state. Accepting caller-supplied TEE
+	// attestations or ZK proofs here would let an ordinary signed account mint
+	// an apparently verified seal without passing the PoUW verification path.
+	//
+	// Keep the protobuf method for wire compatibility, but fail closed. The
+	// PoUW keeper creates seals internally only after verified validator
+	// results reach consensus.
+	return nil, fmt.Errorf("direct seal creation is disabled; seals are created from verified PoUW consensus")
 }
 
 // RevokeSeal handles MsgRevokeSeal

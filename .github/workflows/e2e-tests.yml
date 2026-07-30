@@ -5,13 +5,12 @@ permissions:
 
 on:
   pull_request:
-    branches: [main, "release/**"]
   schedule:
     - cron: "0 4 * * *"
   workflow_dispatch:
 
 env:
-  GO_VERSION: "1.25.8"
+  GO_VERSION: "1.25.12"
   GOFLAGS: "-mod=mod"
 
 jobs:

@@ -414,6 +414,7 @@ func serializeHeaderForSigning(header *LightClientHeader) []byte {
 	buf = append(buf, []byte(header.ChainID)...)
 
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the header schema encodes signed consensus heights as two's-complement BE64.
 	binary.BigEndian.PutUint64(heightBytes, uint64(header.Height))
 	buf = append(buf, heightBytes...)
 
@@ -445,7 +446,7 @@ func BuildLightClientHeader(
 		NextValidatorsHash: nextValidatorsHash,
 		AppHash:            sha256.Sum256([]byte(fmt.Sprintf("app_state_%d", ctx.BlockHeight()))),
 		ComputeResultsRoot: GenerateComputeResultsRoot(computeResults),
-		SignedPower:         signedPower,
-		TotalPower:          totalPower,
+		SignedPower:        signedPower,
+		TotalPower:         totalPower,
 	}
 }

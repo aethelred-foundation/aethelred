@@ -48,7 +48,8 @@ type NitroEnclaveService struct {
 	attestationBreaker *circuitbreaker.Breaker
 
 	// HTTP client for remote executor/verifier calls
-	remoteClient *http.Client
+	remoteClient    *http.Client
+	remoteClientErr error
 }
 
 // NitroConfig contains configuration for Nitro Enclave
@@ -206,19 +207,23 @@ func NewNitroEnclaveService(logger log.Logger, config NitroConfig) *NitroEnclave
 	if strings.TrimSpace(config.APIToken) == "" {
 		config.APIToken = strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN"))
 	}
+	baseClient := httpclient.NewPooledClient(httpclient.PoolConfig{
+		Timeout:             config.RequestTimeout,
+		MaxIdleConns:        50,
+		MaxIdleConnsPerHost: 10,
+		MaxConnsPerHost:     50,
+		IdleConnTimeout:     90 * time.Second,
+	})
+	secureClient, secureClientErr := httputil.NewSecureClient(baseClient)
+
 	return &NitroEnclaveService{
 		logger:             logger,
 		config:             config,
 		metrics:            &NitroMetrics{mutex: &sync.Mutex{}},
 		executorBreaker:    circuitbreaker.NewDefault("nitro_executor"),
 		attestationBreaker: circuitbreaker.NewDefault("nitro_attestation_verifier"),
-		remoteClient: httpclient.NewPooledClient(httpclient.PoolConfig{
-			Timeout:             config.RequestTimeout,
-			MaxIdleConns:        50,
-			MaxIdleConnsPerHost: 10,
-			MaxConnsPerHost:     50,
-			IdleConnTimeout:     90 * time.Second,
-		}),
+		remoteClient:       secureClient,
+		remoteClientErr:    secureClientErr,
 	}
 }
 
@@ -258,6 +263,13 @@ func (nes *NitroEnclaveService) Initialize(ctx context.Context) error {
 
 // Execute runs a model in the Nitro Enclave
 func (nes *NitroEnclaveService) Execute(ctx context.Context, req *EnclaveExecutionRequest) (*EnclaveExecutionResult, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("enclave execution context cannot be nil")
+	}
+	if err := validateEnclaveExecutionRequest(req); err != nil {
+		return nil, err
+	}
+
 	startTime := time.Now()
 
 	nes.enclaveMutex.RLock()
@@ -350,11 +362,35 @@ func (nes *NitroEnclaveService) simulateEnclaveExecution(req *EnclaveExecutionRe
 	output := map[string]interface{}{
 		"probability": 0.85,
 		"confidence":  0.92,
-		"model_hash":  fmt.Sprintf("%x", req.ModelHash[:8]),
+		"model_hash":  shortHashHex(req.ModelHash),
 	}
 	outputData, _ := json.Marshal(output)
 
 	return outputData, outputHash[:], nil
+}
+
+func validateEnclaveExecutionRequest(req *EnclaveExecutionRequest) error {
+	if req == nil {
+		return fmt.Errorf("enclave execution request cannot be nil")
+	}
+	if len(req.ModelHash) != sha256.Size {
+		return fmt.Errorf("model hash must be exactly %d bytes, got %d", sha256.Size, len(req.ModelHash))
+	}
+	if len(req.InputHash) != sha256.Size {
+		return fmt.Errorf("input hash must be exactly %d bytes, got %d", sha256.Size, len(req.InputHash))
+	}
+	if len(req.InputData) == 0 {
+		return fmt.Errorf("input data cannot be empty")
+	}
+	return nil
+}
+
+func shortHashHex(hash []byte) string {
+	const logPrefixBytes = 8
+	if len(hash) > logPrefixBytes {
+		hash = hash[:logPrefixBytes]
+	}
+	return fmt.Sprintf("%x", hash)
 }
 
 // generateAttestation generates a Nitro attestation document
@@ -497,10 +533,12 @@ func VerifySimulatedNitroAttestation(doc *NitroAttestationDocument, key []byte) 
 func simulatedNitroAttestationPayload(doc *NitroAttestationDocument) []byte {
 	var buf bytes.Buffer
 	writeString := func(v string) {
+		// #nosec G115 -- simulated documents are locally generated and request-size bounded.
 		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
 		buf.WriteString(v)
 	}
 	writeBytes := func(v []byte) {
+		// #nosec G115 -- simulated documents are locally generated and request-size bounded.
 		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
 		buf.Write(v)
 	}
@@ -514,8 +552,10 @@ func simulatedNitroAttestationPayload(doc *NitroAttestationDocument) []byte {
 		pcrIndexes = append(pcrIndexes, idx)
 	}
 	sort.Ints(pcrIndexes)
+	// #nosec G115 -- Nitro exposes a fixed, protocol-bounded PCR register set.
 	_ = binary.Write(&buf, binary.BigEndian, uint32(len(pcrIndexes)))
 	for _, idx := range pcrIndexes {
+		// #nosec G115 -- Nitro PCR indices are canonical small non-negative register numbers.
 		_ = binary.Write(&buf, binary.BigEndian, int32(idx))
 		writeBytes(doc.PCRs[idx])
 	}
@@ -533,6 +573,9 @@ func simulatedNitroAttestationPayload(doc *NitroAttestationDocument) []byte {
 func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *EnclaveExecutionRequest) (*EnclaveExecutionResult, error) {
 	if nes.executorBreaker != nil && !nes.executorBreaker.Allow() {
 		return nil, fmt.Errorf("nitro executor circuit open")
+	}
+	if nes.remoteClientErr != nil {
+		return nil, fmt.Errorf("secure Nitro executor HTTP client unavailable: %w", nes.remoteClientErr)
 	}
 
 	endpoint := strings.TrimRight(nes.config.ExecutorEndpoint, "/") + "/execute"
@@ -599,6 +642,9 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Context, doc *NitroAttestationDocument) (bool, error) {
 	if nes.attestationBreaker != nil && !nes.attestationBreaker.Allow() {
 		return false, fmt.Errorf("nitro attestation verifier circuit open")
+	}
+	if nes.remoteClientErr != nil {
+		return false, fmt.Errorf("secure Nitro attestation HTTP client unavailable: %w", nes.remoteClientErr)
 	}
 
 	endpoint := strings.TrimRight(nes.config.AttestationVerifierEndpoint, "/") + "/verify"

@@ -182,6 +182,7 @@ func buildSimulatedZKProofBytes(proof *types.ZKMLProof, vk *types.VerifyingKey, 
 	seedMaterial = append(seedMaterial, proof.CircuitHash...)
 
 	sizeBytes := make([]byte, 4)
+	// #nosec G115 -- size is selected from fixed positive simulated-proof sizes.
 	binary.BigEndian.PutUint32(sizeBytes, uint32(size))
 	seedMaterial = append(seedMaterial, sizeBytes...)
 

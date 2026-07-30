@@ -25,9 +25,23 @@ contract MockAggregatorV3 {
     ) external {
         _roundId += 1;
         _answer = answer_;
-        _startedAt = block.timestamp;
+        _startedAt = updatedAt_;
         _updatedAt = updatedAt_;
         _answeredInRound = _roundId;
+    }
+
+    function setRoundDataWithMetadata(
+        uint80 roundId_,
+        int256 answer_,
+        uint256 startedAt_,
+        uint256 updatedAt_,
+        uint80 answeredInRound_
+    ) external {
+        _roundId = roundId_;
+        _answer = answer_;
+        _startedAt = startedAt_;
+        _updatedAt = updatedAt_;
+        _answeredInRound = answeredInRound_;
     }
 
     function latestRoundData()
@@ -50,4 +64,3 @@ contract MockAggregatorV3 {
         );
     }
 }
-

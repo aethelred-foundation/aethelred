@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25.8'
+          go-version: '1.25.12'
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.85.0'
@@ -72,26 +72,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Run opportunistic test smoke checks
+      - name: Run required root test smoke checks
         shell: bash
         run: |
           set -euo pipefail
           # Go (root module only)
           if [[ -f go.mod ]]; then
-            go test ./... || true
+            go test ./...
           fi
           # Rust (root crate only)
           if [[ -f Cargo.toml ]]; then
-            cargo test --lib || true
+            cargo test --lib
           fi
           # Node (root package only)
           if [[ -f package.json ]]; then
-            npm install --no-fund --no-audit || true
-            npm test --if-present || true
+            npm ci --no-fund --no-audit
+            npm test --if-present
           fi
           # Python (root project only)
           if [[ -f pyproject.toml ]]; then
-            python -m pip install --upgrade pip || true
-            python -m pip install pytest || true
-            pytest -q || true
+            python -m pip install --upgrade pip
+            python -m pip install pytest
+            pytest -q
           fi

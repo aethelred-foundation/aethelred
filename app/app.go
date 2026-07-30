@@ -50,9 +50,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensuskeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -103,6 +100,12 @@ const (
 	AccountAddressPrefix = "aethel"
 	// BondDenom is the staking token denomination
 	BondDenom = "uaethel"
+
+	// Keep the retired Cosmos x/crisis KV store mounted for database
+	// compatibility. The vulnerable module, message routes, genesis handlers,
+	// and params wiring are removed; this inert key preserves the existing
+	// multistore layout during a binary-only upgrade.
+	legacyCosmosCrisisStoreKey = "crisis"
 )
 
 var (
@@ -122,7 +125,6 @@ var (
 			paramsclient.ProposalHandler,
 		}),
 		params.AppModuleBasic{},
-		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		feegrantmodule.AppModuleBasic{},
 		authzmodule.AppModuleBasic{},
@@ -170,13 +172,16 @@ type AethelredApp struct {
 	MintKeeper            mintkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             govkeeper.Keeper
-	CrisisKeeper          *crisiskeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
 	ParamsKeeper          paramskeeper.Keeper
 	AuthzKeeper           authzkeeper.Keeper
 	EvidenceKeeper        evidencekeeper.Keeper
 	FeeGrantKeeper        feegrantkeeper.Keeper
 	ConsensusParamsKeeper consensuskeeper.Keeper
+
+	// consensusValidatorResolver defaults to StakingKeeper in production and
+	// exists as a narrow seam for deterministic ABCI evidence tests.
+	consensusValidatorResolver consensusValidatorResolver
 
 	// keepers - Aethelred custom modules
 	SealKeeper            sealkeeper.Keeper
@@ -192,6 +197,10 @@ type AethelredApp struct {
 	// orchestrator coordinates zkML and TEE verification services.
 	// Created during initVerificationPipeline().
 	orchestrator *verify.VerificationOrchestrator
+
+	// inputResolver retrieves and authenticates committed job inputs for the
+	// validator-local ExtendVote execution path.
+	inputResolver verificationInputResolver
 
 	// consensusHandler manages Proof-of-Useful-Work consensus logic.
 	// It holds the JobVerifier (OrchestratorBridge) that delegates to
@@ -277,10 +286,10 @@ func New(
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 	bApp.SetTxEncoder(txConfig.TxEncoder())
 
-	// Use safe PQC initialization with graceful degradation (AS-16 compliance)
-	if err := SafeInitPQCMode(logger, appOpts); err != nil {
-		logger.Error("PQC initialization returned error, continuing with classical crypto", "error", err)
-	}
+	// Production builds default to the real CIRCL backend and fail startup if
+	// it is unavailable or its power-on self-tests fail. Development builds
+	// retain the explicitly simulated/disabled defaults.
+	initializePQCModeOrPanic(logger, appOpts)
 
 	// Initialize store keys
 	keys := storetypes.NewKVStoreKeys(
@@ -296,7 +305,7 @@ func New(
 		feegrant.StoreKey,
 		evidencetypes.StoreKey,
 		authzkeeper.StoreKey,
-		crisistypes.StoreKey,
+		legacyCosmosCrisisStoreKey,
 		// Aethelred custom module store keys
 		sealtypes.StoreKey,
 		pouwtypes.StoreKey,
@@ -360,6 +369,10 @@ func New(
 	// Initialize TEE client (required for production verification)
 	app.initTEEClient(appOpts)
 
+	// Initialize the bounded, SSRF-resistant job input resolver used only by
+	// validator-local ExtendVote execution.
+	app.initVerificationInputResolver()
+
 	// Build the full verification pipeline:
 	// VerificationOrchestrator → OrchestratorBridge → ConsensusHandler
 	app.initVerificationPipeline()
@@ -386,6 +399,7 @@ func New(
 
 	// Initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -479,6 +493,50 @@ func (app *AethelredApp) initStandardKeepers(
 		app.StakingKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
+
+	// Distribution and slashing must observe every validator lifecycle
+	// transition.
+	app.StakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			app.DistrKeeper.Hooks(),
+			app.SlashingKeeper.Hooks(),
+		),
+	)
+
+	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[feegrant.StoreKey]),
+		app.AccountKeeper,
+	).SetBankKeeper(app.BankKeeper)
+	app.AuthzKeeper = authzkeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[authzkeeper.StoreKey]),
+		appCodec,
+		app.MsgServiceRouter(),
+		app.AccountKeeper,
+	).SetBankKeeper(app.BankKeeper)
+
+	govKeeper := govkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[govtypes.StoreKey]),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
+		app.DistrKeeper,
+		app.MsgServiceRouter(),
+		govtypes.DefaultConfig(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+	app.GovKeeper = *govKeeper.SetHooks(govtypes.NewMultiGovHooks())
+
+	evidenceKeeper := evidencekeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[evidencetypes.StoreKey]),
+		app.StakingKeeper,
+		app.SlashingKeeper,
+		app.AccountKeeper.AddressCodec(),
+		runtime.ProvideCometInfoService(),
+	)
+	app.EvidenceKeeper = *evidenceKeeper
 }
 
 // initAethelredKeepers initializes Aethelred custom module keepers
@@ -605,6 +663,11 @@ func (app *AethelredApp) setupModuleManager() {
 		mint.NewAppModule(app.appCodec, app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
 		distr.NewAppModule(app.appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
 		slashing.NewAppModule(app.appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
+		gov.NewAppModule(app.appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
+		evidence.NewAppModule(app.EvidenceKeeper),
+		authzmodule.NewAppModule(app.appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		feegrantmodule.NewAppModule(app.appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
+		upgrade.NewAppModule(app.UpgradeKeeper, authcodec.NewBech32Codec(AccountAddressPrefix)),
 		params.NewAppModule(app.ParamsKeeper),
 		consensus.NewAppModule(app.appCodec, app.ConsensusParamsKeeper),
 		// Aethelred custom modules
@@ -614,9 +677,10 @@ func (app *AethelredApp) setupModuleManager() {
 		ibcmodule.NewAppModule(app.appCodec, app.IBCKeeper),
 	)
 
+	app.ModuleManager.SetOrderPreBlockers(upgradetypes.ModuleName)
+
 	// Set order of module operations
 	app.ModuleManager.SetOrderBeginBlockers(
-		upgradetypes.ModuleName,
 		minttypes.ModuleName,
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
@@ -625,7 +689,6 @@ func (app *AethelredApp) setupModuleManager() {
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		govtypes.ModuleName,
-		crisistypes.ModuleName,
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		feegrant.ModuleName,
@@ -639,9 +702,9 @@ func (app *AethelredApp) setupModuleManager() {
 	)
 
 	app.ModuleManager.SetOrderEndBlockers(
-		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
+		feegrant.ModuleName,
 		// Aethelred modules - process compute jobs at end of block
 		pouwtypes.ModuleName,
 		sealtypes.ModuleName,
@@ -657,7 +720,6 @@ func (app *AethelredApp) setupModuleManager() {
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
-		crisistypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		authz.ModuleName,
@@ -710,12 +772,13 @@ func (app *AethelredApp) BeginBlocker(ctx sdk.Context) (resp sdk.BeginBlock, err
 func (app *AethelredApp) EndBlocker(ctx sdk.Context) (resp sdk.EndBlock, err error) {
 	defer app.recoverABCI("EndBlocker", &err)
 
+	if err := app.schedulePoUWJobsEndBlock(ctx); err != nil {
+		return resp, err
+	}
 	resp, err = app.ModuleManager.EndBlock(ctx)
 	if err != nil {
 		return resp, err
 	}
-
-	app.processEndBlockEvidence(ctx)
 
 	return resp, nil
 }
@@ -810,7 +873,6 @@ func initParamsKeeper(
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName)
-	paramsKeeper.Subspace(crisistypes.ModuleName)
 	// Aethelred custom modules
 	paramsKeeper.Subspace(sealtypes.ModuleName)
 	paramsKeeper.Subspace(pouwtypes.ModuleName)

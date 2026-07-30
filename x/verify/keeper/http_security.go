@@ -1,11 +1,10 @@
 package keeper
 
 import (
+	"crypto/tls"
 	"io"
 	"net/http"
 	"time"
-
-	"crypto/tls"
 
 	"github.com/aethelred/aethelred/internal/httpclient"
 	"github.com/aethelred/aethelred/x/verify/httputil"
@@ -23,9 +22,9 @@ const (
 )
 
 // secureHTTPClient creates an HTTP client with proper security configuration.
-// SECURITY: Prevents DoS attacks via hanging connections and large responses.
-func secureHTTPClient() *http.Client {
-	return httpclient.NewPooledClient(httpclient.PoolConfig{
+// SECURITY: Prevents DoS attacks and pins validated DNS answers at dial time.
+func secureHTTPClient() (*http.Client, error) {
+	base := httpclient.NewPooledClient(httpclient.PoolConfig{
 		Timeout:             httpClientTimeout,
 		MaxIdleConns:        maxIdleConns,
 		MaxIdleConnsPerHost: maxIdleConns,
@@ -33,6 +32,7 @@ func secureHTTPClient() *http.Client {
 		TLSHandshakeTimeout: 10 * time.Second,
 		MinTLSVersion:       tls.VersionTLS12,
 	})
+	return httputil.NewSecureClient(base)
 }
 
 // secureHTTPClientProvider is a test seam for remote verifier HTTP calls.

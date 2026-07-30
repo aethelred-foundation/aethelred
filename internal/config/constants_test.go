@@ -157,11 +157,20 @@ func TestDefaultJobLimits(t *testing.T) {
 func TestDefaultCryptoParams(t *testing.T) {
 	t.Parallel()
 	cp := DefaultCryptoParams()
+	// These values are the exact final FIPS 204 encodings exposed by CIRCL's
+	// mldsa65 and mldsa87 implementations. Keeping every supported parameter
+	// set here catches accidental drift back to round-3 Dilithium sizes.
 	if cp.Dilithium3PubKeySize != 1952 {
-		t.Errorf("expected 1952, got %d", cp.Dilithium3PubKeySize)
+		t.Errorf("expected ML-DSA-65 public key size 1952, got %d", cp.Dilithium3PubKeySize)
 	}
-	if cp.Dilithium3SigSize != 3293 {
-		t.Errorf("expected 3293, got %d", cp.Dilithium3SigSize)
+	if cp.Dilithium3SigSize != 3309 {
+		t.Errorf("expected ML-DSA-65 signature size 3309, got %d", cp.Dilithium3SigSize)
+	}
+	if cp.Dilithium5PubKeySize != 2592 {
+		t.Errorf("expected ML-DSA-87 public key size 2592, got %d", cp.Dilithium5PubKeySize)
+	}
+	if cp.Dilithium5SigSize != 4627 {
+		t.Errorf("expected ML-DSA-87 signature size 4627, got %d", cp.Dilithium5SigSize)
 	}
 	if cp.ECDSASecp256k1PubKeySize != 33 {
 		t.Errorf("expected 33, got %d", cp.ECDSASecp256k1PubKeySize)

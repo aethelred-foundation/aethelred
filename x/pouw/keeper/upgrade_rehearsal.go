@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -243,23 +244,26 @@ func CaptureStateSnapshot(ctx sdk.Context, k Keeper) StateSnapshot {
 
 // StateSnapshotDiff describes the differences between two snapshots.
 type StateSnapshotDiff struct {
-	JobsDelta       int64
-	PendingDelta    int
-	ValidatorDelta  int
-	ModelDelta      int
-	ParamsChanged   bool
-	InvariantStatus string // "stable", "improved", "degraded"
-	HasChanges      bool
+	JobsDelta         int64
+	JobsDeltaOverflow bool
+	PendingDelta      int
+	ValidatorDelta    int
+	ModelDelta        int
+	ParamsChanged     bool
+	InvariantStatus   string // "stable", "improved", "degraded"
+	HasChanges        bool
 }
 
 // CompareSnapshots computes the diff between two state snapshots.
 func CompareSnapshots(before, after StateSnapshot) StateSnapshotDiff {
+	jobsDelta, jobsDeltaOverflow := signedUint64Delta(after.TotalJobs, before.TotalJobs)
 	diff := StateSnapshotDiff{
-		JobsDelta:      int64(after.TotalJobs) - int64(before.TotalJobs),
-		PendingDelta:   after.PendingJobCount - before.PendingJobCount,
-		ValidatorDelta: after.TotalValidators - before.TotalValidators,
-		ModelDelta:     after.TotalModels - before.TotalModels,
-		ParamsChanged:  before.ParamsHash != after.ParamsHash,
+		JobsDelta:         jobsDelta,
+		JobsDeltaOverflow: jobsDeltaOverflow,
+		PendingDelta:      after.PendingJobCount - before.PendingJobCount,
+		ValidatorDelta:    after.TotalValidators - before.TotalValidators,
+		ModelDelta:        after.TotalModels - before.TotalModels,
+		ParamsChanged:     before.ParamsHash != after.ParamsHash,
 	}
 
 	if before.InvariantsPass && after.InvariantsPass {
@@ -272,10 +276,35 @@ func CompareSnapshots(before, after StateSnapshot) StateSnapshotDiff {
 		diff.InvariantStatus = "broken"
 	}
 
-	diff.HasChanges = diff.JobsDelta != 0 || diff.PendingDelta != 0 ||
+	diff.HasChanges = diff.JobsDelta != 0 || diff.JobsDeltaOverflow || diff.PendingDelta != 0 ||
 		diff.ValidatorDelta != 0 || diff.ModelDelta != 0 || diff.ParamsChanged
 
 	return diff
+}
+
+// signedUint64Delta returns after-before as an int64. If the mathematical
+// difference cannot be represented, it saturates and reports overflow so a
+// rehearsal cannot silently report the wrong direction or magnitude.
+func signedUint64Delta(after, before uint64) (int64, bool) {
+	if after >= before {
+		delta := after - before
+		if delta > uint64(math.MaxInt64) {
+			return math.MaxInt64, true
+		}
+		// #nosec G115 -- delta is bounded by math.MaxInt64 above.
+		return int64(delta), false
+	}
+
+	delta := before - after
+	const minInt64Magnitude = uint64(math.MaxInt64) + 1
+	if delta > minInt64Magnitude {
+		return math.MinInt64, true
+	}
+	if delta == minInt64Magnitude {
+		return math.MinInt64, false
+	}
+	// #nosec G115 -- delta is strictly below the absolute value of math.MinInt64.
+	return -int64(delta), false
 }
 
 // ---------------------------------------------------------------------------
@@ -618,7 +647,11 @@ func RenderRehearsalReport(r *UpgradeRehearsalResult) string {
 	}
 
 	sb.WriteString("\n─── STATE DIFF ────────────────────────────────────────────────\n")
-	sb.WriteString(fmt.Sprintf("  Jobs:       %+d\n", r.StateDiff.JobsDelta))
+	jobsOverflow := ""
+	if r.StateDiff.JobsDeltaOverflow {
+		jobsOverflow = " (overflow; saturated)"
+	}
+	sb.WriteString(fmt.Sprintf("  Jobs:       %+d%s\n", r.StateDiff.JobsDelta, jobsOverflow))
 	sb.WriteString(fmt.Sprintf("  Pending:    %+d\n", r.StateDiff.PendingDelta))
 	sb.WriteString(fmt.Sprintf("  Validators: %+d\n", r.StateDiff.ValidatorDelta))
 	sb.WriteString(fmt.Sprintf("  Models:     %+d\n", r.StateDiff.ModelDelta))

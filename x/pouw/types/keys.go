@@ -78,6 +78,12 @@ var (
 
 	// TrustedMeasurementRevocationKeyPrefix stores persisted emergency revocation request state.
 	TrustedMeasurementRevocationKeyPrefix = []byte{0x10}
+
+	// LastFinalizedBlockKey stores the height and CometBFT hash of the most
+	// recently finalized block. The next height uses it to bind compact vote
+	// evidence to the block that was actually decided, rather than merely to
+	// any proposal a validator may have signed at that height.
+	LastFinalizedBlockKey = []byte{0x11}
 )
 
 // JobKey returns the store key for a job with the given ID

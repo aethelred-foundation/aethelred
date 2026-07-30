@@ -5,8 +5,8 @@
 //
 // Build with: go build -tags=pqc_circl
 //
-// Without the build tag, this file provides stub implementations that delegate
-// to the simulated implementation while warning about production use.
+// Without the build tag, simulated mode remains available for tests, while
+// production and hybrid modes fail closed.
 package pqc
 
 import (
@@ -55,13 +55,7 @@ func InitCircl() error {
 // IsCirclAvailable returns true if circl library is properly integrated.
 // This is determined at build time based on the pqc_circl tag.
 func IsCirclAvailable() bool {
-	// This will be overridden by circl_production.go when built with pqc_circl tag
 	return circlAvailableImpl()
-}
-
-// circlAvailableImpl is the default implementation (no circl)
-func circlAvailableImpl() bool {
-	return false
 }
 
 func pqcRequiresCircl(mode PQCMode) bool {
@@ -92,8 +86,8 @@ type CirclDilithiumKeyPair struct {
 }
 
 // GenerateCirclDilithiumKeyPair generates a new Dilithium key pair.
-// If circl is available and mode is Production, uses real lattice cryptography.
-// Otherwise, falls back to the simulated implementation with a warning.
+// Production and hybrid modes require the tagged circl backend. Simulated mode
+// uses the deterministic test-only implementation.
 func GenerateCirclDilithiumKeyPair(level int) (*CirclDilithiumKeyPair, error) {
 	mode := GetPQCMode()
 
@@ -118,13 +112,6 @@ func GenerateCirclDilithiumKeyPair(level int) (*CirclDilithiumKeyPair, error) {
 	}, nil
 }
 
-// generateCirclDilithiumReal generates a real Dilithium key pair using circl.
-// This is overridden by circl_production.go when built with pqc_circl tag.
-func generateCirclDilithiumReal(level int) (*CirclDilithiumKeyPair, error) {
-	// Default stub - will be replaced by actual circl implementation
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
-}
-
 // Sign creates a Dilithium signature over the message.
 func (kp *CirclDilithiumKeyPair) Sign(message []byte) (*DilithiumSignature, error) {
 	if kp.useCircl {
@@ -144,14 +131,12 @@ func (kp *CirclDilithiumKeyPair) Sign(message []byte) (*DilithiumSignature, erro
 	return simKP.Sign(message)
 }
 
-// signCirclDilithiumReal signs using real circl Dilithium.
-// This is overridden by circl_production.go when built with pqc_circl tag.
-func signCirclDilithiumReal(kp *CirclDilithiumKeyPair, message []byte) (*DilithiumSignature, error) {
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
-}
-
 // VerifyCirclDilithium verifies a Dilithium signature.
 func VerifyCirclDilithium(publicKey []byte, message []byte, sig *DilithiumSignature) (bool, error) {
+	if sig == nil {
+		return false, errors.New("Dilithium signature is nil")
+	}
+
 	mode := GetPQCMode()
 
 	if pqcRequiresCircl(mode) {
@@ -163,12 +148,6 @@ func VerifyCirclDilithium(publicKey []byte, message []byte, sig *DilithiumSignat
 
 	// Fall back to simulated verification
 	return VerifyDilithium(publicKey, message, sig)
-}
-
-// verifyCirclDilithiumReal verifies using real circl Dilithium.
-// This is overridden by circl_production.go when built with pqc_circl tag.
-func verifyCirclDilithiumReal(publicKey []byte, message []byte, sig *DilithiumSignature) (bool, error) {
-	return false, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
 }
 
 // =============================================================================
@@ -215,11 +194,6 @@ func GenerateCirclKyberKeyPair(level int) (*CirclKyberKeyPair, error) {
 	}, nil
 }
 
-// generateCirclKyberReal generates a real Kyber key pair using circl.
-func generateCirclKyberReal(level int) (*CirclKyberKeyPair, error) {
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
-}
-
 // Encapsulate performs key encapsulation using the recipient's public key.
 // Returns the shared secret and ciphertext.
 func (kp *CirclKyberKeyPair) Encapsulate(recipientPublicKey []byte) (sharedSecret []byte, ciphertext *KyberCiphertext, err error) {
@@ -233,11 +207,6 @@ func (kp *CirclKyberKeyPair) Encapsulate(recipientPublicKey []byte) (sharedSecre
 
 	// Fall back to simulated implementation
 	return Encapsulate(kp.Level, recipientPublicKey)
-}
-
-// encapsulateCirclKyberReal performs real encapsulation using circl.
-func encapsulateCirclKyberReal(level int, publicKey []byte) ([]byte, *KyberCiphertext, error) {
-	return nil, nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
 }
 
 // Decapsulate recovers the shared secret from a ciphertext.
@@ -257,11 +226,6 @@ func (kp *CirclKyberKeyPair) Decapsulate(ciphertext *KyberCiphertext) ([]byte, e
 		PrivateKey: kp.PrivateKey,
 	}
 	return simKP.Decapsulate(ciphertext)
-}
-
-// decapsulateCirclKyberReal performs real decapsulation using circl.
-func decapsulateCirclKyberReal(kp *CirclKyberKeyPair, ciphertext *KyberCiphertext) ([]byte, error) {
-	return nil, errors.New("circl library not available - build with -tags=pqc_circl for real PQC")
 }
 
 // =============================================================================

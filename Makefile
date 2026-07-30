@@ -19,6 +19,9 @@ BUILD_DIR = ./build
 GO = go
 # Rust uses a top-level vendor/ directory; force module mode for Go commands.
 GOFLAGS ?= -mod=mod
+# Release and deployment binaries must include both production hardening and
+# the real CIRCL-backed PQC implementation.
+PRODUCTION_GO_TAGS := production,pqc_circl
 GOCACHE ?= $(CURDIR)/.cache/go-build
 LDFLAGS = -s -w -X github.com/aethelred/aethelred/app.Version=$(VERSION)
 
@@ -34,7 +37,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical release-preflight fuzz-check
+.PHONY: all build install clean test test-pqc-production lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -54,13 +57,13 @@ build:
 	@echo "Building $(BINARY_NAME) $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(GOCACHE)
-	GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/aethelredd
+	GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -tags "$(PRODUCTION_GO_TAGS)" -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/aethelredd
 
 ## install: Install aethelredd to GOPATH/bin
 install:
 	@echo "Installing $(BINARY_NAME)..."
 	@mkdir -p $(GOCACHE)
-	GOCACHE=$(GOCACHE) $(GO) install $(GOFLAGS) -ldflags "$(LDFLAGS)" ./cmd/aethelredd
+	GOCACHE=$(GOCACHE) $(GO) install $(GOFLAGS) -tags "$(PRODUCTION_GO_TAGS)" -ldflags "$(LDFLAGS)" ./cmd/aethelredd
 
 ## clean: Remove build artifacts
 clean:
@@ -73,6 +76,14 @@ test:
 	@echo "Running tests..."
 	@mkdir -p $(GOCACHE)
 	GOCACHE=$(GOCACHE) $(GO) test $(GOFLAGS) -v ./...
+
+## test-pqc-production: Test production PQC wiring and compile the production node
+test-pqc-production:
+	@echo "Testing CIRCL-backed PQC, production defaults, and FIPS 204 sizes..."
+	@mkdir -p $(GOCACHE)
+	GOCACHE=$(GOCACHE) $(GO) test $(GOFLAGS) -count=1 -tags "$(PRODUCTION_GO_TAGS)" ./crypto/pqc/... ./internal/config
+	GOCACHE=$(GOCACHE) $(GO) test $(GOFLAGS) -count=1 -tags "$(PRODUCTION_GO_TAGS)" -run PQC ./app
+	GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -tags "$(PRODUCTION_GO_TAGS)" -o /dev/null ./cmd/aethelredd
 
 ## test-unit: Run unit tests
 test-unit:
@@ -203,7 +214,7 @@ audit-signoff-check:
 		--require-signed-report
 
 ## release-preflight: Run all pre-release validation checks
-release-preflight: audit-signoff-check coverage-critical sdk-version-check openapi-validate
+release-preflight: audit-signoff-check coverage-critical sdk-version-check openapi-validate test-pqc-production
 	@echo "All release preflight checks passed"
 
 ## docker-build: Build Docker image

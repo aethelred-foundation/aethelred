@@ -51,37 +51,37 @@ type EnclaveIdentity struct {
 
 // SGXReport contains an SGX hardware report
 type SGXReport struct {
-	CPUSVn         [16]byte
-	MiscSelect     uint32
-	Reserved1      [28]byte
-	Attributes     EnclaveAttributes
-	MREnclave      [MREnclaveSize]byte
-	Reserved2      [32]byte
-	MRSigner       [MRSignerSize]byte
-	Reserved3      [96]byte
-	ISVProdID      uint16
-	ISVSvn         uint16
-	Reserved4      [60]byte
-	ReportData     [ReportDataSize]byte
-	KeyID          [32]byte
-	MAC            [16]byte
+	CPUSVn     [16]byte
+	MiscSelect uint32
+	Reserved1  [28]byte
+	Attributes EnclaveAttributes
+	MREnclave  [MREnclaveSize]byte
+	Reserved2  [32]byte
+	MRSigner   [MRSignerSize]byte
+	Reserved3  [96]byte
+	ISVProdID  uint16
+	ISVSvn     uint16
+	Reserved4  [60]byte
+	ReportData [ReportDataSize]byte
+	KeyID      [32]byte
+	MAC        [16]byte
 }
 
 // SGXQuote contains an ECDSA attestation quote
 type SGXQuote struct {
-	Version           uint16
-	SignType          uint16
+	Version            uint16
+	SignType           uint16
 	AttestationKeyType uint16
-	Reserved          uint16
-	QEVenderID        uint16
-	UserData          [20]byte
-	ISVSvn            uint16
-	PCESvn            uint16
-	QEVendorID        [16]byte
-	QEVendorData      [20]byte
-	ReportBody        SGXReport
-	SignatureLength   uint32
-	Signature         []byte
+	Reserved           uint16
+	QEVenderID         uint16
+	UserData           [20]byte
+	ISVSvn             uint16
+	PCESvn             uint16
+	QEVendorID         [16]byte
+	QEVendorData       [20]byte
+	ReportBody         SGXReport
+	SignatureLength    uint32
+	Signature          []byte
 }
 
 // AttestationResult contains the result of attestation verification
@@ -115,12 +115,12 @@ type SGXEnclave struct {
 
 // ExecutionEntry logs an enclave execution
 type ExecutionEntry struct {
-	Timestamp   time.Time
-	Operation   string
-	InputHash   [32]byte
-	OutputHash  [32]byte
-	GasUsed     uint64
-	Success     bool
+	Timestamp  time.Time
+	Operation  string
+	InputHash  [32]byte
+	OutputHash [32]byte
+	GasUsed    uint64
+	Success    bool
 }
 
 // EnclaveConfig configures an SGX enclave
@@ -278,8 +278,8 @@ func (e *SGXEnclave) GetQuote(reportData [ReportDataSize]byte) (*SGXQuote, error
 
 	// Simulate quote generation
 	quote := &SGXQuote{
-		Version:           3,
-		SignType:          2, // ECDSA_P256
+		Version:            3,
+		SignType:           2, // ECDSA_P256
 		AttestationKeyType: 2,
 	}
 
@@ -310,6 +310,9 @@ func (e *SGXEnclave) SealData(label string, data []byte) ([]byte, error) {
 	if !e.initialized {
 		return nil, errors.New("enclave not initialized")
 	}
+	if int64(len(data)) > int64(^uint32(0)) {
+		return nil, fmt.Errorf("seal data too large: %d bytes exceeds uint32 wire limit", len(data))
+	}
 
 	// In production, this would:
 	// 1. Derive sealing key using EGETKEY
@@ -319,6 +322,7 @@ func (e *SGXEnclave) SealData(label string, data []byte) ([]byte, error) {
 	// Simulate sealing
 	sealed := make([]byte, len(data)+48) // Data + header + MAC
 	copy(sealed[:32], e.identity.MREnclave[:])
+	// #nosec G115 -- len(data) is explicitly bounded to the uint32 wire limit above.
 	binary.LittleEndian.PutUint32(sealed[32:36], uint32(len(data)))
 	copy(sealed[48:], data)
 
@@ -426,8 +430,8 @@ type SGXQuoteVerifier struct {
 // NewSGXQuoteVerifier creates a new quote verifier
 func NewSGXQuoteVerifier() *SGXQuoteVerifier {
 	return &SGXQuoteVerifier{
-		trustedEnclaves: make(map[[MREnclaveSize]byte]bool),
-		trustedSigners:  make(map[[MRSignerSize]byte]bool),
+		trustedEnclaves:    make(map[[MREnclaveSize]byte]bool),
+		trustedSigners:     make(map[[MRSignerSize]byte]bool),
 		minSecurityVersion: 0,
 	}
 }

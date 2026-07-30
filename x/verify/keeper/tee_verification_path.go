@@ -335,6 +335,9 @@ func buildSimulatedAttestationQuote(attestation *types.TEEAttestation, simulatio
 	if len(rawQuoteBody) == 0 {
 		return nil, fmt.Errorf("simulated attestation quote body cannot be empty")
 	}
+	if int64(len(rawQuoteBody)) > int64(^uint32(0)) {
+		return nil, fmt.Errorf("simulated attestation quote body exceeds uint32 wire limit")
+	}
 
 	macBytes := computeSimulatedAttestationMAC(attestation, rawQuoteBody, simulationVerifierKey)
 	quote := make([]byte, 0, simulatedTEEQuoteHeaderLen+len(rawQuoteBody))
@@ -342,6 +345,7 @@ func buildSimulatedAttestationQuote(attestation *types.TEEAttestation, simulatio
 	quote = append(quote, simulatedTEEQuoteVersion)
 
 	var lenBuf [4]byte
+	// #nosec G115 -- rawQuoteBody is explicitly bounded to uint32 above.
 	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(rawQuoteBody)))
 	quote = append(quote, lenBuf[:]...)
 	quote = append(quote, macBytes...)
@@ -358,6 +362,7 @@ func computeSimulatedAttestationMAC(attestation *types.TEEAttestation, rawQuoteB
 
 func canonicalSimulatedAttestationInput(attestation *types.TEEAttestation, rawQuoteBody []byte) []byte {
 	var out []byte
+	// #nosec G115 -- Platform is a validated non-negative protobuf enum.
 	out = appendUvarintField(out, uint64(attestation.Platform))
 	out = appendLengthPrefixedField(out, []byte(attestation.EnclaveId))
 	out = appendLengthPrefixedField(out, attestation.Measurement)
@@ -378,6 +383,7 @@ func canonicalSimulatedAttestationInput(attestation *types.TEEAttestation, rawQu
 
 func appendLengthPrefixedField(dst, field []byte) []byte {
 	var lenBuf [4]byte
+	// #nosec G115 -- attestation fields are bounded by the module request/quote limits.
 	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(field)))
 	dst = append(dst, lenBuf[:]...)
 	dst = append(dst, field...)

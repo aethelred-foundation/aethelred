@@ -625,8 +625,9 @@ contract BridgeFuzzTest is Test {
         amount1 = bound(amount1, 0.01 ether, 10 ether);
         amount2 = bound(amount2, 0.01 ether, 10 ether);
 
-        // Fund bridge
-        vm.deal(address(bridge), 100 ether);
+        // Fund through the production deposit path so locked-balance
+        // accounting matches the bridge's actual ETH balance.
+        _fundBridge(100 ether);
 
         bytes32 proposalId1 = keccak256(abi.encode("p1", burnTxHash));
         bytes32 proposalId2 = keccak256(abi.encode("p2", burnTxHash));
@@ -699,12 +700,17 @@ contract BridgeFuzzTest is Test {
 
     function testFuzz_withdrawalRateLimitEnforced(uint256 numWithdrawals) public {
         numWithdrawals = bound(numWithdrawals, 1, 12);
-        vm.deal(address(bridge), 2000 ether);
+        _fundBridge(120 ether);
 
+        vm.prank(admin);
+        bridge.updateRateLimitConfig(1000 ether, 50 ether, true);
         (, uint256 maxPerPeriod,) = bridge.rateLimitConfig();
         uint256 totalWithdrawn = 0;
         uint256 withdrawAmount = 9.99 ether; // Under mint ceiling
 
+        // Approve every proposal before advancing time. Processing them after
+        // a single warp keeps all withdrawals in the same hourly rate-limit
+        // window while rolling blocks resets only the per-block mint ceiling.
         for (uint256 i = 0; i < numWithdrawals; i++) {
             bytes32 proposalId = keccak256(abi.encode("wp", i));
             bytes32 burnTxHash = keccak256(abi.encode("bt", i));
@@ -722,10 +728,12 @@ contract BridgeFuzzTest is Test {
             bridge.voteWithdrawal(proposalId);
             vm.prank(relayer4);
             bridge.voteWithdrawal(proposalId);
+        }
 
-            // Warp past challenge period
-            vm.warp(block.timestamp + 7 days + 1);
-            // Advance block so mint ceiling resets
+        vm.warp(block.timestamp + 7 days + 1);
+
+        for (uint256 i = 0; i < numWithdrawals; i++) {
+            bytes32 proposalId = keccak256(abi.encode("wp", i));
             vm.roll(block.number + 1);
 
             if (totalWithdrawn + withdrawAmount > maxPerPeriod) {
@@ -749,7 +757,7 @@ contract BridgeFuzzTest is Test {
     function testFuzz_mintCeilingPerBlock(uint256 amount1, uint256 amount2) public {
         amount1 = bound(amount1, 0.01 ether, 10 ether);
         amount2 = bound(amount2, 0.01 ether, 10 ether);
-        vm.deal(address(bridge), 100 ether);
+        _fundBridge(100 ether);
 
         uint256 ceiling = bridge.mintCeilingPerBlock(); // 10 ETH
 
@@ -824,7 +832,7 @@ contract BridgeFuzzTest is Test {
 
     function testFuzz_emergencyRequiresGuardianQuorum(uint256 amount) public {
         amount = bound(amount, 0.01 ether, 50 ether);
-        vm.deal(address(bridge), 100 ether);
+        _fundBridge(100 ether);
 
         vm.prank(admin);
         bytes32 opId = bridge.queueEmergencyWithdrawal(
@@ -891,6 +899,10 @@ contract BridgeFuzzTest is Test {
     // =========================================================================
 
     function testFuzz_depositAmountBounds(uint256 amount) public {
+        // Keep this property focused on the 0.01-100 ETH single-deposit
+        // bounds. Values above the independent 1000 ETH hourly rate limit
+        // correctly fail in the outer rate-limit modifier first.
+        amount = bound(amount, 0, 200 ether);
         vm.deal(user1, amount);
         vm.prank(user1);
 
@@ -922,6 +934,22 @@ contract BridgeFuzzTest is Test {
     // =========================================================================
     // HELPERS
     // =========================================================================
+
+    function _fundBridge(uint256 amount) internal {
+        uint256 remaining = amount;
+        uint256 fundingNonce = 0;
+
+        while (remaining > 0) {
+            uint256 chunk = remaining > 100 ether ? 100 ether : remaining;
+            vm.deal(user1, chunk);
+            vm.prank(user1);
+            bridge.depositETH{value: chunk}(
+                keccak256(abi.encode("fuzz-funding", fundingNonce))
+            );
+            remaining -= chunk;
+            fundingNonce++;
+        }
+    }
 
     function _createApprovedProposal(
         bytes32 proposalId,

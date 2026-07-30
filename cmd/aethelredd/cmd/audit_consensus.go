@@ -3,11 +3,16 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	aethelredapp "github.com/aethelred/aethelred/app"
 	"github.com/spf13/cobra"
 )
+
+const maxConsensusEvidenceRequestSize int64 = 16 << 20
 
 func auditCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -38,7 +43,7 @@ The request file must be JSON with:
 				return fmt.Errorf("--request-file is required")
 			}
 
-			payload, err := os.ReadFile(requestFile)
+			payload, err := readConsensusEvidenceRequest(requestFile)
 			if err != nil {
 				return fmt.Errorf("read request file: %w", err)
 			}
@@ -71,4 +76,44 @@ The request file must be JSON with:
 	cmd.Flags().StringVar(&requestFile, "request-file", "", "Path to JSON request payload")
 	cmd.Flags().BoolVar(&pretty, "pretty", true, "Pretty-print JSON output")
 	return cmd
+}
+
+func readConsensusEvidenceRequest(path string) ([]byte, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, fmt.Errorf("request path is required")
+	}
+	absolutePath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("resolve request path: %w", err)
+	}
+
+	// #nosec G304 -- --request-file is an explicit local operator input,
+	// canonicalized and verified as a bounded regular file after opening.
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	info, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("request path must be a regular file")
+	}
+	if info.Size() > maxConsensusEvidenceRequestSize {
+		return nil, fmt.Errorf("request file exceeds %d bytes", maxConsensusEvidenceRequestSize)
+	}
+
+	payload, err := io.ReadAll(io.LimitReader(file, maxConsensusEvidenceRequestSize+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(payload)) > maxConsensusEvidenceRequestSize {
+		return nil, fmt.Errorf("request file exceeds %d bytes", maxConsensusEvidenceRequestSize)
+	}
+	return payload, nil
 }

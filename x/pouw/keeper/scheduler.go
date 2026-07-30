@@ -1135,7 +1135,8 @@ func (s *JobScheduler) GetNextJobs(ctx context.Context, blockHeight int64) []*ty
 				continue
 			}
 
-			if err := scheduledJob.Job.MarkProcessing(); err != nil {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+			if err := scheduledJob.Job.MarkProcessingAt(sdkCtx.BlockTime()); err != nil {
 				// State machine rejected the transition - skip this job
 				s.logger.Warn("Failed to transition job to Processing",
 					"job_id", scheduledJob.Job.Id,
@@ -1338,7 +1339,11 @@ func (s *JobScheduler) markJobFailed(ctx context.Context, jobID string, errorMsg
 		if scheduledJob.index >= 0 && scheduledJob.index < s.jobQueue.Len() {
 			heap.Remove(s.jobQueue, scheduledJob.index)
 		}
-		_ = scheduledJob.Job.MarkFailed() // state machine: Processing → Failed
+		if sdkCtx, ok := unwrapSDKContext(ctx); ok {
+			_ = scheduledJob.Job.MarkFailedAt(sdkCtx.BlockTime())
+		} else {
+			_ = scheduledJob.Job.MarkFailed()
+		}
 
 		s.persistSchedulingMetadata(ctx, scheduledJob)
 
@@ -1349,7 +1354,11 @@ func (s *JobScheduler) markJobFailed(ctx context.Context, jobID string, errorMsg
 		)
 	} else {
 		// Reset to pending for retry (state machine: Processing → Pending)
-		_ = scheduledJob.Job.RequeueForRetry()
+		if sdkCtx, ok := unwrapSDKContext(ctx); ok {
+			_ = scheduledJob.Job.RequeueForRetryAt(sdkCtx.BlockTime())
+		} else {
+			_ = scheduledJob.Job.RequeueForRetry()
+		}
 		// Boost priority for retried jobs
 		scheduledJob.EffectivePriority += 10
 
@@ -1527,7 +1536,11 @@ func (s *JobScheduler) removeExpiredJobs(ctx context.Context, currentBlock int64
 			heap.Remove(s.jobQueue, scheduledJob.index)
 		}
 
-		_ = scheduledJob.Job.MarkExpired() // state machine: Pending → Expired
+		if sdkCtx, ok := unwrapSDKContext(ctx); ok {
+			_ = scheduledJob.Job.MarkExpiredAt(sdkCtx.BlockTime())
+		} else {
+			_ = scheduledJob.Job.MarkExpired()
+		}
 		s.persistSchedulingMetadata(ctx, scheduledJob)
 
 		s.logger.Info("Job expired", "job_id", id)
@@ -1603,7 +1616,11 @@ func (pq JobPriorityQueue) Less(i, j int) bool {
 		return pq[i].EffectivePriority > pq[j].EffectivePriority
 	}
 	// Earlier submission comes first (FIFO for same priority)
-	return pq[i].SubmittedBlock < pq[j].SubmittedBlock
+	if pq[i].SubmittedBlock != pq[j].SubmittedBlock {
+		return pq[i].SubmittedBlock < pq[j].SubmittedBlock
+	}
+	// Consensus-safe final tie-breaker.
+	return pq[i].Job.Id < pq[j].Job.Id
 }
 
 func (pq JobPriorityQueue) Swap(i, j int) {

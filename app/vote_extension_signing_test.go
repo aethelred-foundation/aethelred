@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
+	"math"
 	"testing"
 	"time"
 
@@ -246,11 +247,41 @@ func TestSerializeSignatureData_Deterministic(t *testing.T) {
 		Nonce:            []byte("test-nonce"),
 	}
 
-	bytes1 := serializeSignatureData(data)
-	bytes2 := serializeSignatureData(data)
+	bytes1, err := serializeSignatureData(data)
+	if err != nil {
+		t.Fatalf("serializeSignatureData failed: %v", err)
+	}
+	bytes2, err := serializeSignatureData(data)
+	if err != nil {
+		t.Fatalf("serializeSignatureData failed: %v", err)
+	}
 
 	if !bytes.Equal(bytes1, bytes2) {
 		t.Error("Expected serialization to be deterministic")
+	}
+}
+
+func TestSignatureSerializationRejectsOversizedLengthPrefixes(t *testing.T) {
+	oversized := make([]byte, math.MaxUint16+1)
+
+	data := &VoteExtensionSignatureData{
+		Version:          1,
+		ChainID:          string(oversized),
+		ValidatorAddress: []byte("validator"),
+		Timestamp:        time.Unix(1, 0),
+	}
+	if _, err := serializeSignatureData(data); err == nil {
+		t.Fatal("expected oversized chain ID to be rejected")
+	}
+
+	sig := &VoteExtensionSignature{
+		Version:   1,
+		Signature: oversized,
+		PublicKey: make([]byte, ed25519.PublicKeySize),
+		Timestamp: time.Unix(1, 0),
+	}
+	if _, err := marshalSignature(sig); err == nil {
+		t.Fatal("expected oversized signature to be rejected")
 	}
 }
 

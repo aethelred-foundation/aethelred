@@ -83,20 +83,21 @@ contract SovereignCircuitBreakerModule is ISovereignCircuitBreaker, Ownable {
         uint256 projectedSupply18 = _normalizeTo18(projectedSupply, tokenDecimals);
 
         (
-            ,
+            uint80 roundId,
             int256 reserveBalance,
-            ,
+            uint256 startedAt,
             uint256 updatedAt,
+            uint80 answeredInRound
         ) = IReserveOracle(reserveOracle).latestRoundData();
-        if (reserveBalance <= 0) {
-            isPaused = true;
-            emit AnomalyDetected(projectedSupply18, 0, BPS_DENOMINATOR);
-            emit MintingPaused(msg.sender, block.timestamp);
-            return;
-        }
         if (
-            updatedAt == 0 ||
-            block.timestamp > updatedAt + MAX_ORACLE_STALENESS_SECONDS
+            reserveBalance <= 0 || roundId == 0 || startedAt == 0
+                || updatedAt == 0 || startedAt > updatedAt
+                || updatedAt > block.timestamp
+                || answeredInRound < roundId
+                || (
+                    block.timestamp > updatedAt
+                        && block.timestamp - updatedAt > MAX_ORACLE_STALENESS_SECONDS
+                )
         ) {
             isPaused = true;
             emit AnomalyDetected(projectedSupply18, 0, BPS_DENOMINATOR);

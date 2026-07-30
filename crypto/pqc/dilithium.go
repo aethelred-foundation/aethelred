@@ -18,22 +18,22 @@ const (
 	DilithiumLevel5 = 5 // 256-bit classical, 128-bit quantum
 )
 
-// Dilithium key and signature sizes
+// ML-DSA key and signature sizes from the final FIPS 204 standard.
 const (
-	// Dilithium3 (recommended for Aethelred)
+	// ML-DSA-65 (formerly Dilithium3; recommended for Aethelred)
 	Dilithium3PublicKeySize  = 1952
-	Dilithium3PrivateKeySize = 4000
-	Dilithium3SignatureSize  = 3293
+	Dilithium3PrivateKeySize = 4032
+	Dilithium3SignatureSize  = 3309
 
-	// Dilithium2
+	// ML-DSA-44 (formerly Dilithium2)
 	Dilithium2PublicKeySize  = 1312
 	Dilithium2PrivateKeySize = 2560
 	Dilithium2SignatureSize  = 2420
 
-	// Dilithium5
+	// ML-DSA-87 (formerly Dilithium5)
 	Dilithium5PublicKeySize  = 2592
-	Dilithium5PrivateKeySize = 4864
-	Dilithium5SignatureSize  = 4595
+	Dilithium5PrivateKeySize = 4896
+	Dilithium5SignatureSize  = 4627
 )
 
 // DilithiumKeyPair represents a Dilithium key pair
@@ -278,6 +278,10 @@ func (kp *DilithiumKeyPair) Sign(message []byte) (*DilithiumSignature, error) {
 
 // Verify verifies a Dilithium signature
 func VerifyDilithium(publicKey []byte, message []byte, signature *DilithiumSignature) (bool, error) {
+	if signature == nil {
+		return false, errors.New("Dilithium signature is nil")
+	}
+
 	params, err := GetDilithiumParams(signature.Level)
 	if err != nil {
 		return false, err
@@ -335,6 +339,7 @@ func (sig *DilithiumSignature) Verify(publicKey []byte, message []byte) (bool, e
 // Serialize serializes the key pair
 func (kp *DilithiumKeyPair) Serialize() []byte {
 	data := make([]byte, 1+len(kp.PublicKey)+len(kp.PrivateKey))
+	// #nosec G115 -- supported Dilithium levels are the validated constants 2, 3, and 5.
 	data[0] = byte(kp.Level)
 	copy(data[1:1+len(kp.PublicKey)], kp.PublicKey)
 	copy(data[1+len(kp.PublicKey):], kp.PrivateKey)

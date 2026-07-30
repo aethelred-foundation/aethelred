@@ -63,9 +63,9 @@ type Parameters struct {
 	Set  ParameterSet
 
 	// Core parameters
-	Q  int32 // Modulus
-	D  int   // Dropped bits
-	N  int   // Ring degree
+	Q int32 // Modulus
+	D int   // Dropped bits
+	N int   // Ring degree
 
 	// Module dimensions
 	K int // Rows in matrix A
@@ -182,7 +182,7 @@ func GetParameters(set ParameterSet) (*Parameters, error) {
 // PublicKey represents an ML-DSA public key
 type PublicKey struct {
 	params *Parameters
-	rho    [32]byte // Public seed
+	rho    [32]byte  // Public seed
 	t1     [][]int32 // High bits of t (K polynomials)
 }
 
@@ -256,6 +256,7 @@ func GenerateKeyFromSeed(set ParameterSet, seed []byte) (*PrivateKey, error) {
 
 	// Step 3: Generate secret vectors s1, s2 from rhoPrime
 	s1 := expandS(params, rhoPrime[:], 0, params.L, params.Eta)
+	// #nosec G115 -- supported ML-DSA parameter sets have L in {4, 5, 7}.
 	s2 := expandS(params, rhoPrime[:], uint16(params.L), params.K, params.Eta)
 
 	// Step 4: Compute t = A*s1 + s2
@@ -673,11 +674,11 @@ func (pk *PublicKey) Bytes() []byte {
 			t3 := pk.t1[i][4*j+3]
 
 			// Pack 4 coefficients into 10 bytes (10 bits each)
-			buf[offset+0] = byte(t0)
-			buf[offset+1] = byte((t0 >> 8) | (t1 << 2))
-			buf[offset+2] = byte((t1 >> 6) | (t2 << 4))
-			buf[offset+3] = byte((t2 >> 4) | (t3 << 6))
-			buf[offset+4] = byte(t3 >> 2)
+			buf[offset+0] = packedByte32(t0)
+			buf[offset+1] = packedByte32((t0 >> 8) | (t1 << 2))
+			buf[offset+2] = packedByte32((t1 >> 6) | (t2 << 4))
+			buf[offset+3] = packedByte32((t2 >> 4) | (t3 << 6))
+			buf[offset+4] = packedByte32(t3 >> 2)
 			offset += 5
 		}
 	}
@@ -881,7 +882,9 @@ func polyReduce(params *Parameters, p []int32) {
 // modReduce reduces x modulo Q using Montgomery reduction
 func modReduce(x int64) int32 {
 	const Q = 8380417
+	// #nosec G115 -- Montgomery reduction deliberately takes the low 32-bit word.
 	t := int32(x * int64(qInv))
+	// #nosec G115 -- the shifted Montgomery result is defined in the int32 coefficient domain.
 	r := int32((x - int64(t)*Q) >> 32)
 	return r
 }
@@ -920,7 +923,9 @@ func power2Round(params *Parameters, r int32) (int32, int32) {
 func decompose(params *Parameters, r int32) (int32, int32) {
 	r = modQ(params, r)
 	r1 := highBits(params, r)
+	// #nosec G115 -- supported Gamma2 values are positive constants below Q and fit int32.
 	r0 := r - r1*int32(2*params.Gamma2)
+	// #nosec G115 -- supported Gamma2 values are positive constants below Q and fit int32.
 	if r0 > int32(params.Gamma2) {
 		r0 -= params.Q
 	}
@@ -930,8 +935,10 @@ func decompose(params *Parameters, r int32) (int32, int32) {
 // highBits computes HighBits(r, 2*gamma2)
 func highBits(params *Parameters, r int32) int32 {
 	r = modQ(params, r)
+	// #nosec G115 -- supported Gamma2 values are positive constants below Q and fit int32.
 	g2 := int32(2 * params.Gamma2)
 	r1 := (r + g2/2 - 1) / g2
+	// #nosec G115 -- supported Gamma2 values are positive constants below Q and fit int32.
 	if r1 > (params.Q-1)/(2*int32(params.Gamma2)) {
 		r1 = 0
 	}
@@ -1143,7 +1150,7 @@ func encodeW1(params *Parameters, w1 [][]int32) []byte {
 		maxW1 >>= 1
 	}
 
-	byteLen := (params.K * params.N * bits + 7) / 8
+	byteLen := (params.K*params.N*bits + 7) / 8
 	buf := make([]byte, byteLen)
 
 	bitPos := 0
@@ -1163,6 +1170,20 @@ func encodeW1(params *Parameters, w1 [][]int32) []byte {
 	return buf
 }
 
+// packedByte32 emits the low byte required by the FIPS 204 coefficient
+// bit-packing layouts. Callers supply shifted/combined coefficient words.
+func packedByte32(value int32) byte {
+	// #nosec G115 -- truncation to the low eight bits is the FIPS 204 wire format.
+	return byte(value)
+}
+
+// packedByteInt emits the low byte required by the FIPS 204 parameter and
+// hint bit-packing layouts.
+func packedByteInt(value int) byte {
+	// #nosec G115 -- truncation to the low eight bits is the FIPS 204 wire format.
+	return byte(value)
+}
+
 // encodeEta encodes a polynomial with eta-bounded coefficients
 func encodeEta(params *Parameters, buf []byte, poly []int32) int {
 	if params.Eta == 2 {
@@ -1175,7 +1196,8 @@ func encodeEta(params *Parameters, buf []byte, poly []int32) int {
 		return params.N * 3 / 8
 	} else if params.Eta == 4 {
 		for i := 0; i < params.N/2; i++ {
-			buf[i] = byte(params.Eta-int(poly[2*i])) | (byte(params.Eta-int(poly[2*i+1])) << 4)
+			buf[i] = packedByteInt(params.Eta-int(poly[2*i])) |
+				(packedByteInt(params.Eta-int(poly[2*i+1])) << 4)
 		}
 		return params.N / 2
 	}
@@ -1190,19 +1212,19 @@ func encodeT0(params *Parameters, buf []byte, poly []int32) int {
 			t[j] = (1 << (params.D - 1)) - poly[8*i+j]
 		}
 
-		buf[13*i+0] = byte(t[0])
-		buf[13*i+1] = byte(t[0]>>8) | byte(t[1]<<5)
-		buf[13*i+2] = byte(t[1] >> 3)
-		buf[13*i+3] = byte(t[1]>>11) | byte(t[2]<<2)
-		buf[13*i+4] = byte(t[2]>>6) | byte(t[3]<<7)
-		buf[13*i+5] = byte(t[3] >> 1)
-		buf[13*i+6] = byte(t[3]>>9) | byte(t[4]<<4)
-		buf[13*i+7] = byte(t[4] >> 4)
-		buf[13*i+8] = byte(t[4]>>12) | byte(t[5]<<1)
-		buf[13*i+9] = byte(t[5]>>7) | byte(t[6]<<6)
-		buf[13*i+10] = byte(t[6] >> 2)
-		buf[13*i+11] = byte(t[6]>>10) | byte(t[7]<<3)
-		buf[13*i+12] = byte(t[7] >> 5)
+		buf[13*i+0] = packedByte32(t[0])
+		buf[13*i+1] = packedByte32(t[0]>>8) | packedByte32(t[1]<<5)
+		buf[13*i+2] = packedByte32(t[1] >> 3)
+		buf[13*i+3] = packedByte32(t[1]>>11) | packedByte32(t[2]<<2)
+		buf[13*i+4] = packedByte32(t[2]>>6) | packedByte32(t[3]<<7)
+		buf[13*i+5] = packedByte32(t[3] >> 1)
+		buf[13*i+6] = packedByte32(t[3]>>9) | packedByte32(t[4]<<4)
+		buf[13*i+7] = packedByte32(t[4] >> 4)
+		buf[13*i+8] = packedByte32(t[4]>>12) | packedByte32(t[5]<<1)
+		buf[13*i+9] = packedByte32(t[5]>>7) | packedByte32(t[6]<<6)
+		buf[13*i+10] = packedByte32(t[6] >> 2)
+		buf[13*i+11] = packedByte32(t[6]>>10) | packedByte32(t[7]<<3)
+		buf[13*i+12] = packedByte32(t[7] >> 5)
 	}
 
 	return params.N * 13 / 8
@@ -1222,27 +1244,29 @@ func packSignature(params *Parameters, cTilde []byte, z [][]int32, h [][]int32) 
 			for j := 0; j < params.N/4; j++ {
 				t := make([]int32, 4)
 				for k := 0; k < 4; k++ {
+					// #nosec G115 -- supported Gamma1 constants fit in int32.
 					t[k] = int32(params.Gamma1) - z[i][4*j+k]
 				}
-				sig[offset+0] = byte(t[0])
-				sig[offset+1] = byte(t[0]>>8) | byte(t[1]<<2)
-				sig[offset+2] = byte(t[1]>>6) | byte(t[2]<<4)
-				sig[offset+3] = byte(t[2]>>4) | byte(t[3]<<6)
-				sig[offset+4] = byte(t[3] >> 2)
+				sig[offset+0] = packedByte32(t[0])
+				sig[offset+1] = packedByte32(t[0]>>8) | packedByte32(t[1]<<2)
+				sig[offset+2] = packedByte32(t[1]>>6) | packedByte32(t[2]<<4)
+				sig[offset+3] = packedByte32(t[2]>>4) | packedByte32(t[3]<<6)
+				sig[offset+4] = packedByte32(t[3] >> 2)
 				offset += 5
 			}
 		} else {
 			for j := 0; j < params.N/4; j++ {
 				t := make([]int32, 4)
 				for k := 0; k < 4; k++ {
+					// #nosec G115 -- supported Gamma1 constants fit in int32.
 					t[k] = int32(params.Gamma1) - z[i][4*j+k]
 				}
-				sig[offset+0] = byte(t[0])
-				sig[offset+1] = byte(t[0]>>8) | byte(t[1]<<4)
-				sig[offset+2] = byte(t[1] >> 4)
-				sig[offset+3] = byte(t[2])
-				sig[offset+4] = byte(t[2]>>8) | byte(t[3]<<4)
-				sig[offset+5] = byte(t[3] >> 4)
+				sig[offset+0] = packedByte32(t[0])
+				sig[offset+1] = packedByte32(t[0]>>8) | packedByte32(t[1]<<4)
+				sig[offset+2] = packedByte32(t[1] >> 4)
+				sig[offset+3] = packedByte32(t[2])
+				sig[offset+4] = packedByte32(t[2]>>8) | packedByte32(t[3]<<4)
+				sig[offset+5] = packedByte32(t[3] >> 4)
 				offset += 6
 			}
 		}
@@ -1257,7 +1281,7 @@ func packSignature(params *Parameters, cTilde []byte, z [][]int32, h [][]int32) 
 				offset++
 			}
 		}
-		sig[hintOffset+params.Omega+i] = byte(offset - hintOffset - params.Omega - i)
+		sig[hintOffset+params.Omega+i] = packedByteInt(offset - hintOffset - params.Omega - i)
 	}
 
 	return sig
@@ -1287,6 +1311,7 @@ func unpackSignature(params *Parameters, sig []byte) ([]byte, [][]int32, [][]int
 				z[i][4*j+3] = int32(sig[offset+3]>>6) | (int32(sig[offset+4]) << 2)
 
 				for k := 0; k < 4; k++ {
+					// #nosec G115 -- supported Gamma1 constants fit in int32.
 					z[i][4*j+k] = int32(params.Gamma1) - z[i][4*j+k]
 				}
 				offset += 5
@@ -1299,6 +1324,7 @@ func unpackSignature(params *Parameters, sig []byte) ([]byte, [][]int32, [][]int
 				z[i][4*j+3] = int32(sig[offset+4]>>4) | (int32(sig[offset+5]) << 4)
 
 				for k := 0; k < 4; k++ {
+					// #nosec G115 -- supported Gamma1 constants fit in int32.
 					z[i][4*j+k] = int32(params.Gamma1) - z[i][4*j+k]
 				}
 				offset += 6
@@ -1346,13 +1372,13 @@ func abs(x int32) int {
 
 // KATVector represents a Known Answer Test vector
 type KATVector struct {
-	Name      string
-	Set       ParameterSet
-	Seed      []byte
-	Message   []byte
-	PKHash    [32]byte // SHA-256 of public key
-	SKHash    [32]byte // SHA-256 of private key
-	SigHash   [32]byte // SHA-256 of signature
+	Name    string
+	Set     ParameterSet
+	Seed    []byte
+	Message []byte
+	PKHash  [32]byte // SHA-256 of public key
+	SKHash  [32]byte // SHA-256 of private key
+	SigHash [32]byte // SHA-256 of signature
 }
 
 // GetKATVectors returns the FIPS 204 Known Answer Test vectors

@@ -38,7 +38,7 @@
 //! │   │                    AETHELRED TEE ENCLAVE (Intel SGX / AWS Nitro)                 │  │
 //! │   │                                                                                  │  │
 //! │   │   ┌──────────────────────────────────────────────────────────────────────────┐  │  │
-//! │   │   │                         Med42 LLM Inference                               │  │  │
+//! │   │   │                    Clinical Model Inference                               │  │  │
 //! │   │   │                                                                           │  │  │
 //! │   │   │   Input: [Genome Markers] + [Drug Structure]                             │  │  │
 //! │   │   │   Output: Efficacy Score (0-100%)                                        │  │  │
@@ -844,12 +844,12 @@ pub struct ModelConfig {
 }
 
 impl ModelConfig {
-    /// Med42 clinical LLM (M42's flagship model)
-    pub fn med42_clinical() -> Self {
+    /// Clinical research language model
+    pub fn clinical_research_model() -> Self {
         let model_hash = {
             use sha2::{Digest, Sha256};
             let mut hasher = Sha256::new();
-            hasher.update(b"med42-70b-clinical-v2.0");
+            hasher.update(b"clinical-research-70b-v2.0");
             let result = hasher.finalize();
             let mut hash = Hash::default();
             hash.0.copy_from_slice(&result);
@@ -857,9 +857,9 @@ impl ModelConfig {
         };
 
         Self {
-            model_id: "med42-70b-clinical".to_string(),
+            model_id: "clinical-research-70b".to_string(),
             version: "2.0.0".to_string(),
-            model_type: ModelType::ClinicalLlm,
+            model_type: ModelType::ClinicalLanguageModel,
             model_hash,
             gpu_requirement: Some(GpuRequirement::NvidiaH100),
         }
@@ -870,7 +870,7 @@ impl ModelConfig {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ModelType {
     /// Large language model for clinical use
-    ClinicalLlm,
+    ClinicalLanguageModel,
     /// Genomic sequence model
     GenomicSequence,
     /// Drug-target interaction model
@@ -1429,9 +1429,9 @@ mod tests {
     }
 
     #[test]
-    fn test_med42_config() {
-        let config = ModelConfig::med42_clinical();
-        assert_eq!(config.model_id, "med42-70b-clinical");
+    fn test_clinical_research_model_config() {
+        let config = ModelConfig::clinical_research_model();
+        assert_eq!(config.model_id, "clinical-research-70b");
         assert_eq!(config.gpu_requirement, Some(GpuRequirement::NvidiaH100));
     }
 

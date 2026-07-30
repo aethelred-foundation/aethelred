@@ -14,10 +14,16 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	verifytee "github.com/aethelred/aethelred/x/verify/tee"
 )
 
 // VoteExtensionVersion is the current version of the vote extension format
 const VoteExtensionVersion = 1
+
+// ComputeVerificationSignatureVersion identifies the canonical compact
+// verification-signature schema embedded in seal quorum certificates.
+const ComputeVerificationSignatureVersion = 1
 
 const (
 	voteExtensionDefaultMaxPastSkew   = 10 * time.Minute
@@ -42,6 +48,10 @@ type VoteExtension struct {
 
 	// Height at which this extension was created
 	Height int64 `json:"height"`
+
+	// ChainID prevents signed verification evidence from being replayed on a
+	// different Aethelred network.
+	ChainID string `json:"chain_id"`
 
 	// ValidatorAddress of the validator submitting this extension
 	ValidatorAddress []byte `json:"validator_address"`
@@ -99,6 +109,24 @@ type ComputeVerification struct {
 
 	// Nonce to prevent replay attacks
 	Nonce []byte `json:"nonce"`
+
+	// ValidatorSignatureVersion pins the compact signature encoding so a future
+	// vote-extension schema upgrade cannot reinterpret historical evidence.
+	ValidatorSignatureVersion int32 `json:"validator_signature_version,omitempty"`
+
+	// VoteBlockHash binds this independent validator attestation to the exact
+	// proposal block the validator verified at Height.
+	VoteBlockHash []byte `json:"vote_block_hash,omitempty"`
+
+	// ExtensionNonce is copied from the containing vote extension and prevents
+	// otherwise-identical attestations from sharing signing bytes.
+	ExtensionNonce []byte `json:"extension_nonce,omitempty"`
+
+	// ValidatorSignature is an independently verifiable signature over this
+	// verification and its consensus domain. Keeping the signature at the
+	// verification grain lets a seal carry compact, restart-safe evidence
+	// without duplicating the validator's entire vote extension.
+	ValidatorSignature []byte `json:"validator_signature,omitempty"`
 }
 
 // AttestationType represents the type of attestation used
@@ -150,6 +178,10 @@ type TEEAttestationData struct {
 
 	// Nonce used in attestation generation
 	Nonce []byte `json:"nonce"`
+
+	// Signature is the hardware-attestation signature, distinct from the
+	// validator's signature over the outer vote extension.
+	Signature []byte `json:"signature,omitempty"`
 
 	// BlockHeight anchors this attestation to a specific consensus height.
 	// When present, the verifier checks that UserData commits to this height.
@@ -226,6 +258,7 @@ func (ve *VoteExtension) ComputeHash() []byte {
 
 	writeLenBytes := func(b []byte) {
 		lenBytes := make([]byte, 4)
+		// #nosec G115 -- fields are inside a vote extension capped at MaxVoteExtensionSizeBytes.
 		binary.BigEndian.PutUint32(lenBytes, uint32(len(b)))
 		h.Write(lenBytes)
 		if len(b) > 0 {
@@ -242,6 +275,7 @@ func (ve *VoteExtension) ComputeHash() []byte {
 	}
 	writeInt64 := func(v int64) {
 		buf := make([]byte, 8)
+		// #nosec G115 -- the hash schema intentionally encodes signed values as two's-complement BE64.
 		binary.BigEndian.PutUint64(buf, uint64(v))
 		h.Write(buf)
 	}
@@ -251,13 +285,17 @@ func (ve *VoteExtension) ComputeHash() []byte {
 
 	// Version (fixed 4 bytes)
 	versionBytes := make([]byte, 4)
+	// #nosec G115 -- validated vote-extension versions are non-negative protocol constants.
 	binary.BigEndian.PutUint32(versionBytes, uint32(ve.Version))
 	h.Write(versionBytes)
 
 	// Height (fixed 8 bytes)
 	heightBytes := make([]byte, 8)
+	// #nosec G115 -- the hash schema intentionally encodes signed consensus height as BE64.
 	binary.BigEndian.PutUint64(heightBytes, uint64(ve.Height))
 	h.Write(heightBytes)
+
+	writeString(ve.ChainID)
 
 	// Validator address (length-prefixed)
 	writeLenBytes(ve.ValidatorAddress)
@@ -270,6 +308,7 @@ func (ve *VoteExtension) ComputeHash() []byte {
 
 	// Number of verifications (fixed 4 bytes)
 	numVerifications := make([]byte, 4)
+	// #nosec G115 -- the verification list is bounded by MaxVoteExtensionSizeBytes.
 	binary.BigEndian.PutUint32(numVerifications, uint32(len(ve.Verifications)))
 	h.Write(numVerifications)
 
@@ -285,6 +324,13 @@ func (ve *VoteExtension) ComputeHash() []byte {
 		writeString(string(v.ErrorCode))
 		writeString(v.ErrorMessage)
 		writeLenBytes(v.Nonce)
+		signatureVersion := make([]byte, 4)
+		// #nosec G115 -- signature versions are validated non-negative protocol constants.
+		binary.BigEndian.PutUint32(signatureVersion, uint32(v.ValidatorSignatureVersion))
+		h.Write(signatureVersion)
+		writeLenBytes(v.VoteBlockHash)
+		writeLenBytes(v.ExtensionNonce)
+		writeLenBytes(v.ValidatorSignature)
 
 		if v.TEEAttestation == nil {
 			writeBool(false)
@@ -297,10 +343,12 @@ func (ve *VoteExtension) ComputeHash() []byte {
 			writeLenBytes(v.TEEAttestation.UserData)
 			writeInt64(v.TEEAttestation.Timestamp.UnixNano())
 			writeLenBytes(v.TEEAttestation.Nonce)
+			writeLenBytes(v.TEEAttestation.Signature)
 			// Attestation timestamp binding fields
 			writeInt64(v.TEEAttestation.BlockHeight)
 			writeString(v.TEEAttestation.ChainID)
 			chainLen := make([]byte, 4)
+			// #nosec G115 -- the certificate chain is part of a size-capped vote extension.
 			binary.BigEndian.PutUint32(chainLen, uint32(len(v.TEEAttestation.CertificateChain)))
 			h.Write(chainLen)
 			for _, cert := range v.TEEAttestation.CertificateChain {
@@ -322,6 +370,164 @@ func (ve *VoteExtension) ComputeHash() []byte {
 	}
 
 	return h.Sum(nil)
+}
+
+// computeVerificationSignatureHash returns the domain-separated digest signed
+// for one compute verification. It uses a dedicated, versioned length-prefixed
+// encoding so vote-extension schema changes cannot reinterpret stored quorum
+// certificates.
+func computeVerificationSignatureHash(
+	verification ComputeVerification,
+	height int64,
+	chainID string,
+	validatorAddress []byte,
+	timestamp time.Time,
+) []byte {
+	verification.ValidatorSignature = nil
+	h := sha256.New()
+	writeLenBytes := func(value []byte) {
+		length := make([]byte, 4)
+		// #nosec G115 -- all fields are bounded by MaxVoteExtensionSizeBytes.
+		binary.BigEndian.PutUint32(length, uint32(len(value)))
+		h.Write(length)
+		h.Write(value)
+	}
+	writeString := func(value string) { writeLenBytes([]byte(value)) }
+	writeInt64 := func(value int64) {
+		encoded := make([]byte, 8)
+		// #nosec G115 -- signed protocol values are intentionally encoded as two's-complement.
+		binary.BigEndian.PutUint64(encoded, uint64(value))
+		h.Write(encoded)
+	}
+	writeBool := func(value bool) {
+		if value {
+			h.Write([]byte{1})
+		} else {
+			h.Write([]byte{0})
+		}
+	}
+
+	h.Write([]byte("aethelred_compute_verification_signature_v1:"))
+	version := make([]byte, 4)
+	// #nosec G115 -- signature versions are validated non-negative protocol constants.
+	binary.BigEndian.PutUint32(version, uint32(verification.ValidatorSignatureVersion))
+	h.Write(version)
+	writeInt64(height)
+	writeString(chainID)
+	writeLenBytes(validatorAddress)
+	writeInt64(timestamp.UTC().UnixNano())
+	writeLenBytes(verification.VoteBlockHash)
+	writeLenBytes(verification.ExtensionNonce)
+
+	writeString(verification.JobID)
+	writeLenBytes(verification.ModelHash)
+	writeLenBytes(verification.InputHash)
+	writeLenBytes(verification.OutputHash)
+	writeString(string(verification.AttestationType))
+	writeInt64(verification.ExecutionTimeMs)
+	writeBool(verification.Success)
+	writeString(string(verification.ErrorCode))
+	writeString(verification.ErrorMessage)
+	writeLenBytes(verification.Nonce)
+
+	if verification.TEEAttestation == nil {
+		writeBool(false)
+	} else {
+		writeBool(true)
+		attestation := verification.TEEAttestation
+		writeString(attestation.Platform)
+		writeString(attestation.EnclaveID)
+		writeLenBytes(attestation.Measurement)
+		writeLenBytes(attestation.Quote)
+		writeLenBytes(attestation.UserData)
+		writeInt64(attestation.Timestamp.UTC().UnixNano())
+		writeLenBytes(attestation.Nonce)
+		writeLenBytes(attestation.Signature)
+		writeInt64(attestation.BlockHeight)
+		writeString(attestation.ChainID)
+		certificateCount := make([]byte, 4)
+		// #nosec G115 -- certificate chains are vote-extension size bounded.
+		binary.BigEndian.PutUint32(certificateCount, uint32(len(attestation.CertificateChain)))
+		h.Write(certificateCount)
+		for _, certificate := range attestation.CertificateChain {
+			writeLenBytes(certificate)
+		}
+	}
+
+	if verification.ZKProof == nil {
+		writeBool(false)
+	} else {
+		writeBool(true)
+		proof := verification.ZKProof
+		writeString(proof.ProofSystem)
+		writeLenBytes(proof.Proof)
+		writeLenBytes(proof.PublicInputs)
+		writeLenBytes(proof.VerifyingKeyHash)
+		writeLenBytes(proof.CircuitHash)
+		writeInt64(proof.ProofSize)
+	}
+
+	return h.Sum(nil)
+}
+
+func signComputeVerification(
+	verification *ComputeVerification,
+	height int64,
+	chainID string,
+	validatorAddress []byte,
+	timestamp time.Time,
+	privateKey ed25519.PrivateKey,
+) error {
+	if verification == nil {
+		return fmt.Errorf("compute verification is nil")
+	}
+	if verification.ValidatorSignatureVersion != ComputeVerificationSignatureVersion {
+		return fmt.Errorf(
+			"unsupported compute verification signature version: %d",
+			verification.ValidatorSignatureVersion,
+		)
+	}
+	if len(privateKey) != ed25519.PrivateKeySize {
+		return fmt.Errorf("invalid validator private key length: %d", len(privateKey))
+	}
+	verification.ValidatorSignature = ed25519.Sign(
+		privateKey,
+		computeVerificationSignatureHash(
+			*verification,
+			height,
+			chainID,
+			validatorAddress,
+			timestamp,
+		),
+	)
+	return nil
+}
+
+func verifyComputeVerificationSignature(
+	verification ComputeVerification,
+	height int64,
+	chainID string,
+	validatorAddress []byte,
+	timestamp time.Time,
+	publicKey ed25519.PublicKey,
+) bool {
+	if len(publicKey) != ed25519.PublicKeySize ||
+		len(verification.ValidatorSignature) != ed25519.SignatureSize ||
+		verification.ValidatorSignatureVersion != ComputeVerificationSignatureVersion {
+		return false
+	}
+	signature := append([]byte(nil), verification.ValidatorSignature...)
+	return ed25519.Verify(
+		publicKey,
+		computeVerificationSignatureHash(
+			verification,
+			height,
+			chainID,
+			validatorAddress,
+			timestamp,
+		),
+		signature,
+	)
 }
 
 // Marshal serializes the VoteExtension to bytes
@@ -422,6 +628,9 @@ func (ve *VoteExtension) validateAtWithWindow(mode ValidationMode, now time.Time
 	if len(ve.Verifications) > MaxVerificationsPerExtension {
 		return fmt.Errorf("too many verifications: %d (max %d)", len(ve.Verifications), MaxVerificationsPerExtension)
 	}
+	if ve.Timestamp.IsZero() {
+		return fmt.Errorf("missing vote extension timestamp")
+	}
 
 	if !now.IsZero() {
 		// Timestamp should not be in the future (with some tolerance)
@@ -468,6 +677,44 @@ func (ve *VoteExtension) validateAtWithWindow(mode ValidationMode, now time.Time
 	return nil
 }
 
+func (ve *VoteExtension) validateAttestationDomain(chainID string) error {
+	if chainID == "" {
+		return fmt.Errorf("SECURITY: chain ID is required for TEE attestation validation")
+	}
+	for i := range ve.Verifications {
+		verification := &ve.Verifications[i]
+		if !verification.Success || verification.TEEAttestation == nil {
+			continue
+		}
+		attestation := verification.TEEAttestation
+		if attestation.BlockHeight != ve.Height {
+			return fmt.Errorf(
+				"verification %d TEE block height mismatch: got %d, expected %d",
+				i,
+				attestation.BlockHeight,
+				ve.Height,
+			)
+		}
+		if attestation.ChainID != chainID {
+			return fmt.Errorf(
+				"verification %d TEE chain ID mismatch: got %q, expected %q",
+				i,
+				attestation.ChainID,
+				chainID,
+			)
+		}
+		expected := verifytee.ComputeAttestationUserData(
+			verification.OutputHash,
+			ve.Height,
+			chainID,
+		)
+		if subtle.ConstantTimeCompare(attestation.UserData, expected) != 1 {
+			return fmt.Errorf("verification %d TEE user_data domain binding mismatch", i)
+		}
+	}
+	return nil
+}
+
 // Validate performs validation of a ComputeVerification including replay protection.
 // This is the permissive mode; use validate(ValidationModeStrict) for production.
 func (cv *ComputeVerification) Validate() error {
@@ -504,6 +751,9 @@ func (cv *ComputeVerification) validate(mode ValidationMode) error {
 	if cv.Success {
 		if len(cv.OutputHash) != 32 {
 			return fmt.Errorf("successful verification must have 32-byte output hash")
+		}
+		if cv.ErrorCode != ErrorCodeNone || cv.ErrorMessage != "" {
+			return fmt.Errorf("successful verification cannot contain an error")
 		}
 
 		// Execution time must be positive for successful verifications
@@ -552,6 +802,21 @@ func (cv *ComputeVerification) validate(mode ValidationMode) error {
 
 	// ── Strict mode: bind attestation/proof to output hash ──
 	if mode == ValidationModeStrict && cv.Success {
+		if cv.ValidatorSignatureVersion != ComputeVerificationSignatureVersion {
+			return fmt.Errorf(
+				"SECURITY: unsupported validator signature version %d",
+				cv.ValidatorSignatureVersion,
+			)
+		}
+		if len(cv.VoteBlockHash) != 32 {
+			return fmt.Errorf("SECURITY: vote block hash must be 32 bytes")
+		}
+		if len(cv.ExtensionNonce) != 32 {
+			return fmt.Errorf("SECURITY: extension nonce must be 32 bytes")
+		}
+		if len(cv.ValidatorSignature) != ed25519.SignatureSize {
+			return fmt.Errorf("SECURITY: compact validator signature must be 64 bytes")
+		}
 		if len(cv.OutputHash) != 32 {
 			return fmt.Errorf("SECURITY: output hash must be 32 bytes for binding checks")
 		}
@@ -571,17 +836,14 @@ func (cv *ComputeVerification) validate(mode ValidationMode) error {
 				}
 			}
 
-			// When BlockHeight or ChainID are set, UserData is
-			// SHA-256(outputHash || LE64(blockHeight) || chainID) rather
-			// than just the raw outputHash. We verify the binding.
+			// When BlockHeight or ChainID are set, UserData is the canonical
+			// domain-separated output binding rather than the raw output hash.
 			if cv.TEEAttestation.BlockHeight > 0 || cv.TEEAttestation.ChainID != "" {
-				heightBytes := make([]byte, 8)
-				binary.LittleEndian.PutUint64(heightBytes, uint64(cv.TEEAttestation.BlockHeight))
-				bindingHash := sha256.New()
-				bindingHash.Write(cv.OutputHash)
-				bindingHash.Write(heightBytes)
-				bindingHash.Write([]byte(cv.TEEAttestation.ChainID))
-				expectedUserData := bindingHash.Sum(nil)
+				expectedUserData := verifytee.ComputeAttestationUserData(
+					cv.OutputHash,
+					cv.TEEAttestation.BlockHeight,
+					cv.TEEAttestation.ChainID,
+				)
 				if subtle.ConstantTimeCompare(cv.TEEAttestation.UserData, expectedUserData) != 1 {
 					return fmt.Errorf("SECURITY: TEE user_data binding mismatch (outputHash+height+chainID)")
 				}
@@ -620,6 +882,11 @@ func (ta *TEEAttestationData) validate(mode ValidationMode) error {
 	// ── Strict mode: reject simulated TEE platform ──
 	if mode == ValidationModeStrict && isSimulatedTEEPlatform(ta.Platform) {
 		return fmt.Errorf("SECURITY: simulated TEE platform is rejected in production mode")
+	}
+	if mode == ValidationModeStrict &&
+		(ta.Platform == "aws-nitro" || ta.Platform == "nitro-simulated") &&
+		len(ta.Signature) == 0 {
+		return fmt.Errorf("SECURITY: Nitro attestation signature is required in production mode")
 	}
 
 	validPlatforms := map[string]bool{

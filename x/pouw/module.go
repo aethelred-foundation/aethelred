@@ -154,35 +154,60 @@ func (am *AppModule) BeginBlock(ctx context.Context) error {
 func (am *AppModule) EndBlock(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Expire old jobs using deterministic block-height-based expiry.
-	// DETERMINISM: Use block height (not wall-clock time) to ensure all
-	// validators agree on which jobs are expired.
-	pendingJobs := am.keeper.GetPendingJobs(ctx)
+	// Apply deterministic block-height-based timeouts before the app-level
+	// scheduler rebuilds its cache. GetOpenJobs deliberately includes overdue
+	// entries; GetPendingJobs filters them and therefore cannot drive cleanup.
+	openJobs, err := am.keeper.GetOpenJobs(sdkCtx)
+	if err != nil {
+		return err
+	}
+	params, err := am.keeper.GetParams(ctx)
+	if err != nil {
+		return fmt.Errorf("load PoUW timeout params: %w", err)
+	}
+	if params == nil || params.JobTimeoutBlocks <= 0 {
+		return fmt.Errorf("invalid PoUW job timeout parameter")
+	}
+
 	currentHeight := sdkCtx.BlockHeight()
-	for _, job := range pendingJobs {
+	for _, job := range openJobs {
 		if job == nil {
 			continue
 		}
-		if job.IsExpiredAtHeight(currentHeight) {
-			if err := job.MarkExpired(); err != nil {
-				// Log but don't halt consensus for invalid transitions
-				sdkCtx.Logger().Warn("failed to expire job",
-					"job_id", job.Id,
-					"current_status", job.Status,
-					"error", err,
-				)
-				continue
-			}
-			_ = am.keeper.UpdateJob(ctx, job)
-
-			sdkCtx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					"job_expired",
-					sdk.NewAttribute("job_id", job.Id),
-					sdk.NewAttribute("block_height", fmt.Sprintf("%d", currentHeight)),
-				),
-			)
+		if currentHeight <= job.BlockHeight ||
+			currentHeight-job.BlockHeight <= params.JobTimeoutBlocks {
+			continue
 		}
+
+		eventType := "job_expired"
+		switch job.Status {
+		case types.JobStatusPending:
+			if err := job.MarkExpiredAt(sdkCtx.BlockTime()); err != nil {
+				return fmt.Errorf("expire pending job %s: %w", job.Id, err)
+			}
+		case types.JobStatusProcessing:
+			// Processing → Expired is not a valid state-machine edge. A job
+			// that failed to reach verification finality before the governed
+			// timeout is terminally failed instead.
+			eventType = "job_timed_out"
+			if err := job.MarkFailedAt(sdkCtx.BlockTime()); err != nil {
+				return fmt.Errorf("fail timed-out processing job %s: %w", job.Id, err)
+			}
+		default:
+			return fmt.Errorf("unexpected open job status %s for %s", job.Status, job.Id)
+		}
+
+		if err := am.keeper.UpdateJob(ctx, job); err != nil {
+			return fmt.Errorf("persist timed-out job %s: %w", job.Id, err)
+		}
+
+		sdkCtx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				eventType,
+				sdk.NewAttribute("job_id", job.Id),
+				sdk.NewAttribute("block_height", fmt.Sprintf("%d", currentHeight)),
+			),
+		)
 	}
 
 	return nil

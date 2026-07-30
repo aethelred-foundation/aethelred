@@ -774,6 +774,11 @@ func (k *Keeper) Unstake(ctx context.Context, address string, shares uint64) (wi
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	blockTime := sdkCtx.BlockTime()
+	params := k.getParams(ctx)
+	unbondingDuration, err := checkedSecondsDuration(params.UnbondingPeriod, "unbonding period")
+	if err != nil {
+		return 0, 0, err
+	}
 	currentEpoch := k.getUint64(ctx, k.CurrentEpoch)
 	epochKey := strconv.FormatUint(currentEpoch, 10)
 
@@ -849,8 +854,7 @@ func (k *Keeper) Unstake(ctx context.Context, address string, shares uint64) (wi
 		return 0, 0, err
 	}
 
-	params := k.getParams(ctx)
-	completionTime := blockTime.Add(time.Duration(params.UnbondingPeriod) * time.Second)
+	completionTime := blockTime.Add(unbondingDuration)
 
 	w := &types.WithdrawalRequest{
 		ID:             withdrawalID,
@@ -957,6 +961,7 @@ func computeValidatorSetHash(epoch uint64, validators []types.ValidatorRecord) [
 	h.Write(epochBuf[:])
 
 	var countBuf [4]byte
+	// #nosec G115 -- validator-set cardinality is capped by VaultParams.MaxValidators (default 200).
 	binary.BigEndian.PutUint32(countBuf[:], uint32(len(validators)))
 	h.Write(countBuf[:])
 
@@ -1199,7 +1204,10 @@ func (k *Keeper) ApplyValidatorSelection(
 	if maxAgeSec == 0 {
 		maxAgeSec = types.DefaultTelemetryMaxAgeSec
 	}
-	eligibleResult := k.getValidatorInputs(ctx, blockTime, maxAgeSec)
+	eligibleResult, err := k.getValidatorInputs(ctx, blockTime, maxAgeSec)
+	if err != nil {
+		return fmt.Errorf("derive eligible validator set: %w", err)
+	}
 	universeHash := computeEligibleUniverseHash(eligibleResult.eligibleAddrs)
 
 	// Build expected 96-byte payload: canonicalHash || policyHash || universeHash
@@ -1377,6 +1385,7 @@ func computeAttestationDigest(att types.TEEAttestation) [32]byte {
 	h.Write([]byte{att.Platform})
 
 	var tsBuf [8]byte
+	// #nosec G115 -- the digest preserves the signed Unix timestamp as two's-complement BE64.
 	binary.BigEndian.PutUint64(tsBuf[:], uint64(att.Timestamp))
 	h.Write(tsBuf[:])
 
@@ -2536,7 +2545,10 @@ func (k *Keeper) BuildValidatorSelectionRequest(ctx context.Context) ([]byte, er
 		maxAge = types.DefaultTelemetryMaxAgeSec
 	}
 
-	result := k.getValidatorInputs(ctx, blockTime, maxAge)
+	result, err := k.getValidatorInputs(ctx, blockTime, maxAge)
+	if err != nil {
+		return nil, fmt.Errorf("derive validator inputs: %w", err)
+	}
 
 	if result.eligible == 0 {
 		return nil, fmt.Errorf(
@@ -2560,6 +2572,7 @@ func (k *Keeper) BuildValidatorSelectionRequest(ctx context.Context) ([]byte, er
 		quorumPct = types.DefaultMinTelemetryQuorumPct
 	}
 	if result.totalActive > 0 &&
+		// #nosec G115 -- both counts are non-negative and capped by VaultParams.MaxValidators.
 		uint64(result.eligible)*100 < uint64(quorumPct)*uint64(result.totalActive) {
 		actualPct := result.eligible * 100 / result.totalActive
 		return nil, fmt.Errorf(
@@ -2621,11 +2634,15 @@ type validatorInputsResult struct {
 //
 // The returned eligibleAddrs are sorted for deterministic universe-hash
 // computation.
-func (k *Keeper) getValidatorInputs(ctx context.Context, blockTime time.Time, maxAgeSec uint64) validatorInputsResult {
+func (k *Keeper) getValidatorInputs(ctx context.Context, blockTime time.Time, maxAgeSec uint64) (validatorInputsResult, error) {
 	var result validatorInputsResult
-	cutoff := blockTime.Add(-time.Duration(maxAgeSec) * time.Second)
+	maxAge, err := checkedSecondsDuration(maxAgeSec, "telemetry max age")
+	if err != nil {
+		return result, err
+	}
+	cutoff := blockTime.Add(-maxAge)
 
-	_ = k.Validators.Walk(ctx, nil, func(_ string, raw string) (bool, error) {
+	if err := k.Validators.Walk(ctx, nil, func(_ string, raw string) (bool, error) {
 		var v types.ValidatorRecord
 		if json.Unmarshal([]byte(raw), &v) != nil {
 			return false, nil
@@ -2659,11 +2676,22 @@ func (k *Keeper) getValidatorInputs(ctx context.Context, blockTime time.Time, ma
 			"commission_bps":       v.Commission,
 		})
 		return false, nil
-	})
+	}); err != nil {
+		return result, fmt.Errorf("walk validators: %w", err)
+	}
 
 	result.eligible = len(result.inputs)
 	sort.Strings(result.eligibleAddrs)
-	return result
+	return result, nil
+}
+
+func checkedSecondsDuration(seconds uint64, field string) (time.Duration, error) {
+	const maxDurationSeconds = uint64(math.MaxInt64 / int64(time.Second))
+	if seconds > maxDurationSeconds {
+		return 0, fmt.Errorf("%s %d seconds exceeds time.Duration range", field, seconds)
+	}
+	// #nosec G115 -- seconds is bounded by maxDurationSeconds above.
+	return time.Duration(seconds) * time.Second, nil
 }
 
 // computeEligibleUniverseHash computes SHA-256 over the sorted eligible
@@ -2789,10 +2817,11 @@ func (k *Keeper) GetVaultStatus(ctx context.Context) types.VaultStatus {
 	ps := k.getPauseState(ctx)
 
 	return types.VaultStatus{
-		TotalPooledAethel:  totalPooled,
-		TotalShares:        totalShares,
-		ExchangeRate:       exchangeRate,
-		CurrentEpoch:       k.getUint64(ctx, k.CurrentEpoch),
+		TotalPooledAethel: totalPooled,
+		TotalShares:       totalShares,
+		ExchangeRate:      exchangeRate,
+		CurrentEpoch:      k.getUint64(ctx, k.CurrentEpoch),
+		// #nosec G115 -- active validators are capped by VaultParams.MaxValidators.
 		ActiveValidators:   uint32(len(activeAddrs)),
 		TotalStakers:       totalStakers,
 		PendingWithdrawals: k.getUint64(ctx, k.TotalPendingWithdrawals),
