@@ -1402,9 +1402,9 @@ class TestHuggingFaceIntegration:
     def test_getattr(self):
         from aethelred.integrations.huggingface import VerifiedTransformersPipeline
         pipeline = MagicMock()
-        pipeline.model = "bert-base"
+        pipeline.model = "approved-text-encoder"
         wrapper = VerifiedTransformersPipeline(pipeline)
-        assert wrapper.model == "bert-base"
+        assert wrapper.model == "approved-text-encoder"
 
     def test_call(self):
         from aethelred.integrations.huggingface import VerifiedTransformersPipeline

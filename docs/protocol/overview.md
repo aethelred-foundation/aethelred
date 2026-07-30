@@ -210,7 +210,7 @@ Aethelred's architecture is built on eight foundational pillars, collectively kn
 | 5 | **Economy** | Congestion-Squared Burn | Fee burn = Network Load² | High demand creates exponential deflation |
 | 6 | **Governance** | Bi-Cameral Senate | House of Tokens + House of Validators | Prevents mob rule while ensuring enterprise stability |
 | 7 | **Interop** | Zero-Copy Data Bridge | Pointer swizzling for external data | Process petabytes of S3 data without on-chain movement |
-| 8 | **Storage** | Vector-Vault | Native vector embedding storage | Protocol acts as global database for LLMs |
+| 8 | **Storage** | Vector-Vault | Native vector embedding storage | Protocol acts as global database for language models |
 
 ---
 
@@ -528,7 +528,7 @@ Aethelred's architecture is built on eight foundational pillars, collectively kn
 | Finality | Instant | Instant | No reorgs (BFT) |
 | TPS (Transfers) | 8,500+ | Internal target | Standard ECDSA transfers |
 | TPS (Compute Jobs) | 500+ | Internal target | Depends on job complexity |
-| Inference Latency | < 100ms | ~45ms | Llama-3 8B, batch size 1 |
+| Inference Latency | < 100ms | ~45ms | 8B transformer, batch size 1 |
 | TEE Attestation Latency | < 5s | ~10ms (on-chain verify) | Hardware attestation + chain verify |
 | ZK Proof Latency (Optional) | < 30s | 5–30 seconds | EZKL/Halo2 for small-to-mid models |
 
