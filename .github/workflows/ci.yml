@@ -10,7 +10,7 @@ on:
     branches: [main, develop, "release/**"]
 
 env:
-  GO_VERSION: "1.25.8"
+  GO_VERSION: "1.25.12"
   RUST_VERSION: "1.85.0"
 
 jobs:
