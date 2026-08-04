@@ -9,6 +9,38 @@ linters:
         - -ST*
   exclusions:
     rules:
+      # Cosmos SDK 0.53 migration compatibility in the application wiring.
+      # Match both the exact file and the known SDK symbol so unrelated
+      # deprecations in this large file remain visible.
+      - path: "^app/app\\.go$"
+        text: "^SA1019: (crisiskeeper\\.(Keeper|NewKeeper)|paramskeeper\\.(Keeper|NewKeeper)|app\\.ModuleManager\\.RegisterInvariants|crisis\\.NewAppModule|params\\.NewAppModule|module\\.AppModule) is deprecated:"
+        linters:
+          - staticcheck
+      # Cosmos module-manager compatibility in EVM application wiring.
+      - path: "^app/evm\\.go$"
+        text: "^SA1019: module\\.AppModule is deprecated:"
+        linters:
+          - staticcheck
+      # Legacy Cosmos module interfaces retained during the SDK 0.53 migration.
+      - path: "^x/(ibc|pouw|seal|verify)/module\\.go$"
+        text: "^SA1019: (module\\.AppModule|sdk\\.InvariantRegistry) is deprecated:"
+        linters:
+          - staticcheck
+      # x/crisis invariant compatibility retained until the SDK removes crisis.
+      - path: "^x/pouw/keeper/(invariants\\.go|coverage_boost_test\\.go)$"
+        text: "^SA1019: sdk\\.(Invariant|InvariantRegistry|FormatInvariant) is deprecated:"
+        linters:
+          - staticcheck
+      # Legacy SDK context wrapping appears only in these migration tests.
+      - path: "^x/pouw/keeper/(msg_server_hybrid_key|seal_quorum_e2e|seal_quorum_query)_test\\.go$"
+        text: "^SA1019: sdk\\.WrapSDKContext is deprecated:"
+        linters:
+          - staticcheck
+      # Legacy amino sign-byte compatibility for PoUW, seal, and verify messages.
+      - path: "^x/(pouw|seal|verify)/types/msgs\\.go$"
+        text: "^SA1019: sdk\\.MustSortJSON is deprecated:"
+        linters:
+          - staticcheck
       # Proto-generated types embed protoimpl.MessageState which contains sync.Mutex.
       # Passing proto messages by value is required by several APIs (collections.Set,
       # index closure callbacks, etc.) and cannot be avoided without modifying

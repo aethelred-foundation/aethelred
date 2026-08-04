@@ -80,7 +80,11 @@ func TestGPUCC_ExecuteLiftsAttestation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prepare: %v", err)
 	}
-	defer sess.Close()
+	defer func() {
+		if err := sess.Close(); err != nil {
+			t.Errorf("close GPU confidential-computing session: %v", err)
+		}
+	}()
 
 	out, att, err := b.Execute(context.Background(), sess, EncryptedInput("in"), ModelRef{ModelID: "m"})
 	if err != nil {

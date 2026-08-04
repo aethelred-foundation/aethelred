@@ -61,7 +61,11 @@ func TestFHE_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prepare: %v", err)
 	}
-	defer sess.Close()
+	defer func() {
+		if err := sess.Close(); err != nil {
+			t.Errorf("close FHE session: %v", err)
+		}
+	}()
 
 	out, att, err := backend.Execute(context.Background(), sess, ctIn, ModelRef{ModelID: model.ID, ModelHash: model.Hash()})
 	if err != nil {

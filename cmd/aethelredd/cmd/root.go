@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -111,12 +112,18 @@ Learn more at https://aethelred.io`,
 	// no TEE endpoint is configured) by scoping AETHELRED_ALLOW_SIMULATED to just
 	// this construction — the real node app built later stays strict.
 	prevAllow, hadAllow := os.LookupEnv("AETHELRED_ALLOW_SIMULATED")
-	os.Setenv("AETHELRED_ALLOW_SIMULATED", "true")
+	if err := os.Setenv("AETHELRED_ALLOW_SIMULATED", "true"); err != nil {
+		panic(fmt.Errorf("set AETHELRED_ALLOW_SIMULATED for CLI initialization: %w", err))
+	}
 	tempApp := app.New(log.NewNopLogger(), dbm.NewMemDB(), nil, false, emptyAppOptions{})
 	if hadAllow {
-		os.Setenv("AETHELRED_ALLOW_SIMULATED", prevAllow)
+		if err := os.Setenv("AETHELRED_ALLOW_SIMULATED", prevAllow); err != nil {
+			panic(fmt.Errorf("restore AETHELRED_ALLOW_SIMULATED after CLI initialization: %w", err))
+		}
 	} else {
-		os.Unsetenv("AETHELRED_ALLOW_SIMULATED")
+		if err := os.Unsetenv("AETHELRED_ALLOW_SIMULATED"); err != nil {
+			panic(fmt.Errorf("unset AETHELRED_ALLOW_SIMULATED after CLI initialization: %w", err))
+		}
 	}
 	// autocli's flag builder needs a proto file resolver; it reads it from
 	// AppOptions.ClientCtx.InterfaceRegistry, so wire the client context in.

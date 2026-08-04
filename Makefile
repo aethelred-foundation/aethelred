@@ -28,11 +28,17 @@ GO = go
 # Rust uses a top-level vendor/ directory; force module mode for Go commands.
 GOFLAGS ?= -mod=mod
 GOCACHE ?= $(CURDIR)/.cache/go-build
-LDFLAGS = -s -w -X github.com/aethelred/aethelred/app.Version=$(VERSION)
+BUILD_TAGS ?= production
+LDFLAGS = -s -w \
+	-X github.com/cosmos/cosmos-sdk/version.Name=aethelred \
+	-X github.com/cosmos/cosmos-sdk/version.AppName=aethelredd \
+	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+	-X github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)
 CC_BIN := $(shell $(GO) env CC)
 
-VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.1.0-dev")
-COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.1.0-dev")
+COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 
 # Docker
@@ -72,13 +78,13 @@ build: check-cgo
 	@echo "Building $(BINARY_NAME) $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(GOCACHE)
-	CGO_ENABLED=1 GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/aethelredd
+	CGO_ENABLED=1 GOCACHE=$(GOCACHE) $(GO) build $(GOFLAGS) -tags "$(BUILD_TAGS)" -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/aethelredd
 
 ## install: Install aethelredd to GOPATH/bin
 install: check-cgo
 	@echo "Installing $(BINARY_NAME)..."
 	@mkdir -p $(GOCACHE)
-	CGO_ENABLED=1 GOCACHE=$(GOCACHE) $(GO) install $(GOFLAGS) -ldflags "$(LDFLAGS)" ./cmd/aethelredd
+	CGO_ENABLED=1 GOCACHE=$(GOCACHE) $(GO) install $(GOFLAGS) -tags "$(BUILD_TAGS)" -ldflags "$(LDFLAGS)" ./cmd/aethelredd
 
 ## clean: Remove build artifacts
 clean:

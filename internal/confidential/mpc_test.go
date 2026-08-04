@@ -217,7 +217,11 @@ func TestMPC_BackendHonesty(t *testing.T) {
 		if err != nil {
 			t.Fatalf("prepare: %v", err)
 		}
-		defer sess.Close()
+		defer func() {
+			if err := sess.Close(); err != nil {
+				t.Errorf("close MPC session: %v", err)
+			}
+		}()
 		in, err := cluster.EncryptInput([]float64{1, 2, 3})
 		if err != nil {
 			t.Fatalf("share: %v", err)

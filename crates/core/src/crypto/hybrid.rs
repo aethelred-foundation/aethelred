@@ -468,12 +468,43 @@ impl HybridSignature {
     ///
     /// Format (V2):
     /// [version][marker][ecdsa_sig:64][separator][level][dilithium_sig_len:u16][dilithium_sig][metadata]
+    ///
+    /// This compatibility method preserves the historical infallible API. It
+    /// returns an empty byte vector if public fields were externally mutated
+    /// into a value that cannot be represented by the V2 wire format. New code
+    /// that accepts externally assembled signatures should use
+    /// [`Self::try_to_bytes`] and handle the error explicitly.
     pub fn to_bytes(&self) -> Vec<u8> {
-        let quantum_len: u16 = self
-            .quantum
-            .len()
-            .try_into()
-            .expect("quantum signature length exceeds u16");
+        match self.try_to_bytes() {
+            Ok(bytes) => bytes,
+            Err(_) => Vec::new(),
+        }
+    }
+
+    /// Serialize to the V2 wire format with explicit error handling.
+    pub fn try_to_bytes(&self) -> CryptoResult<Vec<u8>> {
+        if self.classical.len() != 64 {
+            return Err(CryptoError::InvalidSignatureLength {
+                expected: 64,
+                actual: self.classical.len(),
+            });
+        }
+
+        let max_quantum_len = self.level.signature_size();
+        if self.quantum.is_empty() || self.quantum.len() > max_quantum_len {
+            return Err(CryptoError::InvalidKeyFormat(format!(
+                "Invalid Dilithium signature length {} for level {:?} (max {})",
+                self.quantum.len(),
+                self.level,
+                max_quantum_len
+            )));
+        }
+
+        let quantum_len =
+            u16::try_from(self.quantum.len()).map_err(|_| CryptoError::InvalidSignatureLength {
+                expected: u16::MAX as usize,
+                actual: self.quantum.len(),
+            })?;
         let mut result = Vec::with_capacity(2 + 64 + 1 + 1 + 2 + self.quantum.len() + 17);
 
         result.push(SIGNATURE_VERSION_V2);
@@ -499,7 +530,7 @@ impl HybridSignature {
             result.push(0x00);
         }
 
-        result
+        Ok(result)
     }
 
     /// Deserialize from wire format
@@ -548,15 +579,17 @@ impl HybridSignature {
 
 impl fmt::Debug for HybridSignature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("HybridSignature")
-            .field(
-                "classical",
-                &format!(
-                    "{}...{}",
-                    &hex::encode(&self.classical[..4]),
-                    &hex::encode(&self.classical[60..])
-                ),
+        let classical_preview = if self.classical.len() >= 8 {
+            format!(
+                "{}...{}",
+                hex::encode(&self.classical[..4]),
+                hex::encode(&self.classical[self.classical.len() - 4..])
             )
+        } else {
+            hex::encode(&self.classical)
+        };
+        f.debug_struct("HybridSignature")
+            .field("classical", &classical_preview)
             .field("quantum_len", &self.quantum.len())
             .field("level", &self.level)
             .field("timestamp", &self.timestamp)
@@ -570,10 +603,28 @@ impl fmt::Debug for HybridSignature {
 // =============================================================================
 
 /// ECDSA secp256k1 public key (33 bytes compressed)
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize)]
 pub struct EcdsaPublicKey {
     #[serde(with = "hex")]
     bytes: Vec<u8>,
+    #[serde(skip)]
+    eth_address: [u8; 20],
+}
+
+#[derive(Deserialize)]
+struct EcdsaPublicKeyWire {
+    #[serde(with = "hex")]
+    bytes: Vec<u8>,
+}
+
+impl<'de> Deserialize<'de> for EcdsaPublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let wire = EcdsaPublicKeyWire::deserialize(deserializer)?;
+        Self::from_bytes(&wire.bytes).map_err(serde::de::Error::custom)
+    }
 }
 
 impl EcdsaPublicKey {
@@ -588,11 +639,19 @@ impl EcdsaPublicKey {
 
         // Validate it's a valid point on secp256k1
         use k256::ecdsa::VerifyingKey;
-        let _ = VerifyingKey::from_sec1_bytes(bytes)
+        let verifying_key = VerifyingKey::from_sec1_bytes(bytes)
             .map_err(|e| CryptoError::InvalidKeyFormat(e.to_string()))?;
+
+        let uncompressed = verifying_key.to_encoded_point(false);
+        let mut hasher = Keccak256::new();
+        hasher.update(&uncompressed.as_bytes()[1..]);
+        let hash = hasher.finalize();
+        let mut eth_address = [0u8; 20];
+        eth_address.copy_from_slice(&hash[12..]);
 
         Ok(Self {
             bytes: bytes.to_vec(),
+            eth_address,
         })
     }
 
@@ -603,18 +662,7 @@ impl EcdsaPublicKey {
 
     /// Get Ethereum-style address (last 20 bytes of Keccak256)
     pub fn to_eth_address(&self) -> [u8; 20] {
-        // Uncompressed key for Ethereum address
-        use k256::ecdsa::VerifyingKey;
-        let vk = VerifyingKey::from_sec1_bytes(&self.bytes).unwrap();
-        let uncompressed = vk.to_encoded_point(false);
-
-        let mut hasher = Keccak256::new();
-        hasher.update(&uncompressed.as_bytes()[1..]); // Skip 0x04 prefix
-        let hash = hasher.finalize();
-
-        let mut addr = [0u8; 20];
-        addr.copy_from_slice(&hash[12..]);
-        addr
+        self.eth_address
     }
 }
 
@@ -992,8 +1040,18 @@ impl HybridKeyPair {
     pub fn from_seed(seed: &[u8; 64]) -> CryptoResult<Self> {
         use k256::ecdsa::SigningKey;
 
+        let classical_seed = seed.get(..32).ok_or_else(|| {
+            CryptoError::KeyGenerationFailed("missing classical seed material".into())
+        })?;
+        let quantum_seed: &[u8; 32] = seed
+            .get(32..)
+            .and_then(|bytes| bytes.try_into().ok())
+            .ok_or_else(|| {
+                CryptoError::KeyGenerationFailed("invalid quantum seed material".into())
+            })?;
+
         // Use first 32 bytes for ECDSA
-        let ecdsa_sk = SigningKey::from_bytes(seed[..32].into())
+        let ecdsa_sk = SigningKey::from_slice(classical_seed)
             .map_err(|e| CryptoError::KeyGenerationFailed(e.to_string()))?;
         let ecdsa_pk = ecdsa_sk.verifying_key();
 
@@ -1001,10 +1059,8 @@ impl HybridKeyPair {
         let classical_pk = EcdsaPublicKey::from_bytes(&ecdsa_pk.to_sec1_bytes())?;
 
         // Use second 32 bytes for Dilithium seed
-        let (quantum_sk, quantum_pk) = generate_dilithium_keypair_from_seed(
-            &seed[32..64].try_into().unwrap(),
-            DilithiumSecurityLevel::Level3,
-        )?;
+        let (quantum_sk, quantum_pk) =
+            generate_dilithium_keypair_from_seed(quantum_seed, DilithiumSecurityLevel::Level3)?;
 
         let public_key = HybridPublicKey {
             classical: classical_pk,
@@ -1573,6 +1629,54 @@ mod tests {
     }
 
     #[test]
+    fn test_unrepresentable_signature_serialization_fails_closed() {
+        let oversized_signature = HybridSignature::new(
+            vec![0x11; 64],
+            vec![0x22; usize::from(u16::MAX) + 1],
+            DilithiumSecurityLevel::Level3,
+        );
+
+        assert!(oversized_signature.try_to_bytes().is_err());
+        assert!(oversized_signature.to_bytes().is_empty());
+
+        let wrong_classical_length = HybridSignature::new(
+            vec![0x11; 63],
+            vec![0x22; DilithiumSecurityLevel::Level3.signature_size()],
+            DilithiumSecurityLevel::Level3,
+        );
+        assert!(wrong_classical_length.try_to_bytes().is_err());
+        assert!(wrong_classical_length.to_bytes().is_empty());
+
+        let empty_quantum =
+            HybridSignature::new(vec![0x11; 64], Vec::new(), DilithiumSecurityLevel::Level3);
+        assert!(empty_quantum.try_to_bytes().is_err());
+        assert!(empty_quantum.to_bytes().is_empty());
+
+        let wrong_level_length = HybridSignature::new(
+            vec![0x11; 64],
+            vec![0x22; DilithiumSecurityLevel::Level2.signature_size() + 1],
+            DilithiumSecurityLevel::Level2,
+        );
+        assert!(wrong_level_length.try_to_bytes().is_err());
+        assert!(wrong_level_length.to_bytes().is_empty());
+
+        let short_signature =
+            HybridSignature::new(vec![0x11; 3], vec![0x22; 1], DilithiumSecurityLevel::Level3);
+        assert!(format!("{short_signature:?}").contains("111111"));
+
+        let valid_signature = HybridSignature::new(
+            vec![0x11; 64],
+            vec![0x22; DilithiumSecurityLevel::Level3.signature_size()],
+            DilithiumSecurityLevel::Level3,
+        );
+        let encoded = valid_signature.try_to_bytes().unwrap();
+        assert_eq!(
+            HybridSignature::from_bytes(&encoded).unwrap(),
+            valid_signature
+        );
+    }
+
+    #[test]
     fn test_signature_deserialize_level2_and_level5() {
         let levels = [
             DilithiumSecurityLevel::Level2,
@@ -1622,6 +1726,20 @@ mod tests {
         let eth_addr = keypair.public_key.to_eth_address();
         assert!(eth_addr.starts_with("0x"));
         assert_eq!(eth_addr.len(), 42); // 0x + 40 hex chars
+    }
+
+    #[test]
+    fn test_ecdsa_public_key_deserialization_validates_and_restores_address() {
+        let keypair = HybridKeyPair::generate().unwrap();
+        let classical = &keypair.public_key.classical;
+        let encoded = serde_json::to_string(classical).unwrap();
+        let restored: EcdsaPublicKey = serde_json::from_str(&encoded).unwrap();
+
+        assert_eq!(restored.as_bytes(), classical.as_bytes());
+        assert_eq!(restored.to_eth_address(), classical.to_eth_address());
+
+        let invalid = serde_json::json!({ "bytes": "00" });
+        assert!(serde_json::from_value::<EcdsaPublicKey>(invalid).is_err());
     }
 
     #[test]

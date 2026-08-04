@@ -34,6 +34,16 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 pub struct EcdsaPublicKey {
     /// Compressed public key (33 bytes)
     bytes: [u8; 33],
+    /// Cached Ethereum address derived while validating the public key.
+    eth_address: [u8; 20],
+}
+
+fn ethereum_address(verifying_key: &VerifyingKey) -> [u8; 20] {
+    let uncompressed = verifying_key.to_encoded_point(false);
+    let hash = Keccak256::digest(&uncompressed.as_bytes()[1..]);
+    let mut address = [0u8; 20];
+    address.copy_from_slice(&hash[12..32]);
+    address
 }
 
 impl EcdsaPublicKey {
@@ -57,13 +67,16 @@ impl EcdsaPublicKey {
         }
 
         // Validate that the bytes represent a valid point on secp256k1
-        VerifyingKey::from_sec1_bytes(bytes).map_err(|_| {
+        let verifying_key = VerifyingKey::from_sec1_bytes(bytes).map_err(|_| {
             CryptoError::InvalidKeyFormat("Point is not on the secp256k1 curve".into())
         })?;
 
         let mut key = [0u8; 33];
         key.copy_from_slice(bytes);
-        Ok(Self { bytes: key })
+        Ok(Self {
+            bytes: key,
+            eth_address: ethereum_address(&verifying_key),
+        })
     }
 
     /// Create from uncompressed bytes (65 bytes) by compressing
@@ -88,7 +101,10 @@ impl EcdsaPublicKey {
         let compressed = vk.to_encoded_point(true);
         let mut key = [0u8; 33];
         key.copy_from_slice(compressed.as_bytes());
-        Ok(Self { bytes: key })
+        Ok(Self {
+            bytes: key,
+            eth_address: ethereum_address(&vk),
+        })
     }
 
     /// Get raw bytes
@@ -103,15 +119,7 @@ impl EcdsaPublicKey {
 
     /// Compute Ethereum-style address (last 20 bytes of Keccak256(uncompressed_pubkey_without_prefix))
     pub fn to_eth_address(&self) -> [u8; 20] {
-        // Decompress the public key to get the full 65-byte uncompressed form
-        let vk = VerifyingKey::from_sec1_bytes(&self.bytes)
-            .expect("EcdsaPublicKey always contains valid key bytes");
-        let uncompressed = vk.to_encoded_point(false);
-        // Keccak256 of the 64-byte public key (without 0x04 prefix)
-        let hash = Keccak256::digest(&uncompressed.as_bytes()[1..]);
-        let mut addr = [0u8; 20];
-        addr.copy_from_slice(&hash[12..32]);
-        addr
+        self.eth_address
     }
 
     /// Compute fingerprint (first 16 bytes of SHA256 hash)
@@ -383,7 +391,10 @@ pub fn derive_public_key(secret_key: &EcdsaSecretKey) -> CryptoResult<EcdsaPubli
     pk_bytes.copy_from_slice(compressed.as_bytes());
 
     // We know this is valid because we just derived it from a valid signing key
-    Ok(EcdsaPublicKey { bytes: pk_bytes })
+    Ok(EcdsaPublicKey {
+        bytes: pk_bytes,
+        eth_address: ethereum_address(verifying_key),
+    })
 }
 
 /// Sign a message with SHA256 hashing
@@ -484,7 +495,10 @@ pub fn recover_public_key(
     let mut pk_bytes = [0u8; 33];
     pk_bytes.copy_from_slice(compressed.as_bytes());
 
-    Ok(EcdsaPublicKey { bytes: pk_bytes })
+    Ok(EcdsaPublicKey {
+        bytes: pk_bytes,
+        eth_address: ethereum_address(&recovered_key),
+    })
 }
 
 #[cfg(test)]

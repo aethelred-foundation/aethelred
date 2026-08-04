@@ -171,7 +171,7 @@ type rpcClient struct {
 	id  int
 }
 
-func (c *rpcClient) call(result interface{}, method string, params ...interface{}) error {
+func (c *rpcClient) call(result interface{}, method string, params ...interface{}) (callErr error) {
 	c.id++
 	if params == nil {
 		params = []interface{}{}
@@ -186,7 +186,11 @@ func (c *rpcClient) call(result interface{}, method string, params ...interface{
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); callErr == nil && err != nil {
+			callErr = fmt.Errorf("close rpc response body: %w", err)
+		}
+	}()
 	var envelope struct {
 		Result json.RawMessage `json:"result"`
 		Error  *struct {

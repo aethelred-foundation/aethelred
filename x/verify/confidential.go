@@ -54,7 +54,7 @@ func (vo *VerificationOrchestrator) ExecuteConfidential(
 	policy confidential.ConfidentialityPolicy,
 	in confidential.EncryptedInput,
 	ref confidential.ModelRef,
-) (*ConfidentialExecutionResult, error) {
+) (result *ConfidentialExecutionResult, err error) {
 	if vo.confidentialRegistry == nil {
 		return nil, fmt.Errorf("confidential execution not configured: no backend registry installed")
 	}
@@ -69,7 +69,12 @@ func (vo *VerificationOrchestrator) ExecuteConfidential(
 	if err != nil {
 		return nil, fmt.Errorf("confidential session (%s): %w", backend.Kind(), err)
 	}
-	defer sess.Close()
+	defer func() {
+		if closeErr := sess.Close(); err == nil && closeErr != nil {
+			result = nil
+			err = fmt.Errorf("close confidential session (%s): %w", backend.Kind(), closeErr)
+		}
+	}()
 
 	out, att, err := backend.Execute(ctx, sess, in, ref)
 	if err != nil {
