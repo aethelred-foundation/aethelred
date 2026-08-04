@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0",
-  "releaseId": "public-testnet-application-bundle-2026-07-31.1",
+  "releaseId": "public-testnet-application-bundle-2026-07-31.2",
   "status": "approved-public-testnet-baseline",
-  "issuedAt": "2026-07-31T06:45:49.109924979Z",
+  "issuedAt": "2026-08-04T09:20:17Z",
   "manifest": {
     "repository": "https://github.com/aethelred-foundation/aethelred.git",
     "branch": "release/public-testnet-application-bundle-2026-07-31",
-    "tag": "public-testnet-application-bundle-2026-07-31.1",
+    "tag": "public-testnet-application-bundle-2026-07-31.2",
     "files": [
       "docs/ops/PUBLIC_TESTNET_APPLICATION_RELEASE_2026-07-31.md",
       "docs/ops/PUBLIC_TESTNET_US_TEAM_HANDOFF_2026-07-31.md",
@@ -23,11 +23,16 @@
   },
   "network": {
     "chainId": "aethelred-testnet-1",
+    "evmChainId": 7332,
+    "evmAnchor": {
+      "blockNumber": 450000,
+      "blockHash": "0x1057a62d12eed50d8740fcf51be0cd784db9a4f8f98c9312eee8b8bc7e543ddc"
+    },
     "sourceRepository": "https://github.com/aethelred-foundation/aethelred.git",
     "sourceBranch": "release/public-testnet-pqc",
     "sourceCommit": "4c9c258c5757d385e6259875625e63ac205aa5e8",
-    "observedBlockHeight": "388445",
-    "observedBlockTime": "2026-07-31T06:45:49.109924979Z",
+    "observedBlockHeight": "454313",
+    "observedBlockTime": "2026-08-04T09:16:59.109005493Z",
     "catchingUp": false,
     "goVersion": "1.25.12",
     "build": {
@@ -61,8 +66,11 @@
       "cometbftRpc": 26657,
       "rest": 1317,
       "grpc": 9090,
-      "evmRpc": 8545,
-      "evmWebsocket": 8546
+      "evmRpc": 8545
+    },
+    "evmWebsocket": {
+      "status": "not-published",
+      "url": null
     },
     "references": [
       "docs/ops/PRECOMPILE_ACTIVATION_RUNBOOK.md",
@@ -99,7 +107,7 @@
     "cruzible": {
       "repository": "https://github.com/aethelred-foundation/cruzible.git",
       "branch": "fix/us-testnet-wallet-staking",
-      "commit": "7df3998ae1a09d149eec9f005b6cf4146851acb1",
+      "commit": "92671c4558d476a873caa7b33cc24f82c69676dd",
       "runtime": {
         "node": ">=20.0.0",
         "packageManager": "npm@10.9.4"
@@ -109,11 +117,13 @@
         "api": 4001
       },
       "contractRedeploy": "no-unless-manifest-bytecode-or-wiring-verification-fails",
+      "applicationAction": "run-one-dedicated-indexer-and-complete-existing-projection-rebuild-without-reset",
       "validation": {
         "status": "success",
         "evidence": [
-          "31 local tests passed",
-          "typecheck, lint, and production build passed",
+          "74 focused application tests passed",
+          "35 backend indexer tests passed",
+          "typecheck and deterministic Compose topology checks passed",
           "operator confirmed public-testnet stake and unstake"
         ]
       },
@@ -128,7 +138,7 @@
     "terraqura": {
       "repository": "https://github.com/aethelred-foundation/terraqura.git",
       "branch": "ramesh/terraqura-pre-mainnet-remediation-20260414",
-      "commit": "0f84a3f0c820afed6bcf2af50dd1c258481d3fe4",
+      "commit": "af509d2f1629af98873de3f627896d483baed595",
       "runtime": {
         "node": "20.18.3",
         "packageManager": "pnpm@9.0.0"
@@ -137,14 +147,33 @@
         "frontend": 3007,
         "api": 4000
       },
-      "contractRedeploy": "complete-current-two-phase-ceremony",
+      "contractRedeploy": "complete-five-proxy-two-phase-ceremony-after-preflight",
+      "evaluationDeployment": {
+        "composeFile": "docker-compose.public-testnet-evaluation.yml",
+        "environmentTemplate": "deploy/terraqura.public-testnet-evaluation.env.example",
+        "rpcUrl": "http://54.165.44.130:8545",
+        "rpcTransportAcknowledgement": "acknowledge-evaluation-only-plaintext-rpc",
+        "operatorSignerContainerUid": 1001,
+        "operatorSignerContainerGid": 1001,
+        "operatorSignerMode": "0400"
+      },
       "validation": {
         "status": "success",
-        "run": "https://github.com/aethelred-foundation/terraqura/actions/runs/30609691573"
+        "run": "https://github.com/aethelred-foundation/terraqura/actions/runs/30895237713",
+        "evidence": [
+          "1560 contract tests passed",
+          "207 API tests passed",
+          "API, contracts, and web typecheck and lint passed",
+          "direct-IP production build and Compose health drill passed",
+          "live chain ID and anchor check passed",
+          "production dependency audit reported no known vulnerabilities"
+        ]
       },
       "references": [
         "docs/deployment/PUBLIC_TESTNET_DEPLOYMENT.md",
         "deploy/terraqura.contracts.public-testnet.env.example",
+        "deploy/terraqura.public-testnet-evaluation.env.example",
+        "docker-compose.public-testnet-evaluation.yml",
         "deploy/terraqura.api.production.env.example",
         "deploy/terraqura.web.production.env.example"
       ]
@@ -161,7 +190,8 @@
         "frontend": 3003,
         "api": 4003
       },
-      "databaseAction": "create-fresh-database-in-existing-volume",
+      "databaseAction": "keep-working-zeroid1-and-preserve-old-zeroid-database",
+      "applicationAction": "rebuild-frontend-with-browser-reachable-http-api-and-rpc-csp-origins",
       "contractRedeploy": "preserve-verified-addresses-otherwise-run-complete-ceremony",
       "validation": {
         "status": "success",
@@ -180,7 +210,7 @@
     "noblepay": {
       "repository": "https://github.com/aethelred-foundation/noblepay.git",
       "branch": "release/noblepay-production-readiness",
-      "commit": "2f6d71ac1fe6d1f787534d7fe5234c3646aabab1",
+      "commit": "cf91c309252d3c5e69b52525975ceef98e6dc24e",
       "runtime": {
         "node": "24.18.0",
         "packageManager": "npm@11.16.0"
@@ -192,12 +222,21 @@
         "edge": 8080
       },
       "contractRedeploy": "follow-current-two-phase-core-ceremony",
-      "testTokenProvisioning": "only-if-network-operator-confirms-canonical-test-tokens-do-not-exist",
+      "testTokenProvisioning": "verify-and-adopt-existing-usdc-then-deploy-only-missing-usdt",
+      "coreBootstrap": "allowed-with-explicitly-acknowledged-anchored-evaluation-http-rpc",
+      "coreFinalize": "blocked-until-real-evm-wss-and-required-tls-publication-endpoints-exist",
       "validation": {
         "status": "success",
         "runs": [
-          "https://github.com/aethelred-foundation/noblepay/actions/runs/30610237783",
-          "https://github.com/aethelred-foundation/noblepay/actions/runs/30610235335"
+          "https://github.com/aethelred-foundation/noblepay/actions/runs/30893998717",
+          "https://github.com/aethelred-foundation/noblepay/actions/runs/30893994299"
+        ],
+        "evidence": [
+          "537 frontend tests passed",
+          "1288 backend tests passed",
+          "1519 contract tests passed",
+          "root and backend dependency audits reported zero advisories",
+          "contracts dependency audit passed with only pre-existing low-severity toolchain findings"
         ]
       },
       "references": [

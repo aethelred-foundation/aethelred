@@ -14,7 +14,7 @@ passed, and the live EVM parameters now contain `0x0800`, `0x0801`, `0x0900`,
 `0x0901`, and `0x0902`.
 
 We are freezing the application setup to release
-`public-testnet-application-bundle-2026-07-31.1`. From this point, do not
+`public-testnet-application-bundle-2026-07-31.2`. From this point, do not
 deploy a branch tip. Fetch the branch and check out the exact commit in
 detached mode:
 
@@ -45,12 +45,12 @@ pnpm: 11.9.0
 
 Cruzible
 branch: fix/us-testnet-wallet-staking
-commit: 7df3998ae1a09d149eec9f005b6cf4146851acb1
+commit: 92671c4558d476a873caa7b33cc24f82c69676dd
 action: keep the working contract addresses; do not redeploy
 
 TerraQura
 branch: ramesh/terraqura-pre-mainnet-remediation-20260414
-commit: 0f84a3f0c820afed6bcf2af50dd1c258481d3fe4
+commit: af509d2f1629af98873de3f627896d483baed595
 Node: 20.18.3
 pnpm: 9.0.0
 
@@ -62,7 +62,7 @@ npm: 10.8.2
 
 NoblePay
 branch: release/noblepay-production-readiness
-commit: 2f6d71ac1fe6d1f787534d7fe5234c3646aabab1
+commit: cf91c309252d3c5e69b52525975ceef98e6dc24e
 Node: 24.18.0
 npm: 11.16.0
 
@@ -84,36 +84,191 @@ size: 752236 bytes
 Verify the hash before loading the unpacked extension. If endpoint protection
 still flags the ZIP, do not disable or bypass protection. Build it locally
 from the exact wallet commit and submit the hash for security-vendor review.
+Disable/remove older Aethelred Wallet copies, load only this release, grant it
+site access to `http://93.127.132.52/*`, then reload the extension and every
+open dApp tab.
 
-Then proceed in this order:
+Proceed in this order.
 
-1. Cruzible: keep the current contracts. With the new wallet installed, retest
-   Aethelred Wallet connection, stake, unstake, transaction confirmation, and
-   receipts. Stake and unstake have already succeeded with MetaMask, so a
-   contract redeploy is not approved unless bytecode or wiring verification
-   fails.
-2. TerraQura: switch from Node 25 to exactly Node `20.18.3`, install with the
-   frozen lockfile, then run `pnpm contracts:preflight`,
-   `pnpm contracts:bootstrap`, `pnpm contracts:finalize`, and
-   `pnpm contracts:verify` using the confirmation variables and sequence in
-   `docs/deployment/PUBLIC_TESTNET_DEPLOYMENT.md`. Do not reuse an old
-   deployment manifest or removed script.
-3. ZeroID: the wallet-provider issue is handled by the wallet release. For
-   Prisma `P3005`, keep the existing PostgreSQL volume and old database, create
-   a new database named `zeroid_testnet_20260731`, update `POSTGRES_DB` and
-   `DATABASE_URL`, then start the one-shot `migrate` service and API. Do not
-   drop the old database, remove the volume, run `migrate reset`, or edit
-   `_prisma_migrations`. Reuse contract addresses only after the manifest,
-   chain ID, bytecode, owner, and wiring verify.
-4. NoblePay: follow
-   `deploy/PUBLIC_TESTNET_OPERATOR_RUNBOOK.md`. Do not use or restore
-   `scripts/setup-test-token.mjs`. First obtain and verify the canonical
-   public-testnet USDC and USDT addresses. Run
-   `scripts/provision-testnet-tokens.mjs` only if the network operator confirms
-   that canonical test tokens do not exist.
-5. Shiora: rebuild and restart the application at commit
-   `2dd1255715a373beb691ab4bbcaecf787dcb8c09`. For the current synthetic
-   direct-IP evaluation, set:
+### 1. Cruzible
+
+Keep the current contract addresses. Deploy commit
+`92671c4558d476a873caa7b33cc24f82c69676dd` for the application processes.
+The current `requiresRebuild=true` / `INDEXER_GENERATION_UNCOMMITTED` state is
+an indexer-worker recovery issue, not a reason to reset the database, redeploy
+contracts, or restart the chain. Follow **Recover an existing stuck rebuild
+without resetting data** in `docs/TESTNET_DEPLOYMENT.md` so the API has
+`INDEXER_ENABLED=false` and exactly one dedicated indexer runs. Require
+readiness 200 before retesting both wallets and stake/unstake.
+
+```bash
+docker ps --filter label=com.docker.compose.service=api \
+  --format 'project={{.Label "com.docker.compose.project"}} container={{.Names}} ports={{.Ports}}'
+docker ps --filter label=com.docker.compose.service=indexer \
+  --format 'project={{.Label "com.docker.compose.project"}} container={{.Names}} status={{.Status}}'
+export CRUZIBLE_COMPOSE_PROJECT='<exact project from the API row>'
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" config --quiet
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" ps -a
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" exec -T api \
+  sh -c 'printf "API INDEXER_ENABLED=%s\n" "${INDEXER_ENABLED:-unset}"'
+```
+
+If that last command reports `true`, stop any separate worker and recreate
+only the API before starting one worker:
+
+```bash
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" stop indexer
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" up --build -d --no-deps \
+  --force-recreate api
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" exec -T api \
+  sh -c 'test "$INDEXER_ENABLED" = false'
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" up --build -d --no-deps indexer
+```
+
+If it reports `false`, leave the API running and run only the final `up ...
+indexer` command above. Then monitor the existing cursor:
+
+```bash
+docker compose -p "$CRUZIBLE_COMPOSE_PROJECT" logs --tail 200 indexer
+curl -sS -w '\nHTTP %{http_code}\n' \
+  http://93.127.132.52:4001/health/ready
+```
+
+### 2. TerraQura
+
+Use exactly Node `20.18.3` and pnpm `9.0.0`. In
+`/secure/operator/terraqura-contracts.env`, set `DEPLOYER_SIGNER_KEY_FILE` to an
+absolute path—not to the key value. The referenced mode-0400/0600 file is
+exactly one `0x` + 64-hex line. Install the custody-supplied file separately,
+then run:
+
+```bash
+TERRAQURA_OPERATOR_USER="$(id -un)"
+TERRAQURA_OPERATOR_GROUP="$(id -gn)"
+sudo install -d -o "$TERRAQURA_OPERATOR_USER" \
+  -g "$TERRAQURA_OPERATOR_GROUP" -m 0700 /secure/operator
+sudo install -o "$TERRAQURA_OPERATOR_USER" \
+  -g "$TERRAQURA_OPERATOR_GROUP" -m 0600 \
+  deploy/terraqura.contracts.public-testnet.env.example \
+  /secure/operator/terraqura-contracts.env
+sudo install -o "$TERRAQURA_OPERATOR_USER" \
+  -g "$TERRAQURA_OPERATOR_GROUP" -m 0400 \
+  /path/from/custody/terraqura-deployer.key \
+  /secure/operator/terraqura-deployer.key
+```
+
+Fill every required non-secret field in
+`/secure/operator/terraqura-contracts.env`, set its signer variable to
+`DEPLOYER_SIGNER_KEY_FILE=/secure/operator/terraqura-deployer.key`, and then
+run:
+
+```bash
+unset PRIVATE_KEY
+set -a
+. /secure/operator/terraqura-contracts.env
+set +a
+env -u PRIVATE_KEY pnpm contracts:signer-key:check
+env -u PRIVATE_KEY pnpm contracts:rpc:check
+env -u PRIVATE_KEY pnpm contracts:preflight
+```
+
+Then use the bootstrap/finalize/verify sequence and confirmation interlocks
+in `docs/deployment/PUBLIC_TESTNET_DEPLOYMENT.md`. After finalization, install
+`deploy/terraqura.public-testnet-evaluation.env.example` as
+`/secure/operator/terraqura-public-testnet-evaluation.env` and copy the five
+finalized proxy addresses into that external file; do not edit the tracked
+example. Use it with `docker-compose.public-testnet-evaluation.yml` for ports
+`3007/4000`. Stage the API operator key as the separate UID/GID-1001,
+mode-0400 copy documented there. Do not use old deployment scripts or an old
+manifest.
+
+### 3. ZeroID
+
+The backend is already healthy on port `4003` using `zeroid1`. Keep `zeroid1`,
+preserve the old `zeroid` database, and do not create or reset another
+database. Rebuild only the frontend at the frozen commit with API
+`http://93.127.132.52:4003`, RPC `http://54.165.44.130:8545`, and
+`ZEROID_ALLOW_PLAINTEXT_HTTP=true`. Reload the final wallet extension and
+browser tab.
+
+```dotenv
+NEXT_PUBLIC_CHAIN_ENV=testnet
+NEXT_PUBLIC_AETHELRED_TESTNET_RPC_URL=http://54.165.44.130:8545
+NEXT_PUBLIC_ZEROID_API_URL=http://93.127.132.52:4003
+NEXT_PUBLIC_API_URL=http://93.127.132.52:4003
+ZEROID_BACKEND_API_URL=http://127.0.0.1:4003
+ZEROID_ALLOW_PLAINTEXT_HTTP=true
+```
+
+### 4. NoblePay
+
+Do not restore `scripts/setup-test-token.mjs`. In the current state, configure
+`EXISTING_USDC_TOKEN_ADDRESS` plus its exact on-chain name, leave the
+existing-USDT fields blank, and use the following exact evaluation inputs in
+`/etc/noblepay/testnet-token-provisioning.env`:
+
+```dotenv
+CHAIN_ENV=testnet
+RPC_URL=http://54.165.44.130:8545
+ALLOW_INSECURE_TESTNET_RPC=acknowledge-evaluation-only-plaintext-rpc
+AETHELRED_CHAIN_ID=7332
+AETHELRED_NETWORK_ANCHOR_BLOCK=450000
+AETHELRED_NETWORK_ANCHOR_HASH=0x1057a62d12eed50d8740fcf51be0cd784db9a4f8f98c9312eee8b8bc7e543ddc
+NOBLEPAY_SOURCE_COMMIT=cf91c309252d3c5e69b52525975ceef98e6dc24e
+TOKEN_PROVISIONER_ADDRESS=0x<funded-testnet-provisioner>
+TOKEN_PROVISIONER_KEY_FILE=/etc/noblepay/token-provisioner.key
+EXISTING_USDC_TOKEN_ADDRESS=0x<existing-usdc-address>
+EXISTING_USDC_TOKEN_NAME=<exact-output-of-on-chain-name()>
+EXISTING_USDT_TOKEN_ADDRESS=
+EXISTING_USDT_TOKEN_NAME=
+CONFIRM_TESTNET_TOKEN_PROVISIONING=false
+```
+
+The signer file contains only one raw `0x` + 64-hex key and has mode
+`0400`; it is not an env assignment. Obtain the exact USDC name and run the
+two non-transaction checks:
+
+```bash
+node --input-type=module -e \
+  'import {createPublicClient,http,parseAbi} from "viem";const [rpc,address]=process.argv.slice(1);const client=createPublicClient({transport:http(rpc)});console.log(await client.readContract({address,abi:parseAbi(["function name() view returns (string)"]),functionName:"name"}));' \
+  http://54.165.44.130:8545 \
+  0x<existing-usdc-address>
+
+export RELEASE_SHA=cf91c309252d3c5e69b52525975ceef98e6dc24e
+export TOKEN_CHECKPOINT=/etc/noblepay/testnet-token-checkpoint.json
+export TOKEN_MANIFEST=/etc/noblepay/testnet-token-manifest."$RELEASE_SHA".json
+
+node --env-file=/etc/noblepay/testnet-token-provisioning.env \
+  scripts/provision-testnet-tokens.mjs --validate-only \
+  --checkpoint-file "$TOKEN_CHECKPOINT" --manifest-file "$TOKEN_MANIFEST"
+node --env-file=/etc/noblepay/testnet-token-provisioning.env \
+  scripts/provision-testnet-tokens.mjs --verify-only \
+  --checkpoint-file "$TOKEN_CHECKPOINT" --manifest-file "$TOKEN_MANIFEST"
+```
+
+After review, change only `CONFIRM_TESTNET_TOKEN_PROVISIONING` to
+`deploy-publicly-mintable-test-tokens` and run:
+
+```bash
+node --env-file=/etc/noblepay/testnet-token-provisioning.env \
+  scripts/provision-testnet-tokens.mjs \
+  --checkpoint-file "$TOKEN_CHECKPOINT" --manifest-file "$TOKEN_MANIFEST"
+```
+
+Immediately return the confirmation to `false`. The ceremony adopts verified
+USDC and deploys only missing USDT. Token provisioning and core bootstrap can
+use the explicitly acknowledged anchored HTTP RPC. Core finalize must wait for
+a real Ethereum JSON-RPC WSS endpoint and the required TLS publication
+endpoints; CometBFT `26657` is not a substitute, and no validator restart is
+required.
+
+### 5. Shiora
+
+Rebuild and restart the application at commit
+`2dd1255715a373beb691ab4bbcaecf787dcb8c09`. First complete an operator copy of
+`.env.public-testnet.example`, including its required secrets, database, admin,
+and migration values. For the current synthetic direct-IP evaluation, apply
+these overrides; this block is not a complete environment:
 
 ```dotenv
 NODE_ENV=production

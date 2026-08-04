@@ -1,11 +1,11 @@
 # Public Testnet Application Release — 2026-07-31
 
-Release ID: `public-testnet-application-bundle-2026-07-31.1`
+Release ID: `public-testnet-application-bundle-2026-07-31.2`
 
 Status: approved public-testnet application baseline.
 
 Canonical release tag:
-`public-testnet-application-bundle-2026-07-31.1` in
+`public-testnet-application-bundle-2026-07-31.2` in
 `aethelred-foundation/aethelred`.
 
 This release freezes the running Aethelred public testnet, Aethelred Wallet,
@@ -54,15 +54,20 @@ test -z "$(git status --porcelain)"
 
 ## 2. Confirmed live chain state
 
-Read-only verification at block `388445`, block time
-`2026-07-31T06:45:49.109924979Z`, confirmed:
+Read-only verification at block `454313`, block time
+`2026-08-04T09:16:59.109005493Z`, reconfirmed:
 
 - chain ID `aethelred-testnet-1`;
 - node `catching_up=false`;
 - governance proposal `1` is `PROPOSAL_STATUS_PASSED`;
 - final tally is `600000000000` yes and zero no, veto, or abstain;
+- EVM chain ID is `7332` (`0x1ca4`), and block `450000` still has the pinned
+  hash `0x1057a62d12eed50d8740fcf51be0cd784db9a4f8f98c9312eee8b8bc7e543ddc`;
 - `active_static_precompiles` contains all five approved addresses:
   `0x0800`, `0x0801`, `0x0900`, `0x0901`, and `0x0902`.
+
+No reviewed EVM JSON-RPC WSS URL is published in this release. CometBFT RPC
+port `26657` is not an EVM WebSocket endpoint.
 
 The exact verification references are:
 
@@ -96,25 +101,25 @@ the Ubuntu and Debian executable hashes equal.
 
 ## 3. Frozen source and deployment matrix
 
-| Component | Repository and release branch | Frozen commit | Runtime | Deployment action |
-| --- | --- | --- | --- | --- |
-| Protocol | `aethelred-foundation/aethelred`, `release/public-testnet-pqc` | `4c9c258c5757d385e6259875625e63ac205aa5e8` | Go `1.25.12` | No action. Keep the running chain. |
-| Wallet | `aethelred-foundation/wallet`, `fix/wallet-popup-layout` | `c33d4c05120ba98449aad8f9ac820df2ad701955` | Node `24.18.0`, pnpm `11.9.0` | Replace/reload the evaluation extension from the verified release artifact. |
-| Cruzible | `aethelred-foundation/cruzible`, `fix/us-testnet-wallet-staking` | `7df3998ae1a09d149eec9f005b6cf4146851acb1` | Node `>=20.0.0`, npm `10.9.4` | Keep the working contract deployment. Rebuild/restart the application only if needed after the wallet update. |
-| TerraQura | `aethelred-foundation/terraqura`, `ramesh/terraqura-pre-mainnet-remediation-20260414` | `0f84a3f0c820afed6bcf2af50dd1c258481d3fe4` | Node `20.18.3`, pnpm `9.0.0` | Complete the current two-phase contract ceremony; do not reuse removed scripts or an old manifest. |
-| ZeroID | `aethelred-foundation/zeroid`, `release/zeroid-production-hardening` | `709beb25493b30093f5bd637824c0e1fcd2ed3ec` | Node `20.19.5`, npm `10.8.2` | Move the application to a fresh database in the existing PostgreSQL volume. Preserve verified contract addresses; run the contract ceremony only if no valid deployment manifest exists. |
-| NoblePay | `aethelred-foundation/noblepay`, `release/noblepay-production-readiness` | `2f6d71ac1fe6d1f787534d7fe5234c3646aabab1` | Node `24.18.0`, npm `11.16.0` | Follow the current two-phase core ceremony. Provision test tokens only if the network operator confirms canonical test tokens do not exist. |
-| Shiora | `aethelred-foundation/shiora`, `release/public-testnet-2026-07-31` | `2dd1255715a373beb691ab4bbcaecf787dcb8c09` | Node `20.x`, `npm ci` | Rebuild/restart the combined application with the evaluation origin settings. Do not redeploy a verified attestation contract. |
+| Component | Repository and release branch                                                         | Frozen commit                              | Runtime                       | Deployment action                                                                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Protocol  | `aethelred-foundation/aethelred`, `release/public-testnet-pqc`                        | `4c9c258c5757d385e6259875625e63ac205aa5e8` | Go `1.25.12`                  | No action. Keep the running chain.                                                                                                                                  |
+| Wallet    | `aethelred-foundation/wallet`, `fix/wallet-popup-layout`                              | `c33d4c05120ba98449aad8f9ac820df2ad701955` | Node `24.18.0`, pnpm `11.9.0` | Replace/reload the evaluation extension from the verified release artifact.                                                                                         |
+| Cruzible  | `aethelred-foundation/cruzible`, `fix/us-testnet-wallet-staking`                      | `92671c4558d476a873caa7b33cc24f82c69676dd` | Node `>=20.0.0`, npm `10.9.4` | Keep the working contracts. Recreate the API only if it embeds an indexer, then run exactly one dedicated indexer until readiness recovers.                         |
+| TerraQura | `aethelred-foundation/terraqura`, `ramesh/terraqura-pre-mainnet-remediation-20260414` | `af509d2f1629af98873de3f627896d483baed595` | Node `20.18.3`, pnpm `9.0.0`  | Use the repaired signer/RPC preflight, complete the five-proxy ceremony, then start the explicit direct-IP evaluation profile.                                      |
+| ZeroID    | `aethelred-foundation/zeroid`, `release/zeroid-production-hardening`                  | `709beb25493b30093f5bd637824c0e1fcd2ed3ec` | Node `20.19.5`, npm `10.8.2`  | Keep the working `zeroid1` database and preserved old `zeroid` database. Rebuild the frontend with the exact API/RPC variables below; do not reset either database. |
+| NoblePay  | `aethelred-foundation/noblepay`, `release/noblepay-production-readiness`              | `cf91c309252d3c5e69b52525975ceef98e6dc24e` | Node `24.18.0`, npm `11.16.0` | Verify and adopt the existing USDC, deploy only missing USDT, then bootstrap the core. Finalize only after real EVM WSS and required TLS endpoints exist.           |
+| Shiora    | `aethelred-foundation/shiora`, `release/public-testnet-2026-07-31`                    | `2dd1255715a373beb691ab4bbcaecf787dcb8c09` | Node `20.x`, `npm ci`         | Rebuild/restart the combined application with the evaluation origin settings. Do not redeploy a verified attestation contract.                                      |
 
 Expected service ports:
 
-| Application | Frontend | Backend / API | Other |
-| --- | ---: | ---: | --- |
-| Cruzible | `3000` | `4001` | — |
-| Shiora | `3001` | same process | — |
-| ZeroID | `3003` | `4003` | — |
-| TerraQura | `3007` | `4000` | — |
-| NoblePay | `3008` | `4008` | optional gateway `4018`, edge `8080` |
+| Application | Frontend | Backend / API | Other                                |
+| ----------- | -------: | ------------: | ------------------------------------ |
+| Cruzible    |   `3000` |        `4001` | —                                    |
+| Shiora      |   `3001` |  same process | —                                    |
+| ZeroID      |   `3003` |        `4003` | —                                    |
+| TerraQura   |   `3007` |        `4000` | —                                    |
+| NoblePay    |   `3008` |        `4008` | optional gateway `4018`, edge `8080` |
 
 ## 4. Wallet artifact
 
@@ -152,6 +157,11 @@ failure and strict-content-security-policy injection failure that prevented
 ZeroID, Cruzible, and Shiora from detecting the extension. The popup navigation
 and viewport layout fixes are included in the same artifact.
 
+Disable or remove every older Aethelred Wallet copy before loading this one.
+Grant this extension site access to `http://93.127.132.52/*`, reload the
+extension, and then reload every open dApp tab. Multiple enabled copies can
+race provider injection and are not a valid test configuration.
+
 References:
 
 - `wallet/docs/testing/WALLET_PUBLIC_TESTNET_RETEST.md`
@@ -168,6 +178,17 @@ contracts again unless the deployed manifest, bytecode, or wiring check fails.
 After installing the frozen wallet, retest Aethelred Wallet connection,
 stake, unstake, transaction confirmation, and receipt display. MetaMask and
 Aethelred Wallet are both supported.
+
+The current backend is not ready because its durable cursor reports
+`requiresRebuild=true` and `INDEXER_GENERATION_UNCOMMITTED`. That is an
+application-worker recovery condition, not a chain or contract failure.
+Commit `92671c4558d476a873caa7b33cc24f82c69676dd` fixes the single-box topology:
+the API is forced to `INDEXER_ENABLED=false` and exactly one dedicated indexer
+is started by default. Resolve the Compose project that owns API port `4001`,
+then follow **Recover an existing stuck rebuild without resetting data** in
+the canonical runbook. Do not edit/delete the cursor, reset Prisma, remove the
+PostgreSQL volume, redeploy contracts, or restart the chain. Readiness must
+return 200 and the reconciliation discrepancy must clear before promotion.
 
 References:
 
@@ -192,58 +213,82 @@ test "$(pnpm --version)" = "9.0.0"
 HUSKY=0 pnpm install --frozen-lockfile
 ```
 
-Run the reviewed ceremony:
+The deployment env must contain a path, not the private key value:
+
+```dotenv
+DEPLOYER_SIGNER_KEY_FILE=/secure/operator/terraqura-deployer.key
+```
+
+The referenced file contains exactly one `0x` followed by 64 hexadecimal
+characters and has mode `0400` or `0600`. Source only the reviewed operator
+env, clear any inherited legacy value, and run the read-only checks first:
 
 ```bash
-pnpm contracts:preflight
+unset PRIVATE_KEY
+set -a
+. /secure/operator/terraqura-contracts.env
+set +a
+env -u PRIVATE_KEY pnpm contracts:signer-key:check
+env -u PRIVATE_KEY pnpm contracts:rpc:check
+env -u PRIVATE_KEY pnpm contracts:preflight
+```
 
+Then run the reviewed ceremony:
+
+```bash
 export CONFIRM_TESTNET_DEPLOY=true
 export CONFIRM_TESTNET_FINALIZE=false
-pnpm contracts:bootstrap
+env -u PRIVATE_KEY pnpm contracts:bootstrap
 export CONFIRM_TESTNET_DEPLOY=false
 
 export CONFIRM_TESTNET_DEPLOY=false
 export CONFIRM_TESTNET_FINALIZE=true
-pnpm contracts:finalize
+env -u PRIVATE_KEY pnpm contracts:finalize
 export CONFIRM_TESTNET_FINALIZE=false
 
-pnpm contracts:verify
+env -u PRIVATE_KEY pnpm contracts:verify
 ```
+
+For the current US host, install
+`deploy/terraqura.public-testnet-evaluation.env.example` as the external
+operator file `/secure/operator/terraqura-public-testnet-evaluation.env`, then
+copy the finalized five proxy addresses into that external file. Do not edit
+the tracked example. Use only `docker-compose.public-testnet-evaluation.yml`;
+it is the reviewed production-runtime, direct-IP profile for web `3007`, API
+`4000`, chain `7332`, and the pinned RPC anchor. The API signer must be staged
+as the separate UID/GID `1001`, mode-`0400` copy described in the runbook. Do
+not use the old database or previous deployment scripts by default.
 
 References:
 
 - `terraqura/docs/deployment/PUBLIC_TESTNET_DEPLOYMENT.md`
 - `terraqura/deploy/terraqura.contracts.public-testnet.env.example`
+- `terraqura/deploy/terraqura.public-testnet-evaluation.env.example`
+- `terraqura/docker-compose.public-testnet-evaluation.yml`
 - `terraqura/deploy/terraqura.api.production.env.example`
 - `terraqura/deploy/terraqura.web.production.env.example`
 
 ### ZeroID
 
-The wallet-provider error is fixed by the wallet release; ZeroID already
-supports the required provider surfaces.
+The backend is healthy at port `4003` using the new `zeroid1` database. Keep
+that database and preserve the old `zeroid` database; do not create another
+database, remove the volume, run `migrate reset`, or edit
+`_prisma_migrations`.
 
-For Prisma `P3005`, preserve the existing PostgreSQL volume and create a fresh
-public-testnet database:
+Rebuild only the frontend at the frozen commit with the browser-reachable API
+and RPC values so its CSP includes both HTTP endpoints:
 
-```bash
-cd backend
-docker compose stop api
-docker compose up -d postgres
-docker compose exec -T postgres sh -eu -c \
-  'createdb --username "$POSTGRES_USER" --owner "$POSTGRES_USER" zeroid_testnet_20260731'
+```dotenv
+NEXT_PUBLIC_CHAIN_ENV=testnet
+NEXT_PUBLIC_AETHELRED_TESTNET_RPC_URL=http://54.165.44.130:8545
+NEXT_PUBLIC_ZEROID_API_URL=http://93.127.132.52:4003
+NEXT_PUBLIC_API_URL=http://93.127.132.52:4003
+ZEROID_BACKEND_API_URL=http://127.0.0.1:4003
+ZEROID_ALLOW_PLAINTEXT_HTTP=true
 ```
 
-Update both `POSTGRES_DB` and the database component of `DATABASE_URL`, then:
-
-```bash
-docker compose up -d --build
-docker compose logs --no-color migrate
-docker compose ps
-```
-
-Do not remove the volume, drop the old database, run `migrate reset`, execute a
-generated schema diff, or edit `_prisma_migrations`. The old database remains
-available for a separately reviewed backup and baseline audit.
+The final wallet artifact fixes provider discovery. Reload the extension and
+the ZeroID tab before retesting wallet connection.
 
 Reuse existing ZeroID contract addresses only when the deployment manifest,
 chain ID, bytecode, ownership, and wiring verify against this release. If that
@@ -259,25 +304,67 @@ References:
 
 ### NoblePay
 
-Do not restore or use `scripts/setup-test-token.mjs`. First ask the network
-operator for the canonical public-testnet USDC and USDT addresses and verify
-their chain ID, bytecode, decimals, and mint policy.
+Do not restore or use `scripts/setup-test-token.mjs`. The current operator has
+one existing USDC and no USDT. Set the existing USDC address and its exact
+on-chain `name()` in the provisioning env, and leave both existing-USDT fields
+blank:
 
-Only when the operator confirms that canonical test tokens do not exist, use:
+```dotenv
+EXISTING_USDC_TOKEN_ADDRESS=0x<existing-usdc-address>
+EXISTING_USDC_TOKEN_NAME=<exact-name-returned-by-name()>
+EXISTING_USDT_TOKEN_ADDRESS=
+EXISTING_USDT_TOKEN_NAME=
+RPC_URL=http://54.165.44.130:8545
+ALLOW_INSECURE_TESTNET_RPC=acknowledge-evaluation-only-plaintext-rpc
+AETHELRED_CHAIN_ID=7332
+AETHELRED_NETWORK_ANCHOR_BLOCK=450000
+AETHELRED_NETWORK_ANCHOR_HASH=0x1057a62d12eed50d8740fcf51be0cd784db9a4f8f98c9312eee8b8bc7e543ddc
+```
+
+The signer file is one raw `0x` + 64-hex key with mode `0400`; it is not an
+env assignment. Run validation, then the keyless on-chain verification:
 
 ```bash
+export RELEASE_SHA=cf91c309252d3c5e69b52525975ceef98e6dc24e
+export TOKEN_CHECKPOINT=/etc/noblepay/testnet-token-checkpoint.json
+export TOKEN_MANIFEST=/etc/noblepay/testnet-token-manifest."$RELEASE_SHA".json
+
 node --env-file=/etc/noblepay/testnet-token-provisioning.env \
   scripts/provision-testnet-tokens.mjs \
   --validate-only \
   --checkpoint-file "$TOKEN_CHECKPOINT" \
   --manifest-file "$TOKEN_MANIFEST"
+
+node --env-file=/etc/noblepay/testnet-token-provisioning.env \
+  scripts/provision-testnet-tokens.mjs \
+  --verify-only \
+  --checkpoint-file "$TOKEN_CHECKPOINT" \
+  --manifest-file "$TOKEN_MANIFEST"
 ```
 
-After review, the same command without `--validate-only` performs the
-testnet-only ceremony. The script does not register tokens, mint, approve, or
-modify core contracts. The resulting `SUPPORTED_TOKEN_ADDRESSES`,
-`USDC_TOKEN_ADDRESS`, and `USDT_TOKEN_ADDRESS` values enter the normal
-two-phase core deployment.
+After review, set
+`CONFIRM_TESTNET_TOKEN_PROVISIONING=deploy-publicly-mintable-test-tokens` in the
+operator env and run:
+
+```bash
+node --env-file=/etc/noblepay/testnet-token-provisioning.env \
+  scripts/provision-testnet-tokens.mjs \
+  --checkpoint-file "$TOKEN_CHECKPOINT" \
+  --manifest-file "$TOKEN_MANIFEST"
+```
+
+Return the confirmation to `false`. The command verifies and adopts USDC,
+deploys only USDT, and produces resumable checkpoint and manifest evidence. It
+does not register tokens, mint, approve, or modify core contracts. Copy only
+the emitted `SUPPORTED_TOKEN_ADDRESSES`, `USDC_TOKEN_ADDRESS`, and
+`USDT_TOKEN_ADDRESS` values into the core env.
+
+The repaired core ceremony accepts the same explicitly acknowledged HTTP RPC
+for this evaluation network. Token provisioning and core bootstrap may
+proceed. Core finalize remains blocked until a real credential-free Ethereum
+JSON-RPC WSS endpoint and the required TLS publication endpoints exist.
+CometBFT port `26657` is not an EVM WebSocket substitute, and this blocker does
+not require restarting validators.
 
 References:
 
@@ -288,7 +375,10 @@ References:
 
 ### Shiora
 
-For the current direct-IP evaluation host, use:
+For the current direct-IP evaluation host, complete the operator copy of
+`.env.public-testnet.example`, including every required secret, database,
+admin, and migration value. Apply these direct-IP overrides; they are not a
+complete Shiora environment:
 
 ```dotenv
 NODE_ENV=production
@@ -321,11 +411,12 @@ Run the retest in this order:
 
 1. Verify the chain and five active precompiles read-only.
 2. Install the frozen wallet and verify its SHA-256.
-3. Retest Cruzible without changing contracts.
-4. Complete TerraQura with Node `20.18.3`.
-5. Start ZeroID on the fresh database and verify the existing contract
-   manifest before deciding whether a contract ceremony is required.
-6. Complete NoblePay; do not provision duplicate test tokens.
+3. Recover Cruzible's dedicated indexer and retest without changing contracts.
+4. Complete TerraQura with Node `20.18.3` and its explicit evaluation profile.
+5. Keep ZeroID on `zeroid1`, rebuild its frontend, and verify the existing
+   contract manifest before deciding whether a contract ceremony is required.
+6. Verify/adopt NoblePay's existing USDC and deploy only missing USDT; bootstrap
+   the core, then stop at the documented WSS/TLS finalization gate.
 7. Restart Shiora with the exact evaluation origin and retest both wallet
    choices.
 
@@ -338,6 +429,8 @@ Stop the affected application deployment and report evidence if:
   not match its reviewed manifest;
 - ZeroID's migration preflight exits `78`;
 - a NoblePay canonical token address cannot be verified;
+- NoblePay finalization lacks a real EVM WSS endpoint or required TLS public
+  endpoints;
 - a production-mode service requires an insecure-origin exception.
 
 None of those application stop conditions requires resetting the public
