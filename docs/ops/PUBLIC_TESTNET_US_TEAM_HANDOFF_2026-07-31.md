@@ -14,7 +14,7 @@ passed, and the live EVM parameters now contain `0x0800`, `0x0801`, `0x0900`,
 `0x0901`, and `0x0902`.
 
 We are freezing the application setup to release
-`public-testnet-application-bundle-2026-07-31.2`. From this point, do not
+`public-testnet-application-bundle-2026-07-31.3`. From this point, do not
 deploy a branch tip. Fetch the branch and check out the exact commit in
 detached mode:
 
@@ -39,7 +39,7 @@ action: no restart and no binary change
 
 Wallet
 branch: fix/wallet-popup-layout
-commit: c33d4c05120ba98449aad8f9ac820df2ad701955
+commit: 9f1ba1358f3599ae1d0b084caec0efaee3250896
 Node: 24.18.0
 pnpm: 11.9.0
 
@@ -76,17 +76,23 @@ install: npm ci
 Install the wallet first. Use the GitHub artifact:
 
 ```text
-https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260731/aethelred-wallet-v0.9.0.zip
-SHA-256: a7d4314b4b484c44de89404a5a539a593c06ea782851145772e8e141d2cad90e
-size: 752236 bytes
+https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260805/aethelred-wallet-v0.9.0.zip
+SHA-256: 9635fd6473e4d2ce41a56d06736613f26b50624fe4eeba4cf5728d21c82670db
+size: 752337 bytes
 ```
 
 Verify the hash before loading the unpacked extension. If endpoint protection
 still flags the ZIP, do not disable or bypass protection. Build it locally
 from the exact wallet commit and submit the hash for security-vendor review.
-Disable/remove older Aethelred Wallet copies, load only this release, grant it
-site access to `http://93.127.132.52/*`, then reload the extension and every
-open dApp tab.
+Disable/remove older Aethelred Wallet copies and load only this release. The
+reported browser already grants all-sites access, so no build variable or new
+manual permission is needed; confirm access to `http://93.127.132.52/*`, then
+reload the extension and every open dApp tab.
+
+This wallet accepts Shiora's `safe` sign-in classification without crashing.
+On Chrome 127 and later, an account request also opens the popup when the
+wallet is locked. Unlock it, return to the dApp, and select **Connect** once
+again; the original request is deliberately not resumed silently.
 
 Proceed in this order.
 
@@ -135,6 +141,14 @@ curl -sS -w '\nHTTP %{http_code}\n' \
 ```
 
 ### 2. TerraQura
+
+Do not bypass the clean-source gate. If preflight reports modified or untracked
+files, preserve the current directory, record `git status --short`, and use a
+second clean checkout at the frozen commit. Continue to use the existing
+external signer key, operator env, and durable checkpoint. This is source
+recovery only; it does not restart the chain or discard ceremony state. If the
+dirty files include application or contract source, send the diff for review
+before continuing.
 
 Use exactly Node `20.18.3` and pnpm `9.0.0`. In
 `/secure/operator/terraqura-contracts.env`, set `DEPLOYER_SIGNER_KEY_FILE` to an
@@ -202,9 +216,9 @@ ZEROID_ALLOW_PLAINTEXT_HTTP=true
 
 ### 4. NoblePay
 
-Do not restore `scripts/setup-test-token.mjs`. In the current state, configure
-`EXISTING_USDC_TOKEN_ADDRESS` plus its exact on-chain name, leave the
-existing-USDT fields blank, and use the following exact evaluation inputs in
+Do not restore `scripts/setup-test-token.mjs` and do not deploy another test
+token. Configure both operator-reported addresses plus each exact on-chain
+name, and use the following evaluation inputs in
 `/etc/noblepay/testnet-token-provisioning.env`:
 
 ```dotenv
@@ -217,22 +231,28 @@ AETHELRED_NETWORK_ANCHOR_HASH=0x1057a62d12eed50d8740fcf51be0cd784db9a4f8f98c9312
 NOBLEPAY_SOURCE_COMMIT=cf91c309252d3c5e69b52525975ceef98e6dc24e
 TOKEN_PROVISIONER_ADDRESS=0x<funded-testnet-provisioner>
 TOKEN_PROVISIONER_KEY_FILE=/etc/noblepay/token-provisioner.key
-EXISTING_USDC_TOKEN_ADDRESS=0x<existing-usdc-address>
+EXISTING_USDC_TOKEN_ADDRESS=0xB8FbD0B8cCB3f148DA18C223a1cFD77A594a280a
 EXISTING_USDC_TOKEN_NAME=<exact-output-of-on-chain-name()>
-EXISTING_USDT_TOKEN_ADDRESS=
-EXISTING_USDT_TOKEN_NAME=
+EXISTING_USDT_TOKEN_ADDRESS=0x9928cF89b7ea982ee2E06C26a9Fd00105C02850D
+EXISTING_USDT_TOKEN_NAME=<exact-output-of-on-chain-name()>
 CONFIRM_TESTNET_TOKEN_PROVISIONING=false
 ```
 
 The signer file contains only one raw `0x` + 64-hex key and has mode
-`0400`; it is not an env assignment. Obtain the exact USDC name and run the
-two non-transaction checks:
+`0400`; it is not an env assignment. Obtain the exact on-chain name of each
+token, enter both names in the env, and then run the two non-transaction
+checks:
 
 ```bash
-node --input-type=module -e \
-  'import {createPublicClient,http,parseAbi} from "viem";const [rpc,address]=process.argv.slice(1);const client=createPublicClient({transport:http(rpc)});console.log(await client.readContract({address,abi:parseAbi(["function name() view returns (string)"]),functionName:"name"}));' \
-  http://54.165.44.130:8545 \
-  0x<existing-usdc-address>
+for TOKEN_ADDRESS in \
+  0xB8FbD0B8cCB3f148DA18C223a1cFD77A594a280a \
+  0x9928cF89b7ea982ee2E06C26a9Fd00105C02850D
+do
+  node --input-type=module -e \
+    'import {createPublicClient,http,parseAbi} from "viem";const [rpc,address]=process.argv.slice(1);const client=createPublicClient({transport:http(rpc)});console.log(`${address} ${await client.readContract({address,abi:parseAbi(["function name() view returns (string)"]),functionName:"name"})}`);' \
+    http://54.165.44.130:8545 \
+    "$TOKEN_ADDRESS"
+done
 
 export RELEASE_SHA=cf91c309252d3c5e69b52525975ceef98e6dc24e
 export TOKEN_CHECKPOINT=/etc/noblepay/testnet-token-checkpoint.json
@@ -256,16 +276,33 @@ node --env-file=/etc/noblepay/testnet-token-provisioning.env \
 ```
 
 Immediately return the confirmation to `false`. The ceremony adopts verified
-USDC and deploys only missing USDT. Token provisioning and core bootstrap can
-use the explicitly acknowledged anchored HTTP RPC. Core finalize must wait for
-a real Ethereum JSON-RPC WSS endpoint and the required TLS publication
-endpoints; CometBFT `26657` is not a substitute, and no validator restart is
-required.
+USDC and USDT without another token deployment.
+
+Stop the current core ceremony. The repository does not include a governance
+multisig deployment script; the multisig must be provisioned through the
+approved external governance process. The prior bootstrap disabled the
+multisig-code check and used an individual address as `ADMIN_ADDRESS`, so do
+not call `acceptOwnership`, do not run `--finalize`, and do not configure or
+publish those core addresses. Preserve its checkpoint and transcript.
+
+After a real governance multisig is deployed, use the clean frozen source and
+start a new core ceremony with that contract as `ADMIN_ADDRESS` and with new
+checkpoint and manifest paths. The verified USDC and USDT addresses can be
+retained. Bootstrap may use the acknowledged anchored HTTP RPC. Have the
+multisig execute the generated `acceptOwnership()` payload; finalization must
+then wait for a real Ethereum JSON-RPC WSS endpoint and the required TLS
+publication endpoints. CometBFT `26657` is not a substitute, and no validator
+restart is required.
 
 ### 5. Shiora
 
-Rebuild and restart the application at commit
-`2dd1255715a373beb691ab4bbcaecf787dcb8c09`. First complete an operator copy of
+The Shiora failure was a wallet approval-rendering defect, and the site-access
+setting was already correct. If the running application is commit
+`2dd1255715a373beb691ab4bbcaecf787dcb8c09` with the release environment, keep
+it and its verified attestation contract. Install the new wallet and retest;
+do not redeploy Shiora for this defect.
+
+Only if the running commit or environment differs, complete an operator copy of
 `.env.public-testnet.example`, including its required secrets, database, admin,
 and migration values. For the current synthetic direct-IP evaluation, apply
 these overrides; this block is not a complete environment:
@@ -281,9 +318,8 @@ SHIORA_ALLOW_INSECURE_WALLET_HEADER=false
 SHIORA_TRUSTED_PROXY_COUNT=0
 ```
 
-Do not redeploy a verified Shiora attestation contract. Retest both Aethelred
-Wallet and MetaMask; the modal clipping and exact-origin handling are fixed in
-this release.
+Retest both Aethelred Wallet and MetaMask. The modal clipping and exact-origin
+handling remain fixed in the pinned Shiora commit.
 
 Expected ports are:
 

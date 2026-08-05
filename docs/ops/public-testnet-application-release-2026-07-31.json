@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0",
-  "releaseId": "public-testnet-application-bundle-2026-07-31.2",
+  "releaseId": "public-testnet-application-bundle-2026-07-31.3",
   "status": "approved-public-testnet-baseline",
-  "issuedAt": "2026-08-04T09:26:37Z",
+  "issuedAt": "2026-08-05T07:43:15Z",
   "manifest": {
     "repository": "https://github.com/aethelred-foundation/aethelred.git",
     "branch": "release/public-testnet-application-bundle-2026-07-31",
-    "tag": "public-testnet-application-bundle-2026-07-31.2",
+    "tag": "public-testnet-application-bundle-2026-07-31.3",
     "files": [
       "docs/ops/PUBLIC_TESTNET_APPLICATION_RELEASE_2026-07-31.md",
       "docs/ops/PUBLIC_TESTNET_US_TEAM_HANDOFF_2026-07-31.md",
@@ -31,8 +31,8 @@
     "sourceRepository": "https://github.com/aethelred-foundation/aethelred.git",
     "sourceBranch": "release/public-testnet-pqc",
     "sourceCommit": "4c9c258c5757d385e6259875625e63ac205aa5e8",
-    "observedBlockHeight": "454313",
-    "observedBlockTime": "2026-08-04T09:16:59.109005493Z",
+    "observedBlockHeight": "469283",
+    "observedBlockTime": "2026-08-05T07:42:56.530327282Z",
     "catchingUp": false,
     "goVersion": "1.25.12",
     "build": {
@@ -82,7 +82,7 @@
     "wallet": {
       "repository": "https://github.com/aethelred-foundation/wallet.git",
       "branch": "fix/wallet-popup-layout",
-      "commit": "c33d4c05120ba98449aad8f9ac820df2ad701955",
+      "commit": "9f1ba1358f3599ae1d0b084caec0efaee3250896",
       "runtime": {
         "node": "24.18.0",
         "packageManager": "pnpm@11.9.0"
@@ -90,15 +90,24 @@
       "artifact": {
         "name": "aethelred-wallet-v0.9.0.zip",
         "version": "0.9.0",
-        "sizeBytes": 752236,
-        "sha256": "a7d4314b4b484c44de89404a5a539a593c06ea782851145772e8e141d2cad90e",
-        "url": "https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260731/aethelred-wallet-v0.9.0.zip"
+        "releaseTag": "public-testnet-wallet-v0.9.0-20260805",
+        "sizeBytes": 752337,
+        "sha256": "9635fd6473e4d2ce41a56d06736613f26b50624fe4eeba4cf5728d21c82670db",
+        "url": "https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260805/aethelred-wallet-v0.9.0.zip"
       },
       "contractRedeploy": "not-applicable",
       "validation": {
         "status": "success",
-        "run": "https://github.com/aethelred-foundation/wallet/actions/runs/30609836172"
+        "run": "https://github.com/aethelred-foundation/wallet/actions/runs/30984536941",
+        "vulnerabilityGateRun": "https://github.com/aethelred-foundation/wallet/actions/runs/30984537051",
+        "evidence": [
+          "23 checks passed, 2 policy-defined checks skipped, and 0 checks failed",
+          "production dependency audit reported no known vulnerabilities",
+          "two Node 24.18.0 package builds were byte-identical",
+          "published ZIP was downloaded again and matched the recorded size and SHA-256"
+        ]
       },
+      "lockedConnectionBehavior": "Chrome 127 and later opens the locked wallet popup; after unlock the tester retries Connect once",
       "references": [
         "docs/testing/WALLET_PUBLIC_TESTNET_RETEST.md",
         "docs/engineering/WALLET_PRODUCTION_READINESS.md"
@@ -148,6 +157,7 @@
         "api": 4000
       },
       "contractRedeploy": "complete-five-proxy-two-phase-ceremony-after-preflight",
+      "dirtyCheckoutRecovery": "preserve-current-evidence-and-external-ceremony-state-then-continue-from-a-clean-side-by-side-checkout",
       "evaluationDeployment": {
         "composeFile": "docker-compose.public-testnet-evaluation.yml",
         "environmentTemplate": "deploy/terraqura.public-testnet-evaluation.env.example",
@@ -221,10 +231,15 @@
         "optionalGateway": 4018,
         "edge": 8080
       },
-      "contractRedeploy": "follow-current-two-phase-core-ceremony",
-      "testTokenProvisioning": "verify-and-adopt-existing-usdc-then-deploy-only-missing-usdt",
-      "coreBootstrap": "allowed-with-explicitly-acknowledged-anchored-evaluation-http-rpc",
-      "coreFinalize": "blocked-until-real-evm-wss-and-required-tls-publication-endpoints-exist",
+      "contractRedeploy": "new-clean-core-ceremony-required-because-the-admin-multisig-check-was-bypassed",
+      "operatorReportedTestTokens": {
+        "verificationStatus": "requires-current-ceremony-on-chain-verification-before-adoption",
+        "usdc": "0xB8FbD0B8cCB3f148DA18C223a1cFD77A594a280a",
+        "usdt": "0x9928cF89b7ea982ee2E06C26a9Fd00105C02850D"
+      },
+      "testTokenProvisioning": "verify-and-adopt-existing-usdc-and-usdt-without-another-token-deployment",
+      "coreBootstrap": "preserve-but-do-not-finalize-the-eoa-admin-checkpoint-then-start-a-new-ceremony-with-a-deployed-governance-multisig",
+      "coreFinalize": "blocked-until-multisig-ownership-acceptance-real-evm-wss-and-required-tls-publication-endpoints-exist",
       "validation": {
         "status": "success",
         "runs": [
@@ -268,6 +283,8 @@
         "SHIORA_TRUSTED_PROXY_COUNT": "0"
       },
       "contractRedeploy": "no-unless-attestation-manifest-or-bytecode-verification-fails",
+      "applicationAction": "retain-running-deployment-if-commit-and-environment-match-then-retest-with-the-new-wallet",
+      "walletDefect": "safe-risk-classification-handled-by-wallet-no-shiora-source-or-contract-redeployment-required",
       "validation": {
         "status": "success",
         "run": "https://github.com/aethelred-foundation/shiora/actions/runs/30610908826"

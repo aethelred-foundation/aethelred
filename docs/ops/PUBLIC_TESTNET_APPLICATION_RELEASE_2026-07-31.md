@@ -1,11 +1,11 @@
 # Public Testnet Application Release — 2026-07-31
 
-Release ID: `public-testnet-application-bundle-2026-07-31.2`
+Release ID: `public-testnet-application-bundle-2026-07-31.3`
 
 Status: approved public-testnet application baseline.
 
 Canonical release tag:
-`public-testnet-application-bundle-2026-07-31.2` in
+`public-testnet-application-bundle-2026-07-31.3` in
 `aethelred-foundation/aethelred`.
 
 This release freezes the running Aethelred public testnet, Aethelred Wallet,
@@ -54,8 +54,8 @@ test -z "$(git status --porcelain)"
 
 ## 2. Confirmed live chain state
 
-Read-only verification at block `454313`, block time
-`2026-08-04T09:16:59.109005493Z`, reconfirmed:
+Read-only verification at block `469283`, block time
+`2026-08-05T07:42:56.530327282Z`, reconfirmed:
 
 - chain ID `aethelred-testnet-1`;
 - node `catching_up=false`;
@@ -104,12 +104,12 @@ the Ubuntu and Debian executable hashes equal.
 | Component | Repository and release branch                                                         | Frozen commit                              | Runtime                       | Deployment action                                                                                                                                                   |
 | --------- | ------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Protocol  | `aethelred-foundation/aethelred`, `release/public-testnet-pqc`                        | `4c9c258c5757d385e6259875625e63ac205aa5e8` | Go `1.25.12`                  | No action. Keep the running chain.                                                                                                                                  |
-| Wallet    | `aethelred-foundation/wallet`, `fix/wallet-popup-layout`                              | `c33d4c05120ba98449aad8f9ac820df2ad701955` | Node `24.18.0`, pnpm `11.9.0` | Replace/reload the evaluation extension from the verified release artifact.                                                                                         |
+| Wallet    | `aethelred-foundation/wallet`, `fix/wallet-popup-layout`                              | `9f1ba1358f3599ae1d0b084caec0efaee3250896` | Node `24.18.0`, pnpm `11.9.0` | Replace/reload the evaluation extension from the verified release artifact.                                                                                         |
 | Cruzible  | `aethelred-foundation/cruzible`, `fix/us-testnet-wallet-staking`                      | `92671c4558d476a873caa7b33cc24f82c69676dd` | Node `>=20.0.0`, npm `10.9.4` | Keep the working contracts. Recreate the API only if it embeds an indexer, then run exactly one dedicated indexer until readiness recovers.                         |
 | TerraQura | `aethelred-foundation/terraqura`, `ramesh/terraqura-pre-mainnet-remediation-20260414` | `af509d2f1629af98873de3f627896d483baed595` | Node `20.18.3`, pnpm `9.0.0`  | Use the repaired signer/RPC preflight, complete the five-proxy ceremony, then start the explicit direct-IP evaluation profile.                                      |
 | ZeroID    | `aethelred-foundation/zeroid`, `release/zeroid-production-hardening`                  | `709beb25493b30093f5bd637824c0e1fcd2ed3ec` | Node `20.19.5`, npm `10.8.2`  | Keep the working `zeroid1` database and preserved old `zeroid` database. Rebuild the frontend with the exact API/RPC variables below; do not reset either database. |
-| NoblePay  | `aethelred-foundation/noblepay`, `release/noblepay-production-readiness`              | `cf91c309252d3c5e69b52525975ceef98e6dc24e` | Node `24.18.0`, npm `11.16.0` | Verify and adopt the existing USDC, deploy only missing USDT, then bootstrap the core. Finalize only after real EVM WSS and required TLS endpoints exist.           |
-| Shiora    | `aethelred-foundation/shiora`, `release/public-testnet-2026-07-31`                    | `2dd1255715a373beb691ab4bbcaecf787dcb8c09` | Node `20.x`, `npm ci`         | Rebuild/restart the combined application with the evaluation origin settings. Do not redeploy a verified attestation contract.                                      |
+| NoblePay  | `aethelred-foundation/noblepay`, `release/noblepay-production-readiness`              | `cf91c309252d3c5e69b52525975ceef98e6dc24e` | Node `24.18.0`, npm `11.16.0` | Verify and adopt both reported test tokens. Do not finalize the core bootstrap that bypassed the multisig check; start a new core ceremony only after a real governance multisig is deployed. |
+| Shiora    | `aethelred-foundation/shiora`, `release/public-testnet-2026-07-31`                    | `2dd1255715a373beb691ab4bbcaecf787dcb8c09` | Node `20.x`, `npm ci`         | Keep the running deployment if its commit and environment match. Retest with the new wallet; do not redeploy the application or a verified attestation contract for this wallet defect. |
 
 Expected service ports:
 
@@ -126,17 +126,19 @@ Expected service ports:
 Use the GitHub prerelease artifact, not a chat or CDN attachment:
 
 ```text
-https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260731/aethelred-wallet-v0.9.0.zip
+https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260805/aethelred-wallet-v0.9.0.zip
 ```
 
 Required verification:
 
 ```text
 file:    aethelred-wallet-v0.9.0.zip
-size:    752236 bytes
-sha256:  a7d4314b4b484c44de89404a5a539a593c06ea782851145772e8e141d2cad90e
-source:  c33d4c05120ba98449aad8f9ac820df2ad701955
+size:    752337 bytes
+sha256:  9635fd6473e4d2ce41a56d06736613f26b50624fe4eeba4cf5728d21c82670db
+source:  9f1ba1358f3599ae1d0b084caec0efaee3250896
 runtime: Node 24.18.0, pnpm 11.9.0
+CI:      https://github.com/aethelred-foundation/wallet/actions/runs/30984536941
+audit:   https://github.com/aethelred-foundation/wallet/actions/runs/30984537051
 ```
 
 On Windows:
@@ -151,14 +153,22 @@ and submit the hash to the security vendor for review. The release artifact is
 a deterministic source build; a clean build and matching hash provide
 provenance, not an instruction to ignore a security alert.
 
-The wallet fix loads the page provider in the manifest-declared main world and
+The wallet loads the page provider in the manifest-declared main world and
 keeps the bridge in the isolated world. This removes the classic-script import
 failure and strict-content-security-policy injection failure that prevented
 ZeroID, Cruzible, and Shiora from detecting the extension. The popup navigation
 and viewport layout fixes are included in the same artifact.
 
+Revision `.3` also accepts the wallet's `safe` sign-in risk classification,
+fails closed instead of crashing when an approval risk payload is malformed,
+and opens the locked-wallet popup automatically for account requests on Chrome
+127 and later. Unlocking does not silently resume the original dApp request:
+after unlocking, return to the dApp and select **Connect** once more.
+
 Disable or remove every older Aethelred Wallet copy before loading this one.
-Grant this extension site access to `http://93.127.132.52/*`, reload the
+The reported browser configuration already grants the extension access on all
+sites, so no build variable or new manual permission is required. Confirm that
+the single enabled copy can access `http://93.127.132.52/*`, reload the
 extension, and then reload every open dApp tab. Multiple enabled copies can
 race provider injection and are not a valid test configuration.
 
@@ -199,6 +209,15 @@ References:
 - `cruzible/backend/.env.example`
 
 ### TerraQura
+
+If `contracts:preflight` reports `Source checkout contains modified or
+untracked files`, do not weaken or bypass that release gate. Preserve the
+current directory for evidence, record `git status --short`, and use a second,
+clean checkout at the frozen commit. Keep the signer key, operator env, and
+durable checkpoint at their existing external paths; a clean source checkout
+does not restart the network or discard ceremony state. If any modified file
+is application or contract source rather than local operator configuration,
+stop and submit the diff for review before continuing.
 
 Use the exact runtime before running any contract command:
 
@@ -304,16 +323,24 @@ References:
 
 ### NoblePay
 
-Do not restore or use `scripts/setup-test-token.mjs`. The current operator has
-one existing USDC and no USDT. Set the existing USDC address and its exact
-on-chain `name()` in the provisioning env, and leave both existing-USDT fields
-blank:
+Do not restore or use `scripts/setup-test-token.mjs`. The operator reports that
+both test tokens have now been deployed. Do not deploy either token again.
+Treat these addresses as operator-reported until the current provisioning
+ceremony verifies their chain, runtime, name, symbol, and six decimals:
+
+```text
+USDC  0xB8FbD0B8cCB3f148DA18C223a1cFD77A594a280a
+USDT  0x9928cF89b7ea982ee2E06C26a9Fd00105C02850D
+```
+
+Set both addresses and their exact on-chain `name()` results in the
+provisioning env:
 
 ```dotenv
-EXISTING_USDC_TOKEN_ADDRESS=0x<existing-usdc-address>
+EXISTING_USDC_TOKEN_ADDRESS=0xB8FbD0B8cCB3f148DA18C223a1cFD77A594a280a
 EXISTING_USDC_TOKEN_NAME=<exact-name-returned-by-name()>
-EXISTING_USDT_TOKEN_ADDRESS=
-EXISTING_USDT_TOKEN_NAME=
+EXISTING_USDT_TOKEN_ADDRESS=0x9928cF89b7ea982ee2E06C26a9Fd00105C02850D
+EXISTING_USDT_TOKEN_NAME=<exact-name-returned-by-name()>
 RPC_URL=http://54.165.44.130:8545
 ALLOW_INSECURE_TESTNET_RPC=acknowledge-evaluation-only-plaintext-rpc
 AETHELRED_CHAIN_ID=7332
@@ -353,18 +380,35 @@ node --env-file=/etc/noblepay/testnet-token-provisioning.env \
   --manifest-file "$TOKEN_MANIFEST"
 ```
 
-Return the confirmation to `false`. The command verifies and adopts USDC,
-deploys only USDT, and produces resumable checkpoint and manifest evidence. It
-does not register tokens, mint, approve, or modify core contracts. Copy only
+Return the confirmation to `false`. With both existing-token inputs present,
+the command verifies and adopts USDC and USDT without deploying another token,
+and produces resumable checkpoint and manifest evidence. It does not register
+tokens, mint, approve, or modify core contracts. Copy only
 the emitted `SUPPORTED_TOKEN_ADDRESSES`, `USDC_TOKEN_ADDRESS`, and
 `USDT_TOKEN_ADDRESS` values into the core env.
 
-The repaired core ceremony accepts the same explicitly acknowledged HTTP RPC
-for this evaluation network. Token provisioning and core bootstrap may
-proceed. Core finalize remains blocked until a real credential-free Ethereum
-JSON-RPC WSS endpoint and the required TLS publication endpoints exist.
-CometBFT port `26657` is not an EVM WebSocket substitute, and this blocker does
-not require restarting validators.
+The repository intentionally does not deploy the governance multisig. It must
+be provisioned through the approved external governance process, and its
+address must have runtime code before it is used as `ADMIN_ADDRESS`. Never
+disable the `final governance multisig` check.
+
+The reported core bootstrap was run after that check was disabled and used an
+individual address as `ADMIN_ADDRESS`. Preserve its checkpoint and transcript
+as evidence, but do not call `acceptOwnership`, do not finalize it, and do not
+publish or configure its contract addresses. The checkpoint digest binds the
+invalid admin input, so it cannot be repaired by replacing the address in the
+env. After a real multisig is deployed, return to the clean frozen source and
+start a new core ceremony with a new checkpoint and manifest path. The two
+verified token contracts may be retained; this recovery redeploys only the
+NoblePay core contracts, not the tokens or the chain.
+
+The repaired core ceremony accepts the explicitly acknowledged HTTP RPC for
+this evaluation network. After the new bootstrap, the governance multisig must
+execute the generated `acceptOwnership()` payload. Core finalize then remains
+blocked until a real credential-free Ethereum JSON-RPC WSS endpoint and the
+required TLS publication endpoints exist. CometBFT port `26657` is not an EVM
+WebSocket substitute, and none of these blockers requires restarting
+validators.
 
 References:
 
@@ -375,7 +419,15 @@ References:
 
 ### Shiora
 
-For the current direct-IP evaluation host, complete the operator copy of
+The wallet approval crash shown on Shiora was caused by the wallet's `safe`
+risk-classification handling, not by Shiora site access or contract bytecode.
+The browser evidence already shows all-sites access. If the running Shiora
+checkout is `2dd1255715a373beb691ab4bbcaecf787dcb8c09` and its environment
+matches this release, keep that process and the verified attestation contract;
+install the new wallet and retest. No Shiora source or contract redeployment is
+required for this defect.
+
+If the running commit or environment does not match, complete the operator copy of
 `.env.public-testnet.example`, including every required secret, database,
 admin, and migration value. Apply these direct-IP overrides; they are not a
 complete Shiora environment:
@@ -415,10 +467,12 @@ Run the retest in this order:
 4. Complete TerraQura with Node `20.18.3` and its explicit evaluation profile.
 5. Keep ZeroID on `zeroid1`, rebuild its frontend, and verify the existing
    contract manifest before deciding whether a contract ceremony is required.
-6. Verify/adopt NoblePay's existing USDC and deploy only missing USDT; bootstrap
-   the core, then stop at the documented WSS/TLS finalization gate.
-7. Restart Shiora with the exact evaluation origin and retest both wallet
-   choices.
+6. Verify/adopt NoblePay's existing USDC and USDT without another token
+   deployment. Preserve but do not finalize the EOA-admin core checkpoint;
+   provision a governance multisig and run a new core ceremony, then stop at
+   the documented WSS/TLS finalization gate.
+7. Keep the matching Shiora deployment and retest both wallet choices; rebuild
+   only if its commit or environment differs from this release.
 
 Stop the affected application deployment and report evidence if:
 
@@ -428,9 +482,10 @@ Stop the affected application deployment and report evidence if:
 - a deployed contract's bytecode, proxy implementation, owner, or wiring does
   not match its reviewed manifest;
 - ZeroID's migration preflight exits `78`;
-- a NoblePay canonical token address cannot be verified;
-- NoblePay finalization lacks a real EVM WSS endpoint or required TLS public
-  endpoints;
+- either NoblePay token address cannot be verified;
+- NoblePay `ADMIN_ADDRESS` is not a deployed governance multisig, ownership has
+  not been accepted through it, or finalization lacks a real EVM WSS endpoint
+  or required TLS public endpoints;
 - a production-mode service requires an insecure-origin exception.
 
 None of those application stop conditions requires resetting the public
