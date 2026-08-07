@@ -1,0 +1,68 @@
+# Docker build context exclusions.
+#
+# Without this file `docker build .` ships the entire working tree — measured
+# at 121 GB, of which crates/ alone is 71 GB of Rust target artifacts and .git
+# is 8.8 GB. Every image build (including the production one) paid that cost in
+# context transfer before compiling a single line.
+#
+# The Go build needs only go.mod/go.sum and the packages reachable from
+# ./cmd/aethelredd. Tracked Go sources live exclusively in:
+#   x/ app/ third_party/ sdk/ internal/ crypto/ cmd/ network/ services/ tools/
+# Everything excluded below contains no tracked .go files.
+
+# --- Version control -------------------------------------------------------
+.git
+.gitignore
+.github
+
+# --- Non-Go subprojects (no tracked .go files) -----------------------------
+crates/
+dApps/
+wallet/
+frontend/
+contracts/
+integrations/
+docs/
+use cases/
+tmp/
+
+# --- Build artifacts and dependency trees ----------------------------------
+**/node_modules
+**/target
+**/dist
+**/build
+**/.next
+**/out
+**/coverage
+**/__pycache__
+**/.venv
+**/venv
+**/.pytest_cache
+**/.turbo
+**/artifacts
+**/cache
+
+# --- Agent, editor and OS noise --------------------------------------------
+.claude
+.vscode
+.idea
+**/.DS_Store
+
+# --- Local scratch state (hidden, and very large) --------------------------
+# .worktrees alone measured 27 GB (git worktrees carrying .next build caches);
+# .cache another 2.3 GB. Neither is part of any build.
+.worktrees
+.cache
+.remember
+.pytest_cache
+.playwright-mcp
+.pnpm-store
+
+# --- Local state that must never enter an image ----------------------------
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+**/keyring-test
+**/priv_validator_key.json
+**/node_key.json
