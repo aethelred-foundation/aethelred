@@ -5,6 +5,7 @@ option go_package = "github.com/aethelred/aethelred/x/seal/types";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
@@ -49,6 +50,13 @@ message DigitalSeal {
 
   // Current status
   SealStatus status = 13;
+
+  // Compute job that produced this seal, when available
+  string job_id = 14;
+
+  // CEAP confidentiality attestation: how the data was protected (backend) and
+  // how correctness was proven (verification), bound into the seal.
+  ConfidentialityAttestation confidentiality = 15;
 }
 
 // TEEAttestation represents a hardware attestation from a Trusted Execution Environment
@@ -178,9 +186,24 @@ service Query {
       get: "/aethelred/seal/v1/seals/by_model"
     };
   }
+  rpc SealsByRequester(QuerySealsByRequesterRequest) returns (QuerySealsByRequesterResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/seals/by_requester"
+    };
+  }
   rpc VerifySeal(QueryVerifySealRequest) returns (QueryVerifySealResponse) {
     option (google.api.http) = {
       get: "/aethelred/seal/v1/seals/{seal_id}/verify"
+    };
+  }
+  rpc ExportSeal(QueryExportSealRequest) returns (QueryExportSealResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/seals/{seal_id}/export"
+    };
+  }
+  rpc EnterpriseEvidenceBundle(QueryEnterpriseEvidenceBundleRequest) returns (QueryEnterpriseEvidenceBundleResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/evidence-bundles/{job_id}"
     };
   }
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
@@ -216,6 +239,14 @@ message QuerySealsByModelResponse {
   repeated DigitalSeal seals = 1;
 }
 
+message QuerySealsByRequesterRequest {
+  string requester = 1;
+}
+
+message QuerySealsByRequesterResponse {
+  repeated DigitalSeal seals = 1;
+}
+
 message QueryVerifySealRequest {
   string seal_id = 1;
 }
@@ -224,6 +255,24 @@ message QueryVerifySealResponse {
   bool valid = 1;
   string verification_type = 2;
   string status = 3;
+}
+
+message QueryExportSealRequest {
+  string seal_id = 1;
+  // Supported values: "json", "compact", "portable", and "audit".
+  string format = 2;
+}
+
+message QueryExportSealResponse {
+  google.protobuf.Struct export = 1;
+}
+
+message QueryEnterpriseEvidenceBundleRequest {
+  string job_id = 1;
+}
+
+message QueryEnterpriseEvidenceBundleResponse {
+  google.protobuf.Struct evidence_bundle = 1;
 }
 
 message QueryParamsRequest {}
@@ -244,4 +293,27 @@ message Params {
 message GenesisState {
   repeated DigitalSeal seals = 1;
   Params params = 2;
+}
+
+// ConfidentialityAttestation records the CEAP confidentiality + verification
+// dimensions achieved for a computation (see docs/architecture/ADR-0003).
+message ConfidentialityAttestation {
+  // Backend that protected the data: none|tee|gpu-cc|mpc|fhe|hybrid.
+  string backend = 1;
+  // Verification method: none|tee-attested|freivalds|optimistic|reexec|zkml.
+  string verification = 2;
+  // Attesting platform (e.g. amd-sev-snp, intel-tdx).
+  string platform = 3;
+  // Launch/firmware measurement or FHE circuit/param hash.
+  bytes measurement = 4;
+  // Trust basis: vendor_root | test_root.
+  string trust_basis = 5;
+  // Jurisdiction the computation ran in.
+  string jurisdiction = 6;
+  // Whether the input was sealed to the backend (operator held no plaintext).
+  bool data_sealed = 7;
+  // Canonical hash of the ConfidentialityPolicy this attestation satisfied.
+  bytes policy_hash = 8;
+  // Executing worker.
+  string worker = 9;
 }

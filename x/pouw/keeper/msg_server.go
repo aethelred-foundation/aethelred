@@ -60,6 +60,11 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 	job.InputDataUri = msg.InputDataUri
 	job.Priority = msg.Priority
 
+	// CEAP: carry the submitter's confidentiality requirement onto the job, so it
+	// is enforced when the seal is minted (see confidential.go / CompleteJob). A
+	// nil policy means "no confidentiality required".
+	job.ConfidentialityPolicy = msg.ConfidentialityPolicy
+
 	// SECURITY FIX (P2): Validate and copy metadata, rejecting reserved prefixes
 	if len(msg.Metadata) > 0 {
 		if job.Metadata == nil {
@@ -104,6 +109,13 @@ func (k msgServer) RegisterModel(goCtx context.Context, msg *types.MsgRegisterMo
 	model.VerifyingKeyHash = msg.VerifyingKeyHash
 	model.TeeMeasurement = msg.TeeMeasurement
 	model.AllowedPurposes = msg.AllowedPurposes
+
+	// DETERMINISM: RegisteredAt MUST come from the block time, not wall-clock.
+	// NewRegisteredModel uses timestamppb.Now() (fine for tooling/tests), but this
+	// value is written to consensus state — if every validator stamped its own
+	// wall-clock time, the stored model bytes would differ across validators,
+	// producing divergent app hashes and halting consensus on an AppHash mismatch.
+	model.RegisteredAt = timestamppb.New(ctx.BlockTime())
 
 	if err := k.Keeper.RegisterModel(ctx, model); err != nil {
 		return nil, err
@@ -226,5 +238,28 @@ func (k msgServer) RegisterValidatorPCR0(goCtx context.Context, msg *types.MsgRe
 	return &types.MsgRegisterValidatorPCR0Response{
 		ValidatorAddress: msg.ValidatorAddress,
 		Pcr0Hex:          msg.Pcr0Hex,
+	}, nil
+}
+
+// RegisterValidatorHybridKey registers a validator's hybrid (secp256k1 + ML-DSA)
+// public key, used to verify the validator's signatures over Digital Seal claims
+// in vote extensions. ValidateBasic enforces that the signer (creator) is the
+// validator whose key is being registered.
+func (k msgServer) RegisterValidatorHybridKey(goCtx context.Context, msg *types.MsgRegisterValidatorHybridKey) (*types.MsgRegisterValidatorHybridKeyResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil RegisterValidatorHybridKey message")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	if err := k.Keeper.RegisterValidatorHybridKey(ctx, msg.ValidatorAddress, msg.HybridPublicKey); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgRegisterValidatorHybridKeyResponse{
+		ValidatorAddress: msg.ValidatorAddress,
 	}, nil
 }

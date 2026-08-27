@@ -42,6 +42,13 @@ func (m feeDistMockStakingKeeper) GetValidator(_ context.Context, _ sdk.ValAddre
 	return m.validators[0], nil
 }
 
+func (m feeDistMockStakingKeeper) GetValidatorByConsAddr(_ context.Context, _ sdk.ConsAddress) (stakingtypes.Validator, error) {
+	if len(m.validators) == 0 {
+		return stakingtypes.Validator{}, nil
+	}
+	return m.validators[0], nil
+}
+
 type feeDistMockBankKeeper struct{}
 
 func (m feeDistMockBankKeeper) SendCoinsFromModuleToAccount(_ context.Context, _ string, _ sdk.AccAddress, _ sdk.Coins) error {
@@ -57,6 +64,10 @@ func (m feeDistMockBankKeeper) SendCoinsFromModuleToModule(_ context.Context, _,
 }
 
 func (m feeDistMockBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error {
+	return nil
+}
+
+func (m feeDistMockBankKeeper) MintCoins(_ context.Context, _ string, _ sdk.Coins) error {
 	return nil
 }
 
@@ -92,6 +103,10 @@ func (m *trackingFeeDistBankKeeper) SendCoinsFromModuleToModule(_ context.Contex
 }
 
 func (m *trackingFeeDistBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error {
+	return nil
+}
+
+func (m *trackingFeeDistBankKeeper) MintCoins(_ context.Context, _ string, _ sdk.Coins) error {
 	return nil
 }
 

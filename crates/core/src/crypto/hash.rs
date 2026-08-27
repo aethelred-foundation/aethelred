@@ -352,15 +352,34 @@ impl MerkleProof {
 
 /// HMAC-SHA256
 pub fn hmac_sha256(key: &[u8], data: &[u8]) -> Hash256 {
-    use hmac::{Hmac, Mac};
+    const BLOCK_SIZE: usize = 64;
 
-    type HmacSha256 = Hmac<Sha256>;
+    let mut normalized_key = [0u8; BLOCK_SIZE];
+    if key.len() > BLOCK_SIZE {
+        let digest = Sha256::digest(key);
+        normalized_key[..digest.len()].copy_from_slice(&digest);
+    } else {
+        normalized_key[..key.len()].copy_from_slice(key);
+    }
 
-    let mut mac = HmacSha256::new_from_slice(key).expect("HMAC can take key of any size");
-    mac.update(data);
-    let result = mac.finalize();
+    let mut inner_pad = [0x36u8; BLOCK_SIZE];
+    let mut outer_pad = [0x5cu8; BLOCK_SIZE];
+    for index in 0..BLOCK_SIZE {
+        inner_pad[index] ^= normalized_key[index];
+        outer_pad[index] ^= normalized_key[index];
+    }
+
+    let mut inner = Sha256::new();
+    inner.update(inner_pad);
+    inner.update(data);
+    let inner_hash = inner.finalize();
+
+    let mut outer = Sha256::new();
+    outer.update(outer_pad);
+    outer.update(inner_hash);
+    let result = outer.finalize();
     let mut hash = [0u8; 32];
-    hash.copy_from_slice(&result.into_bytes());
+    hash.copy_from_slice(&result);
     Hash256(hash)
 }
 
@@ -443,7 +462,21 @@ mod tests {
         let key = b"secret key";
         let data = b"message";
         let mac = hmac_sha256(key, data);
-        assert!(!mac.is_zero());
+        assert_eq!(
+            mac.to_hex(),
+            "c431e4857a6b817f9eeaab86b00f78e210808e5a2b2ae1e5bb6befb213608eed"
+        );
+
+        // RFC 4231 test case 6 exercises keys longer than the SHA-256 block.
+        let long_key = [0xaau8; 131];
+        let long_key_mac = hmac_sha256(
+            &long_key,
+            b"Test Using Larger Than Block-Size Key - Hash Key First",
+        );
+        assert_eq!(
+            long_key_mac.to_hex(),
+            "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"
+        );
     }
 
     #[test]

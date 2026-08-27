@@ -1,3 +1,10 @@
+// Error-handling policy guard — see docs/security/error-handling-and-panic-policy.md.
+// Rejects unwrap()/expect() in NON-test cryptographic code because a panic in
+// crypto is a correctness/availability defect. Test code is exempted via
+// clippy.toml (allow-unwrap-in-tests / allow-expect-in-tests).
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
+
 //! Aethelred Cryptographic Primitives
 //!
 //! Enterprise-grade cryptographic implementations for:

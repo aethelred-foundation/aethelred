@@ -34,14 +34,11 @@ func (app *AethelredApp) assignedJobsForValidator(ctx sdk.Context, consAddr []by
 		return app.PouwKeeper.GetPendingJobs(ctx), "unknown", nil
 	}
 
-	if app.consensusHandler == nil || app.consensusHandler.Scheduler() == nil {
-		if !app.allowSimulated(ctx) {
-			return nil, validatorAccountAddr, fmt.Errorf("scheduler not initialized")
-		}
-		return app.PouwKeeper.GetPendingJobs(ctx), validatorAccountAddr, nil
-	}
-
-	jobs := app.consensusHandler.Scheduler().GetJobsForValidator(ctx, validatorAccountAddr)
+	// Resolve assignments from on-chain state (scheduler.assigned_to), written
+	// deterministically by Keeper.AssignPendingJobs in EndBlock. This does not
+	// depend on the in-memory JobScheduler, which is per-node state and is not
+	// populated in the consensus path.
+	jobs := app.PouwKeeper.AssignedJobsForValidator(ctx, validatorAccountAddr)
 	return jobs, validatorAccountAddr, nil
 }
 
@@ -71,7 +68,16 @@ func (app *AethelredApp) validatorAccountAddress(ctx sdk.Context, consAddr []byt
 		return "", fmt.Errorf("validator operator address missing")
 	}
 
-	return sdk.AccAddress(operatorAddr).String(), nil
+	// GetOperator() returns the bech32 valoper STRING. Decode it to bytes and
+	// re-encode as an account address (same underlying bytes for a self-bonded
+	// validator). Passing the raw string to sdk.AccAddress(...) would reinterpret
+	// the bech32 text as address bytes — a garbage address that matches no
+	// assignment, so ExtendVote would resolve zero jobs and never verify or seal.
+	valAddr, err := sdk.ValAddressFromBech32(operatorAddr)
+	if err != nil {
+		return "", fmt.Errorf("invalid operator address %q: %w", operatorAddr, err)
+	}
+	return sdk.AccAddress(valAddr).String(), nil
 }
 
 // executeAssignedVerification runs the verification pipeline for a scheduled job
@@ -152,6 +158,12 @@ func (app *AethelredApp) executeAssignedVerification(ctx sdk.Context, job *pouwt
 	verification.ExecutionTimeMs = resp.TotalTimeMs
 	if verification.ExecutionTimeMs <= 0 {
 		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
+	}
+	if verification.ExecutionTimeMs <= 0 {
+		// Vote-extension validation requires a positive execution time for every
+		// successful verification. Simulated/cached verification can complete in
+		// under a millisecond, so floor it at 1ms to keep the extension valid.
+		verification.ExecutionTimeMs = 1
 	}
 
 	verification.OutputHash = resp.OutputHash

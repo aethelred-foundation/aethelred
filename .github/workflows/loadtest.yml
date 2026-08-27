@@ -24,7 +24,7 @@ on:
           - network-stress
 
 env:
-  GO_VERSION: "1.25.8"
+  GO_VERSION: "1.25.12"
   GOFLAGS: "-mod=mod"
 
 jobs:

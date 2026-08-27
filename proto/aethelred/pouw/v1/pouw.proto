@@ -106,6 +106,9 @@ message ComputeJob {
 
   // Useful Work Units (UWU) earned for this job
   uint64 useful_work_units = 22;
+
+  // CEAP confidentiality requirement the network must satisfy for this job.
+  ConfidentialityPolicy confidentiality_policy = 23;
 }
 
 // JobStatus represents the status of a compute job
@@ -282,6 +285,9 @@ message MsgSubmitJob {
   int64 priority = 8;
   map<string, string> metadata = 9;
   UtilityCategory utility_category = 10;
+
+  // CEAP confidentiality requirement declared by the submitter.
+  ConfidentialityPolicy confidentiality_policy = 11;
 }
 
 message MsgSubmitJobResponse {
@@ -352,6 +358,12 @@ service Msg {
       body: "*"
     };
   }
+  rpc RegisterValidatorHybridKey(MsgRegisterValidatorHybridKey) returns (MsgRegisterValidatorHybridKeyResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/validators/hybrid_key"
+      body: "*"
+    };
+  }
 }
 
 message MsgRegisterValidatorCapability {
@@ -377,6 +389,19 @@ message MsgRegisterValidatorPCR0 {
 message MsgRegisterValidatorPCR0Response {
   string validator_address = 1;
   string pcr0_hex = 2;
+}
+
+// MsgRegisterValidatorHybridKey registers a validator's hybrid
+// (secp256k1 + ML-DSA) public key, used to verify the validator's signatures
+// over Digital Seal claims contributed via vote extensions.
+message MsgRegisterValidatorHybridKey {
+  string creator = 1;
+  string validator_address = 2;
+  bytes hybrid_public_key = 3;
+}
+
+message MsgRegisterValidatorHybridKeyResponse {
+  string validator_address = 1;
 }
 
 // Query service
@@ -431,6 +456,30 @@ service Query {
       get: "/aethelred/pouw/v1/stats/epochs/{epoch}"
     };
   }
+  rpc SealQuorum(QuerySealQuorumRequest) returns (QuerySealQuorumResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/seals/{seal_id}/quorum"
+    };
+  }
+}
+
+// SealQuorumSignature is one validator's hybrid (secp256k1 + ML-DSA) signature
+// over a Digital Seal's canonical claim, retained for offline verification.
+message SealQuorumSignature {
+  string signer_address = 1;
+  string algorithm = 2;
+  bytes public_key = 3;
+  bytes signature = 4;
+}
+
+message QuerySealQuorumRequest {
+  string seal_id = 1;
+}
+
+message QuerySealQuorumResponse {
+  string seal_id = 1;
+  repeated SealQuorumSignature signatures = 2;
+  uint32 signature_count = 3;
 }
 
 message QueryJobRequest {
@@ -550,6 +599,16 @@ message Params {
   map<string, string> utility_multipliers = 14;  // category -> multiplier (e.g., "MEDICAL" -> "2.0")
   bool use_logarithmic_scaling = 15;
   uint64 anti_whale_threshold = 16;
+
+  // data_residency_region is the sovereign jurisdiction this network's
+  // validators operate in — declared by governance and enforced at validator
+  // onboarding (legal/operational control, not per-enclave geo-attestation,
+  // which TEE hardware does not provide). When non-empty it is bound into every
+  // Digital Seal's confidentiality attestation as the achieved jurisdiction, so
+  // a CEAP data-residency policy (e.g. ["AE"]) can be satisfied on a sovereign
+  // deployment. Empty = no residency is claimed, so residency-restricted
+  // policies fail closed rather than being granted a fabricated region.
+  string data_residency_region = 19;
 }
 
 // GenesisState
@@ -561,4 +620,30 @@ message GenesisState {
   Params params = 5;
   uint64 current_epoch = 6;
   uint64 total_uwu = 7;
+  // validator_hybrid_keys seeds validators' hybrid (secp256k1 + ML-DSA) public
+  // keys at genesis so Digital Seal quorum signatures can be verified from the
+  // first block without each validator submitting a registration transaction.
+  repeated ValidatorHybridKey validator_hybrid_keys = 8;
+}
+
+// ValidatorHybridKey binds a validator account address to its hybrid public key.
+message ValidatorHybridKey {
+  string validator_address = 1;
+  bytes hybrid_public_key = 2;
+}
+
+// ConfidentialityPolicy is the client-declared confidentiality requirement the
+// network must satisfy for a job (see docs/architecture/ADR-0003). Empty means
+// no confidentiality required.
+message ConfidentialityPolicy {
+  // Permitted confidentiality backends (empty = any).
+  repeated string allowed_backends = 1;
+  // Weakest acceptable verification method.
+  string min_verification = 2;
+  // Permitted attesting platforms (empty = any).
+  repeated string allowed_platforms = 3;
+  // Forbid test roots — production silicon attestation only.
+  bool require_vendor_root = 4;
+  // Permitted data-residency jurisdictions (empty = any).
+  repeated string data_residency = 5;
 }

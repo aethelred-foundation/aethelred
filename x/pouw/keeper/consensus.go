@@ -16,6 +16,7 @@ import (
 
 	"github.com/aethelred/aethelred/crypto/bls"
 	"github.com/aethelred/aethelred/x/pouw/types"
+	sealtypes "github.com/aethelred/aethelred/x/seal/types"
 )
 
 // ConsensusHandler handles the Proof-of-Useful-Work consensus logic
@@ -196,6 +197,10 @@ type VerificationWire struct {
 	ErrorCode       string          `json:"error_code,omitempty"`
 	ErrorMessage    string          `json:"error_message,omitempty"`
 	Nonce           []byte          `json:"nonce"`
+	// SealClaimSignature is the validator's hybrid (secp256k1 + ML-DSA) signature
+	// over the Digital Seal claim (matches ComputeVerification in app). Carried
+	// through aggregation so a quorum can be persisted onto the seal.
+	SealClaimSignature []byte `json:"seal_claim_signature,omitempty"`
 }
 
 // AggregatedResult represents consensus results for a job.
@@ -233,6 +238,15 @@ type ValidatorResult struct {
 	// BLS signature components for aggregation
 	BLSSignature []byte `json:"bls_signature,omitempty"`
 	BLSPubKey    []byte `json:"bls_pub_key,omitempty"`
+
+	// SealClaimSignature is this validator's hybrid signature over the Digital
+	// Seal claim, carried so a quorum can be persisted onto the resulting seal.
+	SealClaimSignature []byte `json:"seal_claim_signature,omitempty"`
+
+	// ConsensusAddress is the validator's bech32 consensus address (the
+	// authoritative CometBFT identity). Used to resolve the validator's
+	// registered hybrid key when attaching seal-quorum signatures.
+	ConsensusAddress string `json:"consensus_address,omitempty"`
 }
 
 // PrepareVoteExtension creates verification data for the current validator.
@@ -850,9 +864,25 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 				}
 
 				if attestation.Platform == "aws-nitro" || attestation.Platform == "intel-sgx" {
+					// Measurements are registered under the validator's ACCOUNT
+					// address, but this extension identifies the validator by
+					// CONSENSUS address. Resolve the account-address key so the
+					// registry lookup — and any resulting slash — target the same
+					// identity the validator registered under. Fall back to the
+					// consensus form (fails closed) if resolution is impossible.
+					measurementValidatorKey := validatorAddr
+					if len(vote.Validator.Address) > 0 {
+						if accKey, ok := ch.keeper.RegisteredValidatorKeyForConsensus(
+							ctx,
+							sdk.ConsAddress(vote.Validator.Address),
+						); ok {
+							measurementValidatorKey = accKey
+						}
+					}
+
 					if err := ch.keeper.ValidateTEEAttestationMeasurement(
 						ctx,
-						validatorAddr,
+						measurementValidatorKey,
 						attestation.Platform,
 						attestation.Measurement,
 					); err != nil {
@@ -862,7 +892,7 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 							"platform", attestation.Platform,
 							"error", err,
 						)
-						ch.keeper.slashUntrustedAttestationValidator(ctx, validatorAddr, v.JobID, err.Error())
+						ch.keeper.slashUntrustedAttestationValidator(ctx, measurementValidatorKey, v.JobID, err.Error())
 						continue
 					}
 				}
@@ -878,15 +908,32 @@ func (ch *ConsensusHandler) AggregateVoteExtensions(ctx sdk.Context, votes []abc
 				outputPower[v.JobID] = make(map[string]int64)
 			}
 
+			// Resolve the validator's ACCOUNT address from its consensus address.
+			// CompleteJob keys validator stats, verification rewards, and slashing
+			// by ValidatorAddress and expects a bech32 account address — but the
+			// vote extension only carries the consensus address. Without this
+			// mapping, stats are stored under the (unqueryable) consensus address
+			// and rewards are silently withheld ("below minimum bonded stake").
+			// Resolution is a pure function of on-chain staking state, so every
+			// validator derives the same account address.
+			resolvedAddr := validatorAddr
+			if ch.keeper != nil {
+				if accAddr := ch.keeper.accountAddressFromConsensus(ctx, vote.Validator.Address); accAddr != "" {
+					resolvedAddr = accAddr
+				}
+			}
+
 			// Create validator result, including BLS signature if present
 			valResult := ValidatorResult{
-				ValidatorAddress: validatorAddr,
-				OutputHash:       v.OutputHash,
-				AttestationType:  v.AttestationType,
-				ExecutionTimeMs:  v.ExecutionTimeMs,
-				Timestamp:        extension.Timestamp,
-				BLSSignature:     extension.BLSSignature,
-				BLSPubKey:        extension.BLSPubKey,
+				ValidatorAddress:   resolvedAddr,
+				OutputHash:         v.OutputHash,
+				AttestationType:    v.AttestationType,
+				ExecutionTimeMs:    v.ExecutionTimeMs,
+				Timestamp:          extension.Timestamp,
+				BLSSignature:       extension.BLSSignature,
+				BLSPubKey:          extension.BLSPubKey,
+				SealClaimSignature: v.SealClaimSignature,
+				ConsensusAddress:   consensusAddressString(vote.Validator.Address),
 			}
 
 			outputVotes[v.JobID][outputHashHex] = append(outputVotes[v.JobID][outputHashHex], valResult)
@@ -1254,6 +1301,17 @@ func (ch *ConsensusHandler) ProcessSealTransaction(ctx context.Context, txBytes 
 	}
 
 	// Convert validator results to verification results
+	// Idempotency guard: the ABCI++ vote-extension pipeline lags by a block, so a
+	// proposer can inject a seal tx built from an earlier round for a job that has
+	// already been sealed. Skip it cleanly instead of letting CompleteJob fail with
+	// a COMPLETED → COMPLETED transition error — harmless (the tx is rejected) but
+	// it logs a misleading error every block until the stale extension clears.
+	if existing, err := ch.keeper.GetJob(ctx, sealTx.JobID); err == nil && existing != nil {
+		if existing.Status == types.JobStatusCompleted || existing.SealId != "" {
+			return nil
+		}
+	}
+
 	var verificationResults []types.VerificationResult
 	for _, vr := range sealTx.ValidatorResults {
 		verificationResults = append(verificationResults, types.VerificationResult{
@@ -1271,6 +1329,21 @@ func (ch *ConsensusHandler) ProcessSealTransaction(ctx context.Context, txBytes 
 	// Complete the job (this creates the Digital Seal)
 	if err := ch.keeper.CompleteJob(ctx, sealTx.JobID, sealTx.OutputHash, verificationResults); err != nil {
 		return fmt.Errorf("failed to complete job: %w", err)
+	}
+
+	// Persist the validator-quorum hybrid signatures onto the freshly minted
+	// seal (best-effort; never blocks completion). The claim is reconstructed
+	// from the same fields the validators signed in their vote extensions.
+	if completedJob, jErr := ch.keeper.GetJob(ctx, sealTx.JobID); jErr == nil && completedJob.SealId != "" {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		claim := sealtypes.SealClaim{
+			ChainID:          sdkCtx.ChainID(),
+			JobID:            sealTx.JobID,
+			ModelCommitment:  sealTx.ModelHash,
+			InputCommitment:  sealTx.InputHash,
+			OutputCommitment: sealTx.OutputHash,
+		}
+		ch.keeper.AttachSealQuorumSignatures(ctx, completedJob.SealId, claim, sealTx.ValidatorResults, sdkCtx.BlockTime())
 	}
 
 	// Mark job complete in scheduler

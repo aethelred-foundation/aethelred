@@ -106,6 +106,28 @@ func (s *DigitalSeal) GenerateID() string {
 		h.Write([]byte(s.Purpose))
 	}
 
+	// CEAP confidentiality attestation (ADR-0003): fold the achieved backend,
+	// verification method, attesting platform, trust basis, and the hash of the
+	// policy it satisfied into the seal ID, so the confidentiality claim is
+	// tamper-evident. Guarded on presence to preserve the IDs of seals that carry
+	// no attestation. Field order is fixed for determinism.
+	if s.Confidentiality != nil {
+		c := s.Confidentiality
+		h.Write([]byte("ceap/v1:"))
+		h.Write([]byte(c.Backend))
+		h.Write([]byte(c.Verification))
+		h.Write([]byte(c.Platform))
+		h.Write([]byte(c.TrustBasis))
+		h.Write([]byte(c.Jurisdiction))
+		if c.DataSealed {
+			h.Write([]byte{1})
+		} else {
+			h.Write([]byte{0})
+		}
+		h.Write(c.Measurement)
+		h.Write(c.PolicyHash)
+	}
+
 	// Return full 256-bit hash as 64 hex characters
 	return hex.EncodeToString(h.Sum(nil))
 }

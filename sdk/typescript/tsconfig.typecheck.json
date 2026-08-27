@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [],
+  "exclude": [
+    "src/builders/**/*",
+    "src/client/**/*",
+    "src/distributed/**/*",
+    "src/modules/**/*",
+    "src/nn/**/*",
+    "src/optim/**/*",
+    "src/quantize/**/*",
+    "src/zk-forms/**/*"
+  ],
+  "files": [
+    "src/index.ts",
+    "src/jobs/index.ts",
+    "src/seals/index.ts",
+    "src/models/index.ts",
+    "src/crypto/index.ts",
+    "src/integrations/index.ts",
+    "src/integrations/nextjs-middleware.ts",
+    "src/devtools/index.ts",
+    "src/react/index.ts"
+  ]
+}

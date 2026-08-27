@@ -45,6 +45,7 @@ const (
 	Msg_CancelJob_FullMethodName                   = "/aethelred.pouw.v1.Msg/CancelJob"
 	Msg_RegisterValidatorCapability_FullMethodName = "/aethelred.pouw.v1.Msg/RegisterValidatorCapability"
 	Msg_RegisterValidatorPCR0_FullMethodName       = "/aethelred.pouw.v1.Msg/RegisterValidatorPCR0"
+	Msg_RegisterValidatorHybridKey_FullMethodName  = "/aethelred.pouw.v1.Msg/RegisterValidatorHybridKey"
 )
 
 // MsgClient is the client API for Msg service.
@@ -58,6 +59,7 @@ type MsgClient interface {
 	CancelJob(ctx context.Context, in *MsgCancelJob, opts ...grpc.CallOption) (*MsgCancelJobResponse, error)
 	RegisterValidatorCapability(ctx context.Context, in *MsgRegisterValidatorCapability, opts ...grpc.CallOption) (*MsgRegisterValidatorCapabilityResponse, error)
 	RegisterValidatorPCR0(ctx context.Context, in *MsgRegisterValidatorPCR0, opts ...grpc.CallOption) (*MsgRegisterValidatorPCR0Response, error)
+	RegisterValidatorHybridKey(ctx context.Context, in *MsgRegisterValidatorHybridKey, opts ...grpc.CallOption) (*MsgRegisterValidatorHybridKeyResponse, error)
 }
 
 type msgClient struct {
@@ -118,6 +120,16 @@ func (c *msgClient) RegisterValidatorPCR0(ctx context.Context, in *MsgRegisterVa
 	return out, nil
 }
 
+func (c *msgClient) RegisterValidatorHybridKey(ctx context.Context, in *MsgRegisterValidatorHybridKey, opts ...grpc.CallOption) (*MsgRegisterValidatorHybridKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgRegisterValidatorHybridKeyResponse)
+	err := c.cc.Invoke(ctx, Msg_RegisterValidatorHybridKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
@@ -129,6 +141,7 @@ type MsgServer interface {
 	CancelJob(context.Context, *MsgCancelJob) (*MsgCancelJobResponse, error)
 	RegisterValidatorCapability(context.Context, *MsgRegisterValidatorCapability) (*MsgRegisterValidatorCapabilityResponse, error)
 	RegisterValidatorPCR0(context.Context, *MsgRegisterValidatorPCR0) (*MsgRegisterValidatorPCR0Response, error)
+	RegisterValidatorHybridKey(context.Context, *MsgRegisterValidatorHybridKey) (*MsgRegisterValidatorHybridKeyResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -153,6 +166,9 @@ func (UnimplementedMsgServer) RegisterValidatorCapability(context.Context, *MsgR
 }
 func (UnimplementedMsgServer) RegisterValidatorPCR0(context.Context, *MsgRegisterValidatorPCR0) (*MsgRegisterValidatorPCR0Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method RegisterValidatorPCR0 not implemented")
+}
+func (UnimplementedMsgServer) RegisterValidatorHybridKey(context.Context, *MsgRegisterValidatorHybridKey) (*MsgRegisterValidatorHybridKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterValidatorHybridKey not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -265,6 +281,24 @@ func _Msg_RegisterValidatorPCR0_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_RegisterValidatorHybridKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRegisterValidatorHybridKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RegisterValidatorHybridKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_RegisterValidatorHybridKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RegisterValidatorHybridKey(ctx, req.(*MsgRegisterValidatorHybridKey))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -292,6 +326,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "RegisterValidatorPCR0",
 			Handler:    _Msg_RegisterValidatorPCR0_Handler,
 		},
+		{
+			MethodName: "RegisterValidatorHybridKey",
+			Handler:    _Msg_RegisterValidatorHybridKey_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "aethelred/pouw/v1/pouw.proto",
@@ -308,6 +346,7 @@ const (
 	Query_IsPCR0Registered_FullMethodName = "/aethelred.pouw.v1.Query/IsPCR0Registered"
 	Query_UsefulWorkStats_FullMethodName  = "/aethelred.pouw.v1.Query/UsefulWorkStats"
 	Query_EpochStats_FullMethodName       = "/aethelred.pouw.v1.Query/EpochStats"
+	Query_SealQuorum_FullMethodName       = "/aethelred.pouw.v1.Query/SealQuorum"
 )
 
 // QueryClient is the client API for Query service.
@@ -326,6 +365,7 @@ type QueryClient interface {
 	IsPCR0Registered(ctx context.Context, in *QueryIsPCR0RegisteredRequest, opts ...grpc.CallOption) (*QueryIsPCR0RegisteredResponse, error)
 	UsefulWorkStats(ctx context.Context, in *QueryUsefulWorkStatsRequest, opts ...grpc.CallOption) (*QueryUsefulWorkStatsResponse, error)
 	EpochStats(ctx context.Context, in *QueryEpochStatsRequest, opts ...grpc.CallOption) (*QueryEpochStatsResponse, error)
+	SealQuorum(ctx context.Context, in *QuerySealQuorumRequest, opts ...grpc.CallOption) (*QuerySealQuorumResponse, error)
 }
 
 type queryClient struct {
@@ -436,6 +476,16 @@ func (c *queryClient) EpochStats(ctx context.Context, in *QueryEpochStatsRequest
 	return out, nil
 }
 
+func (c *queryClient) SealQuorum(ctx context.Context, in *QuerySealQuorumRequest, opts ...grpc.CallOption) (*QuerySealQuorumResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QuerySealQuorumResponse)
+	err := c.cc.Invoke(ctx, Query_SealQuorum_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -452,6 +502,7 @@ type QueryServer interface {
 	IsPCR0Registered(context.Context, *QueryIsPCR0RegisteredRequest) (*QueryIsPCR0RegisteredResponse, error)
 	UsefulWorkStats(context.Context, *QueryUsefulWorkStatsRequest) (*QueryUsefulWorkStatsResponse, error)
 	EpochStats(context.Context, *QueryEpochStatsRequest) (*QueryEpochStatsResponse, error)
+	SealQuorum(context.Context, *QuerySealQuorumRequest) (*QuerySealQuorumResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -491,6 +542,9 @@ func (UnimplementedQueryServer) UsefulWorkStats(context.Context, *QueryUsefulWor
 }
 func (UnimplementedQueryServer) EpochStats(context.Context, *QueryEpochStatsRequest) (*QueryEpochStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EpochStats not implemented")
+}
+func (UnimplementedQueryServer) SealQuorum(context.Context, *QuerySealQuorumRequest) (*QuerySealQuorumResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SealQuorum not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -693,6 +747,24 @@ func _Query_EpochStats_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_SealQuorum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySealQuorumRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).SealQuorum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_SealQuorum_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).SealQuorum(ctx, req.(*QuerySealQuorumRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -739,6 +811,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EpochStats",
 			Handler:    _Query_EpochStats_Handler,
+		},
+		{
+			MethodName: "SealQuorum",
+			Handler:    _Query_SealQuorum_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

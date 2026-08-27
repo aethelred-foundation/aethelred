@@ -1,0 +1,7 @@
+# Clippy configuration for aethelred-core.
+#
+# The crypto module enables clippy::unwrap_used / clippy::expect_used (see
+# crates/core/src/crypto/mod.rs). Test code legitimately uses unwrap()/expect()
+# for brevity, so exempt it here — the guard targets only non-test code paths.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true

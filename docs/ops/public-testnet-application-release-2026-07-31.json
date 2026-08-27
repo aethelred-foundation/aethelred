@@ -1,0 +1,308 @@
+{
+  "schemaVersion": "1.0",
+  "releaseId": "public-testnet-application-bundle-2026-07-31.3",
+  "status": "approved-public-testnet-baseline",
+  "issuedAt": "2026-08-05T07:43:15Z",
+  "manifest": {
+    "repository": "https://github.com/aethelred-foundation/aethelred.git",
+    "branch": "release/public-testnet-application-bundle-2026-07-31",
+    "tag": "public-testnet-application-bundle-2026-07-31.3",
+    "files": [
+      "docs/ops/PUBLIC_TESTNET_APPLICATION_RELEASE_2026-07-31.md",
+      "docs/ops/PUBLIC_TESTNET_US_TEAM_HANDOFF_2026-07-31.md",
+      "docs/ops/public-testnet-application-release-2026-07-31.json"
+    ]
+  },
+  "rules": {
+    "resetChain": false,
+    "restartValidators": false,
+    "upgradeHandlerRequired": false,
+    "deployDetachedCommitsOnly": true,
+    "walletBeforeApplicationRetest": true,
+    "newManifestRequiredForAnyReleaseChange": true
+  },
+  "network": {
+    "chainId": "aethelred-testnet-1",
+    "evmChainId": 7332,
+    "evmAnchor": {
+      "blockNumber": 450000,
+      "blockHash": "0x1057a62d12eed50d8740fcf51be0cd784db9a4f8f98c9312eee8b8bc7e543ddc"
+    },
+    "sourceRepository": "https://github.com/aethelred-foundation/aethelred.git",
+    "sourceBranch": "release/public-testnet-pqc",
+    "sourceCommit": "4c9c258c5757d385e6259875625e63ac205aa5e8",
+    "observedBlockHeight": "469283",
+    "observedBlockTime": "2026-08-05T07:42:56.530327282Z",
+    "catchingUp": false,
+    "goVersion": "1.25.12",
+    "build": {
+      "vcsRevision": "4c9c258c5757d385e6259875625e63ac205aa5e8",
+      "vcsModified": false,
+      "cgoEnabled": true,
+      "goarch": "amd64",
+      "goos": "linux",
+      "reportedBinarySha256": {
+        "ubuntu": "633dc3df61a59de83a1ecbc14f1c957d97902e258f7036e57f58050092f1bbce",
+        "debian": "0fdc0920980cae58c4098175d44f4334ae0c35460da52815c04e4543ea4e13ab"
+      }
+    },
+    "governance": {
+      "proposalId": "1",
+      "status": "PROPOSAL_STATUS_PASSED",
+      "yesCount": "600000000000",
+      "noCount": "0",
+      "noWithVetoCount": "0",
+      "abstainCount": "0"
+    },
+    "activeStaticPrecompiles": [
+      "0x0000000000000000000000000000000000000800",
+      "0x0000000000000000000000000000000000000801",
+      "0x0000000000000000000000000000000000000900",
+      "0x0000000000000000000000000000000000000901",
+      "0x0000000000000000000000000000000000000902"
+    ],
+    "ports": {
+      "p2p": 26656,
+      "cometbftRpc": 26657,
+      "rest": 1317,
+      "grpc": 9090,
+      "evmRpc": 8545
+    },
+    "evmWebsocket": {
+      "status": "not-published",
+      "url": null
+    },
+    "references": [
+      "docs/ops/PRECOMPILE_ACTIVATION_RUNBOOK.md",
+      "scripts/activate-precompiles-gov.sh",
+      "docs/TESTNET_VALIDATOR_RUNBOOK.md"
+    ]
+  },
+  "components": {
+    "wallet": {
+      "repository": "https://github.com/aethelred-foundation/wallet.git",
+      "branch": "fix/wallet-popup-layout",
+      "commit": "9f1ba1358f3599ae1d0b084caec0efaee3250896",
+      "runtime": {
+        "node": "24.18.0",
+        "packageManager": "pnpm@11.9.0"
+      },
+      "artifact": {
+        "name": "aethelred-wallet-v0.9.0.zip",
+        "version": "0.9.0",
+        "releaseTag": "public-testnet-wallet-v0.9.0-20260805",
+        "sizeBytes": 752337,
+        "sha256": "9635fd6473e4d2ce41a56d06736613f26b50624fe4eeba4cf5728d21c82670db",
+        "url": "https://github.com/aethelred-foundation/wallet/releases/download/public-testnet-wallet-v0.9.0-20260805/aethelred-wallet-v0.9.0.zip"
+      },
+      "contractRedeploy": "not-applicable",
+      "validation": {
+        "status": "success",
+        "run": "https://github.com/aethelred-foundation/wallet/actions/runs/30984536941",
+        "vulnerabilityGateRun": "https://github.com/aethelred-foundation/wallet/actions/runs/30984537051",
+        "evidence": [
+          "23 checks passed, 2 policy-defined checks skipped, and 0 checks failed",
+          "production dependency audit reported no known vulnerabilities",
+          "two Node 24.18.0 package builds were byte-identical",
+          "published ZIP was downloaded again and matched the recorded size and SHA-256"
+        ]
+      },
+      "lockedConnectionBehavior": "Chrome 127 and later opens the locked wallet popup; after unlock the tester retries Connect once",
+      "references": [
+        "docs/testing/WALLET_PUBLIC_TESTNET_RETEST.md",
+        "docs/engineering/WALLET_PRODUCTION_READINESS.md"
+      ]
+    },
+    "cruzible": {
+      "repository": "https://github.com/aethelred-foundation/cruzible.git",
+      "branch": "fix/us-testnet-wallet-staking",
+      "commit": "92671c4558d476a873caa7b33cc24f82c69676dd",
+      "runtime": {
+        "node": ">=20.0.0",
+        "packageManager": "npm@10.9.4"
+      },
+      "ports": {
+        "frontend": 3000,
+        "api": 4001
+      },
+      "contractRedeploy": "no-unless-manifest-bytecode-or-wiring-verification-fails",
+      "applicationAction": "run-one-dedicated-indexer-and-complete-existing-projection-rebuild-without-reset",
+      "validation": {
+        "status": "success",
+        "evidence": [
+          "74 focused application tests passed",
+          "35 backend indexer tests passed",
+          "typecheck and deterministic Compose topology checks passed",
+          "operator confirmed public-testnet stake and unstake"
+        ]
+      },
+      "references": [
+        "docs/TESTNET_DEPLOYMENT.md",
+        "docs/TESTNET_TESTING_GUIDE.md",
+        "docs/ops/environment-reference.md",
+        ".env.testnet.example",
+        "backend/.env.example"
+      ]
+    },
+    "terraqura": {
+      "repository": "https://github.com/aethelred-foundation/terraqura.git",
+      "branch": "ramesh/terraqura-pre-mainnet-remediation-20260414",
+      "commit": "af509d2f1629af98873de3f627896d483baed595",
+      "runtime": {
+        "node": "20.18.3",
+        "packageManager": "pnpm@9.0.0"
+      },
+      "ports": {
+        "frontend": 3007,
+        "api": 4000
+      },
+      "contractRedeploy": "complete-five-proxy-two-phase-ceremony-after-preflight",
+      "dirtyCheckoutRecovery": "preserve-current-evidence-and-external-ceremony-state-then-continue-from-a-clean-side-by-side-checkout",
+      "evaluationDeployment": {
+        "composeFile": "docker-compose.public-testnet-evaluation.yml",
+        "environmentTemplate": "deploy/terraqura.public-testnet-evaluation.env.example",
+        "rpcUrl": "http://54.165.44.130:8545",
+        "rpcTransportAcknowledgement": "acknowledge-evaluation-only-plaintext-rpc",
+        "operatorSignerContainerUid": 1001,
+        "operatorSignerContainerGid": 1001,
+        "operatorSignerMode": "0400"
+      },
+      "validation": {
+        "status": "success",
+        "run": "https://github.com/aethelred-foundation/terraqura/actions/runs/30895237713",
+        "evidence": [
+          "1560 contract tests passed",
+          "207 API tests passed",
+          "API, contracts, and web typecheck and lint passed",
+          "direct-IP production build and Compose health drill passed",
+          "live chain ID and anchor check passed",
+          "production dependency audit reported no known vulnerabilities"
+        ]
+      },
+      "references": [
+        "docs/deployment/PUBLIC_TESTNET_DEPLOYMENT.md",
+        "deploy/terraqura.contracts.public-testnet.env.example",
+        "deploy/terraqura.public-testnet-evaluation.env.example",
+        "docker-compose.public-testnet-evaluation.yml",
+        "deploy/terraqura.api.production.env.example",
+        "deploy/terraqura.web.production.env.example"
+      ]
+    },
+    "zeroid": {
+      "repository": "https://github.com/aethelred-foundation/zeroid.git",
+      "branch": "release/zeroid-production-hardening",
+      "commit": "709beb25493b30093f5bd637824c0e1fcd2ed3ec",
+      "runtime": {
+        "node": "20.19.5",
+        "packageManager": "npm@10.8.2"
+      },
+      "ports": {
+        "frontend": 3003,
+        "api": 4003
+      },
+      "databaseAction": "keep-working-zeroid1-and-preserve-old-zeroid-database",
+      "applicationAction": "rebuild-frontend-with-browser-reachable-http-api-and-rpc-csp-origins",
+      "contractRedeploy": "preserve-verified-addresses-otherwise-run-complete-ceremony",
+      "validation": {
+        "status": "success",
+        "runs": [
+          "https://github.com/aethelred-foundation/zeroid/actions/runs/30610169731",
+          "https://github.com/aethelred-foundation/zeroid/actions/runs/30610169767"
+        ]
+      },
+      "references": [
+        "deployments/PUBLIC_TESTNET_RUNBOOK.md",
+        "backend/README.md#safe-database-migration-and-p3005-recovery",
+        ".env.testnet.example",
+        "backend/.env.testnet.example"
+      ]
+    },
+    "noblepay": {
+      "repository": "https://github.com/aethelred-foundation/noblepay.git",
+      "branch": "release/noblepay-production-readiness",
+      "commit": "cf91c309252d3c5e69b52525975ceef98e6dc24e",
+      "runtime": {
+        "node": "24.18.0",
+        "packageManager": "npm@11.16.0"
+      },
+      "ports": {
+        "frontend": 3008,
+        "apiAndWebsocket": 4008,
+        "optionalGateway": 4018,
+        "edge": 8080
+      },
+      "contractRedeploy": "new-clean-core-ceremony-required-because-the-admin-multisig-check-was-bypassed",
+      "operatorReportedTestTokens": {
+        "verificationStatus": "requires-current-ceremony-on-chain-verification-before-adoption",
+        "usdc": "0xB8FbD0B8cCB3f148DA18C223a1cFD77A594a280a",
+        "usdt": "0x9928cF89b7ea982ee2E06C26a9Fd00105C02850D"
+      },
+      "testTokenProvisioning": "verify-and-adopt-existing-usdc-and-usdt-without-another-token-deployment",
+      "coreBootstrap": "preserve-but-do-not-finalize-the-eoa-admin-checkpoint-then-start-a-new-ceremony-with-a-deployed-governance-multisig",
+      "coreFinalize": "blocked-until-multisig-ownership-acceptance-real-evm-wss-and-required-tls-publication-endpoints-exist",
+      "validation": {
+        "status": "success",
+        "runs": [
+          "https://github.com/aethelred-foundation/noblepay/actions/runs/30893998717",
+          "https://github.com/aethelred-foundation/noblepay/actions/runs/30893994299"
+        ],
+        "evidence": [
+          "537 frontend tests passed",
+          "1288 backend tests passed",
+          "1519 contract tests passed",
+          "root and backend dependency audits reported zero advisories",
+          "contracts dependency audit passed with only pre-existing low-severity toolchain findings"
+        ]
+      },
+      "references": [
+        "deploy/PUBLIC_TESTNET_OPERATOR_RUNBOOK.md",
+        "deploy/README.md",
+        "deploy/core-deployment.env.example",
+        "deploy/testnet-token-provisioning.env.example"
+      ]
+    },
+    "shiora": {
+      "repository": "https://github.com/aethelred-foundation/shiora.git",
+      "branch": "release/public-testnet-2026-07-31",
+      "commit": "2dd1255715a373beb691ab4bbcaecf787dcb8c09",
+      "runtime": {
+        "node": "20.x",
+        "packageManager": "npm-ci"
+      },
+      "ports": {
+        "frontendAndApi": 3001
+      },
+      "evaluationEnvironment": {
+        "NODE_ENV": "production",
+        "PORT": "3001",
+        "SHIORA_PREFLIGHT_MODE": "evaluation",
+        "SHIORA_PROFILE": "pilot",
+        "SHIORA_ALLOWED_ORIGINS": "http://93.127.132.52:3001",
+        "SHIORA_ENABLE_HSTS": "false",
+        "SHIORA_ALLOW_INSECURE_WALLET_HEADER": "false",
+        "SHIORA_TRUSTED_PROXY_COUNT": "0"
+      },
+      "contractRedeploy": "no-unless-attestation-manifest-or-bytecode-verification-fails",
+      "applicationAction": "retain-running-deployment-if-commit-and-environment-match-then-retest-with-the-new-wallet",
+      "walletDefect": "safe-risk-classification-handled-by-wallet-no-shiora-source-or-contract-redeployment-required",
+      "validation": {
+        "status": "success",
+        "run": "https://github.com/aethelred-foundation/shiora/actions/runs/30610908826"
+      },
+      "references": [
+        "docs/PUBLIC_TESTNET_RUNBOOK.md",
+        ".env.public-testnet.example",
+        "contracts/.env.public-testnet.example"
+      ]
+    }
+  },
+  "deploymentOrder": [
+    "network-read-only-verification",
+    "wallet",
+    "cruzible-retest-without-contract-change",
+    "terraqura",
+    "zeroid",
+    "noblepay",
+    "shiora"
+  ]
+}

@@ -11,7 +11,7 @@
 # ------------------------------------
 # Stage 1: Build the Go binary
 # ------------------------------------
-FROM --platform=$BUILDPLATFORM golang:1.25.8-bookworm AS builder
+FROM golang:1.25.12-bookworm AS builder
 
 WORKDIR /build
 
@@ -23,14 +23,19 @@ RUN go mod download
 COPY . .
 
 # Build with optimizations and version info
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETOS
+ARG TARGETARCH
 ARG VERSION=dev
 ARG COMMIT=unknown
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+RUN CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build \
       -tags production \
-      -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
+      -ldflags="-s -w \
+        -X github.com/cosmos/cosmos-sdk/version.Name=aethelred \
+        -X github.com/cosmos/cosmos-sdk/version.AppName=aethelredd \
+        -X github.com/cosmos/cosmos-sdk/version.Version=${VERSION} \
+        -X github.com/cosmos/cosmos-sdk/version.Commit=${COMMIT} \
+        -X github.com/cosmos/cosmos-sdk/version.BuildTags=production" \
       -trimpath \
       -o /build/bin/aethelredd \
       ./cmd/aethelredd/
@@ -38,9 +43,9 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 # ------------------------------------
 # Stage 2: Minimal production image
 # ------------------------------------
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/base-debian12:nonroot
 
-LABEL org.opencontainers.image.source="https://github.com/aethelred/aethelred"
+LABEL org.opencontainers.image.source="https://github.com/aethelred-foundation/aethelred"
 LABEL org.opencontainers.image.description="Aethelred Validator Node"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 

@@ -67,15 +67,20 @@ jobs:
             "sdk/aethelred-py/Cargo.toml"
           )
 
+          # Execute the test suites (previously --no-run compiled them without
+          # running). --lib --bins --tests runs unit + integration tests and
+          # excludes doctests/examples; all listed crates are verified green.
           for manifest in "${manifests[@]}"; do
-            echo ">>> cargo test --manifest-path ${manifest} --lib --bins --tests --no-run"
-            cargo test --manifest-path "${manifest}" --lib --bins --tests --no-run
+            echo ">>> cargo test --manifest-path ${manifest} --lib --bins --tests"
+            cargo test --manifest-path "${manifest}" --lib --bins --tests
           done
 
           echo ">>> verify SDK full source presence"
           cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml --lib source_presence_tests::lib_full_source_is_present -- --nocapture
 
-          echo ">>> cargo test --manifest-path crates/consensus/Cargo.toml"
+          # consensus is the most safety-critical crate: also run its doctests
+          # (bare `cargo test` includes them, the loop above does not).
+          echo ">>> cargo test --manifest-path crates/consensus/Cargo.toml (incl. doctests)"
           cargo test --manifest-path crates/consensus/Cargo.toml
 
   rust-build:

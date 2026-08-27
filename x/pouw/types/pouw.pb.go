@@ -331,8 +331,10 @@ type ComputeJob struct {
 	UtilityCategory UtilityCategory `protobuf:"varint,21,opt,name=utility_category,json=utilityCategory,proto3,enum=aethelred.pouw.v1.UtilityCategory" json:"utility_category,omitempty"`
 	// Useful Work Units (UWU) earned for this job
 	UsefulWorkUnits uint64 `protobuf:"varint,22,opt,name=useful_work_units,json=usefulWorkUnits,proto3" json:"useful_work_units,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// CEAP confidentiality requirement the network must satisfy for this job.
+	ConfidentialityPolicy *ConfidentialityPolicy `protobuf:"bytes,23,opt,name=confidentiality_policy,json=confidentialityPolicy,proto3" json:"confidentiality_policy,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ComputeJob) Reset() {
@@ -517,6 +519,13 @@ func (x *ComputeJob) GetUsefulWorkUnits() uint64 {
 		return x.UsefulWorkUnits
 	}
 	return 0
+}
+
+func (x *ComputeJob) GetConfidentialityPolicy() *ConfidentialityPolicy {
+	if x != nil {
+		return x.ConfidentialityPolicy
+	}
+	return nil
 }
 
 // VerificationResult represents a single validator's verification
@@ -1144,8 +1153,10 @@ type MsgSubmitJob struct {
 	Priority        int64                  `protobuf:"varint,8,opt,name=priority,proto3" json:"priority,omitempty"`
 	Metadata        map[string]string      `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	UtilityCategory UtilityCategory        `protobuf:"varint,10,opt,name=utility_category,json=utilityCategory,proto3,enum=aethelred.pouw.v1.UtilityCategory" json:"utility_category,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// CEAP confidentiality requirement declared by the submitter.
+	ConfidentialityPolicy *ConfidentialityPolicy `protobuf:"bytes,11,opt,name=confidentiality_policy,json=confidentialityPolicy,proto3" json:"confidentiality_policy,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *MsgSubmitJob) Reset() {
@@ -1246,6 +1257,13 @@ func (x *MsgSubmitJob) GetUtilityCategory() UtilityCategory {
 		return x.UtilityCategory
 	}
 	return UtilityCategory_UTILITY_CATEGORY_UNSPECIFIED
+}
+
+func (x *MsgSubmitJob) GetConfidentialityPolicy() *ConfidentialityPolicy {
+	if x != nil {
+		return x.ConfidentialityPolicy
+	}
+	return nil
 }
 
 type MsgSubmitJobResponse struct {
@@ -1846,6 +1864,287 @@ func (x *MsgRegisterValidatorPCR0Response) GetPcr0Hex() string {
 	return ""
 }
 
+// MsgRegisterValidatorHybridKey registers a validator's hybrid
+// (secp256k1 + ML-DSA) public key, used to verify the validator's signatures
+// over Digital Seal claims contributed via vote extensions.
+type MsgRegisterValidatorHybridKey struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Creator          string                 `protobuf:"bytes,1,opt,name=creator,proto3" json:"creator,omitempty"`
+	ValidatorAddress string                 `protobuf:"bytes,2,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	HybridPublicKey  []byte                 `protobuf:"bytes,3,opt,name=hybrid_public_key,json=hybridPublicKey,proto3" json:"hybrid_public_key,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MsgRegisterValidatorHybridKey) Reset() {
+	*x = MsgRegisterValidatorHybridKey{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgRegisterValidatorHybridKey) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgRegisterValidatorHybridKey) ProtoMessage() {}
+
+func (x *MsgRegisterValidatorHybridKey) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgRegisterValidatorHybridKey.ProtoReflect.Descriptor instead.
+func (*MsgRegisterValidatorHybridKey) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *MsgRegisterValidatorHybridKey) GetCreator() string {
+	if x != nil {
+		return x.Creator
+	}
+	return ""
+}
+
+func (x *MsgRegisterValidatorHybridKey) GetValidatorAddress() string {
+	if x != nil {
+		return x.ValidatorAddress
+	}
+	return ""
+}
+
+func (x *MsgRegisterValidatorHybridKey) GetHybridPublicKey() []byte {
+	if x != nil {
+		return x.HybridPublicKey
+	}
+	return nil
+}
+
+type MsgRegisterValidatorHybridKeyResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ValidatorAddress string                 `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MsgRegisterValidatorHybridKeyResponse) Reset() {
+	*x = MsgRegisterValidatorHybridKeyResponse{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgRegisterValidatorHybridKeyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgRegisterValidatorHybridKeyResponse) ProtoMessage() {}
+
+func (x *MsgRegisterValidatorHybridKeyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgRegisterValidatorHybridKeyResponse.ProtoReflect.Descriptor instead.
+func (*MsgRegisterValidatorHybridKeyResponse) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *MsgRegisterValidatorHybridKeyResponse) GetValidatorAddress() string {
+	if x != nil {
+		return x.ValidatorAddress
+	}
+	return ""
+}
+
+// SealQuorumSignature is one validator's hybrid (secp256k1 + ML-DSA) signature
+// over a Digital Seal's canonical claim, retained for offline verification.
+type SealQuorumSignature struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SignerAddress string                 `protobuf:"bytes,1,opt,name=signer_address,json=signerAddress,proto3" json:"signer_address,omitempty"`
+	Algorithm     string                 `protobuf:"bytes,2,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
+	PublicKey     []byte                 `protobuf:"bytes,3,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SealQuorumSignature) Reset() {
+	*x = SealQuorumSignature{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SealQuorumSignature) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SealQuorumSignature) ProtoMessage() {}
+
+func (x *SealQuorumSignature) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SealQuorumSignature.ProtoReflect.Descriptor instead.
+func (*SealQuorumSignature) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SealQuorumSignature) GetSignerAddress() string {
+	if x != nil {
+		return x.SignerAddress
+	}
+	return ""
+}
+
+func (x *SealQuorumSignature) GetAlgorithm() string {
+	if x != nil {
+		return x.Algorithm
+	}
+	return ""
+}
+
+func (x *SealQuorumSignature) GetPublicKey() []byte {
+	if x != nil {
+		return x.PublicKey
+	}
+	return nil
+}
+
+func (x *SealQuorumSignature) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type QuerySealQuorumRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SealId        string                 `protobuf:"bytes,1,opt,name=seal_id,json=sealId,proto3" json:"seal_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuerySealQuorumRequest) Reset() {
+	*x = QuerySealQuorumRequest{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuerySealQuorumRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySealQuorumRequest) ProtoMessage() {}
+
+func (x *QuerySealQuorumRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySealQuorumRequest.ProtoReflect.Descriptor instead.
+func (*QuerySealQuorumRequest) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *QuerySealQuorumRequest) GetSealId() string {
+	if x != nil {
+		return x.SealId
+	}
+	return ""
+}
+
+type QuerySealQuorumResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SealId         string                 `protobuf:"bytes,1,opt,name=seal_id,json=sealId,proto3" json:"seal_id,omitempty"`
+	Signatures     []*SealQuorumSignature `protobuf:"bytes,2,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	SignatureCount uint32                 `protobuf:"varint,3,opt,name=signature_count,json=signatureCount,proto3" json:"signature_count,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *QuerySealQuorumResponse) Reset() {
+	*x = QuerySealQuorumResponse{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuerySealQuorumResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySealQuorumResponse) ProtoMessage() {}
+
+func (x *QuerySealQuorumResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySealQuorumResponse.ProtoReflect.Descriptor instead.
+func (*QuerySealQuorumResponse) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *QuerySealQuorumResponse) GetSealId() string {
+	if x != nil {
+		return x.SealId
+	}
+	return ""
+}
+
+func (x *QuerySealQuorumResponse) GetSignatures() []*SealQuorumSignature {
+	if x != nil {
+		return x.Signatures
+	}
+	return nil
+}
+
+func (x *QuerySealQuorumResponse) GetSignatureCount() uint32 {
+	if x != nil {
+		return x.SignatureCount
+	}
+	return 0
+}
+
 type QueryJobRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
@@ -1855,7 +2154,7 @@ type QueryJobRequest struct {
 
 func (x *QueryJobRequest) Reset() {
 	*x = QueryJobRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[15]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1867,7 +2166,7 @@ func (x *QueryJobRequest) String() string {
 func (*QueryJobRequest) ProtoMessage() {}
 
 func (x *QueryJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[15]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1880,7 +2179,7 @@ func (x *QueryJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryJobRequest.ProtoReflect.Descriptor instead.
 func (*QueryJobRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{15}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *QueryJobRequest) GetJobId() string {
@@ -1899,7 +2198,7 @@ type QueryJobResponse struct {
 
 func (x *QueryJobResponse) Reset() {
 	*x = QueryJobResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[16]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1911,7 +2210,7 @@ func (x *QueryJobResponse) String() string {
 func (*QueryJobResponse) ProtoMessage() {}
 
 func (x *QueryJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[16]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1924,7 +2223,7 @@ func (x *QueryJobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryJobResponse.ProtoReflect.Descriptor instead.
 func (*QueryJobResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{16}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *QueryJobResponse) GetJob() *ComputeJob {
@@ -1946,7 +2245,7 @@ type QueryJobsRequest struct {
 
 func (x *QueryJobsRequest) Reset() {
 	*x = QueryJobsRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[17]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1958,7 +2257,7 @@ func (x *QueryJobsRequest) String() string {
 func (*QueryJobsRequest) ProtoMessage() {}
 
 func (x *QueryJobsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[17]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1971,7 +2270,7 @@ func (x *QueryJobsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryJobsRequest.ProtoReflect.Descriptor instead.
 func (*QueryJobsRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{17}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *QueryJobsRequest) GetLimit() int32 {
@@ -2012,7 +2311,7 @@ type QueryJobsResponse struct {
 
 func (x *QueryJobsResponse) Reset() {
 	*x = QueryJobsResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[18]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2024,7 +2323,7 @@ func (x *QueryJobsResponse) String() string {
 func (*QueryJobsResponse) ProtoMessage() {}
 
 func (x *QueryJobsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[18]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2037,7 +2336,7 @@ func (x *QueryJobsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryJobsResponse.ProtoReflect.Descriptor instead.
 func (*QueryJobsResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{18}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *QueryJobsResponse) GetJobs() []*ComputeJob {
@@ -2062,7 +2361,7 @@ type QueryPendingJobsRequest struct {
 
 func (x *QueryPendingJobsRequest) Reset() {
 	*x = QueryPendingJobsRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[19]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2074,7 +2373,7 @@ func (x *QueryPendingJobsRequest) String() string {
 func (*QueryPendingJobsRequest) ProtoMessage() {}
 
 func (x *QueryPendingJobsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[19]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2087,7 +2386,7 @@ func (x *QueryPendingJobsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryPendingJobsRequest.ProtoReflect.Descriptor instead.
 func (*QueryPendingJobsRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{19}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{24}
 }
 
 type QueryPendingJobsResponse struct {
@@ -2099,7 +2398,7 @@ type QueryPendingJobsResponse struct {
 
 func (x *QueryPendingJobsResponse) Reset() {
 	*x = QueryPendingJobsResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[20]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2111,7 +2410,7 @@ func (x *QueryPendingJobsResponse) String() string {
 func (*QueryPendingJobsResponse) ProtoMessage() {}
 
 func (x *QueryPendingJobsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[20]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2124,7 +2423,7 @@ func (x *QueryPendingJobsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryPendingJobsResponse.ProtoReflect.Descriptor instead.
 func (*QueryPendingJobsResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{20}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *QueryPendingJobsResponse) GetJobs() []*ComputeJob {
@@ -2143,7 +2442,7 @@ type QueryModelRequest struct {
 
 func (x *QueryModelRequest) Reset() {
 	*x = QueryModelRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[21]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2155,7 +2454,7 @@ func (x *QueryModelRequest) String() string {
 func (*QueryModelRequest) ProtoMessage() {}
 
 func (x *QueryModelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[21]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2168,7 +2467,7 @@ func (x *QueryModelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryModelRequest.ProtoReflect.Descriptor instead.
 func (*QueryModelRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{21}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *QueryModelRequest) GetModelHash() []byte {
@@ -2187,7 +2486,7 @@ type QueryModelResponse struct {
 
 func (x *QueryModelResponse) Reset() {
 	*x = QueryModelResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[22]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2199,7 +2498,7 @@ func (x *QueryModelResponse) String() string {
 func (*QueryModelResponse) ProtoMessage() {}
 
 func (x *QueryModelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[22]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2212,7 +2511,7 @@ func (x *QueryModelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryModelResponse.ProtoReflect.Descriptor instead.
 func (*QueryModelResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{22}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *QueryModelResponse) GetModel() *RegisteredModel {
@@ -2231,7 +2530,7 @@ type QueryValidatorStatsRequest struct {
 
 func (x *QueryValidatorStatsRequest) Reset() {
 	*x = QueryValidatorStatsRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[23]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2243,7 +2542,7 @@ func (x *QueryValidatorStatsRequest) String() string {
 func (*QueryValidatorStatsRequest) ProtoMessage() {}
 
 func (x *QueryValidatorStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[23]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2256,7 +2555,7 @@ func (x *QueryValidatorStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryValidatorStatsRequest.ProtoReflect.Descriptor instead.
 func (*QueryValidatorStatsRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{23}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *QueryValidatorStatsRequest) GetValidatorAddress() string {
@@ -2275,7 +2574,7 @@ type QueryValidatorStatsResponse struct {
 
 func (x *QueryValidatorStatsResponse) Reset() {
 	*x = QueryValidatorStatsResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[24]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2287,7 +2586,7 @@ func (x *QueryValidatorStatsResponse) String() string {
 func (*QueryValidatorStatsResponse) ProtoMessage() {}
 
 func (x *QueryValidatorStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[24]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2300,7 +2599,7 @@ func (x *QueryValidatorStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryValidatorStatsResponse.ProtoReflect.Descriptor instead.
 func (*QueryValidatorStatsResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{24}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *QueryValidatorStatsResponse) GetStats() *ValidatorStats {
@@ -2318,7 +2617,7 @@ type QueryParamsRequest struct {
 
 func (x *QueryParamsRequest) Reset() {
 	*x = QueryParamsRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[25]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2330,7 +2629,7 @@ func (x *QueryParamsRequest) String() string {
 func (*QueryParamsRequest) ProtoMessage() {}
 
 func (x *QueryParamsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[25]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2343,7 +2642,7 @@ func (x *QueryParamsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryParamsRequest.ProtoReflect.Descriptor instead.
 func (*QueryParamsRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{25}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{30}
 }
 
 type QueryParamsResponse struct {
@@ -2355,7 +2654,7 @@ type QueryParamsResponse struct {
 
 func (x *QueryParamsResponse) Reset() {
 	*x = QueryParamsResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[26]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2367,7 +2666,7 @@ func (x *QueryParamsResponse) String() string {
 func (*QueryParamsResponse) ProtoMessage() {}
 
 func (x *QueryParamsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[26]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2380,7 +2679,7 @@ func (x *QueryParamsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryParamsResponse.ProtoReflect.Descriptor instead.
 func (*QueryParamsResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{26}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *QueryParamsResponse) GetParams() *Params {
@@ -2399,7 +2698,7 @@ type QueryValidatorPCR0Request struct {
 
 func (x *QueryValidatorPCR0Request) Reset() {
 	*x = QueryValidatorPCR0Request{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[27]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2411,7 +2710,7 @@ func (x *QueryValidatorPCR0Request) String() string {
 func (*QueryValidatorPCR0Request) ProtoMessage() {}
 
 func (x *QueryValidatorPCR0Request) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[27]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2424,7 +2723,7 @@ func (x *QueryValidatorPCR0Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryValidatorPCR0Request.ProtoReflect.Descriptor instead.
 func (*QueryValidatorPCR0Request) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{27}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *QueryValidatorPCR0Request) GetValidatorAddress() string {
@@ -2444,7 +2743,7 @@ type QueryValidatorPCR0Response struct {
 
 func (x *QueryValidatorPCR0Response) Reset() {
 	*x = QueryValidatorPCR0Response{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[28]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2456,7 +2755,7 @@ func (x *QueryValidatorPCR0Response) String() string {
 func (*QueryValidatorPCR0Response) ProtoMessage() {}
 
 func (x *QueryValidatorPCR0Response) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[28]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2469,7 +2768,7 @@ func (x *QueryValidatorPCR0Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryValidatorPCR0Response.ProtoReflect.Descriptor instead.
 func (*QueryValidatorPCR0Response) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{28}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *QueryValidatorPCR0Response) GetValidatorAddress() string {
@@ -2495,7 +2794,7 @@ type QueryIsPCR0RegisteredRequest struct {
 
 func (x *QueryIsPCR0RegisteredRequest) Reset() {
 	*x = QueryIsPCR0RegisteredRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[29]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2507,7 +2806,7 @@ func (x *QueryIsPCR0RegisteredRequest) String() string {
 func (*QueryIsPCR0RegisteredRequest) ProtoMessage() {}
 
 func (x *QueryIsPCR0RegisteredRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[29]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2520,7 +2819,7 @@ func (x *QueryIsPCR0RegisteredRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryIsPCR0RegisteredRequest.ProtoReflect.Descriptor instead.
 func (*QueryIsPCR0RegisteredRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{29}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *QueryIsPCR0RegisteredRequest) GetPcr0Hex() string {
@@ -2540,7 +2839,7 @@ type QueryIsPCR0RegisteredResponse struct {
 
 func (x *QueryIsPCR0RegisteredResponse) Reset() {
 	*x = QueryIsPCR0RegisteredResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[30]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2552,7 +2851,7 @@ func (x *QueryIsPCR0RegisteredResponse) String() string {
 func (*QueryIsPCR0RegisteredResponse) ProtoMessage() {}
 
 func (x *QueryIsPCR0RegisteredResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[30]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2565,7 +2864,7 @@ func (x *QueryIsPCR0RegisteredResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryIsPCR0RegisteredResponse.ProtoReflect.Descriptor instead.
 func (*QueryIsPCR0RegisteredResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{30}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *QueryIsPCR0RegisteredResponse) GetPcr0Hex() string {
@@ -2590,7 +2889,7 @@ type QueryUsefulWorkStatsRequest struct {
 
 func (x *QueryUsefulWorkStatsRequest) Reset() {
 	*x = QueryUsefulWorkStatsRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[31]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2602,7 +2901,7 @@ func (x *QueryUsefulWorkStatsRequest) String() string {
 func (*QueryUsefulWorkStatsRequest) ProtoMessage() {}
 
 func (x *QueryUsefulWorkStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[31]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2615,7 +2914,7 @@ func (x *QueryUsefulWorkStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryUsefulWorkStatsRequest.ProtoReflect.Descriptor instead.
 func (*QueryUsefulWorkStatsRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{31}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{36}
 }
 
 type QueryUsefulWorkStatsResponse struct {
@@ -2630,7 +2929,7 @@ type QueryUsefulWorkStatsResponse struct {
 
 func (x *QueryUsefulWorkStatsResponse) Reset() {
 	*x = QueryUsefulWorkStatsResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[32]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2642,7 +2941,7 @@ func (x *QueryUsefulWorkStatsResponse) String() string {
 func (*QueryUsefulWorkStatsResponse) ProtoMessage() {}
 
 func (x *QueryUsefulWorkStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[32]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2655,7 +2954,7 @@ func (x *QueryUsefulWorkStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryUsefulWorkStatsResponse.ProtoReflect.Descriptor instead.
 func (*QueryUsefulWorkStatsResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{32}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *QueryUsefulWorkStatsResponse) GetTotalUwu() uint64 {
@@ -2695,7 +2994,7 @@ type QueryEpochStatsRequest struct {
 
 func (x *QueryEpochStatsRequest) Reset() {
 	*x = QueryEpochStatsRequest{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[33]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2707,7 +3006,7 @@ func (x *QueryEpochStatsRequest) String() string {
 func (*QueryEpochStatsRequest) ProtoMessage() {}
 
 func (x *QueryEpochStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[33]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2720,7 +3019,7 @@ func (x *QueryEpochStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryEpochStatsRequest.ProtoReflect.Descriptor instead.
 func (*QueryEpochStatsRequest) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{33}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *QueryEpochStatsRequest) GetEpoch() uint64 {
@@ -2742,7 +3041,7 @@ type QueryEpochStatsResponse struct {
 
 func (x *QueryEpochStatsResponse) Reset() {
 	*x = QueryEpochStatsResponse{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[34]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2754,7 +3053,7 @@ func (x *QueryEpochStatsResponse) String() string {
 func (*QueryEpochStatsResponse) ProtoMessage() {}
 
 func (x *QueryEpochStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[34]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2767,7 +3066,7 @@ func (x *QueryEpochStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryEpochStatsResponse.ProtoReflect.Descriptor instead.
 func (*QueryEpochStatsResponse) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{34}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *QueryEpochStatsResponse) GetEpoch() uint64 {
@@ -2810,7 +3109,7 @@ type ValidatorEpochStats struct {
 
 func (x *ValidatorEpochStats) Reset() {
 	*x = ValidatorEpochStats{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[35]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2822,7 +3121,7 @@ func (x *ValidatorEpochStats) String() string {
 func (*ValidatorEpochStats) ProtoMessage() {}
 
 func (x *ValidatorEpochStats) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[35]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2835,7 +3134,7 @@ func (x *ValidatorEpochStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidatorEpochStats.ProtoReflect.Descriptor instead.
 func (*ValidatorEpochStats) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{35}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ValidatorEpochStats) GetValidatorAddress() string {
@@ -2889,13 +3188,22 @@ type Params struct {
 	UtilityMultipliers    map[string]string `protobuf:"bytes,14,rep,name=utility_multipliers,json=utilityMultipliers,proto3" json:"utility_multipliers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // category -> multiplier (e.g., "MEDICAL" -> "2.0")
 	UseLogarithmicScaling bool              `protobuf:"varint,15,opt,name=use_logarithmic_scaling,json=useLogarithmicScaling,proto3" json:"use_logarithmic_scaling,omitempty"`
 	AntiWhaleThreshold    uint64            `protobuf:"varint,16,opt,name=anti_whale_threshold,json=antiWhaleThreshold,proto3" json:"anti_whale_threshold,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// data_residency_region is the sovereign jurisdiction this network's
+	// validators operate in — declared by governance and enforced at validator
+	// onboarding (legal/operational control, not per-enclave geo-attestation,
+	// which TEE hardware does not provide). When non-empty it is bound into every
+	// Digital Seal's confidentiality attestation as the achieved jurisdiction, so
+	// a CEAP data-residency policy (e.g. ["AE"]) can be satisfied on a sovereign
+	// deployment. Empty = no residency is claimed, so residency-restricted
+	// policies fail closed rather than being granted a fabricated region.
+	DataResidencyRegion string `protobuf:"bytes,19,opt,name=data_residency_region,json=dataResidencyRegion,proto3" json:"data_residency_region,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Params) Reset() {
 	*x = Params{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[36]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2907,7 +3215,7 @@ func (x *Params) String() string {
 func (*Params) ProtoMessage() {}
 
 func (x *Params) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[36]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2920,7 +3228,7 @@ func (x *Params) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Params.ProtoReflect.Descriptor instead.
 func (*Params) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{36}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *Params) GetMinValidators() int64 {
@@ -3049,6 +3357,13 @@ func (x *Params) GetAntiWhaleThreshold() uint64 {
 	return 0
 }
 
+func (x *Params) GetDataResidencyRegion() string {
+	if x != nil {
+		return x.DataResidencyRegion
+	}
+	return ""
+}
+
 // GenesisState
 type GenesisState struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
@@ -3059,13 +3374,17 @@ type GenesisState struct {
 	Params                *Params                `protobuf:"bytes,5,opt,name=params,proto3" json:"params,omitempty"`
 	CurrentEpoch          uint64                 `protobuf:"varint,6,opt,name=current_epoch,json=currentEpoch,proto3" json:"current_epoch,omitempty"`
 	TotalUwu              uint64                 `protobuf:"varint,7,opt,name=total_uwu,json=totalUwu,proto3" json:"total_uwu,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// validator_hybrid_keys seeds validators' hybrid (secp256k1 + ML-DSA) public
+	// keys at genesis so Digital Seal quorum signatures can be verified from the
+	// first block without each validator submitting a registration transaction.
+	ValidatorHybridKeys []*ValidatorHybridKey `protobuf:"bytes,8,rep,name=validator_hybrid_keys,json=validatorHybridKeys,proto3" json:"validator_hybrid_keys,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GenesisState) Reset() {
 	*x = GenesisState{}
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[37]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3077,7 +3396,7 @@ func (x *GenesisState) String() string {
 func (*GenesisState) ProtoMessage() {}
 
 func (x *GenesisState) ProtoReflect() protoreflect.Message {
-	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[37]
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3090,7 +3409,7 @@ func (x *GenesisState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenesisState.ProtoReflect.Descriptor instead.
 func (*GenesisState) Descriptor() ([]byte, []int) {
-	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{37}
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GenesisState) GetJobs() []*ComputeJob {
@@ -3142,11 +3461,155 @@ func (x *GenesisState) GetTotalUwu() uint64 {
 	return 0
 }
 
+func (x *GenesisState) GetValidatorHybridKeys() []*ValidatorHybridKey {
+	if x != nil {
+		return x.ValidatorHybridKeys
+	}
+	return nil
+}
+
+// ValidatorHybridKey binds a validator account address to its hybrid public key.
+type ValidatorHybridKey struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ValidatorAddress string                 `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	HybridPublicKey  []byte                 `protobuf:"bytes,2,opt,name=hybrid_public_key,json=hybridPublicKey,proto3" json:"hybrid_public_key,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ValidatorHybridKey) Reset() {
+	*x = ValidatorHybridKey{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidatorHybridKey) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidatorHybridKey) ProtoMessage() {}
+
+func (x *ValidatorHybridKey) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidatorHybridKey.ProtoReflect.Descriptor instead.
+func (*ValidatorHybridKey) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ValidatorHybridKey) GetValidatorAddress() string {
+	if x != nil {
+		return x.ValidatorAddress
+	}
+	return ""
+}
+
+func (x *ValidatorHybridKey) GetHybridPublicKey() []byte {
+	if x != nil {
+		return x.HybridPublicKey
+	}
+	return nil
+}
+
+// ConfidentialityPolicy is the client-declared confidentiality requirement the
+// network must satisfy for a job (see docs/architecture/ADR-0003). Empty means
+// no confidentiality required.
+type ConfidentialityPolicy struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Permitted confidentiality backends (empty = any).
+	AllowedBackends []string `protobuf:"bytes,1,rep,name=allowed_backends,json=allowedBackends,proto3" json:"allowed_backends,omitempty"`
+	// Weakest acceptable verification method.
+	MinVerification string `protobuf:"bytes,2,opt,name=min_verification,json=minVerification,proto3" json:"min_verification,omitempty"`
+	// Permitted attesting platforms (empty = any).
+	AllowedPlatforms []string `protobuf:"bytes,3,rep,name=allowed_platforms,json=allowedPlatforms,proto3" json:"allowed_platforms,omitempty"`
+	// Forbid test roots — production silicon attestation only.
+	RequireVendorRoot bool `protobuf:"varint,4,opt,name=require_vendor_root,json=requireVendorRoot,proto3" json:"require_vendor_root,omitempty"`
+	// Permitted data-residency jurisdictions (empty = any).
+	DataResidency []string `protobuf:"bytes,5,rep,name=data_residency,json=dataResidency,proto3" json:"data_residency,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfidentialityPolicy) Reset() {
+	*x = ConfidentialityPolicy{}
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfidentialityPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfidentialityPolicy) ProtoMessage() {}
+
+func (x *ConfidentialityPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_aethelred_pouw_v1_pouw_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfidentialityPolicy.ProtoReflect.Descriptor instead.
+func (*ConfidentialityPolicy) Descriptor() ([]byte, []int) {
+	return file_aethelred_pouw_v1_pouw_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ConfidentialityPolicy) GetAllowedBackends() []string {
+	if x != nil {
+		return x.AllowedBackends
+	}
+	return nil
+}
+
+func (x *ConfidentialityPolicy) GetMinVerification() string {
+	if x != nil {
+		return x.MinVerification
+	}
+	return ""
+}
+
+func (x *ConfidentialityPolicy) GetAllowedPlatforms() []string {
+	if x != nil {
+		return x.AllowedPlatforms
+	}
+	return nil
+}
+
+func (x *ConfidentialityPolicy) GetRequireVendorRoot() bool {
+	if x != nil {
+		return x.RequireVendorRoot
+	}
+	return false
+}
+
+func (x *ConfidentialityPolicy) GetDataResidency() []string {
+	if x != nil {
+		return x.DataResidency
+	}
+	return nil
+}
+
 var File_aethelred_pouw_v1_pouw_proto protoreflect.FileDescriptor
 
 const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\n" +
-	"\x1caethelred/pouw/v1/pouw.proto\x12\x11aethelred.pouw.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1ecosmos/base/v1beta1/coin.proto\"\xbc\b\n" +
+	"\x1caethelred/pouw/v1/pouw.proto\x12\x11aethelred.pouw.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1ecosmos/base/v1beta1/coin.proto\"\x9d\t\n" +
 	"\n" +
 	"ComputeJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -3178,7 +3641,8 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\bpriority\x18\x13 \x01(\x03R\bpriority\x12!\n" +
 	"\fblock_height\x18\x14 \x01(\x03R\vblockHeight\x12M\n" +
 	"\x10utility_category\x18\x15 \x01(\x0e2\".aethelred.pouw.v1.UtilityCategoryR\x0futilityCategory\x12*\n" +
-	"\x11useful_work_units\x18\x16 \x01(\x04R\x0fusefulWorkUnits\x1a;\n" +
+	"\x11useful_work_units\x18\x16 \x01(\x04R\x0fusefulWorkUnits\x12_\n" +
+	"\x16confidentiality_policy\x18\x17 \x01(\v2(.aethelred.pouw.v1.ConfidentialityPolicyR\x15confidentialityPolicy\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa1\x04\n" +
@@ -3249,7 +3713,7 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\rgpu_memory_gb\x18\n" +
 	" \x01(\x03R\vgpuMemoryGb\x12\x1b\n" +
 	"\tcpu_cores\x18\v \x01(\x03R\bcpuCores\x12\x1b\n" +
-	"\tmemory_gb\x18\f \x01(\x03R\bmemoryGb\"\xf1\x03\n" +
+	"\tmemory_gb\x18\f \x01(\x03R\bmemoryGb\"\xd2\x04\n" +
 	"\fMsgSubmitJob\x12\x18\n" +
 	"\acreator\x18\x01 \x01(\tR\acreator\x12\x1d\n" +
 	"\n" +
@@ -3264,7 +3728,8 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\bpriority\x18\b \x01(\x03R\bpriority\x12I\n" +
 	"\bmetadata\x18\t \x03(\v2-.aethelred.pouw.v1.MsgSubmitJob.MetadataEntryR\bmetadata\x12M\n" +
 	"\x10utility_category\x18\n" +
-	" \x01(\x0e2\".aethelred.pouw.v1.UtilityCategoryR\x0futilityCategory\x1a;\n" +
+	" \x01(\x0e2\".aethelred.pouw.v1.UtilityCategoryR\x0futilityCategory\x12_\n" +
+	"\x16confidentiality_policy\x18\v \x01(\v2(.aethelred.pouw.v1.ConfidentialityPolicyR\x15confidentialityPolicy\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"R\n" +
@@ -3313,7 +3778,27 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\bpcr0_hex\x18\x03 \x01(\tR\apcr0Hex\"j\n" +
 	" MsgRegisterValidatorPCR0Response\x12+\n" +
 	"\x11validator_address\x18\x01 \x01(\tR\x10validatorAddress\x12\x19\n" +
-	"\bpcr0_hex\x18\x02 \x01(\tR\apcr0Hex\"(\n" +
+	"\bpcr0_hex\x18\x02 \x01(\tR\apcr0Hex\"\x92\x01\n" +
+	"\x1dMsgRegisterValidatorHybridKey\x12\x18\n" +
+	"\acreator\x18\x01 \x01(\tR\acreator\x12+\n" +
+	"\x11validator_address\x18\x02 \x01(\tR\x10validatorAddress\x12*\n" +
+	"\x11hybrid_public_key\x18\x03 \x01(\fR\x0fhybridPublicKey\"T\n" +
+	"%MsgRegisterValidatorHybridKeyResponse\x12+\n" +
+	"\x11validator_address\x18\x01 \x01(\tR\x10validatorAddress\"\x97\x01\n" +
+	"\x13SealQuorumSignature\x12%\n" +
+	"\x0esigner_address\x18\x01 \x01(\tR\rsignerAddress\x12\x1c\n" +
+	"\talgorithm\x18\x02 \x01(\tR\talgorithm\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x03 \x01(\fR\tpublicKey\x12\x1c\n" +
+	"\tsignature\x18\x04 \x01(\fR\tsignature\"1\n" +
+	"\x16QuerySealQuorumRequest\x12\x17\n" +
+	"\aseal_id\x18\x01 \x01(\tR\x06sealId\"\xa3\x01\n" +
+	"\x17QuerySealQuorumResponse\x12\x17\n" +
+	"\aseal_id\x18\x01 \x01(\tR\x06sealId\x12F\n" +
+	"\n" +
+	"signatures\x18\x02 \x03(\v2&.aethelred.pouw.v1.SealQuorumSignatureR\n" +
+	"signatures\x12'\n" +
+	"\x0fsignature_count\x18\x03 \x01(\rR\x0esignatureCount\"(\n" +
 	"\x0fQueryJobRequest\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"C\n" +
 	"\x10QueryJobResponse\x12/\n" +
@@ -3374,7 +3859,7 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\n" +
 	"uwu_earned\x18\x02 \x01(\x04R\tuwuEarned\x12%\n" +
 	"\x0ejobs_completed\x18\x03 \x01(\x04R\rjobsCompleted\x12#\n" +
-	"\rreward_earned\x18\x04 \x01(\tR\frewardEarned\"\xfd\a\n" +
+	"\rreward_earned\x18\x04 \x01(\tR\frewardEarned\"\xb1\b\n" +
 	"\x06Params\x12%\n" +
 	"\x0emin_validators\x18\x01 \x01(\x03R\rminValidators\x12/\n" +
 	"\x13consensus_threshold\x18\x02 \x01(\x03R\x12consensusThreshold\x12,\n" +
@@ -3395,10 +3880,11 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\x0fbase_uwu_reward\x18\r \x01(\tR\rbaseUwuReward\x12b\n" +
 	"\x13utility_multipliers\x18\x0e \x03(\v21.aethelred.pouw.v1.Params.UtilityMultipliersEntryR\x12utilityMultipliers\x126\n" +
 	"\x17use_logarithmic_scaling\x18\x0f \x01(\bR\x15useLogarithmicScaling\x120\n" +
-	"\x14anti_whale_threshold\x18\x10 \x01(\x04R\x12antiWhaleThreshold\x1aE\n" +
+	"\x14anti_whale_threshold\x18\x10 \x01(\x04R\x12antiWhaleThreshold\x122\n" +
+	"\x15data_residency_region\x18\x13 \x01(\tR\x13dataResidencyRegion\x1aE\n" +
 	"\x17UtilityMultipliersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb2\x03\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8d\x04\n" +
 	"\fGenesisState\x121\n" +
 	"\x04jobs\x18\x01 \x03(\v2\x1d.aethelred.pouw.v1.ComputeJobR\x04jobs\x12O\n" +
 	"\x11registered_models\x18\x02 \x03(\v2\".aethelred.pouw.v1.RegisteredModelR\x10registeredModels\x12J\n" +
@@ -3406,7 +3892,17 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\x16validator_capabilities\x18\x04 \x03(\v2&.aethelred.pouw.v1.ValidatorCapabilityR\x15validatorCapabilities\x121\n" +
 	"\x06params\x18\x05 \x01(\v2\x19.aethelred.pouw.v1.ParamsR\x06params\x12#\n" +
 	"\rcurrent_epoch\x18\x06 \x01(\x04R\fcurrentEpoch\x12\x1b\n" +
-	"\ttotal_uwu\x18\a \x01(\x04R\btotalUwu*\xf9\x01\n" +
+	"\ttotal_uwu\x18\a \x01(\x04R\btotalUwu\x12Y\n" +
+	"\x15validator_hybrid_keys\x18\b \x03(\v2%.aethelred.pouw.v1.ValidatorHybridKeyR\x13validatorHybridKeys\"m\n" +
+	"\x12ValidatorHybridKey\x12+\n" +
+	"\x11validator_address\x18\x01 \x01(\tR\x10validatorAddress\x12*\n" +
+	"\x11hybrid_public_key\x18\x02 \x01(\fR\x0fhybridPublicKey\"\xf1\x01\n" +
+	"\x15ConfidentialityPolicy\x12)\n" +
+	"\x10allowed_backends\x18\x01 \x03(\tR\x0fallowedBackends\x12)\n" +
+	"\x10min_verification\x18\x02 \x01(\tR\x0fminVerification\x12+\n" +
+	"\x11allowed_platforms\x18\x03 \x03(\tR\x10allowedPlatforms\x12.\n" +
+	"\x13require_vendor_root\x18\x04 \x01(\bR\x11requireVendorRoot\x12%\n" +
+	"\x0edata_residency\x18\x05 \x03(\tR\rdataResidency*\xf9\x01\n" +
 	"\x0fUtilityCategory\x12 \n" +
 	"\x1cUTILITY_CATEGORY_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18UTILITY_CATEGORY_MEDICAL\x10\x01\x12\x1f\n" +
@@ -3435,13 +3931,14 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\x18VERIFICATION_METHOD_ZKML\x10\x02\x12\x1e\n" +
 	"\x1aVERIFICATION_METHOD_HYBRID\x10\x03\x12#\n" +
 	"\x1fVERIFICATION_METHOD_REEXECUTION\x10\x04\x12 \n" +
-	"\x1cVERIFICATION_METHOD_AI_PROOF\x10\x052\x86\x06\n" +
+	"\x1cVERIFICATION_METHOD_AI_PROOF\x10\x052\xc6\a\n" +
 	"\x03Msg\x12y\n" +
 	"\tSubmitJob\x12\x1f.aethelred.pouw.v1.MsgSubmitJob\x1a'.aethelred.pouw.v1.MsgSubmitJobResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/aethelred/pouw/v1/jobs\x12\x87\x01\n" +
 	"\rRegisterModel\x12#.aethelred.pouw.v1.MsgRegisterModel\x1a+.aethelred.pouw.v1.MsgRegisterModelResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/aethelred/pouw/v1/models\x12\x89\x01\n" +
 	"\tCancelJob\x12\x1f.aethelred.pouw.v1.MsgCancelJob\x1a'.aethelred.pouw.v1.MsgCancelJobResponse\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/aethelred/pouw/v1/jobs/{job_id}:cancel\x12\xc2\x01\n" +
 	"\x1bRegisterValidatorCapability\x121.aethelred.pouw.v1.MsgRegisterValidatorCapability\x1a9.aethelred.pouw.v1.MsgRegisterValidatorCapabilityResponse\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/aethelred/pouw/v1/validators/capabilities\x12\xa8\x01\n" +
-	"\x15RegisterValidatorPCR0\x12+.aethelred.pouw.v1.MsgRegisterValidatorPCR0\x1a3.aethelred.pouw.v1.MsgRegisterValidatorPCR0Response\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/aethelred/pouw/v1/validators/pcr02\xd5\v\n" +
+	"\x15RegisterValidatorPCR0\x12+.aethelred.pouw.v1.MsgRegisterValidatorPCR0\x1a3.aethelred.pouw.v1.MsgRegisterValidatorPCR0Response\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/aethelred/pouw/v1/validators/pcr0\x12\xbd\x01\n" +
+	"\x1aRegisterValidatorHybridKey\x120.aethelred.pouw.v1.MsgRegisterValidatorHybridKey\x1a8.aethelred.pouw.v1.MsgRegisterValidatorHybridKeyResponse\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/aethelred/pouw/v1/validators/hybrid_key2\xee\f\n" +
 	"\x05Query\x12x\n" +
 	"\x03Job\x12\".aethelred.pouw.v1.QueryJobRequest\x1a#.aethelred.pouw.v1.QueryJobResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /aethelred/pouw/v1/jobs/{job_id}\x12r\n" +
 	"\x04Jobs\x12#.aethelred.pouw.v1.QueryJobsRequest\x1a$.aethelred.pouw.v1.QueryJobsResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/aethelred/pouw/v1/jobs\x12\x8f\x01\n" +
@@ -3453,7 +3950,10 @@ const file_aethelred_pouw_v1_pouw_proto_rawDesc = "" +
 	"\x10IsPCR0Registered\x12/.aethelred.pouw.v1.QueryIsPCR0RegisteredRequest\x1a0.aethelred.pouw.v1.QueryIsPCR0RegisteredResponse\"5\x82\xd3\xe4\x93\x02/\x12-/aethelred/pouw/v1/pcr0/{pcr0_hex}/registered\x12\xa0\x01\n" +
 	"\x0fUsefulWorkStats\x12..aethelred.pouw.v1.QueryUsefulWorkStatsRequest\x1a/.aethelred.pouw.v1.QueryUsefulWorkStatsResponse\",\x82\xd3\xe4\x93\x02&\x12$/aethelred/pouw/v1/stats/useful_work\x12\x94\x01\n" +
 	"\n" +
-	"EpochStats\x12).aethelred.pouw.v1.QueryEpochStatsRequest\x1a*.aethelred.pouw.v1.QueryEpochStatsResponse\"/\x82\xd3\xe4\x93\x02)\x12'/aethelred/pouw/v1/stats/epochs/{epoch}B-Z+github.com/aethelred/aethelred/x/pouw/typesb\x06proto3"
+	"EpochStats\x12).aethelred.pouw.v1.QueryEpochStatsRequest\x1a*.aethelred.pouw.v1.QueryEpochStatsResponse\"/\x82\xd3\xe4\x93\x02)\x12'/aethelred/pouw/v1/stats/epochs/{epoch}\x12\x96\x01\n" +
+	"\n" +
+	"SealQuorum\x12).aethelred.pouw.v1.QuerySealQuorumRequest\x1a*.aethelred.pouw.v1.QuerySealQuorumResponse\"1\x82\xd3\xe4\x93\x02+\x12)/aethelred/pouw/v1/seals/{seal_id}/quorumB\xb5\x01\n" +
+	"\x15com.aethelred.pouw.v1B\tPouwProtoP\x01Z+github.com/aethelred/aethelred/x/pouw/types\xa2\x02\x03APX\xaa\x02\x11Aethelred.Pouw.V1\xca\x02\x11Aethelred\\Pouw\\V1\xe2\x02\x1dAethelred\\Pouw\\V1\\GPBMetadata\xea\x02\x13Aethelred::Pouw::V1b\x06proto3"
 
 var (
 	file_aethelred_pouw_v1_pouw_proto_rawDescOnce sync.Once
@@ -3468,7 +3968,7 @@ func file_aethelred_pouw_v1_pouw_proto_rawDescGZIP() []byte {
 }
 
 var file_aethelred_pouw_v1_pouw_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_aethelred_pouw_v1_pouw_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
+var file_aethelred_pouw_v1_pouw_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_aethelred_pouw_v1_pouw_proto_goTypes = []any{
 	(UtilityCategory)(0),                           // 0: aethelred.pouw.v1.UtilityCategory
 	(JobStatus)(0),                                 // 1: aethelred.pouw.v1.JobStatus
@@ -3489,111 +3989,126 @@ var file_aethelred_pouw_v1_pouw_proto_goTypes = []any{
 	(*MsgRegisterValidatorCapabilityResponse)(nil), // 16: aethelred.pouw.v1.MsgRegisterValidatorCapabilityResponse
 	(*MsgRegisterValidatorPCR0)(nil),               // 17: aethelred.pouw.v1.MsgRegisterValidatorPCR0
 	(*MsgRegisterValidatorPCR0Response)(nil),       // 18: aethelred.pouw.v1.MsgRegisterValidatorPCR0Response
-	(*QueryJobRequest)(nil),                        // 19: aethelred.pouw.v1.QueryJobRequest
-	(*QueryJobResponse)(nil),                       // 20: aethelred.pouw.v1.QueryJobResponse
-	(*QueryJobsRequest)(nil),                       // 21: aethelred.pouw.v1.QueryJobsRequest
-	(*QueryJobsResponse)(nil),                      // 22: aethelred.pouw.v1.QueryJobsResponse
-	(*QueryPendingJobsRequest)(nil),                // 23: aethelred.pouw.v1.QueryPendingJobsRequest
-	(*QueryPendingJobsResponse)(nil),               // 24: aethelred.pouw.v1.QueryPendingJobsResponse
-	(*QueryModelRequest)(nil),                      // 25: aethelred.pouw.v1.QueryModelRequest
-	(*QueryModelResponse)(nil),                     // 26: aethelred.pouw.v1.QueryModelResponse
-	(*QueryValidatorStatsRequest)(nil),             // 27: aethelred.pouw.v1.QueryValidatorStatsRequest
-	(*QueryValidatorStatsResponse)(nil),            // 28: aethelred.pouw.v1.QueryValidatorStatsResponse
-	(*QueryParamsRequest)(nil),                     // 29: aethelred.pouw.v1.QueryParamsRequest
-	(*QueryParamsResponse)(nil),                    // 30: aethelred.pouw.v1.QueryParamsResponse
-	(*QueryValidatorPCR0Request)(nil),              // 31: aethelred.pouw.v1.QueryValidatorPCR0Request
-	(*QueryValidatorPCR0Response)(nil),             // 32: aethelred.pouw.v1.QueryValidatorPCR0Response
-	(*QueryIsPCR0RegisteredRequest)(nil),           // 33: aethelred.pouw.v1.QueryIsPCR0RegisteredRequest
-	(*QueryIsPCR0RegisteredResponse)(nil),          // 34: aethelred.pouw.v1.QueryIsPCR0RegisteredResponse
-	(*QueryUsefulWorkStatsRequest)(nil),            // 35: aethelred.pouw.v1.QueryUsefulWorkStatsRequest
-	(*QueryUsefulWorkStatsResponse)(nil),           // 36: aethelred.pouw.v1.QueryUsefulWorkStatsResponse
-	(*QueryEpochStatsRequest)(nil),                 // 37: aethelred.pouw.v1.QueryEpochStatsRequest
-	(*QueryEpochStatsResponse)(nil),                // 38: aethelred.pouw.v1.QueryEpochStatsResponse
-	(*ValidatorEpochStats)(nil),                    // 39: aethelred.pouw.v1.ValidatorEpochStats
-	(*Params)(nil),                                 // 40: aethelred.pouw.v1.Params
-	(*GenesisState)(nil),                           // 41: aethelred.pouw.v1.GenesisState
-	nil,                                            // 42: aethelred.pouw.v1.ComputeJob.MetadataEntry
-	nil,                                            // 43: aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
-	nil,                                            // 44: aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
-	nil,                                            // 45: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
-	nil,                                            // 46: aethelred.pouw.v1.Params.UtilityMultipliersEntry
-	(*timestamppb.Timestamp)(nil),                  // 47: google.protobuf.Timestamp
-	(*types.Coin)(nil),                             // 48: cosmos.base.v1beta1.Coin
+	(*MsgRegisterValidatorHybridKey)(nil),          // 19: aethelred.pouw.v1.MsgRegisterValidatorHybridKey
+	(*MsgRegisterValidatorHybridKeyResponse)(nil),  // 20: aethelred.pouw.v1.MsgRegisterValidatorHybridKeyResponse
+	(*SealQuorumSignature)(nil),                    // 21: aethelred.pouw.v1.SealQuorumSignature
+	(*QuerySealQuorumRequest)(nil),                 // 22: aethelred.pouw.v1.QuerySealQuorumRequest
+	(*QuerySealQuorumResponse)(nil),                // 23: aethelred.pouw.v1.QuerySealQuorumResponse
+	(*QueryJobRequest)(nil),                        // 24: aethelred.pouw.v1.QueryJobRequest
+	(*QueryJobResponse)(nil),                       // 25: aethelred.pouw.v1.QueryJobResponse
+	(*QueryJobsRequest)(nil),                       // 26: aethelred.pouw.v1.QueryJobsRequest
+	(*QueryJobsResponse)(nil),                      // 27: aethelred.pouw.v1.QueryJobsResponse
+	(*QueryPendingJobsRequest)(nil),                // 28: aethelred.pouw.v1.QueryPendingJobsRequest
+	(*QueryPendingJobsResponse)(nil),               // 29: aethelred.pouw.v1.QueryPendingJobsResponse
+	(*QueryModelRequest)(nil),                      // 30: aethelred.pouw.v1.QueryModelRequest
+	(*QueryModelResponse)(nil),                     // 31: aethelred.pouw.v1.QueryModelResponse
+	(*QueryValidatorStatsRequest)(nil),             // 32: aethelred.pouw.v1.QueryValidatorStatsRequest
+	(*QueryValidatorStatsResponse)(nil),            // 33: aethelred.pouw.v1.QueryValidatorStatsResponse
+	(*QueryParamsRequest)(nil),                     // 34: aethelred.pouw.v1.QueryParamsRequest
+	(*QueryParamsResponse)(nil),                    // 35: aethelred.pouw.v1.QueryParamsResponse
+	(*QueryValidatorPCR0Request)(nil),              // 36: aethelred.pouw.v1.QueryValidatorPCR0Request
+	(*QueryValidatorPCR0Response)(nil),             // 37: aethelred.pouw.v1.QueryValidatorPCR0Response
+	(*QueryIsPCR0RegisteredRequest)(nil),           // 38: aethelred.pouw.v1.QueryIsPCR0RegisteredRequest
+	(*QueryIsPCR0RegisteredResponse)(nil),          // 39: aethelred.pouw.v1.QueryIsPCR0RegisteredResponse
+	(*QueryUsefulWorkStatsRequest)(nil),            // 40: aethelred.pouw.v1.QueryUsefulWorkStatsRequest
+	(*QueryUsefulWorkStatsResponse)(nil),           // 41: aethelred.pouw.v1.QueryUsefulWorkStatsResponse
+	(*QueryEpochStatsRequest)(nil),                 // 42: aethelred.pouw.v1.QueryEpochStatsRequest
+	(*QueryEpochStatsResponse)(nil),                // 43: aethelred.pouw.v1.QueryEpochStatsResponse
+	(*ValidatorEpochStats)(nil),                    // 44: aethelred.pouw.v1.ValidatorEpochStats
+	(*Params)(nil),                                 // 45: aethelred.pouw.v1.Params
+	(*GenesisState)(nil),                           // 46: aethelred.pouw.v1.GenesisState
+	(*ValidatorHybridKey)(nil),                     // 47: aethelred.pouw.v1.ValidatorHybridKey
+	(*ConfidentialityPolicy)(nil),                  // 48: aethelred.pouw.v1.ConfidentialityPolicy
+	nil,                                            // 49: aethelred.pouw.v1.ComputeJob.MetadataEntry
+	nil,                                            // 50: aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
+	nil,                                            // 51: aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
+	nil,                                            // 52: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
+	nil,                                            // 53: aethelred.pouw.v1.Params.UtilityMultipliersEntry
+	(*timestamppb.Timestamp)(nil),                  // 54: google.protobuf.Timestamp
+	(*types.Coin)(nil),                             // 55: cosmos.base.v1beta1.Coin
 }
 var file_aethelred_pouw_v1_pouw_proto_depIdxs = []int32{
 	2,  // 0: aethelred.pouw.v1.ComputeJob.proof_type:type_name -> aethelred.pouw.v1.ProofType
 	1,  // 1: aethelred.pouw.v1.ComputeJob.status:type_name -> aethelred.pouw.v1.JobStatus
-	47, // 2: aethelred.pouw.v1.ComputeJob.created_at:type_name -> google.protobuf.Timestamp
-	47, // 3: aethelred.pouw.v1.ComputeJob.updated_at:type_name -> google.protobuf.Timestamp
-	47, // 4: aethelred.pouw.v1.ComputeJob.completed_at:type_name -> google.protobuf.Timestamp
-	47, // 5: aethelred.pouw.v1.ComputeJob.expires_at:type_name -> google.protobuf.Timestamp
+	54, // 2: aethelred.pouw.v1.ComputeJob.created_at:type_name -> google.protobuf.Timestamp
+	54, // 3: aethelred.pouw.v1.ComputeJob.updated_at:type_name -> google.protobuf.Timestamp
+	54, // 4: aethelred.pouw.v1.ComputeJob.completed_at:type_name -> google.protobuf.Timestamp
+	54, // 5: aethelred.pouw.v1.ComputeJob.expires_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: aethelred.pouw.v1.ComputeJob.verification_results:type_name -> aethelred.pouw.v1.VerificationResult
-	42, // 7: aethelred.pouw.v1.ComputeJob.metadata:type_name -> aethelred.pouw.v1.ComputeJob.MetadataEntry
-	48, // 8: aethelred.pouw.v1.ComputeJob.fee:type_name -> cosmos.base.v1beta1.Coin
+	49, // 7: aethelred.pouw.v1.ComputeJob.metadata:type_name -> aethelred.pouw.v1.ComputeJob.MetadataEntry
+	55, // 8: aethelred.pouw.v1.ComputeJob.fee:type_name -> cosmos.base.v1beta1.Coin
 	0,  // 9: aethelred.pouw.v1.ComputeJob.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	47, // 10: aethelred.pouw.v1.VerificationResult.timestamp:type_name -> google.protobuf.Timestamp
-	3,  // 11: aethelred.pouw.v1.VerificationResult.verification_method:type_name -> aethelred.pouw.v1.VerificationMethod
-	47, // 12: aethelred.pouw.v1.RegisteredModel.registered_at:type_name -> google.protobuf.Timestamp
-	0,  // 13: aethelred.pouw.v1.RegisteredModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	47, // 14: aethelred.pouw.v1.ValidatorStats.last_active_at:type_name -> google.protobuf.Timestamp
-	43, // 15: aethelred.pouw.v1.ValidatorStats.uwu_by_category:type_name -> aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
-	47, // 16: aethelred.pouw.v1.ValidatorCapability.last_seen:type_name -> google.protobuf.Timestamp
-	0,  // 17: aethelred.pouw.v1.ValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
-	2,  // 18: aethelred.pouw.v1.MsgSubmitJob.proof_type:type_name -> aethelred.pouw.v1.ProofType
-	44, // 19: aethelred.pouw.v1.MsgSubmitJob.metadata:type_name -> aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
-	0,  // 20: aethelred.pouw.v1.MsgSubmitJob.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	0,  // 21: aethelred.pouw.v1.MsgRegisterModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	0,  // 22: aethelred.pouw.v1.MsgRegisterValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
-	4,  // 23: aethelred.pouw.v1.QueryJobResponse.job:type_name -> aethelred.pouw.v1.ComputeJob
-	0,  // 24: aethelred.pouw.v1.QueryJobsRequest.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
-	4,  // 25: aethelred.pouw.v1.QueryJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
-	4,  // 26: aethelred.pouw.v1.QueryPendingJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
-	6,  // 27: aethelred.pouw.v1.QueryModelResponse.model:type_name -> aethelred.pouw.v1.RegisteredModel
-	7,  // 28: aethelred.pouw.v1.QueryValidatorStatsResponse.stats:type_name -> aethelred.pouw.v1.ValidatorStats
-	40, // 29: aethelred.pouw.v1.QueryParamsResponse.params:type_name -> aethelred.pouw.v1.Params
-	45, // 30: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.uwu_by_category:type_name -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
-	39, // 31: aethelred.pouw.v1.QueryEpochStatsResponse.validator_stats:type_name -> aethelred.pouw.v1.ValidatorEpochStats
-	46, // 32: aethelred.pouw.v1.Params.utility_multipliers:type_name -> aethelred.pouw.v1.Params.UtilityMultipliersEntry
-	4,  // 33: aethelred.pouw.v1.GenesisState.jobs:type_name -> aethelred.pouw.v1.ComputeJob
-	6,  // 34: aethelred.pouw.v1.GenesisState.registered_models:type_name -> aethelred.pouw.v1.RegisteredModel
-	7,  // 35: aethelred.pouw.v1.GenesisState.validator_stats:type_name -> aethelred.pouw.v1.ValidatorStats
-	8,  // 36: aethelred.pouw.v1.GenesisState.validator_capabilities:type_name -> aethelred.pouw.v1.ValidatorCapability
-	40, // 37: aethelred.pouw.v1.GenesisState.params:type_name -> aethelred.pouw.v1.Params
-	9,  // 38: aethelred.pouw.v1.Msg.SubmitJob:input_type -> aethelred.pouw.v1.MsgSubmitJob
-	11, // 39: aethelred.pouw.v1.Msg.RegisterModel:input_type -> aethelred.pouw.v1.MsgRegisterModel
-	13, // 40: aethelred.pouw.v1.Msg.CancelJob:input_type -> aethelred.pouw.v1.MsgCancelJob
-	15, // 41: aethelred.pouw.v1.Msg.RegisterValidatorCapability:input_type -> aethelred.pouw.v1.MsgRegisterValidatorCapability
-	17, // 42: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:input_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0
-	19, // 43: aethelred.pouw.v1.Query.Job:input_type -> aethelred.pouw.v1.QueryJobRequest
-	21, // 44: aethelred.pouw.v1.Query.Jobs:input_type -> aethelred.pouw.v1.QueryJobsRequest
-	23, // 45: aethelred.pouw.v1.Query.PendingJobs:input_type -> aethelred.pouw.v1.QueryPendingJobsRequest
-	25, // 46: aethelred.pouw.v1.Query.Model:input_type -> aethelred.pouw.v1.QueryModelRequest
-	27, // 47: aethelred.pouw.v1.Query.ValidatorStats:input_type -> aethelred.pouw.v1.QueryValidatorStatsRequest
-	29, // 48: aethelred.pouw.v1.Query.Params:input_type -> aethelred.pouw.v1.QueryParamsRequest
-	31, // 49: aethelred.pouw.v1.Query.ValidatorPCR0:input_type -> aethelred.pouw.v1.QueryValidatorPCR0Request
-	33, // 50: aethelred.pouw.v1.Query.IsPCR0Registered:input_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredRequest
-	35, // 51: aethelred.pouw.v1.Query.UsefulWorkStats:input_type -> aethelred.pouw.v1.QueryUsefulWorkStatsRequest
-	37, // 52: aethelred.pouw.v1.Query.EpochStats:input_type -> aethelred.pouw.v1.QueryEpochStatsRequest
-	10, // 53: aethelred.pouw.v1.Msg.SubmitJob:output_type -> aethelred.pouw.v1.MsgSubmitJobResponse
-	12, // 54: aethelred.pouw.v1.Msg.RegisterModel:output_type -> aethelred.pouw.v1.MsgRegisterModelResponse
-	14, // 55: aethelred.pouw.v1.Msg.CancelJob:output_type -> aethelred.pouw.v1.MsgCancelJobResponse
-	16, // 56: aethelred.pouw.v1.Msg.RegisterValidatorCapability:output_type -> aethelred.pouw.v1.MsgRegisterValidatorCapabilityResponse
-	18, // 57: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:output_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0Response
-	20, // 58: aethelred.pouw.v1.Query.Job:output_type -> aethelred.pouw.v1.QueryJobResponse
-	22, // 59: aethelred.pouw.v1.Query.Jobs:output_type -> aethelred.pouw.v1.QueryJobsResponse
-	24, // 60: aethelred.pouw.v1.Query.PendingJobs:output_type -> aethelred.pouw.v1.QueryPendingJobsResponse
-	26, // 61: aethelred.pouw.v1.Query.Model:output_type -> aethelred.pouw.v1.QueryModelResponse
-	28, // 62: aethelred.pouw.v1.Query.ValidatorStats:output_type -> aethelred.pouw.v1.QueryValidatorStatsResponse
-	30, // 63: aethelred.pouw.v1.Query.Params:output_type -> aethelred.pouw.v1.QueryParamsResponse
-	32, // 64: aethelred.pouw.v1.Query.ValidatorPCR0:output_type -> aethelred.pouw.v1.QueryValidatorPCR0Response
-	34, // 65: aethelred.pouw.v1.Query.IsPCR0Registered:output_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredResponse
-	36, // 66: aethelred.pouw.v1.Query.UsefulWorkStats:output_type -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse
-	38, // 67: aethelred.pouw.v1.Query.EpochStats:output_type -> aethelred.pouw.v1.QueryEpochStatsResponse
-	53, // [53:68] is the sub-list for method output_type
-	38, // [38:53] is the sub-list for method input_type
-	38, // [38:38] is the sub-list for extension type_name
-	38, // [38:38] is the sub-list for extension extendee
-	0,  // [0:38] is the sub-list for field type_name
+	48, // 10: aethelred.pouw.v1.ComputeJob.confidentiality_policy:type_name -> aethelred.pouw.v1.ConfidentialityPolicy
+	54, // 11: aethelred.pouw.v1.VerificationResult.timestamp:type_name -> google.protobuf.Timestamp
+	3,  // 12: aethelred.pouw.v1.VerificationResult.verification_method:type_name -> aethelred.pouw.v1.VerificationMethod
+	54, // 13: aethelred.pouw.v1.RegisteredModel.registered_at:type_name -> google.protobuf.Timestamp
+	0,  // 14: aethelred.pouw.v1.RegisteredModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	54, // 15: aethelred.pouw.v1.ValidatorStats.last_active_at:type_name -> google.protobuf.Timestamp
+	50, // 16: aethelred.pouw.v1.ValidatorStats.uwu_by_category:type_name -> aethelred.pouw.v1.ValidatorStats.UwuByCategoryEntry
+	54, // 17: aethelred.pouw.v1.ValidatorCapability.last_seen:type_name -> google.protobuf.Timestamp
+	0,  // 18: aethelred.pouw.v1.ValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
+	2,  // 19: aethelred.pouw.v1.MsgSubmitJob.proof_type:type_name -> aethelred.pouw.v1.ProofType
+	51, // 20: aethelred.pouw.v1.MsgSubmitJob.metadata:type_name -> aethelred.pouw.v1.MsgSubmitJob.MetadataEntry
+	0,  // 21: aethelred.pouw.v1.MsgSubmitJob.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	48, // 22: aethelred.pouw.v1.MsgSubmitJob.confidentiality_policy:type_name -> aethelred.pouw.v1.ConfidentialityPolicy
+	0,  // 23: aethelred.pouw.v1.MsgRegisterModel.default_utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	0,  // 24: aethelred.pouw.v1.MsgRegisterValidatorCapability.supported_categories:type_name -> aethelred.pouw.v1.UtilityCategory
+	21, // 25: aethelred.pouw.v1.QuerySealQuorumResponse.signatures:type_name -> aethelred.pouw.v1.SealQuorumSignature
+	4,  // 26: aethelred.pouw.v1.QueryJobResponse.job:type_name -> aethelred.pouw.v1.ComputeJob
+	0,  // 27: aethelred.pouw.v1.QueryJobsRequest.utility_category:type_name -> aethelred.pouw.v1.UtilityCategory
+	4,  // 28: aethelred.pouw.v1.QueryJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
+	4,  // 29: aethelred.pouw.v1.QueryPendingJobsResponse.jobs:type_name -> aethelred.pouw.v1.ComputeJob
+	6,  // 30: aethelred.pouw.v1.QueryModelResponse.model:type_name -> aethelred.pouw.v1.RegisteredModel
+	7,  // 31: aethelred.pouw.v1.QueryValidatorStatsResponse.stats:type_name -> aethelred.pouw.v1.ValidatorStats
+	45, // 32: aethelred.pouw.v1.QueryParamsResponse.params:type_name -> aethelred.pouw.v1.Params
+	52, // 33: aethelred.pouw.v1.QueryUsefulWorkStatsResponse.uwu_by_category:type_name -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse.UwuByCategoryEntry
+	44, // 34: aethelred.pouw.v1.QueryEpochStatsResponse.validator_stats:type_name -> aethelred.pouw.v1.ValidatorEpochStats
+	53, // 35: aethelred.pouw.v1.Params.utility_multipliers:type_name -> aethelred.pouw.v1.Params.UtilityMultipliersEntry
+	4,  // 36: aethelred.pouw.v1.GenesisState.jobs:type_name -> aethelred.pouw.v1.ComputeJob
+	6,  // 37: aethelred.pouw.v1.GenesisState.registered_models:type_name -> aethelred.pouw.v1.RegisteredModel
+	7,  // 38: aethelred.pouw.v1.GenesisState.validator_stats:type_name -> aethelred.pouw.v1.ValidatorStats
+	8,  // 39: aethelred.pouw.v1.GenesisState.validator_capabilities:type_name -> aethelred.pouw.v1.ValidatorCapability
+	45, // 40: aethelred.pouw.v1.GenesisState.params:type_name -> aethelred.pouw.v1.Params
+	47, // 41: aethelred.pouw.v1.GenesisState.validator_hybrid_keys:type_name -> aethelred.pouw.v1.ValidatorHybridKey
+	9,  // 42: aethelred.pouw.v1.Msg.SubmitJob:input_type -> aethelred.pouw.v1.MsgSubmitJob
+	11, // 43: aethelred.pouw.v1.Msg.RegisterModel:input_type -> aethelred.pouw.v1.MsgRegisterModel
+	13, // 44: aethelred.pouw.v1.Msg.CancelJob:input_type -> aethelred.pouw.v1.MsgCancelJob
+	15, // 45: aethelred.pouw.v1.Msg.RegisterValidatorCapability:input_type -> aethelred.pouw.v1.MsgRegisterValidatorCapability
+	17, // 46: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:input_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0
+	19, // 47: aethelred.pouw.v1.Msg.RegisterValidatorHybridKey:input_type -> aethelred.pouw.v1.MsgRegisterValidatorHybridKey
+	24, // 48: aethelred.pouw.v1.Query.Job:input_type -> aethelred.pouw.v1.QueryJobRequest
+	26, // 49: aethelred.pouw.v1.Query.Jobs:input_type -> aethelred.pouw.v1.QueryJobsRequest
+	28, // 50: aethelred.pouw.v1.Query.PendingJobs:input_type -> aethelred.pouw.v1.QueryPendingJobsRequest
+	30, // 51: aethelred.pouw.v1.Query.Model:input_type -> aethelred.pouw.v1.QueryModelRequest
+	32, // 52: aethelred.pouw.v1.Query.ValidatorStats:input_type -> aethelred.pouw.v1.QueryValidatorStatsRequest
+	34, // 53: aethelred.pouw.v1.Query.Params:input_type -> aethelred.pouw.v1.QueryParamsRequest
+	36, // 54: aethelred.pouw.v1.Query.ValidatorPCR0:input_type -> aethelred.pouw.v1.QueryValidatorPCR0Request
+	38, // 55: aethelred.pouw.v1.Query.IsPCR0Registered:input_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredRequest
+	40, // 56: aethelred.pouw.v1.Query.UsefulWorkStats:input_type -> aethelred.pouw.v1.QueryUsefulWorkStatsRequest
+	42, // 57: aethelred.pouw.v1.Query.EpochStats:input_type -> aethelred.pouw.v1.QueryEpochStatsRequest
+	22, // 58: aethelred.pouw.v1.Query.SealQuorum:input_type -> aethelred.pouw.v1.QuerySealQuorumRequest
+	10, // 59: aethelred.pouw.v1.Msg.SubmitJob:output_type -> aethelred.pouw.v1.MsgSubmitJobResponse
+	12, // 60: aethelred.pouw.v1.Msg.RegisterModel:output_type -> aethelred.pouw.v1.MsgRegisterModelResponse
+	14, // 61: aethelred.pouw.v1.Msg.CancelJob:output_type -> aethelred.pouw.v1.MsgCancelJobResponse
+	16, // 62: aethelred.pouw.v1.Msg.RegisterValidatorCapability:output_type -> aethelred.pouw.v1.MsgRegisterValidatorCapabilityResponse
+	18, // 63: aethelred.pouw.v1.Msg.RegisterValidatorPCR0:output_type -> aethelred.pouw.v1.MsgRegisterValidatorPCR0Response
+	20, // 64: aethelred.pouw.v1.Msg.RegisterValidatorHybridKey:output_type -> aethelred.pouw.v1.MsgRegisterValidatorHybridKeyResponse
+	25, // 65: aethelred.pouw.v1.Query.Job:output_type -> aethelred.pouw.v1.QueryJobResponse
+	27, // 66: aethelred.pouw.v1.Query.Jobs:output_type -> aethelred.pouw.v1.QueryJobsResponse
+	29, // 67: aethelred.pouw.v1.Query.PendingJobs:output_type -> aethelred.pouw.v1.QueryPendingJobsResponse
+	31, // 68: aethelred.pouw.v1.Query.Model:output_type -> aethelred.pouw.v1.QueryModelResponse
+	33, // 69: aethelred.pouw.v1.Query.ValidatorStats:output_type -> aethelred.pouw.v1.QueryValidatorStatsResponse
+	35, // 70: aethelred.pouw.v1.Query.Params:output_type -> aethelred.pouw.v1.QueryParamsResponse
+	37, // 71: aethelred.pouw.v1.Query.ValidatorPCR0:output_type -> aethelred.pouw.v1.QueryValidatorPCR0Response
+	39, // 72: aethelred.pouw.v1.Query.IsPCR0Registered:output_type -> aethelred.pouw.v1.QueryIsPCR0RegisteredResponse
+	41, // 73: aethelred.pouw.v1.Query.UsefulWorkStats:output_type -> aethelred.pouw.v1.QueryUsefulWorkStatsResponse
+	43, // 74: aethelred.pouw.v1.Query.EpochStats:output_type -> aethelred.pouw.v1.QueryEpochStatsResponse
+	23, // 75: aethelred.pouw.v1.Query.SealQuorum:output_type -> aethelred.pouw.v1.QuerySealQuorumResponse
+	59, // [59:76] is the sub-list for method output_type
+	42, // [42:59] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_aethelred_pouw_v1_pouw_proto_init() }
@@ -3607,7 +4122,7 @@ func file_aethelred_pouw_v1_pouw_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aethelred_pouw_v1_pouw_proto_rawDesc), len(file_aethelred_pouw_v1_pouw_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   43,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

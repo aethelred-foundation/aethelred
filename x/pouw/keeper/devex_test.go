@@ -88,6 +88,8 @@ func (committeeTestBankKeeper) SendCoinsFromModuleToModule(context.Context, stri
 
 func (committeeTestBankKeeper) BurnCoins(context.Context, string, sdk.Coins) error { return nil }
 
+func (committeeTestBankKeeper) MintCoins(context.Context, string, sdk.Coins) error { return nil }
+
 func (committeeTestBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins {
 	return sdk.NewCoins()
 }
@@ -101,6 +103,10 @@ func (m committeeTestStakingKeeper) GetAllValidators(context.Context) ([]staking
 }
 
 func (committeeTestStakingKeeper) GetValidator(context.Context, sdk.ValAddress) (stakingtypes.Validator, error) {
+	return stakingtypes.Validator{}, nil
+}
+
+func (committeeTestStakingKeeper) GetValidatorByConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.Validator, error) {
 	return stakingtypes.Validator{}, nil
 }
 
@@ -229,6 +235,20 @@ func newTestKeeperFromStore(cdc codec.Codec, storeService store.KVStoreService) 
 			"trusted_measurement_revocations",
 			collections.StringKey,
 			collections.StringValue,
+		),
+		ValidatorHybridKeys: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.ValidatorHybridKeyKeyPrefix),
+			"validator_hybrid_keys",
+			collections.StringKey,
+			collections.BytesValue,
+		),
+		SealQuorumSignatures: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.SealQuorumSignatureKeyPrefix),
+			"seal_quorum_signatures",
+			collections.StringKey,
+			collections.BytesValue,
 		),
 		JobCount: collections.NewItem(
 			sb,

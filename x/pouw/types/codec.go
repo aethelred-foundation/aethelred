@@ -6,7 +6,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/types/tx"
+	gogoproto "github.com/cosmos/gogoproto/proto"
 )
+
+// The generated pb.go registers message types with the modern protoregistry,
+// but the SDK's unknownproto tx-decode check (codec/unknownproto) resolves
+// nested message types through gogoproto's legacy type registry. Msg request
+// types are bridged into that registry by RegisterImplementations below, but a
+// plain nested message used only as a Msg field is not — so a tx that populates
+// such a field is rejected at decode with:
+//
+//	failed to retrieve the message of type "aethelred.pouw.v1.ConfidentialityPolicy"
+//
+// ConfidentialityPolicy is the sole nested-message field across pouw Msgs
+// (MsgSubmitJob.confidentiality_policy). Registering it here makes CEAP-bound
+// job submissions decodable — without it, --conf-* flags on submit-job always
+// fail and no seal can carry a jurisdiction/backend policy. Guarded so repeated
+// app construction (tests) does not double-register and panic.
+func init() {
+	if gogoproto.MessageType("aethelred.pouw.v1.ConfidentialityPolicy") == nil {
+		gogoproto.RegisterType((*ConfidentialityPolicy)(nil), "aethelred.pouw.v1.ConfidentialityPolicy")
+	}
+}
 
 // ModuleCdc is the codec for the module
 var ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
@@ -19,6 +40,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgCancelJob{}, "aethelred/pouw/MsgCancelJob", nil)
 	cdc.RegisterConcrete(&MsgRegisterValidatorCapability{}, "aethelred/pouw/MsgRegisterValidatorCapability", nil)
 	cdc.RegisterConcrete(&MsgRegisterValidatorPCR0{}, "aethelred/pouw/MsgRegisterValidatorPCR0", nil)
+	cdc.RegisterConcrete(&MsgRegisterValidatorHybridKey{}, "aethelred/pouw/MsgRegisterValidatorHybridKey", nil)
 }
 
 // RegisterInterfaces registers the interfaces types with the interface registry.
@@ -29,6 +51,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&MsgCancelJob{},
 		&MsgRegisterValidatorCapability{},
 		&MsgRegisterValidatorPCR0{},
+		&MsgRegisterValidatorHybridKey{},
 	)
 
 	registry.RegisterImplementations((*tx.MsgResponse)(nil),
@@ -37,6 +60,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&MsgCancelJobResponse{},
 		&MsgRegisterValidatorCapabilityResponse{},
 		&MsgRegisterValidatorPCR0Response{},
+		&MsgRegisterValidatorHybridKeyResponse{},
 	)
 
 	// Best-effort registration: avoid panic when proto descriptors are not

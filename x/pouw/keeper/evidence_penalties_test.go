@@ -36,6 +36,7 @@ func (m *slashingBankKeeper) SendCoinsFromModuleToModule(_ context.Context, _, _
 	return nil
 }
 
+func (m *slashingBankKeeper) MintCoins(_ context.Context, _ string, _ sdk.Coins) error { return nil }
 func (m *slashingBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error {
 	m.burnCalls++
 	return m.burnErr

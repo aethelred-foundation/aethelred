@@ -8,15 +8,21 @@
     "schema_version",
     "bundle_id",
     "job_id",
+    "chain_id",
+    "seal_id",
     "timestamp",
     "model_hash",
     "circuit_hash",
     "verifying_key_hash",
+    "validator_signature",
+    "confidence_score",
     "tee_evidence",
     "zkml_evidence",
     "region",
     "operator",
-    "policy_decision"
+    "policy_decision",
+    "archive_pointer",
+    "verification"
   ],
   "additionalProperties": true,
   "properties": {
@@ -35,6 +41,16 @@
       "pattern": "^[0-9A-Fa-f]{64}$",
       "description": "On-chain job identifier (hex-encoded transaction hash, 32 bytes)."
     },
+    "chain_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Aethelred chain identifier for the evidence-producing network."
+    },
+    "seal_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Digital Seal identifier linked to this evidence bundle."
+    },
     "timestamp": {
       "type": "string",
       "format": "date-time",
@@ -51,6 +67,16 @@
     "verifying_key_hash": {
       "$ref": "#/definitions/sha256_hex",
       "description": "SHA-256 hash of the verifying key."
+    },
+    "validator_signature": {
+      "$ref": "#/definitions/non_empty_base64",
+      "description": "Validator/operator signature carried on the accepted evidence transcript, such as the primary TEE attestation signature."
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Pilot confidence score for the accepted job, bounded to [0, 1]."
     },
     "tee_evidence": {
       "$ref": "#/definitions/tee_evidence",
@@ -73,6 +99,14 @@
     "policy_decision": {
       "$ref": "#/definitions/policy_decision",
       "description": "Policy engine output for this job."
+    },
+    "archive_pointer": {
+      "$ref": "#/definitions/archive_pointer",
+      "description": "Pointer to the retained audit archive record for this evidence bundle."
+    },
+    "verification": {
+      "$ref": "#/definitions/verification",
+      "description": "Verification status for schema, policy, TEE, zkML, and Digital Seal checks."
     },
     "metadata": {
       "type": "object",
@@ -182,6 +216,84 @@
         "policy_version": {
           "type": "string",
           "description": "Version of the policy engine that produced this decision."
+        }
+      }
+    },
+    "archive_pointer": {
+      "type": "object",
+      "required": [
+        "archive_type",
+        "index",
+        "document_id",
+        "uri",
+        "retention_days",
+        "write_status"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "archive_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "index": {
+          "type": "string",
+          "minLength": 1
+        },
+        "document_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retention_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "write_status": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": [
+        "schema_verified",
+        "policy_verified",
+        "tee_attestation_verified",
+        "zkml_proof_verified",
+        "digital_seal_verified",
+        "live_verification_required",
+        "verifier_version"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "artifact_mode": {
+          "type": "string"
+        },
+        "schema_verified": {
+          "type": "boolean"
+        },
+        "policy_verified": {
+          "type": "boolean"
+        },
+        "tee_attestation_verified": {
+          "type": "boolean"
+        },
+        "zkml_proof_verified": {
+          "type": "boolean"
+        },
+        "digital_seal_verified": {
+          "type": "boolean"
+        },
+        "live_verification_required": {
+          "type": "boolean"
+        },
+        "verifier_version": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },

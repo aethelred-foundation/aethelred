@@ -82,17 +82,21 @@ type VerifierConfig struct {
 // DefaultVerifierConfig returns default configuration
 func DefaultVerifierConfig() VerifierConfig {
 	return VerifierConfig{
-		VerifyTEEAttestations:             true,
-		VerifyZKMLProofs:                  true,
-		VerifyConsensus:                   true,
-		VerifySignatures:                  true,
-		AllowExpiredSeals:                 false,
-		MaxAuditTrailSize:                 1000,
-		RequireCompliance:                 true,
-		TEEAttestationVerifier:            nil,
-		ZKMLProofVerifier:                 nil,
-		SignatureVerifier:                 nil,
-		EnhancedSignatureVerifier:         nil,
+		VerifyTEEAttestations:  true,
+		VerifyZKMLProofs:       true,
+		VerifyConsensus:        true,
+		VerifySignatures:       true,
+		AllowExpiredSeals:      false,
+		MaxAuditTrailSize:      1000,
+		RequireCompliance:      true,
+		TEEAttestationVerifier: nil,
+		ZKMLProofVerifier:      nil,
+		SignatureVerifier:      nil,
+		// Verify validator-quorum hybrid (secp256k1 + ML-DSA) seal signatures
+		// with real cryptography. The pouw module only ever emits hybrid seal
+		// signatures (NewValidatorSealSignature), so this is the correct default;
+		// it replaces fail-closed behaviour with genuine verification.
+		EnhancedSignatureVerifier:         HybridSealSignatureVerifier,
 		AllowInsecureFallbackVerification: false,
 	}
 }
