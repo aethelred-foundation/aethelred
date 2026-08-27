@@ -76,7 +76,11 @@ jobs:
           # files so binaries and vendored assets do not slow the scan.
           markers='INTERNAL ONLY|DO NOT SEND TO|CONFIDENTIAL - DO NOT|COMPANY CONFIDENTIAL'
 
-          files="$(git ls-files -- '*.md' '*.txt' '*.rst' '*.adoc' '*.csv' '*.json' '*.yml' '*.yaml' || true)"
+          # This workflow is excluded from its own content scan: it quotes the
+          # markers it searches for, both in the comment above and in the
+          # pattern below, so scanning it would fail this job on every push
+          # forever. The path scans above still cover it.
+          files="$(git ls-files -- '*.md' '*.txt' '*.rst' '*.adoc' '*.csv' '*.json' '*.yml' '*.yaml' ':!.github/workflows/confidential-content-guard.yml' || true)"
           [ -z "$files" ] && { echo "OK: nothing to scan."; exit 0; }
 
           # -I skips binary; || true so an empty result is not a failure.
